@@ -1263,6 +1263,18 @@ video {
 .duration-200 {
   transition-duration: 200ms;
 }
+.az-logo {
+  font-weight: 700;
+  font-size: 28px;
+  font-family: Poppins, sans-serif;
+  text-transform: lowercase;
+  color: #5b47fb;
+  letter-spacing: -1px;
+  display: flex;
+  align-items: center;
+  position: relative;
+  top: -2px;
+}
 .backdrop\:backdrop-blur::backdrop {
   --tw-backdrop-blur: blur(8px);
   -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
