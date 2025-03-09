@@ -56769,6 +56769,7 @@ var AppModule = class _AppModule {
         // deps: [AuthService, NavOutletService]
         // deps: [AuthService, NavOutletService]
       },
+      IsAuthenticatedAuthGuard,
       provideHttpClient(withInterceptorsFromDi()),
       provideRouter(routes, withComponentInputBinding())
     ], imports: [
