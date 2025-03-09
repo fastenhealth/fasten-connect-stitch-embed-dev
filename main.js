@@ -55910,7 +55910,8 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts
-function HealthSystemBrandDetailsComponent_div_17_Template(rf, ctx) {
+var _c04 = () => [];
+function HealthSystemBrandDetailsComponent_div_19_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 19);
     \u0275\u0275namespaceSVG();
@@ -55919,18 +55920,22 @@ function HealthSystemBrandDetailsComponent_div_17_Template(rf, ctx) {
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceHTML();
     \u0275\u0275elementStart(5, "a", 24);
-    \u0275\u0275text(6);
+    \u0275\u0275pipe(6, "async");
+    \u0275\u0275text(7);
+    \u0275\u0275pipe(8, "async");
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
+    let tmp_1_0;
+    let tmp_2_0;
     const ctx_r0 = \u0275\u0275nextContext();
     \u0275\u0275advance(5);
-    \u0275\u0275property("href", ctx_r0.brand.brand_website, \u0275\u0275sanitizeUrl);
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate(ctx_r0.brand.brand_website);
+    \u0275\u0275property("href", (tmp_1_0 = \u0275\u0275pipeBind1(6, 2, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.brand_website, \u0275\u0275sanitizeUrl);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate((tmp_2_0 = \u0275\u0275pipeBind1(8, 4, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.brand_website);
   }
 }
-function HealthSystemBrandDetailsComponent_div_18_span_5_Template(rf, ctx) {
+function HealthSystemBrandDetailsComponent_div_21_span_5_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1);
@@ -55943,19 +55948,21 @@ function HealthSystemBrandDetailsComponent_div_18_span_5_Template(rf, ctx) {
     \u0275\u0275textInterpolate(\u0275\u0275pipeBind1(2, 1, stateCode_r2));
   }
 }
-function HealthSystemBrandDetailsComponent_div_18_span_7_Template(rf, ctx) {
+function HealthSystemBrandDetailsComponent_div_21_span_8_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1);
+    \u0275\u0275pipe(2, "async");
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
+    let tmp_2_0;
     const ctx_r0 = \u0275\u0275nextContext(2);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", ctx_r0.brand.locations.length, "");
+    \u0275\u0275textInterpolate1("+ ", (((tmp_2_0 = \u0275\u0275pipeBind1(2, 1, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c04)).length, "");
   }
 }
-function HealthSystemBrandDetailsComponent_div_18_Template(rf, ctx) {
+function HealthSystemBrandDetailsComponent_div_21_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 25);
     \u0275\u0275namespaceSVG();
@@ -55964,27 +55971,31 @@ function HealthSystemBrandDetailsComponent_div_18_Template(rf, ctx) {
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceHTML();
     \u0275\u0275elementStart(4, "span", 29);
-    \u0275\u0275template(5, HealthSystemBrandDetailsComponent_div_18_span_5_Template, 3, 3, "span", 18);
-    \u0275\u0275pipe(6, "slice");
-    \u0275\u0275template(7, HealthSystemBrandDetailsComponent_div_18_span_7_Template, 2, 1, "span", 30);
+    \u0275\u0275template(5, HealthSystemBrandDetailsComponent_div_21_span_5_Template, 3, 3, "span", 18);
+    \u0275\u0275pipe(6, "async");
+    \u0275\u0275pipe(7, "slice");
+    \u0275\u0275template(8, HealthSystemBrandDetailsComponent_div_21_span_8_Template, 3, 4, "span", 30);
+    \u0275\u0275pipe(9, "async");
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
+    let tmp_1_0;
+    let tmp_2_0;
     const ctx_r0 = \u0275\u0275nextContext();
     \u0275\u0275advance(5);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(6, 2, ctx_r0.brand.locations, 0, 3));
-    \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ctx_r0.brand.locations.length > 4);
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(7, 4, ((tmp_1_0 = \u0275\u0275pipeBind1(6, 2, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c04), 0, 3));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("ngIf", (((tmp_2_0 = \u0275\u0275pipeBind1(9, 8, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c04)).length > 4);
   }
 }
-function HealthSystemBrandDetailsComponent_ng_container_20_div_1_Template(rf, ctx) {
+function HealthSystemBrandDetailsComponent_ng_container_24_div_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "div", 32)(1, "div", 33)(2, "h4", 34);
     \u0275\u0275text(3);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(4, "button", 35);
-    \u0275\u0275listener("click", function HealthSystemBrandDetailsComponent_ng_container_20_div_1_Template_button_click_4_listener() {
+    \u0275\u0275listener("click", function HealthSystemBrandDetailsComponent_ng_container_24_div_1_Template_button_click_4_listener() {
       const endpoint_r4 = \u0275\u0275restoreView(_r3).$implicit;
       const portal_r5 = \u0275\u0275nextContext().$implicit;
       const ctx_r0 = \u0275\u0275nextContext();
@@ -55999,10 +56010,10 @@ function HealthSystemBrandDetailsComponent_ng_container_20_div_1_Template(rf, ct
     \u0275\u0275textInterpolate(portal_r5.name);
   }
 }
-function HealthSystemBrandDetailsComponent_ng_container_20_Template(rf, ctx) {
+function HealthSystemBrandDetailsComponent_ng_container_24_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275template(1, HealthSystemBrandDetailsComponent_ng_container_20_div_1_Template, 6, 1, "div", 31);
+    \u0275\u0275template(1, HealthSystemBrandDetailsComponent_ng_container_24_div_1_Template, 6, 1, "div", 31);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
@@ -56015,7 +56026,6 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
   constructor(configService, router) {
     this.configService = configService;
     this.router = router;
-    this.brand = configService.searchConfig$.selectedBrand;
   }
   ngOnInit() {
   }
@@ -56030,7 +56040,7 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], inputs: { brand: "brand" }, standalone: false, decls: 21, vars: 7, consts: [["id", "step-health-system-details", 1, "space-y-6"], [1, "relative", "flex", "justify-center", "items-center"], ["type", "button", "id", "hsd-back", 1, "absolute", "left-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "routerLink"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", 1, "w-5", "h-5"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M15 19l-7-7 7-7"], [1, "az-logo"], [1, "space-y-6"], [1, "border", "rounded-2xl", "p-6"], [1, "flex", "items-start", "space-x-4", "mb-4"], [1, "flex-shrink-0"], ["imageFallback", "", 1, "w-12", "max-h-12", "rounded-lg", "object-contain", 3, "src"], [1, "flex-1", "min-w-0"], ["id", "hsd-name", 1, "text-xl", "font-semibold"], ["id", "hsd-description", 1, "text-gray-600", "text-base", "mb-4"], [1, "space-y-2"], ["class", "flex items-center gap-2 text-gray-600", "id", "hsd-website-container", 4, "ngIf"], ["class", "flex items-center gap-2 text-gray-600", 4, "ngIf"], ["id", "hsd-institutions-list", 1, "space-y-2"], [4, "ngFor", "ngForOf"], ["id", "hsd-website-container", 1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-globe", "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"], ["d", "M2 12h20"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 1, "text-base", "hover:underline", 3, "href"], [1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-map-pin", "w-5", "h-5"], ["d", "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"], ["cx", "12", "cy", "10", "r", "3"], ["id", "hsd-location", 1, "text-base"], [4, "ngIf"], ["class", "p-4 border rounded-lg hover:border-gray-400 transition-colors", 4, "ngFor", "ngForOf"], [1, "p-4", "border", "rounded-lg", "hover:border-gray-400", "transition-colors"], [1, "flex", "items-center", "justify-between"], [1, "font-medium", "text-base", "tracking-tight"], ["type", "button", 1, "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "w-8", "h-8", "rounded-lg", "text-lg", "font-medium", "transition-colors", "flex", "items-center", "justify-center", 3, "click"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], inputs: { brand: "brand" }, standalone: false, decls: 26, vars: 17, consts: [["id", "step-health-system-details", 1, "space-y-6"], [1, "relative", "flex", "justify-center", "items-center"], ["type", "button", "id", "hsd-back", 1, "absolute", "left-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "routerLink"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", 1, "w-5", "h-5"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M15 19l-7-7 7-7"], [1, "az-logo"], [1, "space-y-6"], [1, "border", "rounded-2xl", "p-6"], [1, "flex", "items-start", "space-x-4", "mb-4"], [1, "flex-shrink-0"], ["imageFallback", "", 1, "w-12", "max-h-12", "rounded-lg", "object-contain", 3, "src"], [1, "flex-1", "min-w-0"], ["id", "hsd-name", 1, "text-xl", "font-semibold"], ["id", "hsd-description", 1, "text-gray-600", "text-base", "mb-4"], [1, "space-y-2"], ["class", "flex items-center gap-2 text-gray-600", "id", "hsd-website-container", 4, "ngIf"], ["class", "flex items-center gap-2 text-gray-600", 4, "ngIf"], ["id", "hsd-institutions-list", 1, "space-y-2"], [4, "ngFor", "ngForOf"], ["id", "hsd-website-container", 1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-globe", "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"], ["d", "M2 12h20"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 1, "text-base", "hover:underline", 3, "href"], [1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-map-pin", "w-5", "h-5"], ["d", "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"], ["cx", "12", "cy", "10", "r", "3"], ["id", "hsd-location", 1, "text-base"], [4, "ngIf"], ["class", "p-4 border rounded-lg hover:border-gray-400 transition-colors", 4, "ngFor", "ngForOf"], [1, "p-4", "border", "rounded-lg", "hover:border-gray-400", "transition-colors"], [1, "flex", "items-center", "justify-between"], [1, "font-medium", "text-base", "tracking-tight"], ["type", "button", 1, "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "w-8", "h-8", "rounded-lg", "text-lg", "font-medium", "transition-colors", "flex", "items-center", "justify-center", 3, "click"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "button", 2);
         \u0275\u0275namespaceSVG();
@@ -56043,33 +56053,44 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
         \u0275\u0275elementEnd()();
         \u0275\u0275elementStart(7, "div", 6)(8, "div", 7)(9, "div", 8)(10, "div", 9);
         \u0275\u0275element(11, "img", 10);
+        \u0275\u0275pipe(12, "async");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(12, "div", 11)(13, "h2", 12);
-        \u0275\u0275text(14);
+        \u0275\u0275elementStart(13, "div", 11)(14, "h2", 12);
+        \u0275\u0275text(15);
+        \u0275\u0275pipe(16, "async");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275element(15, "p", 13);
-        \u0275\u0275elementStart(16, "div", 14);
-        \u0275\u0275template(17, HealthSystemBrandDetailsComponent_div_17_Template, 7, 2, "div", 15)(18, HealthSystemBrandDetailsComponent_div_18_Template, 8, 6, "div", 16);
+        \u0275\u0275element(17, "p", 13);
+        \u0275\u0275elementStart(18, "div", 14);
+        \u0275\u0275template(19, HealthSystemBrandDetailsComponent_div_19_Template, 9, 6, "div", 15);
+        \u0275\u0275pipe(20, "async");
+        \u0275\u0275template(21, HealthSystemBrandDetailsComponent_div_21_Template, 10, 12, "div", 16);
+        \u0275\u0275pipe(22, "async");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(19, "div", 17);
-        \u0275\u0275template(20, HealthSystemBrandDetailsComponent_ng_container_20_Template, 2, 1, "ng-container", 18);
+        \u0275\u0275elementStart(23, "div", 17);
+        \u0275\u0275template(24, HealthSystemBrandDetailsComponent_ng_container_24_Template, 2, 1, "ng-container", 18);
+        \u0275\u0275pipe(25, "async");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
+        let tmp_1_0;
+        let tmp_2_0;
+        let tmp_3_0;
+        let tmp_4_0;
+        let tmp_5_0;
         \u0275\u0275advance(2);
         \u0275\u0275property("routerLink", "/search");
         \u0275\u0275advance(9);
-        \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", ctx.brand.id, ".png", \u0275\u0275sanitizeUrl);
-        \u0275\u0275advance(3);
-        \u0275\u0275textInterpolate(ctx.brand.name);
-        \u0275\u0275advance(3);
-        \u0275\u0275property("ngIf", ctx.brand.brand_website);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ctx.brand.locations);
+        \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", (tmp_1_0 = \u0275\u0275pipeBind1(12, 7, ctx.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.id, ".png", \u0275\u0275sanitizeUrl);
+        \u0275\u0275advance(4);
+        \u0275\u0275textInterpolate((tmp_2_0 = \u0275\u0275pipeBind1(16, 9, ctx.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.name);
+        \u0275\u0275advance(4);
+        \u0275\u0275property("ngIf", (tmp_3_0 = \u0275\u0275pipeBind1(20, 11, ctx.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.brand_website);
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", ctx.brand.portals);
+        \u0275\u0275property("ngIf", (tmp_4_0 = \u0275\u0275pipeBind1(22, 13, ctx.configService.searchConfigSubject)) == null ? null : tmp_4_0.selectedBrand == null ? null : tmp_4_0.selectedBrand.locations);
+        \u0275\u0275advance(3);
+        \u0275\u0275property("ngForOf", (tmp_5_0 = \u0275\u0275pipeBind1(25, 15, ctx.configService.searchConfigSubject)) == null ? null : tmp_5_0.selectedBrand == null ? null : tmp_5_0.selectedBrand.portals);
       }
-    }, dependencies: [NgForOf, NgIf, RouterLink, ImageFallbackDirective, SlicePipe, StateNamePipe], encapsulation: 2 });
+    }, dependencies: [NgForOf, NgIf, RouterLink, ImageFallbackDirective, AsyncPipe, SlicePipe, StateNamePipe], encapsulation: 2 });
   }
 };
 (() => {
