@@ -44298,6 +44298,24 @@ var RouterScroller = class _RouterScroller {
     type: void 0
   }], null);
 })();
+function provideRouter(routes2, ...features) {
+  return makeEnvironmentProviders([{
+    provide: ROUTES,
+    multi: true,
+    useValue: routes2
+  }, typeof ngDevMode === "undefined" || ngDevMode ? {
+    provide: ROUTER_IS_PROVIDED,
+    useValue: true
+  } : [], {
+    provide: ActivatedRoute,
+    useFactory: rootRoute,
+    deps: [Router]
+  }, {
+    provide: APP_BOOTSTRAP_LISTENER,
+    multi: true,
+    useFactory: getBootstrapListener
+  }, features.map((feature) => feature.\u0275providers)]);
+}
 function rootRoute(router) {
   return router.routerState.root;
 }
@@ -52909,7 +52927,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     console.log("Signin", this.existingVaultProfile.email);
     this.authService.VaultAuthBegin(this.existingVaultProfile.email).then(() => {
       this.loading = false;
-      this.router.navigateByUrl("auth/signin/code", { state: /* @__PURE__ */ new Map([["currentEmail", this.existingVaultProfile.email]]) });
+      this.router.navigate(["auth/signin/code"], { queryParams: { currentEmail: this.existingVaultProfile.email } });
     }).catch((err) => {
       this.loading = false;
       if (err?.name) {
@@ -54897,12 +54915,14 @@ var DashboardComponent = class _DashboardComponent {
   }
   connectAccount(pendingAccount) {
     console.log("connecting account", pendingAccount);
-    this.router.navigateByUrl("dashboard/connecting", { state: /* @__PURE__ */ new Map([
-      ["brandId", pendingAccount.brand?.id],
-      ["portalId", pendingAccount.portal?.id],
-      ["endpointId", pendingAccount.endpoint?.id],
-      ["externalId", this.configService.systemConfig$.externalId]
-    ]) });
+    this.router.navigate(["dashboard/connecting"], {
+      queryParams: {
+        "brandId": pendingAccount.brand?.id,
+        "portalId": pendingAccount.portal?.id,
+        "endpointId": pendingAccount.endpoint?.id,
+        "externalId": this.configService.systemConfig$.externalId
+      }
+    });
   }
   completeAccounts() {
     this.messageBus.publishComplete();
@@ -56877,14 +56897,16 @@ var AppComponent = class _AppComponent {
     if (this.reconnectOrgConnectionId) {
       this.vaultService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
         console.log("Reconnect Org Connection", orgConnection);
-        this.router.navigateByUrl("dashboard/connecting", { state: /* @__PURE__ */ new Map([
-          ["brandId", orgConnection.catalog_brand_id],
-          ["portalId", orgConnection.catalog_portal_id],
-          ["endpointId", orgConnection.catalog_endpoint_id],
-          ["orgConnectionId", orgConnection.org_connection_id],
-          ["externalId", this.externalId]
-          // ["externalState", this.externalState],
-        ]) });
+        this.router.navigate(["dashboard/connecting"], {
+          queryParams: {
+            "brandId": orgConnection.catalog_brand_id,
+            "portalId": orgConnection.catalog_portal_id,
+            "endpointId": orgConnection.catalog_endpoint_id,
+            "orgConnectionId": orgConnection.org_connection_id,
+            "externalId": this.externalId
+            // ["externalState", this.externalState],
+          }
+        });
       }, (err) => {
         this.errorMessage = "Could not find the patient connection using id. Please contact the developer of this app.";
         console.log("Invalid Fasten Connect Connection ID", err);
@@ -57009,7 +57031,8 @@ var AppModule = class _AppModule {
         // deps: [AuthService, NavOutletService]
         // deps: [AuthService, NavOutletService]
       },
-      provideHttpClient(withInterceptorsFromDi())
+      provideHttpClient(withInterceptorsFromDi()),
+      provideRouter(routes, withComponentInputBinding())
     ], imports: [
       BrowserModule,
       AppRoutingModule,
