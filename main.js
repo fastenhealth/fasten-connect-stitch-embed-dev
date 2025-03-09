@@ -57039,7 +57039,8 @@ var AppModule = class _AppModule {
       FormsModule,
       CommonModule,
       InfiniteScrollModule,
-      CodeInputModule
+      CodeInputModule,
+      RouterModule
     ] });
   }
 };
