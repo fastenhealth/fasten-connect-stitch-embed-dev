@@ -44305,6 +44305,8 @@ var ConnectMode;
 })(ConnectMode || (ConnectMode = {}));
 var EventTypes;
 (function(EventTypes2) {
+  EventTypes2["EventTypeWidgetError"] = "widget.config_error";
+  EventTypes2["EventTypeWidgetClose"] = "widget.close";
   EventTypes2["EventTypeWidgetComplete"] = "widget.complete";
   EventTypes2["EventTypeConnectionPending"] = "patient.connection_pending";
   EventTypes2["EventTypeConnectionSuccess"] = "patient.connection_success";
@@ -56453,14 +56455,59 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormSupportRequestComponent, { className: "FormSupportRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-support-request/form-support-request.component.ts", lineNumber: 14 });
 })();
 
+// projects/fasten-connect-stitch-embed/src/app/auth-guards/is-authenticated-auth-guard.ts
+var IsAuthenticatedAuthGuard = class _IsAuthenticatedAuthGuard {
+  constructor(authService, router, configService) {
+    this.authService = authService;
+    this.router = router;
+    this.configService = configService;
+  }
+  canActivate(route, state) {
+    return __async(this, null, function* () {
+      if (this.configService.systemConfig$.anonymousVaultProfile) {
+        return Promise.resolve(true);
+      }
+      return this.authService.GetJWTPayload().then((jwtPayload) => {
+        if (!jwtPayload) {
+          if (route.url.toString() === "/auth/signin") {
+            return true;
+          } else {
+            console.log("User is not authenticated, redirecting to login page");
+            return this.router.navigate(["/auth/signin"]);
+          }
+        } else if (!jwtPayload.has_verified_identity) {
+          if (route.url.toString() === "/auth/identity/verification") {
+            return true;
+          } else {
+            console.log("Profile does not have a verified identity, redirecting to id verification step", jwtPayload);
+            return this.router.navigate(["/auth/identity/verification"]);
+          }
+        }
+        return true;
+      }).catch((err) => {
+        console.error("Error checking if user is authenticated", err);
+        return this.router.navigate(["/auth/signin"]);
+      });
+    });
+  }
+  static {
+    this.\u0275fac = function IsAuthenticatedAuthGuard_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _IsAuthenticatedAuthGuard)(\u0275\u0275inject(AuthService), \u0275\u0275inject(Router), \u0275\u0275inject(ConfigService));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _IsAuthenticatedAuthGuard, factory: _IsAuthenticatedAuthGuard.\u0275fac });
+  }
+};
+
 // projects/fasten-connect-stitch-embed/src/app/app-routing.module.ts
 var routes = [
   { path: "auth/signin", component: VaultProfileSigninComponent },
   { path: "auth/signin/code", component: VaultProfileSigninCodeComponent },
-  { path: "auth/identity/verification", component: IdentityVerificationComponent },
-  { path: "dashboard", component: DashboardComponent },
-  { path: "search", component: HealthSystemSearchComponent },
-  { path: "brand/details", component: HealthSystemBrandDetailsComponent },
+  { path: "auth/identity/verification", component: IdentityVerificationComponent, canActivate: [IsAuthenticatedAuthGuard] },
+  { path: "dashboard", component: DashboardComponent, canActivate: [IsAuthenticatedAuthGuard] },
+  { path: "search", component: HealthSystemSearchComponent, canActivate: [IsAuthenticatedAuthGuard] },
+  { path: "brand/details", component: HealthSystemBrandDetailsComponent, canActivate: [IsAuthenticatedAuthGuard] },
   //cannot be authenticated, must be publically accessible for reconnecting
   { path: "dashboard/connecting", component: HealthSystemConnectingComponent },
   { path: "dashboard/complete", component: CompleteComponent },
@@ -56634,7 +56681,7 @@ var AppComponent = class _AppComponent {
     }
     console.log("sending postMessage", eventPayload);
     let parentWindowRef = window.parent || window.opener;
-    parentWindowRef.postMessage(eventPayload, "*");
+    parentWindowRef.postMessage(JSON.stringify(eventPayload), "*");
   }
   static {
     this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
