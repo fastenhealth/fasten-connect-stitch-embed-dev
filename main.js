@@ -44305,7 +44305,7 @@ var ConnectMode;
 })(ConnectMode || (ConnectMode = {}));
 var EventTypes;
 (function(EventTypes2) {
-  EventTypes2["EventTypeWidgetError"] = "widget.config_error";
+  EventTypes2["EventTypeWidgetConfigError"] = "widget.config_error";
   EventTypes2["EventTypeWidgetClose"] = "widget.close";
   EventTypes2["EventTypeWidgetComplete"] = "widget.complete";
   EventTypes2["EventTypeConnectionPending"] = "patient.connection_pending";
@@ -54447,6 +54447,12 @@ var MessageBusService = class _MessageBusService {
     this.configService = configService;
     this.messageBusSubject = new BehaviorSubject(null);
   }
+  publishWidgetConfigError() {
+    let eventPayload = new EventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.event_type = EventTypes.EventTypeWidgetConfigError;
+    this.messageBusSubject.next(eventPayload);
+  }
   //this event is published when the popup window is opened.
   publishOrgConnectionPending(pendingConnectData) {
     let eventPayload = new EventPayload();
@@ -56640,6 +56646,7 @@ var AppComponent = class _AppComponent {
     if (publicIdParts.length != 3) {
       console.error("Could not register Fasten Connect installation: missing or invalid id", this.publicId);
       this.errorMessage = "Could not register Fasten Connect installation: missing or invalid id. Please contact the developer of this app.";
+      this.messageBus.publishWidgetConfigError();
       this.configService.systemConfig = {
         org: void 0
       };
@@ -56653,6 +56660,7 @@ var AppComponent = class _AppComponent {
         };
       }, (err) => {
         this.errorMessage = "Could not register Fasten Connect installation using id. Please contact the developer of this app.";
+        this.messageBus.publishWidgetConfigError();
         console.log("Invalid Fasten Connect registration", err);
       });
       return apiMode;
