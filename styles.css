@@ -696,6 +696,9 @@ video {
 .min-h-96 {
   min-height: 24rem;
 }
+.min-h-\[600px\] {
+  min-height: 600px;
+}
 .w-10 {
   width: 2.5rem;
 }
@@ -910,6 +913,9 @@ video {
 .border-b-2 {
   border-bottom-width: 2px;
 }
+.border-none {
+  border-style: none;
+}
 .border-\[\#5B47FB\] {
   --tw-border-opacity: 1;
   border-color: rgb(91 71 251 / var(--tw-border-opacity, 1));
@@ -1000,6 +1006,9 @@ video {
 }
 .object-contain {
   object-fit: contain;
+}
+.p-0 {
+  padding: 0px;
 }
 .p-2 {
   padding: 0.5rem;
