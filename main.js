@@ -56590,6 +56590,14 @@ function AppComponent_ng_template_3_Template(rf, ctx) {
   }
 }
 var AppComponent = class _AppComponent {
+  populateInputsFromWindowLocation() {
+    let urlParams = new URLSearchParams(window.location.search);
+    this.publicId = urlParams.get("public-id") || "";
+    this.externalId = urlParams.get("external-id") || "";
+    this.reconnectOrgConnectionId = urlParams.get("reconnect-org-connection-id") || "";
+    this.anonymousVaultProfile = urlParams.get("anonymous-vault-profile") == "true";
+    this.staticBackdrop = urlParams.get("static-backdrop") == "true";
+  }
   constructor(activatedRoute, configService, messageBus, vaultService, router) {
     this.activatedRoute = activatedRoute;
     this.configService = configService;
@@ -56602,9 +56610,8 @@ var AppComponent = class _AppComponent {
     this.staticBackdrop = false;
   }
   ngOnInit() {
-    this.activatedRoute.queryParams.subscribe((params) => {
-      console.log("Query Params", params);
-    });
+    console.log("QUERY STRING MAP", new URLSearchParams(window.location.search));
+    this.populateInputsFromWindowLocation();
     let apiMode = this.getApiModeFromPublicId(this.publicId);
     this.configService.systemConfig = {
       apiMode,
@@ -56680,7 +56687,6 @@ var AppComponent = class _AppComponent {
   // postMessage registration, listen to events from the parent window
   receivePostMessage(event) {
     console.log("received postMessage", event);
-    this.sendPostMessage({ api_mode: "test", event_type: EventTypes.EventTypeWidgetComplete, data: "response from child" });
   }
   sendPostMessage(eventPayload) {
     if (!window.opener && !window.parent) {
