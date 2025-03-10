@@ -56590,7 +56590,8 @@ function AppComponent_ng_template_3_Template(rf, ctx) {
   }
 }
 var AppComponent = class _AppComponent {
-  constructor(configService, messageBus, vaultService, router) {
+  constructor(activatedRoute, configService, messageBus, vaultService, router) {
+    this.activatedRoute = activatedRoute;
     this.configService = configService;
     this.messageBus = messageBus;
     this.vaultService = vaultService;
@@ -56601,6 +56602,9 @@ var AppComponent = class _AppComponent {
     this.staticBackdrop = false;
   }
   ngOnInit() {
+    this.activatedRoute.queryParams.subscribe((params) => {
+      console.log("Query Params", params);
+    });
     let apiMode = this.getApiModeFromPublicId(this.publicId);
     this.configService.systemConfig = {
       apiMode,
@@ -56693,7 +56697,7 @@ var AppComponent = class _AppComponent {
   }
   static {
     this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(Router));
+      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(Router));
     };
   }
   static {
