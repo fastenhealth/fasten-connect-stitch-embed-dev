@@ -6785,6 +6785,69 @@ var dateTimestampProvider = {
   delegate: void 0
 };
 
+// node_modules/rxjs/dist/esm/internal/ReplaySubject.js
+var ReplaySubject = class extends Subject {
+  constructor(_bufferSize = Infinity, _windowTime = Infinity, _timestampProvider = dateTimestampProvider) {
+    super();
+    this._bufferSize = _bufferSize;
+    this._windowTime = _windowTime;
+    this._timestampProvider = _timestampProvider;
+    this._buffer = [];
+    this._infiniteTimeWindow = true;
+    this._infiniteTimeWindow = _windowTime === Infinity;
+    this._bufferSize = Math.max(1, _bufferSize);
+    this._windowTime = Math.max(1, _windowTime);
+  }
+  next(value) {
+    const {
+      isStopped,
+      _buffer,
+      _infiniteTimeWindow,
+      _timestampProvider,
+      _windowTime
+    } = this;
+    if (!isStopped) {
+      _buffer.push(value);
+      !_infiniteTimeWindow && _buffer.push(_timestampProvider.now() + _windowTime);
+    }
+    this._trimBuffer();
+    super.next(value);
+  }
+  _subscribe(subscriber) {
+    this._throwIfClosed();
+    this._trimBuffer();
+    const subscription = this._innerSubscribe(subscriber);
+    const {
+      _infiniteTimeWindow,
+      _buffer
+    } = this;
+    const copy = _buffer.slice();
+    for (let i = 0; i < copy.length && !subscriber.closed; i += _infiniteTimeWindow ? 1 : 2) {
+      subscriber.next(copy[i]);
+    }
+    this._checkFinalizedStatuses(subscriber);
+    return subscription;
+  }
+  _trimBuffer() {
+    const {
+      _bufferSize,
+      _timestampProvider,
+      _buffer,
+      _infiniteTimeWindow
+    } = this;
+    const adjustedBufferSize = (_infiniteTimeWindow ? 1 : 2) * _bufferSize;
+    _bufferSize < Infinity && adjustedBufferSize < _buffer.length && _buffer.splice(0, _buffer.length - adjustedBufferSize);
+    if (!_infiniteTimeWindow) {
+      const now = _timestampProvider.now();
+      let last4 = 0;
+      for (let i = 1; i < _buffer.length && _buffer[i] <= now; i += 2) {
+        last4 = i;
+      }
+      last4 && _buffer.splice(0, last4 + 1);
+    }
+  }
+};
+
 // node_modules/rxjs/dist/esm/internal/scheduler/Action.js
 var Action = class extends Subscription {
   constructor(scheduler, work) {
@@ -7914,9 +7977,173 @@ function last2(predicate, defaultValue) {
   return (source) => source.pipe(predicate ? filter((v, i) => predicate(v, i, source)) : identity, takeLast(1), hasDefaultValue ? defaultIfEmpty(defaultValue) : throwIfEmpty(() => new EmptyError()));
 }
 
+// node_modules/rxjs/dist/esm/internal/operators/retry.js
+function retry(configOrCount = Infinity) {
+  let config2;
+  if (configOrCount && typeof configOrCount === "object") {
+    config2 = configOrCount;
+  } else {
+    config2 = {
+      count: configOrCount
+    };
+  }
+  const {
+    count = Infinity,
+    delay,
+    resetOnSuccess = false
+  } = config2;
+  return count <= 0 ? identity : operate((source, subscriber) => {
+    let soFar = 0;
+    let innerSub;
+    const subscribeForRetry = () => {
+      let syncUnsub = false;
+      innerSub = source.subscribe(createOperatorSubscriber(subscriber, (value) => {
+        if (resetOnSuccess) {
+          soFar = 0;
+        }
+        subscriber.next(value);
+      }, void 0, (err) => {
+        if (soFar++ < count) {
+          const resub = () => {
+            if (innerSub) {
+              innerSub.unsubscribe();
+              innerSub = null;
+              subscribeForRetry();
+            } else {
+              syncUnsub = true;
+            }
+          };
+          if (delay != null) {
+            const notifier = typeof delay === "number" ? timer(delay) : innerFrom(delay(err, soFar));
+            const notifierSubscriber = createOperatorSubscriber(subscriber, () => {
+              notifierSubscriber.unsubscribe();
+              resub();
+            }, () => {
+              subscriber.complete();
+            });
+            notifier.subscribe(notifierSubscriber);
+          } else {
+            resub();
+          }
+        } else {
+          subscriber.error(err);
+        }
+      }));
+      if (syncUnsub) {
+        innerSub.unsubscribe();
+        innerSub = null;
+        subscribeForRetry();
+      }
+    };
+    subscribeForRetry();
+  });
+}
+
 // node_modules/rxjs/dist/esm/internal/operators/scan.js
 function scan(accumulator, seed) {
   return operate(scanInternals(accumulator, seed, arguments.length >= 2, true));
+}
+
+// node_modules/rxjs/dist/esm/internal/operators/share.js
+function share(options = {}) {
+  const {
+    connector = () => new Subject(),
+    resetOnError = true,
+    resetOnComplete = true,
+    resetOnRefCountZero = true
+  } = options;
+  return (wrapperSource) => {
+    let connection;
+    let resetConnection;
+    let subject;
+    let refCount2 = 0;
+    let hasCompleted = false;
+    let hasErrored = false;
+    const cancelReset = () => {
+      resetConnection === null || resetConnection === void 0 ? void 0 : resetConnection.unsubscribe();
+      resetConnection = void 0;
+    };
+    const reset = () => {
+      cancelReset();
+      connection = subject = void 0;
+      hasCompleted = hasErrored = false;
+    };
+    const resetAndUnsubscribe = () => {
+      const conn = connection;
+      reset();
+      conn === null || conn === void 0 ? void 0 : conn.unsubscribe();
+    };
+    return operate((source, subscriber) => {
+      refCount2++;
+      if (!hasErrored && !hasCompleted) {
+        cancelReset();
+      }
+      const dest = subject = subject !== null && subject !== void 0 ? subject : connector();
+      subscriber.add(() => {
+        refCount2--;
+        if (refCount2 === 0 && !hasErrored && !hasCompleted) {
+          resetConnection = handleReset(resetAndUnsubscribe, resetOnRefCountZero);
+        }
+      });
+      dest.subscribe(subscriber);
+      if (!connection && refCount2 > 0) {
+        connection = new SafeSubscriber({
+          next: (value) => dest.next(value),
+          error: (err) => {
+            hasErrored = true;
+            cancelReset();
+            resetConnection = handleReset(reset, resetOnError, err);
+            dest.error(err);
+          },
+          complete: () => {
+            hasCompleted = true;
+            cancelReset();
+            resetConnection = handleReset(reset, resetOnComplete);
+            dest.complete();
+          }
+        });
+        innerFrom(source).subscribe(connection);
+      }
+    })(wrapperSource);
+  };
+}
+function handleReset(reset, on, ...args) {
+  if (on === true) {
+    reset();
+    return;
+  }
+  if (on === false) {
+    return;
+  }
+  const onSubscriber = new SafeSubscriber({
+    next: () => {
+      onSubscriber.unsubscribe();
+      reset();
+    }
+  });
+  return on(...args).subscribe(onSubscriber);
+}
+
+// node_modules/rxjs/dist/esm/internal/operators/shareReplay.js
+function shareReplay(configOrBufferSize, windowTime, scheduler) {
+  let bufferSize;
+  let refCount2 = false;
+  if (configOrBufferSize && typeof configOrBufferSize === "object") {
+    ({
+      bufferSize = Infinity,
+      windowTime = Infinity,
+      refCount: refCount2 = false,
+      scheduler
+    } = configOrBufferSize);
+  } else {
+    bufferSize = configOrBufferSize !== null && configOrBufferSize !== void 0 ? configOrBufferSize : Infinity;
+  }
+  return share({
+    connector: () => new ReplaySubject(bufferSize, windowTime, scheduler),
+    resetOnError: true,
+    resetOnComplete: false,
+    resetOnRefCountZero: refCount2
+  });
 }
 
 // node_modules/rxjs/dist/esm/internal/operators/startWith.js
@@ -44350,8 +44577,1079 @@ var vaultConfigDefaults = {
 
 // projects/fasten-connect-stitch-embed/src/app/services/config.service.ts
 var import_lodash = __toESM(require_lodash());
+
+// node_modules/vlq/dist/vlq.es.js
+var charToInteger = {};
+var integerToChar = {};
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".split("").forEach(function(char, i) {
+  charToInteger[char] = i;
+  integerToChar[i] = char;
+});
+function decode2(string) {
+  var result = [];
+  var shift = 0;
+  var value = 0;
+  for (var i = 0; i < string.length; i += 1) {
+    var integer = charToInteger[string[i]];
+    if (integer === void 0) {
+      throw new Error("Invalid character (" + string[i] + ")");
+    }
+    var hasContinuationBit = integer & 32;
+    integer &= 31;
+    value += integer << shift;
+    if (hasContinuationBit) {
+      shift += 5;
+    } else {
+      var shouldNegate = value & 1;
+      value >>>= 1;
+      if (shouldNegate) {
+        result.push(value === 0 ? -2147483648 : -value);
+      } else {
+        result.push(value);
+      }
+      value = shift = 0;
+    }
+  }
+  return result;
+}
+
+// node_modules/ngx-logger/fesm2020/ngx-logger.mjs
+var TOKEN_LOGGER_CONFIG = "TOKEN_LOGGER_CONFIG";
+var NGXLoggerConfigEngine = class {
+  constructor(config2) {
+    this.config = this._clone(config2);
+  }
+  /** Get a readonly access to the level configured for the NGXLogger */
+  get level() {
+    return this.config.level;
+  }
+  /** Get a readonly access to the serverLogLevel configured for the NGXLogger */
+  get serverLogLevel() {
+    return this.config.serverLogLevel;
+  }
+  updateConfig(config2) {
+    this.config = this._clone(config2);
+  }
+  /** Update the config partially
+   * This is useful if you want to update only one parameter of the config
+   */
+  partialUpdateConfig(partialConfig) {
+    if (!partialConfig) {
+      return;
+    }
+    Object.keys(partialConfig).forEach((configParamKey) => {
+      this.config[configParamKey] = partialConfig[configParamKey];
+    });
+  }
+  getConfig() {
+    return this._clone(this.config);
+  }
+  // TODO: This is a shallow clone, If the config ever becomes hierarchical we must make this a deep clone
+  _clone(object) {
+    const cloneConfig = {
+      level: null
+    };
+    Object.keys(object).forEach((key) => {
+      cloneConfig[key] = object[key];
+    });
+    return cloneConfig;
+  }
+};
+var TOKEN_LOGGER_CONFIG_ENGINE_FACTORY = "TOKEN_LOGGER_CONFIG_ENGINE_FACTORY";
+var NGXLoggerConfigEngineFactory = class {
+  provideConfigEngine(config2) {
+    return new NGXLoggerConfigEngine(config2);
+  }
+};
+var TOKEN_LOGGER_MAPPER_SERVICE = "TOKEN_LOGGER_MAPPER_SERVICE";
+var NGXLoggerMapperService = class {
+  constructor(httpBackend) {
+    this.httpBackend = httpBackend;
+    this.sourceMapCache = /* @__PURE__ */ new Map();
+    this.logPositionCache = /* @__PURE__ */ new Map();
+  }
+  /**
+   * Returns the log position of the caller
+   * If sourceMaps are enabled, it attemps to get the source map from the server, and use that to parse the position
+   * @param config
+   * @param metadata
+   * @returns
+   */
+  getLogPosition(config2, metadata) {
+    const stackLine = this.getStackLine(config2);
+    if (!stackLine) {
+      return of({
+        fileName: "",
+        lineNumber: 0,
+        columnNumber: 0
+      });
+    }
+    const logPosition = this.getLocalPosition(stackLine);
+    if (!config2.enableSourceMaps) {
+      return of(logPosition);
+    }
+    const sourceMapLocation = this.getSourceMapLocation(stackLine);
+    return this.getSourceMap(sourceMapLocation, logPosition);
+  }
+  /**
+   * Get the stackline of the original caller
+   * @param config
+   * @returns null if stackline was not found
+   */
+  getStackLine(config2) {
+    const error = new Error();
+    try {
+      throw error;
+    } catch (e) {
+      try {
+        let defaultProxy = 4;
+        const firstStackLine = error.stack.split("\n")[0];
+        if (!firstStackLine.includes(".js:")) {
+          defaultProxy = defaultProxy + 1;
+        }
+        return error.stack.split("\n")[defaultProxy + (config2.proxiedSteps || 0)];
+      } catch (e2) {
+        return null;
+      }
+    }
+  }
+  /**
+   * Get position of caller without using sourceMaps
+   * @param stackLine
+   * @returns
+   */
+  getLocalPosition(stackLine) {
+    const positionStartIndex = stackLine.lastIndexOf("/");
+    let positionEndIndex = stackLine.indexOf(")");
+    if (positionEndIndex < 0) {
+      positionEndIndex = void 0;
+    }
+    const position = stackLine.substring(positionStartIndex + 1, positionEndIndex);
+    const dataArray = position.split(":");
+    if (dataArray.length === 3) {
+      return {
+        fileName: dataArray[0],
+        lineNumber: +dataArray[1],
+        columnNumber: +dataArray[2]
+      };
+    }
+    return {
+      fileName: "unknown",
+      lineNumber: 0,
+      columnNumber: 0
+    };
+  }
+  getTranspileLocation(stackLine) {
+    let locationStartIndex = stackLine.indexOf("(");
+    if (locationStartIndex < 0) {
+      locationStartIndex = stackLine.lastIndexOf("@");
+      if (locationStartIndex < 0) {
+        locationStartIndex = stackLine.lastIndexOf(" ");
+      }
+    }
+    let locationEndIndex = stackLine.indexOf(")");
+    if (locationEndIndex < 0) {
+      locationEndIndex = void 0;
+    }
+    return stackLine.substring(locationStartIndex + 1, locationEndIndex);
+  }
+  /**
+   * Gets the URL of the sourcemap (the URL can be relative or absolute, it is browser dependant)
+   * @param stackLine
+   * @returns
+   */
+  getSourceMapLocation(stackLine) {
+    const file = this.getTranspileLocation(stackLine);
+    const mapFullPath = file.substring(0, file.lastIndexOf(":"));
+    return mapFullPath.substring(0, mapFullPath.lastIndexOf(":")) + ".map";
+  }
+  getMapping(sourceMap, position) {
+    let sourceFileIndex = 0, sourceCodeLine = 0, sourceCodeColumn = 0;
+    const lines = sourceMap.mappings.split(";");
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      let generatedCodeColumn = 0;
+      const columns = lines[lineIndex].split(",");
+      for (let columnIndex = 0; columnIndex < columns.length; columnIndex++) {
+        const decodedSection = decode2(columns[columnIndex]);
+        if (decodedSection.length >= 4) {
+          generatedCodeColumn += decodedSection[0];
+          sourceFileIndex += decodedSection[1];
+          sourceCodeLine += decodedSection[2];
+          sourceCodeColumn += decodedSection[3];
+        }
+        if (lineIndex === position.lineNumber) {
+          if (generatedCodeColumn === position.columnNumber) {
+            return {
+              fileName: sourceMap.sources[sourceFileIndex],
+              lineNumber: sourceCodeLine,
+              columnNumber: sourceCodeColumn
+            };
+          } else if (columnIndex + 1 === columns.length) {
+            return {
+              fileName: sourceMap.sources[sourceFileIndex],
+              lineNumber: sourceCodeLine,
+              columnNumber: 0
+            };
+          }
+        }
+      }
+    }
+    return {
+      fileName: "unknown",
+      lineNumber: 0,
+      columnNumber: 0
+    };
+  }
+  /**
+   * does the http get request to get the source map
+   * @param sourceMapLocation
+   * @param distPosition
+   */
+  getSourceMap(sourceMapLocation, distPosition) {
+    const req = new HttpRequest("GET", sourceMapLocation);
+    const distPositionKey = `${distPosition.fileName}:${distPosition.lineNumber}:${distPosition.columnNumber}`;
+    if (this.logPositionCache.has(distPositionKey)) {
+      return this.logPositionCache.get(distPositionKey);
+    }
+    if (!this.sourceMapCache.has(sourceMapLocation)) {
+      if (!this.httpBackend) {
+        console.error("NGXLogger : Can't get sourcemap because HttpBackend is not provided. You need to import HttpClientModule");
+        this.sourceMapCache.set(sourceMapLocation, of(null));
+      } else {
+        this.sourceMapCache.set(sourceMapLocation, this.httpBackend.handle(req).pipe(filter((e) => e instanceof HttpResponse), map((httpResponse) => httpResponse.body), retry(3), shareReplay(1)));
+      }
+    }
+    const logPosition$ = this.sourceMapCache.get(sourceMapLocation).pipe(map((sourceMap) => {
+      if (!sourceMap) {
+        return distPosition;
+      }
+      return this.getMapping(sourceMap, distPosition);
+    }), catchError(() => of(distPosition)), shareReplay(1));
+    this.logPositionCache.set(distPositionKey, logPosition$);
+    return logPosition$;
+  }
+};
+NGXLoggerMapperService.\u0275fac = function NGXLoggerMapperService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLoggerMapperService)(\u0275\u0275inject(HttpBackend, 8));
+};
+NGXLoggerMapperService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLoggerMapperService,
+  factory: NGXLoggerMapperService.\u0275fac
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerMapperService, [{
+    type: Injectable
+  }], function() {
+    return [{
+      type: HttpBackend,
+      decorators: [{
+        type: Optional
+      }]
+    }];
+  }, null);
+})();
+var TOKEN_LOGGER_METADATA_SERVICE = "TOKEN_LOGGER_METADATA_SERVICE";
+var NGXLoggerMetadataService = class {
+  constructor(datePipe) {
+    this.datePipe = datePipe;
+  }
+  computeTimestamp(config2) {
+    const defaultTimestamp = () => (/* @__PURE__ */ new Date()).toISOString();
+    if (config2.timestampFormat) {
+      if (!this.datePipe) {
+        console.error("NGXLogger : Can't use timeStampFormat because DatePipe is not provided. You need to provide DatePipe");
+        return defaultTimestamp();
+      } else {
+        return this.datePipe.transform(/* @__PURE__ */ new Date(), config2.timestampFormat);
+      }
+    }
+    return defaultTimestamp();
+  }
+  getMetadata(level, config2, message2, additional) {
+    const metadata = {
+      level,
+      additional
+    };
+    if (message2 && typeof message2 === "function") {
+      metadata.message = message2();
+    } else {
+      metadata.message = message2;
+    }
+    metadata.timestamp = this.computeTimestamp(config2);
+    return metadata;
+  }
+};
+NGXLoggerMetadataService.\u0275fac = function NGXLoggerMetadataService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLoggerMetadataService)(\u0275\u0275inject(DatePipe, 8));
+};
+NGXLoggerMetadataService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLoggerMetadataService,
+  factory: NGXLoggerMetadataService.\u0275fac
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerMetadataService, [{
+    type: Injectable
+  }], function() {
+    return [{
+      type: DatePipe,
+      decorators: [{
+        type: Optional
+      }]
+    }];
+  }, null);
+})();
+var TOKEN_LOGGER_RULES_SERVICE = "TOKEN_LOGGER_RULES_SERVICE";
+var NGXLoggerRulesService = class {
+  shouldCallWriter(level, config2, message2, additional) {
+    return !config2.disableConsoleLogging && level >= config2.level;
+  }
+  shouldCallServer(level, config2, message2, additional) {
+    return !!config2.serverLoggingUrl && level >= config2.serverLogLevel;
+  }
+  shouldCallMonitor(level, config2, message2, additional) {
+    return this.shouldCallWriter(level, config2, message2, additional) || this.shouldCallServer(level, config2, message2, additional);
+  }
+};
+NGXLoggerRulesService.\u0275fac = function NGXLoggerRulesService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLoggerRulesService)();
+};
+NGXLoggerRulesService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLoggerRulesService,
+  factory: NGXLoggerRulesService.\u0275fac
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerRulesService, [{
+    type: Injectable
+  }], null, null);
+})();
+var TOKEN_LOGGER_SERVER_SERVICE = "TOKEN_LOGGER_SERVER_SERVICE";
+var NGXLoggerServerService = class {
+  constructor(httpBackend, ngZone) {
+    this.httpBackend = httpBackend;
+    this.ngZone = ngZone;
+    this.serverCallsQueue = [];
+    this.flushingQueue = new BehaviorSubject(false);
+  }
+  ngOnDestroy() {
+    if (this.flushingQueue) {
+      this.flushingQueue.complete();
+      this.flushingQueue = null;
+    }
+    if (this.addToQueueTimer) {
+      this.addToQueueTimer.unsubscribe();
+      this.addToQueueTimer = null;
+    }
+  }
+  /**
+   * Transforms an error object into a readable string (taking only the stack)
+   * This is needed because JSON.stringify would return "{}"
+   * @param err the error object
+   * @returns The stack of the error
+   */
+  secureErrorObject(err) {
+    return err?.stack;
+  }
+  /**
+   * Transforms the additional parameters to avoid any json error when sending the data to the server
+   * Basically it just replaces unstringifiable object to a string mentioning an error
+   * @param additional The additional data to be sent
+   * @returns The additional data secured
+   */
+  secureAdditionalParameters(additional) {
+    if (additional === null || additional === void 0) {
+      return null;
+    }
+    return additional.map((next, idx) => {
+      try {
+        if (next instanceof Error) {
+          return this.secureErrorObject(next);
+        }
+        if (typeof next === "object") {
+          JSON.stringify(next);
+        }
+        return next;
+      } catch (e) {
+        return `The additional[${idx}] value could not be parsed using JSON.stringify().`;
+      }
+    });
+  }
+  /**
+   * Transforms the message so that it can be sent to the server
+   * @param message the message to be sent
+   * @returns the message secured
+   */
+  secureMessage(message2) {
+    try {
+      if (message2 instanceof Error) {
+        return this.secureErrorObject(message2);
+      }
+      if (typeof message2 !== "string") {
+        message2 = JSON.stringify(message2, null, 2);
+      }
+    } catch (e) {
+      message2 = 'The provided "message" value could not be parsed with JSON.stringify().';
+    }
+    return message2;
+  }
+  /**
+   * Edits HttpRequest object before sending request to server
+   * @param httpRequest default request object
+   * @returns altered httprequest
+   */
+  alterHttpRequest(httpRequest) {
+    return httpRequest;
+  }
+  /**
+   * Sends request to server
+   * @param url
+   * @param logContent
+   * @param options
+   * @returns
+   */
+  logOnServer(url, logContent, options) {
+    if (!this.httpBackend) {
+      console.error("NGXLogger : Can't log on server because HttpBackend is not provided. You need to import HttpClientModule");
+      return of(null);
+    }
+    let defaultRequest = new HttpRequest("POST", url, logContent, options || {});
+    let finalRequest = of(defaultRequest);
+    const alteredRequest = this.alterHttpRequest(defaultRequest);
+    if (isObservable(alteredRequest)) {
+      finalRequest = alteredRequest;
+    } else if (alteredRequest) {
+      finalRequest = of(alteredRequest);
+    } else {
+      console.warn("NGXLogger : alterHttpRequest returned an invalid request. Using default one instead");
+    }
+    return finalRequest.pipe(concatMap((req) => {
+      if (!req) {
+        console.warn("NGXLogger : alterHttpRequest returned an invalid request (observable). Using default one instead");
+        return this.httpBackend.handle(defaultRequest);
+      }
+      return this.httpBackend.handle(req);
+    }), filter((e) => e instanceof HttpResponse), map((httpResponse) => httpResponse.body));
+  }
+  /**
+   * Customise the data sent to the API
+   * @param metadata the data provided by NGXLogger
+   * @returns the data that will be sent to the API in the body
+   */
+  customiseRequestBody(metadata) {
+    return metadata;
+  }
+  /**
+   * Flush the queue of the logger
+   * @param config
+   */
+  flushQueue(config2) {
+    this.flushingQueue.next(true);
+    if (this.addToQueueTimer) {
+      this.addToQueueTimer.unsubscribe();
+      this.addToQueueTimer = null;
+    }
+    if (!!this.serverCallsQueue && this.serverCallsQueue.length > 0) {
+      this.sendToServerAction(this.serverCallsQueue, config2);
+    }
+    this.serverCallsQueue = [];
+    this.flushingQueue.next(false);
+  }
+  sendToServerAction(metadata, config2) {
+    let requestBody;
+    const secureMetadata = (pMetadata) => {
+      const securedMetadata = __spreadValues({}, pMetadata);
+      securedMetadata.additional = this.secureAdditionalParameters(securedMetadata.additional);
+      securedMetadata.message = this.secureMessage(securedMetadata.message);
+      return securedMetadata;
+    };
+    if (Array.isArray(metadata)) {
+      requestBody = [];
+      metadata.forEach((m) => {
+        requestBody.push(secureMetadata(m));
+      });
+    } else {
+      requestBody = secureMetadata(metadata);
+    }
+    requestBody = this.customiseRequestBody(requestBody);
+    const headers = config2.customHttpHeaders || new HttpHeaders();
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+    const logOnServerAction = () => {
+      this.logOnServer(config2.serverLoggingUrl, requestBody, {
+        headers,
+        params: config2.customHttpParams || new HttpParams(),
+        responseType: config2.httpResponseType || "json",
+        withCredentials: config2.withCredentials || false
+      }).pipe(catchError((err) => {
+        console.error("NGXLogger: Failed to log on server", err);
+        return throwError(err);
+      })).subscribe();
+    };
+    if (config2.serverCallsOutsideNgZone === true) {
+      if (!this.ngZone) {
+        console.error("NGXLogger: NgZone is not provided and serverCallsOutsideNgZone is set to true");
+        return;
+      }
+      this.ngZone.runOutsideAngular(logOnServerAction);
+    } else {
+      logOnServerAction();
+    }
+  }
+  /**
+   * Sends the content to be logged to the server according to the config
+   * @param metadata
+   * @param config
+   */
+  sendToServer(metadata, config2) {
+    if ((!config2.serverCallsBatchSize || config2.serverCallsBatchSize <= 0) && (!config2.serverCallsTimer || config2.serverCallsTimer <= 0)) {
+      this.sendToServerAction(metadata, config2);
+      return;
+    }
+    const addLogToQueueAction = () => {
+      this.serverCallsQueue.push(__spreadValues({}, metadata));
+      if (!!config2.serverCallsBatchSize && this.serverCallsQueue.length > config2.serverCallsBatchSize) {
+        this.flushQueue(config2);
+      }
+      if (config2.serverCallsTimer > 0 && !this.addToQueueTimer) {
+        this.addToQueueTimer = timer(config2.serverCallsTimer).subscribe((_) => {
+          this.flushQueue(config2);
+        });
+      }
+    };
+    if (this.flushingQueue.value === true) {
+      this.flushingQueue.pipe(filter((fq) => fq === false), take(1)).subscribe((_) => {
+        addLogToQueueAction();
+      });
+    } else {
+      addLogToQueueAction();
+    }
+  }
+};
+NGXLoggerServerService.\u0275fac = function NGXLoggerServerService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLoggerServerService)(\u0275\u0275inject(HttpBackend, 8), \u0275\u0275inject(NgZone, 8));
+};
+NGXLoggerServerService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLoggerServerService,
+  factory: NGXLoggerServerService.\u0275fac
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerServerService, [{
+    type: Injectable
+  }], function() {
+    return [{
+      type: HttpBackend,
+      decorators: [{
+        type: Optional
+      }]
+    }, {
+      type: NgZone,
+      decorators: [{
+        type: Optional
+      }]
+    }];
+  }, null);
+})();
+var TOKEN_LOGGER_WRITER_SERVICE = "TOKEN_LOGGER_WRITER_SERVICE";
+var NgxLoggerLevel;
+(function(NgxLoggerLevel2) {
+  NgxLoggerLevel2[NgxLoggerLevel2["TRACE"] = 0] = "TRACE";
+  NgxLoggerLevel2[NgxLoggerLevel2["DEBUG"] = 1] = "DEBUG";
+  NgxLoggerLevel2[NgxLoggerLevel2["INFO"] = 2] = "INFO";
+  NgxLoggerLevel2[NgxLoggerLevel2["LOG"] = 3] = "LOG";
+  NgxLoggerLevel2[NgxLoggerLevel2["WARN"] = 4] = "WARN";
+  NgxLoggerLevel2[NgxLoggerLevel2["ERROR"] = 5] = "ERROR";
+  NgxLoggerLevel2[NgxLoggerLevel2["FATAL"] = 6] = "FATAL";
+  NgxLoggerLevel2[NgxLoggerLevel2["OFF"] = 7] = "OFF";
+})(NgxLoggerLevel || (NgxLoggerLevel = {}));
+var DEFAULT_COLOR_SCHEME = ["purple", "teal", "gray", "gray", "red", "red", "red"];
+var NGXLoggerWriterService = class {
+  constructor(platformId) {
+    this.platformId = platformId;
+    this.prepareMetaStringFuncs = [this.getTimestampToWrite, this.getLevelToWrite, this.getFileDetailsToWrite, this.getContextToWrite];
+    this.isIE = isPlatformBrowser(platformId) && navigator && navigator.userAgent && !!(navigator.userAgent.indexOf("MSIE") !== -1 || navigator.userAgent.match(/Trident\//) || navigator.userAgent.match(/Edge\//));
+    this.logFunc = this.isIE ? this.logIE.bind(this) : this.logModern.bind(this);
+  }
+  getTimestampToWrite(metadata, config2) {
+    return metadata.timestamp;
+  }
+  getLevelToWrite(metadata, config2) {
+    return NgxLoggerLevel[metadata.level];
+  }
+  getFileDetailsToWrite(metadata, config2) {
+    return config2.disableFileDetails === true ? "" : `[${metadata.fileName}:${metadata.lineNumber}:${metadata.columnNumber}]`;
+  }
+  getContextToWrite(metadata, config2) {
+    return config2.context ? `{${config2.context}}` : "";
+  }
+  /** Generate a "meta" string that is displayed before the content sent to the log function */
+  prepareMetaString(metadata, config2) {
+    let metaString = "";
+    this.prepareMetaStringFuncs.forEach((prepareMetaStringFunc) => {
+      const metaItem = prepareMetaStringFunc(metadata, config2);
+      if (metaItem) {
+        metaString = metaString + " " + metaItem;
+      }
+    });
+    return metaString.trim();
+  }
+  /** Get the color to use when writing to console */
+  getColor(metadata, config2) {
+    const configColorScheme = config2.colorScheme ?? DEFAULT_COLOR_SCHEME;
+    if (metadata.level === NgxLoggerLevel.OFF) {
+      return void 0;
+    }
+    return configColorScheme[metadata.level];
+  }
+  /** Log to the console specifically for IE */
+  logIE(metadata, config2, metaString) {
+    const additional = metadata.additional || [];
+    switch (metadata.level) {
+      case NgxLoggerLevel.WARN:
+        console.warn(`${metaString} `, metadata.message, ...additional);
+        break;
+      case NgxLoggerLevel.ERROR:
+      case NgxLoggerLevel.FATAL:
+        console.error(`${metaString} `, metadata.message, ...additional);
+        break;
+      case NgxLoggerLevel.INFO:
+        console.info(`${metaString} `, metadata.message, ...additional);
+        break;
+      default:
+        console.log(`${metaString} `, metadata.message, ...additional);
+    }
+  }
+  /** Log to the console */
+  logModern(metadata, config2, metaString) {
+    const color = this.getColor(metadata, config2);
+    const additional = metadata.additional || [];
+    switch (metadata.level) {
+      case NgxLoggerLevel.WARN:
+        console.warn(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
+        break;
+      case NgxLoggerLevel.ERROR:
+      case NgxLoggerLevel.FATAL:
+        console.error(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
+        break;
+      case NgxLoggerLevel.INFO:
+        console.info(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
+        break;
+      //  Disabling console.trace since the stack trace is not helpful. it is showing the stack trace of
+      // the console.trace statement
+      // case NgxLoggerLevel.TRACE:
+      //   console.trace(`%c${metaString}`, `color:${color}`, message, ...additional);
+      //   break;
+      case NgxLoggerLevel.DEBUG:
+        console.debug(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
+        break;
+      default:
+        console.log(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
+    }
+  }
+  /** Write the content sent to the log function to the console */
+  writeMessage(metadata, config2) {
+    const metaString = this.prepareMetaString(metadata, config2);
+    this.logFunc(metadata, config2, metaString);
+  }
+};
+NGXLoggerWriterService.\u0275fac = function NGXLoggerWriterService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLoggerWriterService)(\u0275\u0275inject(PLATFORM_ID));
+};
+NGXLoggerWriterService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLoggerWriterService,
+  factory: NGXLoggerWriterService.\u0275fac
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerWriterService, [{
+    type: Injectable
+  }], function() {
+    return [{
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [PLATFORM_ID]
+      }]
+    }];
+  }, null);
+})();
+var NGXLogger = class {
+  constructor(config2, configEngineFactory, metadataService, ruleService, mapperService, writerService, serverService) {
+    this.metadataService = metadataService;
+    this.ruleService = ruleService;
+    this.mapperService = mapperService;
+    this.writerService = writerService;
+    this.serverService = serverService;
+    this.configEngine = configEngineFactory.provideConfigEngine(config2);
+  }
+  /** Get a readonly access to the level configured for the NGXLogger */
+  get level() {
+    return this.configEngine.level;
+  }
+  /** Get a readonly access to the serverLogLevel configured for the NGXLogger */
+  get serverLogLevel() {
+    return this.configEngine.serverLogLevel;
+  }
+  trace(message2, ...additional) {
+    this._log(NgxLoggerLevel.TRACE, message2, additional);
+  }
+  debug(message2, ...additional) {
+    this._log(NgxLoggerLevel.DEBUG, message2, additional);
+  }
+  info(message2, ...additional) {
+    this._log(NgxLoggerLevel.INFO, message2, additional);
+  }
+  log(message2, ...additional) {
+    this._log(NgxLoggerLevel.LOG, message2, additional);
+  }
+  warn(message2, ...additional) {
+    this._log(NgxLoggerLevel.WARN, message2, additional);
+  }
+  error(message2, ...additional) {
+    this._log(NgxLoggerLevel.ERROR, message2, additional);
+  }
+  fatal(message2, ...additional) {
+    this._log(NgxLoggerLevel.FATAL, message2, additional);
+  }
+  /** @deprecated customHttpHeaders is now part of the config, this should be updated via @see updateConfig */
+  setCustomHttpHeaders(headers) {
+    const config2 = this.getConfigSnapshot();
+    config2.customHttpHeaders = headers;
+    this.updateConfig(config2);
+  }
+  /** @deprecated customHttpParams is now part of the config, this should be updated via @see updateConfig */
+  setCustomParams(params) {
+    const config2 = this.getConfigSnapshot();
+    config2.customHttpParams = params;
+    this.updateConfig(config2);
+  }
+  /** @deprecated withCredentials is now part of the config, this should be updated via @see updateConfig */
+  setWithCredentialsOptionValue(withCredentials) {
+    const config2 = this.getConfigSnapshot();
+    config2.withCredentials = withCredentials;
+    this.updateConfig(config2);
+  }
+  /**
+   * Register a INGXLoggerMonitor that will be trigger when a log is either written or sent to server
+   *
+   * There is only one monitor, registering one will overwrite the last one if there was one
+   * @param monitor
+   */
+  registerMonitor(monitor) {
+    this._loggerMonitor = monitor;
+  }
+  /** Set config of logger
+   *
+   * Warning : This overwrites all the config, if you want to update only one property, you should use @see getConfigSnapshot before
+   */
+  updateConfig(config2) {
+    this.configEngine.updateConfig(config2);
+  }
+  partialUpdateConfig(partialConfig) {
+    this.configEngine.partialUpdateConfig(partialConfig);
+  }
+  /** Get config of logger */
+  getConfigSnapshot() {
+    return this.configEngine.getConfig();
+  }
+  /**
+   * Flush the serveur queue
+   */
+  flushServerQueue() {
+    this.serverService.flushQueue(this.getConfigSnapshot());
+  }
+  _log(level, message2, additional = []) {
+    const config2 = this.configEngine.getConfig();
+    const shouldCallWriter = this.ruleService.shouldCallWriter(level, config2, message2, additional);
+    const shouldCallServer = this.ruleService.shouldCallServer(level, config2, message2, additional);
+    const shouldCallMonitor = this.ruleService.shouldCallMonitor(level, config2, message2, additional);
+    if (!shouldCallWriter && !shouldCallServer && !shouldCallMonitor) {
+      return;
+    }
+    const metadata = this.metadataService.getMetadata(level, config2, message2, additional);
+    this.mapperService.getLogPosition(config2, metadata).pipe(take(1)).subscribe((logPosition) => {
+      if (logPosition) {
+        metadata.fileName = logPosition.fileName;
+        metadata.lineNumber = logPosition.lineNumber;
+        metadata.columnNumber = logPosition.columnNumber;
+      }
+      if (shouldCallMonitor && this._loggerMonitor) {
+        this._loggerMonitor.onLog(metadata, config2);
+      }
+      if (shouldCallWriter) {
+        this.writerService.writeMessage(metadata, config2);
+      }
+      if (shouldCallServer) {
+        this.serverService.sendToServer(metadata, config2);
+      }
+    });
+  }
+};
+NGXLogger.\u0275fac = function NGXLogger_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLogger)(\u0275\u0275inject(TOKEN_LOGGER_CONFIG), \u0275\u0275inject(TOKEN_LOGGER_CONFIG_ENGINE_FACTORY), \u0275\u0275inject(TOKEN_LOGGER_METADATA_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_RULES_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_MAPPER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_WRITER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_SERVER_SERVICE));
+};
+NGXLogger.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLogger,
+  factory: NGXLogger.\u0275fac,
+  providedIn: "root"
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLogger, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root"
+    }]
+  }], function() {
+    return [{
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_CONFIG]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_CONFIG_ENGINE_FACTORY]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_METADATA_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_RULES_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_MAPPER_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_WRITER_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_SERVER_SERVICE]
+      }]
+    }];
+  }, null);
+})();
+var CustomNGXLoggerService = class {
+  constructor(logger, configEngineFactory, metadataService, ruleService, mapperService, writerService, serverService) {
+    this.logger = logger;
+    this.configEngineFactory = configEngineFactory;
+    this.metadataService = metadataService;
+    this.ruleService = ruleService;
+    this.mapperService = mapperService;
+    this.writerService = writerService;
+    this.serverService = serverService;
+  }
+  /**
+   * Create an instance of a logger
+   * @deprecated this function does not have all the features, @see getNewInstance for every params available
+   * @param config
+   * @param serverService
+   * @param logMonitor
+   * @param mapperService
+   * @returns
+   */
+  create(config2, serverService, logMonitor, mapperService) {
+    return this.getNewInstance({
+      config: config2,
+      serverService,
+      logMonitor,
+      mapperService
+    });
+  }
+  /**
+   * Get a new instance of NGXLogger
+   * @param params list of optional params to use when creating an instance of NGXLogger
+   * @returns the new instance of NGXLogger
+   */
+  getNewInstance(params) {
+    const logger = new NGXLogger(params?.config ?? this.logger.getConfigSnapshot(), params?.configEngineFactory ?? this.configEngineFactory, params?.metadataService ?? this.metadataService, params?.ruleService ?? this.ruleService, params?.mapperService ?? this.mapperService, params?.writerService ?? this.writerService, params?.serverService ?? this.serverService);
+    if (params?.partialConfig) {
+      logger.partialUpdateConfig(params.partialConfig);
+    }
+    if (params?.logMonitor) {
+      logger.registerMonitor(params.logMonitor);
+    }
+    return logger;
+  }
+};
+CustomNGXLoggerService.\u0275fac = function CustomNGXLoggerService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || CustomNGXLoggerService)(\u0275\u0275inject(NGXLogger), \u0275\u0275inject(TOKEN_LOGGER_CONFIG_ENGINE_FACTORY), \u0275\u0275inject(TOKEN_LOGGER_METADATA_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_RULES_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_MAPPER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_WRITER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_SERVER_SERVICE));
+};
+CustomNGXLoggerService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: CustomNGXLoggerService,
+  factory: CustomNGXLoggerService.\u0275fac,
+  providedIn: "root"
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CustomNGXLoggerService, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root"
+    }]
+  }], function() {
+    return [{
+      type: NGXLogger
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_CONFIG_ENGINE_FACTORY]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_METADATA_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_RULES_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_MAPPER_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_WRITER_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_SERVER_SERVICE]
+      }]
+    }];
+  }, null);
+})();
+var LoggerModule = class _LoggerModule {
+  static forRoot(config2, customProvider) {
+    if (!customProvider) {
+      customProvider = {};
+    }
+    if (!customProvider.configProvider) {
+      customProvider.configProvider = {
+        provide: TOKEN_LOGGER_CONFIG,
+        useValue: config2 || {}
+      };
+    } else {
+      if (customProvider.configProvider.provide !== TOKEN_LOGGER_CONFIG) {
+        throw new Error(`Wrong injection token for configProvider, it should be ${TOKEN_LOGGER_CONFIG} and you used ${customProvider.configProvider.provide}`);
+      }
+    }
+    if (!customProvider.configEngineFactoryProvider) {
+      customProvider.configEngineFactoryProvider = {
+        provide: TOKEN_LOGGER_CONFIG_ENGINE_FACTORY,
+        useClass: NGXLoggerConfigEngineFactory
+      };
+    } else {
+      if (customProvider.configEngineFactoryProvider.provide !== TOKEN_LOGGER_CONFIG_ENGINE_FACTORY) {
+        throw new Error(`Wrong injection token for configEngineFactoryProvider, it should be '${TOKEN_LOGGER_CONFIG_ENGINE_FACTORY}' and you used '${customProvider.configEngineFactoryProvider.provide}'`);
+      }
+    }
+    if (!customProvider.metadataProvider) {
+      customProvider.metadataProvider = {
+        provide: TOKEN_LOGGER_METADATA_SERVICE,
+        useClass: NGXLoggerMetadataService
+      };
+    } else {
+      if (customProvider.metadataProvider.provide !== TOKEN_LOGGER_METADATA_SERVICE) {
+        throw new Error(`Wrong injection token for metadataProvider, it should be '${TOKEN_LOGGER_METADATA_SERVICE}' and you used '${customProvider.metadataProvider.provide}'`);
+      }
+    }
+    if (!customProvider.ruleProvider) {
+      customProvider.ruleProvider = {
+        provide: TOKEN_LOGGER_RULES_SERVICE,
+        useClass: NGXLoggerRulesService
+      };
+    } else {
+      if (customProvider.ruleProvider.provide !== TOKEN_LOGGER_RULES_SERVICE) {
+        throw new Error(`Wrong injection token for ruleProvider, it should be '${TOKEN_LOGGER_RULES_SERVICE}' and you used '${customProvider.ruleProvider.provide}'`);
+      }
+    }
+    if (!customProvider.mapperProvider) {
+      customProvider.mapperProvider = {
+        provide: TOKEN_LOGGER_MAPPER_SERVICE,
+        useClass: NGXLoggerMapperService
+      };
+    } else {
+      if (customProvider.mapperProvider.provide !== TOKEN_LOGGER_MAPPER_SERVICE) {
+        throw new Error(`Wrong injection token for mapperProvider, it should be '${TOKEN_LOGGER_MAPPER_SERVICE}' and you used '${customProvider.mapperProvider.provide}'`);
+      }
+    }
+    if (!customProvider.writerProvider) {
+      customProvider.writerProvider = {
+        provide: TOKEN_LOGGER_WRITER_SERVICE,
+        useClass: NGXLoggerWriterService
+      };
+    } else {
+      if (customProvider.writerProvider.provide !== TOKEN_LOGGER_WRITER_SERVICE) {
+        throw new Error(`Wrong injection token for writerProvider, it should be '${TOKEN_LOGGER_WRITER_SERVICE}' and you used '${customProvider.writerProvider.provide}'`);
+      }
+    }
+    if (!customProvider.serverProvider) {
+      customProvider.serverProvider = {
+        provide: TOKEN_LOGGER_SERVER_SERVICE,
+        useClass: NGXLoggerServerService
+      };
+    } else {
+      if (customProvider.serverProvider.provide !== TOKEN_LOGGER_SERVER_SERVICE) {
+        throw new Error(`Wrong injection token for serverProvider, it should be '${TOKEN_LOGGER_SERVER_SERVICE}' and you used '${customProvider.writerProvider.provide}'`);
+      }
+    }
+    return {
+      ngModule: _LoggerModule,
+      providers: [NGXLogger, customProvider.configProvider, customProvider.configEngineFactoryProvider, customProvider.metadataProvider, customProvider.ruleProvider, customProvider.mapperProvider, customProvider.writerProvider, customProvider.serverProvider, CustomNGXLoggerService]
+    };
+  }
+  static forChild() {
+    return {
+      ngModule: _LoggerModule
+    };
+  }
+};
+LoggerModule.\u0275fac = function LoggerModule_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || LoggerModule)();
+};
+LoggerModule.\u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+  type: LoggerModule
+});
+LoggerModule.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+  imports: [[CommonModule]]
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(LoggerModule, [{
+    type: NgModule,
+    args: [{
+      imports: [CommonModule]
+    }]
+  }], null, null);
+})();
+
+// projects/fasten-connect-stitch-embed/src/app/services/config.service.ts
 var ConfigService = class _ConfigService {
-  constructor() {
+  constructor(logger) {
+    this.logger = logger;
     this._defaultSystemConfig = vaultConfigDefaults;
     this.systemConfigSubject = new BehaviorSubject(this._defaultSystemConfig);
     this.vaultProfileConfigSubject = new BehaviorSubject(Object.setPrototypeOf({}, VaultProfileConfig.prototype));
@@ -44367,26 +45665,26 @@ var ConfigService = class _ConfigService {
   set systemConfig(value) {
     const mergedSettings = (0, import_lodash.merge)({}, this.systemConfigSubject.getValue(), value);
     if (JSON.stringify(mergedSettings) !== JSON.stringify(this.systemConfigSubject.getValue())) {
-      console.log("updating system settings:", mergedSettings);
+      this.logger.info("updating system settings:", mergedSettings);
       this.systemConfigSubject.next(mergedSettings);
     }
   }
   //Getter
   get systemConfig$() {
-    console.log("getting cached system settings:", this.systemConfigSubject.getValue());
+    this.logger.info("getting cached system settings:", this.systemConfigSubject.getValue());
     return this.systemConfigSubject.getValue();
   }
   //Setter
   set vaultProfileConfig(value) {
     const mergedSettings = (0, import_lodash.merge)({}, this.vaultProfileConfigSubject.getValue(), value);
     if (JSON.stringify(mergedSettings) !== JSON.stringify(this.vaultProfileConfigSubject.getValue())) {
-      console.log("updating vault profile settings:", mergedSettings);
+      this.logger.info("updating vault profile settings:", mergedSettings);
       this.vaultProfileConfigSubject.next(Object.setPrototypeOf(mergedSettings, VaultProfileConfig.prototype));
     }
   }
   //Getter
   get vaultProfileConfig$() {
-    console.log("getting vault profile settings:", this.vaultProfileConfigSubject.getValue());
+    this.logger.info("getting vault profile settings:", this.vaultProfileConfigSubject.getValue());
     return this.vaultProfileConfigSubject.getValue();
   }
   vaultProfileAddPendingAccount(brand, portal, endpoint) {
@@ -44396,7 +45694,7 @@ var ConfigService = class _ConfigService {
   }
   vaultProfileAddConnectedAccount(connectedAccount) {
     if (connectedAccount.error) {
-      console.error("Error connecting account", connectedAccount);
+      this.logger.error("Error connecting account", connectedAccount);
       return;
     }
     let updatedVaultProfile = this.vaultProfileConfig$;
@@ -44412,18 +45710,18 @@ var ConfigService = class _ConfigService {
   set searchConfig(value) {
     const mergedSettings = (0, import_lodash.merge)({}, this.searchConfigSubject.getValue(), value);
     if (JSON.stringify(mergedSettings) !== JSON.stringify(this.searchConfigSubject.getValue())) {
-      console.log("updating search settings:", mergedSettings);
+      this.logger.info("updating search settings:", mergedSettings);
       this.searchConfigSubject.next(mergedSettings);
     }
   }
   //Getter
   get searchConfig$() {
-    console.log("getting search settings:", this.searchConfigSubject.getValue());
+    this.logger.info("getting search settings:", this.searchConfigSubject.getValue());
     return this.searchConfigSubject.getValue();
   }
   static {
     this.\u0275fac = function ConfigService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _ConfigService)();
+      return new (__ngFactoryType__ || _ConfigService)(\u0275\u0275inject(NGXLogger));
     };
   }
   static {
@@ -44475,7 +45773,7 @@ var decodeBase64 = (encoded) => {
   }
   return bytes;
 };
-var decode2 = (input2) => {
+var decode3 = (input2) => {
   let encoded = input2;
   if (encoded instanceof Uint8Array) {
     encoded = decoder.decode(encoded);
@@ -44942,7 +46240,7 @@ var parse = (jwk) => __async(void 0, null, function* () {
 var jwk_to_key_default = parse;
 
 // node_modules/jose/dist/browser/runtime/normalize_key.js
-var exportKeyValue = (k) => decode2(k);
+var exportKeyValue = (k) => decode3(k);
 var privCache;
 var pubCache;
 var isKeyObject = (key) => {
@@ -44984,7 +46282,7 @@ var normalizePublicKey = (key, alg) => {
     return importAndCache(pubCache, key, jwk, alg);
   }
   if (isJWK(key)) {
-    if (key.k) return decode2(key.k);
+    if (key.k) return decode3(key.k);
     pubCache || (pubCache = /* @__PURE__ */ new WeakMap());
     const cryptoKey = importAndCache(pubCache, key, key, alg, true);
     return cryptoKey;
@@ -45003,7 +46301,7 @@ var normalizePrivateKey = (key, alg) => {
     return importAndCache(privCache, key, jwk, alg);
   }
   if (isJWK(key)) {
-    if (key.k) return decode2(key.k);
+    if (key.k) return decode3(key.k);
     privCache || (privCache = /* @__PURE__ */ new WeakMap());
     const cryptoKey = importAndCache(privCache, key, key, alg, true);
     return cryptoKey;
@@ -45027,7 +46325,7 @@ function importJWK(jwk, alg) {
         if (typeof jwk.k !== "string" || !jwk.k) {
           throw new TypeError('missing "k" (Key Value) Parameter value');
         }
-        return decode2(jwk.k);
+        return decode3(jwk.k);
       case "RSA":
         if ("oth" in jwk && jwk.oth !== void 0) {
           throw new JOSENotSupported('RSA JWK "oth" (Other Primes Info) Parameter value is not supported');
@@ -45265,7 +46563,7 @@ function flattenedVerify(jws, key, options) {
     let parsedProt = {};
     if (jws.protected) {
       try {
-        const protectedHeader = decode2(jws.protected);
+        const protectedHeader = decode3(jws.protected);
         parsedProt = JSON.parse(decoder.decode(protectedHeader));
       } catch {
         throw new JWSInvalid("JWS Protected Header is invalid");
@@ -45314,7 +46612,7 @@ function flattenedVerify(jws, key, options) {
     const data = concat2(encoder.encode(jws.protected ?? ""), encoder.encode("."), typeof jws.payload === "string" ? encoder.encode(jws.payload) : jws.payload);
     let signature;
     try {
-      signature = decode2(jws.signature);
+      signature = decode3(jws.signature);
     } catch {
       throw new JWSInvalid("Failed to base64url decode the signature");
     }
@@ -45325,7 +46623,7 @@ function flattenedVerify(jws, key, options) {
     let payload;
     if (b64) {
       try {
-        payload = decode2(jws.payload);
+        payload = decode3(jws.payload);
       } catch {
         throw new JWSInvalid("Failed to base64url decode the payload");
       }
@@ -52556,10 +53854,11 @@ function VaultProfileSigninComponent_app_spinner_62_Template(rf, ctx) {
   }
 }
 var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
-  constructor(configService, authService, router) {
+  constructor(configService, authService, router, logger) {
     this.configService = configService;
     this.authService = authService;
     this.router = router;
+    this.logger = logger;
     this.loading = false;
     this.showMessage = false;
     this.submitted = false;
@@ -52574,7 +53873,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   signinSubmit() {
     this.submitted = true;
     this.loading = true;
-    console.log("Signin", this.existingVaultProfile.email);
+    this.logger.info("Signin", this.existingVaultProfile.email);
     this.authService.VaultAuthBegin(this.existingVaultProfile.email).then(() => {
       this.loading = false;
       this.router.navigate(["auth/signin/code"], { queryParams: { currentEmail: this.existingVaultProfile.email } });
@@ -52598,7 +53897,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
   static {
     this.\u0275fac = function VaultProfileSigninComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router));
+      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -52711,7 +54010,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 13 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 14 });
 })();
 
 // node_modules/angular-code-input/fesm2022/angular-code-input.mjs
@@ -53235,9 +54534,10 @@ function VaultProfileSigninCodeComponent_p_15_Template(rf, ctx) {
   }
 }
 var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
-  constructor(router, authService) {
+  constructor(router, authService, logger) {
     this.router = router;
     this.authService = authService;
+    this.logger = logger;
     this.loading = false;
     this.errorMsg = "";
     this.currentEmail = "test@example.com";
@@ -53248,7 +54548,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
   }
   onCodeCompleted(code) {
     this.loading = true;
-    console.log("submit finish", this.currentEmail, code);
+    this.logger.info("submit finish", this.currentEmail, code);
     this.authService.VaultAuthFinish(this.currentEmail, code).then(() => {
       this.loading = false;
       this.router.navigateByUrl("dashboard");
@@ -53264,7 +54564,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
   }
   static {
     this.\u0275fac = function VaultProfileSigninCodeComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _VaultProfileSigninCodeComponent)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(AuthService));
+      return new (__ngFactoryType__ || _VaultProfileSigninCodeComponent)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -53317,7 +54617,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninCodeComponent, { className: "VaultProfileSigninCodeComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts", lineNumber: 12 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninCodeComponent, { className: "VaultProfileSigninCodeComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts", lineNumber: 13 });
 })();
 
 // node_modules/ngx-device-detector/fesm2022/ngx-device-detector.mjs
@@ -54154,16 +55454,17 @@ var DeviceDetectorService = class _DeviceDetectorService {
 // projects/fasten-connect-stitch-embed/src/app/services/vault.service.ts
 var ConnectWindowTimeout2 = 20 * 60 * 1e3;
 var VaultService = class _VaultService {
-  constructor(_httpClient, deviceService, configService) {
+  constructor(_httpClient, deviceService, configService, logger) {
     this._httpClient = _httpClient;
     this.deviceService = deviceService;
     this.configService = configService;
+    this.logger = logger;
     this.configService.systemConfigSubject.subscribe((systemConfig) => {
-      console.log("System configuration changed:", systemConfig, this.configService.systemConfig$);
+      this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
-        console.log("attempt to download org information, and store in config");
+        this.logger.info("attempt to download org information, and store in config");
         this.getOrg(systemConfig.org_id).subscribe((org) => {
-          console.log("org:", org);
+          this.logger.debug("org:", org);
           this.configService.systemConfig = { org };
         });
       }
@@ -54171,7 +55472,7 @@ var VaultService = class _VaultService {
   }
   //This function must be ".subscribed()" to work. If not, the handler will not be registered and messages will be ignored.
   waitForOrgConnectionOrTimeout(openedWindow) {
-    console.log(`waiting for postMessage notification from popup window`);
+    this.logger.info(`waiting for postMessage notification from popup window`);
     return fromEvent(window, "message").pipe(
       //throw an error if we wait more than 2 minutes (this will close the window)
       timeout(ConnectWindowTimeout2),
@@ -54180,13 +55481,13 @@ var VaultService = class _VaultService {
       //after filtering, we should only have one event to handle.
       first(),
       map((event) => {
-        console.log(`received postMessage notification from popup window & sending acknowledgment`);
+        this.logger.info(`received postMessage notification from popup window & sending acknowledgment`);
         event.source.postMessage(JSON.stringify({ close: true }), event.origin);
-        console.log("postmessage data", event.data);
+        this.logger.debug("postmessage data", event.data);
         return JSON.parse(event.data);
       }),
       catchError((err) => {
-        console.warn(`timed out waiting for notification from popup (${ConnectWindowTimeout2 / 1e3}s), closing window`);
+        this.logger.warn(`timed out waiting for notification from popup (${ConnectWindowTimeout2 / 1e3}s), closing window`);
         openedWindow.self.close();
         return throwError(err);
       })
@@ -54194,7 +55495,7 @@ var VaultService = class _VaultService {
   }
   getRecordLocatorFacilities() {
     return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
-      console.log("Record Locator Response", response);
+      this.logger.info("Record Locator Response", response);
       return response.data;
     }));
   }
@@ -54209,7 +55510,7 @@ var VaultService = class _VaultService {
       "public_id": this.configService.systemConfig$.publicId,
       "api_mode": apiMode
     } }).pipe(map((response) => {
-      console.log("Metadata RESPONSE", response);
+      this.logger.info("Metadata RESPONSE", response);
       return response.data;
     }));
   }
@@ -54217,7 +55518,7 @@ var VaultService = class _VaultService {
     return this._httpClient.get(`${environment.connect_api_endpoint_base}/org/${orgId}`, { params: {
       "public_id": this.configService.systemConfig$.publicId
     } }).pipe(map((response) => {
-      console.log("Organization", response);
+      this.logger.info("Organization", response);
       return response.data;
     }));
   }
@@ -54225,7 +55526,7 @@ var VaultService = class _VaultService {
     let queryParams = {};
     queryParams["public_id"] = publicId;
     return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/org`, { params: queryParams }).pipe(map((response) => {
-      console.log("Organization", response);
+      this.logger.info("Organization", response);
       return response.data;
     }));
   }
@@ -54233,7 +55534,7 @@ var VaultService = class _VaultService {
     let queryParams = {};
     queryParams["public_id"] = publicId;
     return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/org_connection/${orgConnectionId}`, { params: queryParams }).pipe(map((response) => {
-      console.log("Organization Connection Data", response);
+      this.logger.info("Organization Connection Data", response);
       return response.data;
     }));
   }
@@ -54279,7 +55580,7 @@ var VaultService = class _VaultService {
       redirectParams.set("external_state", externalState);
     }
     redirectUrlParts.search = redirectParams.toString();
-    console.log(redirectUrlParts.toString());
+    this.logger.debug(redirectUrlParts.toString());
     const isDesktop = this.deviceService.isDesktop();
     let features = "";
     if (isDesktop) {
@@ -54297,7 +55598,7 @@ var VaultService = class _VaultService {
       newPassword: newPass
     });
     return this._httpClient.put(`${environment.connect_api_endpoint_base}/user`, userUpdateJson).pipe(map((response) => {
-      console.log("Updated User", response);
+      this.logger.info("Updated User", response);
       return response.data;
     }));
   }
@@ -54316,7 +55617,7 @@ var VaultService = class _VaultService {
     formData.append("org", orgJsonBlob);
     formData.append("logo", logoBlob);
     let resp = this._httpClient.post(`${environment.connect_api_endpoint_base}/org`, formData);
-    console.log(resp);
+    this.logger.info(resp);
     return resp;
   }
   updateOrg(orgId, updateOrg, logoBlob) {
@@ -54330,7 +55631,7 @@ var VaultService = class _VaultService {
       formData.append("logo", logoBlob);
     }
     return this._httpClient.put(`${environment.connect_api_endpoint_base}/org/${orgId}`, formData).pipe(map((response) => {
-      console.log("Updated Organization", response);
+      this.logger.info("Updated Organization", response);
       return response.data;
     }));
   }
@@ -54356,13 +55657,13 @@ var VaultService = class _VaultService {
   // }
   getOrgCredentials(orgId) {
     return this._httpClient.get(`${environment.connect_api_endpoint_base}/org/${orgId}/credentials`).pipe(map((response) => {
-      console.log("Organization Credentials", response);
+      this.logger.info("Organization Credentials", response);
       return response.data;
     }));
   }
   static {
     this.\u0275fac = function VaultService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _VaultService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService));
+      return new (__ngFactoryType__ || _VaultService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
     };
   }
   static {
@@ -54377,9 +55678,10 @@ function IdentityVerificationComponent_app_spinner_15_Template(rf, ctx) {
   }
 }
 var IdentityVerificationComponent = class _IdentityVerificationComponent {
-  constructor(vaultService, router) {
+  constructor(vaultService, router, logger) {
     this.vaultService = vaultService;
     this.router = router;
+    this.logger = logger;
     this.loading = false;
   }
   ngOnInit() {
@@ -54388,16 +55690,16 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     this.loading = true;
     this.vaultService.verificationWithPopup().subscribe((result) => {
       this.loading = false;
-      console.log("verification result", result);
+      this.logger.info("verification result", result);
       this.router.navigateByUrl("dashboard");
     }, (err) => {
       this.loading = false;
-      console.error("verification error", err);
+      this.logger.error("verification error", err);
     });
   }
   static {
     this.\u0275fac = function IdentityVerificationComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _IdentityVerificationComponent)(\u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(Router));
+      return new (__ngFactoryType__ || _IdentityVerificationComponent)(\u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -54434,7 +55736,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 11 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 12 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/models/event-payload.ts
@@ -54561,16 +55863,17 @@ function DashboardComponent_div_12_Template(rf, ctx) {
   }
 }
 var DashboardComponent = class _DashboardComponent {
-  constructor(vaultService, configService, router, messageBus) {
+  constructor(vaultService, configService, router, messageBus, logger) {
     this.vaultService = vaultService;
     this.configService = configService;
     this.router = router;
     this.messageBus = messageBus;
+    this.logger = logger;
   }
   ngOnInit() {
   }
   connectAccount(pendingAccount) {
-    console.log("connecting account", pendingAccount);
+    this.logger.info("connecting account", pendingAccount);
     this.router.navigate(["dashboard/connecting"], {
       queryParams: {
         "brandId": pendingAccount.brand?.id,
@@ -54586,7 +55889,7 @@ var DashboardComponent = class _DashboardComponent {
   }
   static {
     this.\u0275fac = function DashboardComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(MessageBusService));
+      return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -54655,7 +55958,7 @@ var DashboardComponent = class _DashboardComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 17 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 18 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/models/search-filter.ts
@@ -55419,10 +56722,11 @@ function HealthSystemSearchComponent_div_16_Template(rf, ctx) {
   }
 }
 var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
-  constructor(vaultServiceApi, configService, router) {
+  constructor(vaultServiceApi, configService, router, logger) {
     this.vaultServiceApi = vaultServiceApi;
     this.configService = configService;
     this.router = router;
+    this.logger = logger;
     this.loading = false;
     this.lighthouseBrandList = [];
     this.showFilters = false;
@@ -55441,20 +56745,20 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     if (reset) {
       this.resetSearch();
     }
-    console.log("querySources()", this.filter);
+    this.logger.debug("querySources()", this.filter);
     if (this.loading) {
-      console.log("already loading, ignoring querySources()");
+      this.logger.info("already loading, ignoring querySources()");
       return of(null);
     }
     if (!this.filter) {
       this.filter = new SearchFilter();
-      console.log("querySources() - no filter provided, using current form value", this.filter);
+      this.logger.info("querySources() - no filter provided, using current form value", this.filter);
     }
     this.filter.fields = ["*"];
     this.loading = true;
     var searchObservable = this.vaultServiceApi.searchCatalogBrands(this.configService.systemConfig$.apiMode, this.filter);
     searchObservable.subscribe((wrapper) => {
-      console.log("search sources", wrapper);
+      this.logger.info("search sources", wrapper);
       this.resultLimits.totalItems = wrapper?.hits?.total.value || 0;
       this.lighthouseBrandList = this.lighthouseBrandList.concat((wrapper?.hits?.hits || []).map((result) => {
         return {
@@ -55463,19 +56767,19 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
         };
       }));
       if (!wrapper?.hits || !wrapper?.hits?.hits || wrapper?.hits?.hits?.length == 0 || wrapper?.hits?.total?.value == wrapper?.hits?.hits?.length) {
-        console.log("SCROLL_COMPLETE!@@@@@@@@");
+        this.logger.debug("SCROLL_COMPLETE!@@@@@@@@");
         this.resultLimits.scrollComplete = true;
       } else {
-        console.log("SETTING NEXT SORT KEY:", wrapper.hits.hits[wrapper.hits.hits.length - 1].sort.join(","));
+        this.logger.debug("SETTING NEXT SORT KEY:", wrapper.hits.hits[wrapper.hits.hits.length - 1].sort.join(","));
         this.filter.searchAfter = wrapper.hits.hits[wrapper.hits.hits.length - 1].sort.join(",");
       }
       this.loading = false;
     }, (error) => {
       this.loading = false;
-      console.error("sources FAILED", error);
+      this.logger.error("sources FAILED", error);
     }, () => {
       this.loading = false;
-      console.log("sources finished");
+      this.logger.info("sources finished");
     });
     return searchObservable;
   }
@@ -55485,7 +56789,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     }
   }
   resetSearch() {
-    console.log("reset search...");
+    this.logger.info("reset search...");
     this.lighthouseBrandList = [];
     this.filter.searchAfter = [];
     this.resultLimits = {
@@ -55501,7 +56805,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
   }
   static {
     this.\u0275fac = function HealthSystemSearchComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _HealthSystemSearchComponent)(\u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router));
+      return new (__ngFactoryType__ || _HealthSystemSearchComponent)(\u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -55562,7 +56866,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemSearchComponent, { className: "HealthSystemSearchComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts", lineNumber: 20 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemSearchComponent, { className: "HealthSystemSearchComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts", lineNumber: 21 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts
@@ -55679,20 +56983,21 @@ function HealthSystemBrandDetailsComponent_ng_container_24_Template(rf, ctx) {
   }
 }
 var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent {
-  constructor(configService, router) {
+  constructor(configService, router, logger) {
     this.configService = configService;
     this.router = router;
+    this.logger = logger;
   }
   ngOnInit() {
   }
   addPendingAccount(brand, portal, endpoint) {
-    console.log("addPendingAccount", brand, portal, endpoint);
+    this.logger.debug("addPendingAccount", brand, portal, endpoint);
     this.configService.vaultProfileAddPendingAccount(brand, portal, endpoint);
     this.router.navigateByUrl("dashboard");
   }
   static {
     this.\u0275fac = function HealthSystemBrandDetailsComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _HealthSystemBrandDetailsComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router));
+      return new (__ngFactoryType__ || _HealthSystemBrandDetailsComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -55750,7 +57055,7 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemBrandDetailsComponent, { className: "HealthSystemBrandDetailsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts", lineNumber: 15 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemBrandDetailsComponent, { className: "HealthSystemBrandDetailsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts", lineNumber: 16 });
 })();
 
 // node_modules/uuid/dist/esm-browser/rng.js
@@ -56463,10 +57768,11 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
 
 // projects/fasten-connect-stitch-embed/src/app/auth-guards/is-authenticated-auth-guard.ts
 var IsAuthenticatedAuthGuard = class _IsAuthenticatedAuthGuard {
-  constructor(authService, router, configService) {
+  constructor(authService, router, configService, logger) {
     this.authService = authService;
     this.router = router;
     this.configService = configService;
+    this.logger = logger;
   }
   canActivate(route, state) {
     return __async(this, null, function* () {
@@ -56478,14 +57784,14 @@ var IsAuthenticatedAuthGuard = class _IsAuthenticatedAuthGuard {
           if (route.url.toString() === "/auth/signin") {
             return true;
           } else {
-            console.log("User is not authenticated, redirecting to login page");
+            this.logger.info("User is not authenticated, redirecting to login page");
             return this.router.navigate(["/auth/signin"]);
           }
         } else if (!jwtPayload.has_verified_identity) {
           if (route.url.toString() === "/auth/identity/verification") {
             return true;
           } else {
-            console.log("Profile does not have a verified identity, redirecting to id verification step", jwtPayload);
+            this.logger.info("Profile does not have a verified identity, redirecting to id verification step", jwtPayload);
             return this.router.navigate(["/auth/identity/verification"]);
           }
         }
@@ -56498,7 +57804,7 @@ var IsAuthenticatedAuthGuard = class _IsAuthenticatedAuthGuard {
   }
   static {
     this.\u0275fac = function IsAuthenticatedAuthGuard_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _IsAuthenticatedAuthGuard)(\u0275\u0275inject(AuthService), \u0275\u0275inject(Router), \u0275\u0275inject(ConfigService));
+      return new (__ngFactoryType__ || _IsAuthenticatedAuthGuard)(\u0275\u0275inject(AuthService), \u0275\u0275inject(Router), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
     };
   }
   static {
@@ -56599,19 +57905,20 @@ var AppComponent = class _AppComponent {
     this.anonymousVaultProfile = urlParams.get("anonymous-vault-profile") == "true";
     this.staticBackdrop = urlParams.get("static-backdrop") == "true";
   }
-  constructor(activatedRoute, configService, messageBus, vaultService, router) {
+  constructor(activatedRoute, configService, messageBus, vaultService, router, logger) {
     this.activatedRoute = activatedRoute;
     this.configService = configService;
     this.messageBus = messageBus;
     this.vaultService = vaultService;
     this.router = router;
+    this.logger = logger;
     this.publicId = "";
     this.externalId = "";
     this.anonymousVaultProfile = false;
     this.staticBackdrop = false;
   }
   ngOnInit() {
-    console.log("QUERY STRING MAP", new URLSearchParams(window.location.search));
+    this.logger.info("QUERY STRING MAP", new URLSearchParams(window.location.search));
     this.populateInputsFromWindowLocation();
     let apiMode = this.getApiModeFromPublicId(this.publicId);
     this.configService.systemConfig = {
@@ -56623,12 +57930,12 @@ var AppComponent = class _AppComponent {
       anonymousVaultProfile: this.anonymousVaultProfile
     };
     this.messageBus.messageBusSubject.subscribe((eventPayload) => {
-      console.log("bubbling up event", eventPayload);
+      this.logger.debug("bubbling up event", eventPayload);
       this.sendPostMessage(eventPayload);
     });
     if (this.reconnectOrgConnectionId) {
       this.vaultService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
-        console.log("Reconnect Org Connection", orgConnection);
+        this.logger.info("Reconnect Org Connection", orgConnection);
         this.router.navigate(["dashboard/connecting"], {
           queryParams: {
             "brandId": orgConnection.catalog_brand_id,
@@ -56641,7 +57948,7 @@ var AppComponent = class _AppComponent {
         });
       }, (err) => {
         this.errorMessage = "Could not find the patient connection using id. Please contact the developer of this app.";
-        console.log("Invalid Fasten Connect Connection ID", err);
+        this.logger.error("Invalid Fasten Connect Connection ID", err);
       });
     } else {
       if (this.anonymousVaultProfile) {
@@ -56666,45 +57973,45 @@ var AppComponent = class _AppComponent {
     } else {
       this.errorMessage = "";
       this.vaultService.getOrgByPublicId(this.publicId).subscribe((org) => {
-        console.log("Fasten Connect registration", org);
+        this.logger.info("Fasten Connect registration", org);
         this.configService.systemConfig = {
           org
         };
       }, (err) => {
         this.errorMessage = "Could not register Fasten Connect installation using id. Please contact the developer of this app.";
         this.messageBus.publishWidgetConfigError();
-        console.log("Invalid Fasten Connect registration", err);
+        this.logger.error("Invalid Fasten Connect registration", err);
       });
       return apiMode;
     }
   }
   // these functions can be called externally to show/hide the widget via javascript
   showStitchModalExt() {
-    console.log("showStitchModalExt pressed");
+    this.logger.info("showStitchModalExt pressed");
   }
   hideStitchModalExt() {
-    console.log("hideStitchModalExt pressed");
+    this.logger.info("hideStitchModalExt pressed");
   }
   // postMessage registration, listen to events from the parent window
   receivePostMessage(event) {
-    console.log("received postMessage", event);
+    this.logger.debug("received postMessage", event);
   }
   sendPostMessage(eventPayload) {
     if (!window.opener && !window.parent) {
-      console.warn("No parent window to send message to");
+      this.logger.debug("No parent window to send message to");
       return;
     }
     if (eventPayload == null) {
-      console.warn("No eventPayload to send");
+      this.logger.warn("No eventPayload to send");
       return;
     }
-    console.log("sending postMessage", eventPayload);
+    this.logger.info("sending postMessage", eventPayload);
     let parentWindowRef = window.parent || window.opener;
     parentWindowRef.postMessage(JSON.stringify(eventPayload), "*");
   }
   static {
     this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(Router));
+      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -56731,14 +58038,15 @@ var AppComponent = class _AppComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 23 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 24 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/services/auth-interceptor.service.ts
 var AuthInterceptorService = class _AuthInterceptorService {
-  constructor(authService, router) {
+  constructor(authService, router, logger) {
     this.authService = authService;
     this.router = router;
+    this.logger = logger;
   }
   handleAuthError(err) {
     if (err.status === 401 || err.status === 403) {
@@ -56749,7 +58057,7 @@ var AuthInterceptorService = class _AuthInterceptorService {
     return throwError(err);
   }
   intercept(req, next) {
-    console.log("Intercepting Request", req);
+    this.logger.info("Intercepting Request", req);
     let reqUrl = new URL(req.url);
     let lighthouseUrl = new URL(environment.lighthouse_api_endpoint_base);
     let apiUrl = new URL(environment.connect_api_endpoint_base);
@@ -56761,7 +58069,7 @@ var AuthInterceptorService = class _AuthInterceptorService {
   }
   static {
     this.\u0275fac = function AuthInterceptorService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AuthInterceptorService)(\u0275\u0275inject(AuthService), \u0275\u0275inject(Router));
+      return new (__ngFactoryType__ || _AuthInterceptorService)(\u0275\u0275inject(AuthService), \u0275\u0275inject(Router), \u0275\u0275inject(NGXLogger));
     };
   }
   static {
@@ -56798,7 +58106,11 @@ var AppModule = class _AppModule {
       CommonModule,
       InfiniteScrollModule,
       CodeInputModule,
-      RouterModule
+      RouterModule,
+      LoggerModule.forRoot({
+        level: NgxLoggerLevel.DEBUG,
+        context: "stitch-embed"
+      })
     ] });
   }
 };
