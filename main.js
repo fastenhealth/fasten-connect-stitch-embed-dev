@@ -56509,8 +56509,9 @@ var IsAuthenticatedAuthGuard = class _IsAuthenticatedAuthGuard {
 // projects/fasten-connect-stitch-embed/src/app/app-routing.module.ts
 var routes = [
   { path: "auth/signin", component: VaultProfileSigninComponent },
-  { path: "auth/signin/code", component: VaultProfileSigninCodeComponent },
-  { path: "auth/identity/verification", component: IdentityVerificationComponent, canActivate: [IsAuthenticatedAuthGuard] },
+  { path: "auth/signin/code", component: VaultProfileSigninCodeComponent, canActivate: [IsAuthenticatedAuthGuard] },
+  { path: "auth/identity/verification", component: IdentityVerificationComponent },
+  //canActivate: [IsAuthenticatedAuthGuard] },
   { path: "dashboard", component: DashboardComponent, canActivate: [IsAuthenticatedAuthGuard] },
   { path: "search", component: HealthSystemSearchComponent, canActivate: [IsAuthenticatedAuthGuard] },
   { path: "brand/details", component: HealthSystemBrandDetailsComponent, canActivate: [IsAuthenticatedAuthGuard] },
