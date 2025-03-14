@@ -55719,7 +55719,13 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     }, (err) => {
       this.loading = false;
       this.logger.error("verification error", err);
-      this.errorMessage = `An error occurred while verifying your identity. ${err}`;
+      if (err instanceof TimeoutError) {
+        this.router.navigate(["/identity/verification/error", { queryParams: { error: "timeout", error_description: "timed out waiting for notification from popup" } }]);
+      } else {
+        var errData = JSON.parse(err.error);
+        this.router.navigate(["/identity/verification/error", { queryParams: { error: errData.error, error_description: errData.error_description } }]);
+      }
+      return;
     });
   }
   static {
@@ -55766,7 +55772,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 12 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 13 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/models/event-payload.ts
@@ -57873,20 +57879,19 @@ var IsAuthenticatedAuthGuard = class _IsAuthenticatedAuthGuard {
 
 // projects/fasten-connect-stitch-embed/src/app/pages/identity-verification-error/identity-verification-error.component.ts
 var IdentityVerificationErrorComponent = class _IdentityVerificationErrorComponent {
-  constructor(vaultService, router, logger) {
-    this.vaultService = vaultService;
-    this.router = router;
-    this.logger = logger;
+  constructor() {
+    this.error = "";
+    this.error_description = "An internal server error occurred. Please retry after a few moments.";
   }
   ngOnInit() {
   }
   static {
     this.\u0275fac = function IdentityVerificationErrorComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _IdentityVerificationErrorComponent)(\u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _IdentityVerificationErrorComponent)();
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationErrorComponent, selectors: [["app-identity-verification-error"]], standalone: false, decls: 23, vars: 1, consts: [[1, "space-y-6", "text-center"], [1, "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "space-y-2"], [1, "text-xl", "font-semibold", "text-red-600"], ["id", "error-message", 1, "text-sm", "text-gray-600"], ["id", "error-details", 1, "bg-gray-100", "p-4", "rounded-md", "text-left"], [1, "text-md", "font-medium"], ["id", "error-type", 1, "text-sm", "text-gray-800"], ["id", "error-code", 1, "font-semibold"], ["id", "error-description", 1, "text-sm", "text-gray-800"], ["id", "error-text"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"]], template: function IdentityVerificationErrorComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationErrorComponent, selectors: [["app-identity-verification-error"]], inputs: { error: "error", error_description: "error_description" }, standalone: false, decls: 23, vars: 3, consts: [[1, "space-y-6", "text-center"], [1, "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "space-y-2"], [1, "text-xl", "font-semibold", "text-red-600"], ["id", "error-message", 1, "text-sm", "text-gray-600"], ["id", "error-details", 1, "bg-gray-100", "p-4", "rounded-md", "text-left"], [1, "text-md", "font-medium"], ["id", "error-type", 1, "text-sm", "text-gray-800"], ["id", "error-code", 1, "font-semibold"], ["id", "error-description", 1, "text-sm", "text-gray-800"], ["id", "error-text"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"]], template: function IdentityVerificationErrorComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h1", 2);
         \u0275\u0275text(3, "fasten");
@@ -57903,19 +57908,23 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
         \u0275\u0275elementStart(12, "p", 8);
         \u0275\u0275text(13, "Error Type: ");
         \u0275\u0275elementStart(14, "span", 9);
-        \u0275\u0275text(15, "fasten_unauthorized_client");
+        \u0275\u0275text(15);
         \u0275\u0275elementEnd()();
         \u0275\u0275elementStart(16, "p", 10);
         \u0275\u0275text(17, "Description: ");
         \u0275\u0275elementStart(18, "span", 11);
-        \u0275\u0275text(19, "An internal server error occurred. Please retry after a few moments.");
+        \u0275\u0275text(19);
         \u0275\u0275elementEnd()()();
         \u0275\u0275elementStart(20, "div", 3)(21, "button", 12);
         \u0275\u0275text(22, " Try Again ");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
-        \u0275\u0275advance(21);
+        \u0275\u0275advance(15);
+        \u0275\u0275textInterpolate(ctx.error);
+        \u0275\u0275advance(4);
+        \u0275\u0275textInterpolate(ctx.error_description);
+        \u0275\u0275advance(2);
         \u0275\u0275property("routerLink", "/identity/verification");
       }
     }, dependencies: [RouterLink], encapsulation: 2 });
