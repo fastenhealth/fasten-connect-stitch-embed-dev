@@ -47171,11 +47171,11 @@ function createRemoteJWKSet(url, options) {
 }
 
 // projects/fasten-connect-stitch-embed/src/app/services/auth.service.ts
+var FASTEN_AUTH_VAULT_COOKIE_NAME = "fasten_connect_auth_vault";
 var AuthService = class _AuthService {
   constructor(_httpClient, configService) {
     this._httpClient = _httpClient;
     this.configService = configService;
-    this.FASTEN_CONNECT_JWT_LOCALSTORAGE_KEY = "fasten_connect_auth_vault";
     this.IsAuthenticatedSubject = new BehaviorSubject(false);
   }
   VaultAuthBegin(email) {
@@ -47191,20 +47191,19 @@ var AuthService = class _AuthService {
       let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_finish`, {
         "email": email,
         "code": code
-      }, { observe: "response", withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
-      this.setAuthToken(resp);
+      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
       return resp;
     });
   }
   Signout() {
     return __async(this, null, function* () {
       this.publishAuthenticationState(false);
-      return localStorage.removeItem(this.FASTEN_CONNECT_JWT_LOCALSTORAGE_KEY);
+      return this.deleteCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
     });
   }
   GetJWTPayload() {
     return __async(this, null, function* () {
-      let authToken = this.GetAuthToken();
+      let authToken = this.getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
       if (!authToken) {
         return null;
       }
@@ -47223,25 +47222,40 @@ var AuthService = class _AuthService {
       }
     });
   }
-  GetAuthToken() {
-    return localStorage.getItem(this.FASTEN_CONNECT_JWT_LOCALSTORAGE_KEY) || "";
+  IsAuthenticated() {
+    return __async(this, null, function* () {
+      let payload = yield this.GetJWTPayload();
+      let isAuthenticated = payload != null;
+      this.publishAuthenticationState(isAuthenticated);
+      return isAuthenticated;
+    });
   }
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //Private Methods
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  setAuthToken(authResp) {
-    if (!authResp) {
-      console.warn("no auth response found, skipping");
-      return;
+  //https://stackoverflow.com/questions/34298133/angular-cookies
+  getCookie(name) {
+    const ca = decodeURIComponent(document.cookie).split(";");
+    const caLen = ca.length;
+    const cookieName = `${name}=`;
+    let c;
+    for (let i = 0; i < caLen; i += 1) {
+      c = ca[i].replace(/^\s+/g, "");
+      if (c.indexOf(cookieName) === 0) {
+        return c.substring(cookieName.length, c.length);
+      }
     }
-    let authHeader = authResp.headers.get("authorization");
-    if (!authHeader) {
-      console.warn("no auth header found in response, skipping");
-      return;
-    }
-    let token = authHeader.replace("Bearer ", "");
-    localStorage.setItem(this.FASTEN_CONNECT_JWT_LOCALSTORAGE_KEY, token);
-    this.publishAuthenticationState(true);
+    return "";
+  }
+  deleteCookie(name) {
+    this.setCookie(name, "", -99999);
+  }
+  setCookie(name, value, expireDays, path = "") {
+    const d = /* @__PURE__ */ new Date();
+    d.setTime(d.getTime() + expireDays * 24 * 60 * 60 * 1e3);
+    const expires = `expires=${d.toUTCString()}`;
+    const cpath = path ? `; path=${path}` : "";
+    document.cookie = `${name}=${value}; ${expires}${cpath}; SameSite=Lax`;
   }
   publishAuthenticationState(authenticated) {
     if (this.IsAuthenticatedSubject.value != authenticated) {
