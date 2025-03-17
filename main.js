@@ -55726,8 +55726,12 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
       if (err instanceof TimeoutError) {
         this.router.navigate(["/identity/verification/error", { queryParams: { error: "timeout", error_description: "timed out waiting for notification from popup" } }]);
       } else {
-        var errData = JSON.parse(err);
-        this.router.navigate(["/identity/verification/error", { queryParams: { error: errData.error, error_description: errData.error_description } }]);
+        try {
+          var errData = JSON.parse(err);
+          this.router.navigate(["/identity/verification/error", { queryParams: { error: errData.error, error_description: errData.error_description } }]);
+        } catch (e) {
+          this.router.navigate(["/identity/verification/error", { queryParams: { error: "unknown", error_description: "An unknown error occurred" } }]);
+        }
       }
       return;
     });
