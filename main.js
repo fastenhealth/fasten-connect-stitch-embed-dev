@@ -55486,6 +55486,8 @@ var VaultService = class _VaultService {
     });
   }
   //This function must be ".subscribed()" to work. If not, the handler will not be registered and messages will be ignored.
+  // errors will be thrown if the connection is not completed during the timeout period. An error will also be thrown if the payload is an error.
+  // new Error('{"error":"error_code","error_description":"error message"}')
   waitForOrgConnectionOrTimeout(openedWindow) {
     this.logger.info(`waiting for postMessage notification from popup window`);
     return fromEvent(window, "message").pipe(
@@ -55510,11 +55512,12 @@ var VaultService = class _VaultService {
         openedWindow.self.close();
         if (err instanceof TimeoutError) {
           this.logger.warn(`timed out waiting for notification from popup (${ConnectWindowTimeout2 / 1e3}s), closing window`);
-          throw err;
+          throw new Error(JSON.stringify({ error: "timeout", error_description: "timed out waiting for notification from popup" }));
         } else {
           this.logger.warn(`an error occurred while verifying identity, closing window`, err);
-          return throwError(() => err);
+          throw err;
         }
+        return throwError(err);
       })
     );
   }
@@ -55723,15 +55726,17 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     }, (err) => {
       this.loading = false;
       this.logger.error("verification error", err);
-      if (err instanceof TimeoutError) {
-        this.router.navigate(["/identity/verification/error", { queryParams: { error: "timeout", error_description: "timed out waiting for notification from popup" } }]);
-      } else {
-        try {
-          var errData = JSON.parse(err);
-          this.router.navigate(["/identity/verification/error", { queryParams: { error: errData.error, error_description: errData.error_description } }]);
-        } catch (e) {
-          this.router.navigate(["/identity/verification/error", { queryParams: { error: "unknown", error_description: "An unknown error occurred" } }]);
+      try {
+        var errData = JSON.parse(err.message);
+        this.logger.debug("error_name", errData.error, "error_description", errData.error_description);
+        if (errData.error == "timeout") {
+          this.router.navigate(["/auth/identity/verification/error"], { queryParams: { "error": "timeout", "error_description": "timed out waiting for notification from popup" } });
+        } else {
+          this.router.navigate(["/auth/identity/verification/error"], { queryParams: { "error": errData.error, "error_description": errData.error_description } });
         }
+      } catch (e) {
+        this.logger.error("Error parsing error response", e);
+        this.router.navigate(["/auth/identity/verification/error"], { queryParams: { "error": "unknown", "error_description": "An unknown error occurred" } });
       }
       return;
     });
@@ -57173,23 +57178,41 @@ function ConnectHelper(connectData) {
     configService.vaultProfileAddConnectedAccount(orgConnectionCallbackData);
     router.navigateByUrl("dashboard");
   }, (err) => {
-    if (err instanceof TimeoutError) {
-      return router.navigateByUrl("dashboard");
-    }
-    console.error("an error occurred while attempting to connect health system", err);
-    router.navigate(["form/support"], {
-      queryParams: {
-        "error": err["error"] || "unknown_error_during_connect",
-        "error_description": err["error_description"] || "an unknown error occurred during the connection process",
-        "brand_id": connectData.brand_id,
-        "portal_id": connectData.portal_id,
-        "endpoint_id": connectData.endpoint_id,
-        "org_connection_id": connectData.org_connection_id,
-        "external_id": connectData.external_id,
-        "external_state": connectData.external_state || err["external_state"],
-        "request_id": err["request_id"]
+    console.error("Error parsing error data", err);
+    try {
+      var errData = JSON.parse(err.toString());
+      if (errData.error == "timeout") {
+        return router.navigateByUrl("dashboard");
+      } else {
+        console.error("an error occurred while attempting to connect health system", err);
+        router.navigate(["form/support"], {
+          queryParams: {
+            "error": err["error"] || "unknown_error_during_connect",
+            "error_description": err["error_description"] || "an unknown error occurred during the connection process",
+            "brand_id": connectData.brand_id,
+            "portal_id": connectData.portal_id,
+            "endpoint_id": connectData.endpoint_id,
+            "org_connection_id": connectData.org_connection_id,
+            "external_id": connectData.external_id,
+            "external_state": connectData.external_state || err["external_state"],
+            "request_id": err["request_id"]
+          }
+        });
       }
-    });
+    } catch (e) {
+      router.navigate(["form/support"], {
+        queryParams: {
+          "error": "unknown_error_during_connect",
+          "error_description": "an unknown error occurred during the connection process",
+          "brand_id": connectData.brand_id,
+          "portal_id": connectData.portal_id,
+          "endpoint_id": connectData.endpoint_id,
+          "org_connection_id": connectData.org_connection_id,
+          "external_id": connectData.external_id,
+          "external_state": connectData.external_state || err["external_state"]
+        }
+      });
+    }
     return null;
   });
 }
@@ -57896,7 +57919,7 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationErrorComponent, selectors: [["app-identity-verification-error"]], inputs: { error: "error", error_description: "error_description" }, standalone: false, decls: 23, vars: 3, consts: [[1, "space-y-6", "text-center"], [1, "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "space-y-2"], [1, "text-xl", "font-semibold", "text-red-600"], ["id", "error-message", 1, "text-sm", "text-gray-600"], ["id", "error-details", 1, "bg-gray-100", "p-4", "rounded-md", "text-left"], [1, "text-md", "font-medium"], ["id", "error-type", 1, "text-sm", "text-gray-800"], ["id", "error-code", 1, "font-semibold"], ["id", "error-description", 1, "text-sm", "text-gray-800"], ["id", "error-text"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"]], template: function IdentityVerificationErrorComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationErrorComponent, selectors: [["app-identity-verification-error"]], inputs: { error: "error", error_description: "error_description" }, standalone: false, decls: 23, vars: 3, consts: [[1, "space-y-6", "text-center"], [1, "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "space-y-2"], [1, "text-xl", "font-semibold", "text-red-600"], ["id", "error-message", 1, "text-sm", "text-gray-600"], ["id", "error-details", 1, "bg-gray-100", "p-4", "rounded-md", "text-left"], [1, "text-md", "font-medium"], [1, "text-sm", "text-gray-800"], [1, "font-semibold"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"]], template: function IdentityVerificationErrorComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h1", 2);
         \u0275\u0275text(3, "fasten");
@@ -57915,12 +57938,12 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
         \u0275\u0275elementStart(14, "span", 9);
         \u0275\u0275text(15);
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(16, "p", 10);
+        \u0275\u0275elementStart(16, "p", 8);
         \u0275\u0275text(17, "Description: ");
-        \u0275\u0275elementStart(18, "span", 11);
+        \u0275\u0275elementStart(18, "span");
         \u0275\u0275text(19);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(20, "div", 3)(21, "button", 12);
+        \u0275\u0275elementStart(20, "div", 3)(21, "button", 10);
         \u0275\u0275text(22, " Try Again ");
         \u0275\u0275elementEnd()()();
       }
@@ -57930,7 +57953,7 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
         \u0275\u0275advance(4);
         \u0275\u0275textInterpolate(ctx.error_description);
         \u0275\u0275advance(2);
-        \u0275\u0275property("routerLink", "/identity/verification");
+        \u0275\u0275property("routerLink", "/auth/identity/verification");
       }
     }, dependencies: [RouterLink], encapsulation: 2 });
   }
