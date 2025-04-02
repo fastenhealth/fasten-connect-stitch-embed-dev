@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.scss"],
-  "sourcesContent": ["// required for 3-dot pulse animation\n.animate-delay-100 {\n  animation-delay: 0s !important;\n}\n\n.animate-delay-200 {\n  animation-delay: 0.4s !important;\n}\n\n.animate-delay-300 {\n  animation-delay: 0.8s !important;\n}\n\n@keyframes pulseFlow {\n  0%, 100% {\n    transform: scale(0.9);\n    opacity: 0.4;\n  }\n  50% {\n    transform: scale(1);\n    opacity: 1;\n  }\n}\n\n.animate-pulse-flow {\n  animation: pulseFlow 2s ease-in-out infinite;\n}\n"],
-  "mappings": ";AACA,CAAA;AACE,mBAAA;;AAGF,CAAA;AACE,mBAAA;;AAGF,CAAA;AACE,mBAAA;;AAGF,WAAA;AACE;AACE,eAAA,MAAA;AACA,aAAA;;AAEF;AACE,eAAA,MAAA;AACA,aAAA;;;AAIJ,CAAA;AACE,aAAA,UAAA,GAAA,YAAA;;",
-  "names": []
-}
