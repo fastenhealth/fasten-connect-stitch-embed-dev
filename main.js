@@ -58023,8 +58023,6 @@ var routes = [
   { path: "form/healthsystem", component: FormHealthSystemRequestComponent },
   { path: "form/support", component: FormSupportRequestComponent },
   { path: "", redirectTo: "/auth/signin", pathMatch: "full" },
-  //TESTING ONLY - REMOVE, DOES NOTHING, JUST TO VERIFY THAT THE LIBRARY IS LOADED
-  { path: "sharedlib", component: SharedLibraryComponent },
   //must be at bottom of list
   { path: "**", redirectTo: "auth/signin" }
 ];
