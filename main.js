@@ -44506,15 +44506,7 @@ function getLoadedRoutes(route) {
 }
 publishExternalGlobalUtil("\u0275getLoadedRoutes", getLoadedRoutes);
 
-// projects/fasten-connect-stitch-embed/src/app/models/fasten/vaultProfile.ts
-var VaultProfile = class {
-  constructor() {
-    this.password_confirm = "";
-    this.agree_terms = false;
-  }
-};
-
-// projects/fasten-connect-stitch-embed/src/app/app.constants.ts
+// projects/shared-library/src/lib/shared-library.constants.ts
 var ApiMode;
 (function(ApiMode2) {
   ApiMode2["Live"] = "live";
@@ -44539,43 +44531,164 @@ var EventTypes;
   EventTypes2["EventTypeConnectionSuccess"] = "patient.connection_success";
   EventTypes2["EventTypeConnectionFailed"] = "patient.connection_failed";
 })(EventTypes || (EventTypes = {}));
-var ConnectWindowTimeout = 24 * 5e3;
+var ConnectWindowTimeout = 2 * 60 * 1e3;
 
-// projects/fasten-connect-stitch-embed/src/app/models/vault-config.ts
-var VaultProfileConfig = class {
-  addPendingAccount(brand, portal, endpoint) {
-    if (!this.pendingPatientAccounts) {
-      this.pendingPatientAccounts = [];
-    }
-    this.pendingPatientAccounts?.push({ brand, portal, endpoint });
+// projects/shared-library/src/lib/pipes/safe-html.pipe.ts
+var SafeHtmlPipe = class _SafeHtmlPipe {
+  constructor(sanitizer) {
+    this.sanitizer = sanitizer;
   }
-  addConnectedAccount(org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id) {
-    if (!this.connectedPatientAccounts) {
-      this.connectedPatientAccounts = [];
+  transform(value, args) {
+    return this.sanitizer.bypassSecurityTrustHtml(value);
+  }
+  static {
+    this.\u0275fac = function SafeHtmlPipe_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _SafeHtmlPipe)(\u0275\u0275directiveInject(DomSanitizer, 16));
+    };
+  }
+  static {
+    this.\u0275pipe = /* @__PURE__ */ \u0275\u0275definePipe({ name: "safeHtml", type: _SafeHtmlPipe, pure: true, standalone: false });
+  }
+};
+
+// projects/shared-library/src/lib/pipes/state-name.pipe.ts
+var StateNamePipe = class _StateNamePipe {
+  constructor() {
+    this.stateCodes = {
+      //CUSTOM
+      "ALL": "Nationwide",
+      //2 letter state codes.
+      "AL": "Alabama",
+      "AK": "Alaska",
+      "AZ": "Arizona",
+      "AR": "Arkansas",
+      "CA": "California",
+      "CO": "Colorado",
+      "CT": "Connecticut",
+      "DE": "Delaware",
+      "FL": "Florida",
+      "GA": "Georgia",
+      "HI": "Hawaii",
+      "ID": "Idaho",
+      "IL": "Illinois",
+      "IN": "Indiana",
+      "IA": "Iowa",
+      "KS": "Kansas",
+      "KY": "Kentucky",
+      "LA": "Louisiana",
+      "ME": "Maine",
+      "MD": "Maryland",
+      "MA": "Massachusetts",
+      "MI": "Michigan",
+      "MN": "Minnesota",
+      "MS": "Mississippi",
+      "MO": "Missouri",
+      "MT": "Montana",
+      "NE": "Nebraska",
+      "NV": "Nevada",
+      "NH": "New Hampshire",
+      "NJ": "New Jersey",
+      "NM": "New Mexico",
+      "NY": "New York",
+      "NC": "North Carolina",
+      "ND": "North Dakota",
+      "OH": "Ohio",
+      "OK": "Oklahoma",
+      "OR": "Oregon",
+      "PA": "Pennsylvania",
+      "RI": "Rhode Island",
+      "SC": "South Carolina",
+      "SD": "South Dakota",
+      "TN": "Tennessee",
+      "TX": "Texas",
+      "UT": "Utah",
+      "VT": "Vermont",
+      "VA": "Virginia",
+      "WA": "Washington",
+      "WV": "West Virginia",
+      "WI": "Wisconsin",
+      "WY": "Wyoming",
+      // Territories
+      "AS": "American Samoa",
+      "DC": "District of Columbia",
+      "FM": "Federated States of Micronesia",
+      "GU": "Guam",
+      "MH": "Marshall Islands",
+      "MP": "Northern Mariana Islands",
+      "PW": "Palau",
+      "PR": "Puerto Rico",
+      "VI": "Virgin Islands",
+      // Armed Forces (AE includes Europe, Africa, Canada, and the Middle East)
+      "AA": "Armed Forces Americas",
+      "AE": "Armed Forces Europe",
+      "AP": "Armed Forces Pacific"
+    };
+  }
+  transform(value) {
+    return this.stateCodes[value] || value;
+  }
+  static {
+    this.\u0275fac = function StateNamePipe_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _StateNamePipe)();
+    };
+  }
+  static {
+    this.\u0275pipe = /* @__PURE__ */ \u0275\u0275definePipe({ name: "stateName", type: _StateNamePipe, pure: true, standalone: false });
+  }
+};
+
+// projects/shared-library/src/lib/directives/image-fallback.directive.ts
+var DEFAULT_IMAGE_FALLBACK_PATH = "https://cdn.fastenhealth.com/images/no-image.svg";
+var ImageFallbackDirective = class _ImageFallbackDirective {
+  constructor(elementRef) {
+    this.elementRef = elementRef;
+    this.hospitalInlineImage = "data:image/svg+xml,%3csvg id='connecting-system-logo-placeholder' xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='text-gray-400'%3e%3cpath d='M12 6v4'/%3e%3cpath d='M14 14h-4'/%3e%3cpath d='M14 18h-4'/%3e%3cpath d='M14 8h-4'/%3e%3cpath d='M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2'/%3e%3cpath d='M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18'/%3e%3c/svg%3e";
+    this.officeInlineImage = "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-building-2 w-10 h-10 text-gray-400'%3e%3cpath d='M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z'/%3e%3cpath d='M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2'/%3e%3cpath d='M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2'/%3e%3cpath d='M10 6h4'/%3e%3cpath d='M10 10h4'/%3e%3cpath d='M10 14h4'/%3e%3cpath d='M10 18h4'/%3e%3c/svg%3e";
+    this.fastenSquareInlineImage = "data:image/svg+xml,%3csvg version='1.2' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1640 1640' width='1640' height='1640'%3e%3ctitle%3esquare%3c/title%3e%3cstyle%3etspan %7b white-space:pre %7d .s0 %7b fill: white %7d .t1 %7b font-size: 400px%3bfill: %235b47fb%3bfont-weight: 700%3bfont-family: 'Poppins-Bold'%2c 'Poppins' %7d%3c/style%3e%3cpath id='Layer 1' fill-rule='evenodd' class='s0' d='m-90-48h1752v1727h-1752z'/%3e%3ctext id='fasten' style='transform: matrix(1.356%2c0%2c0%2c1.356%2c8.863%2c630.478)'%3e%3ctspan x='0' y='296' class='t1' dx='0'%3ef%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3ea%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3es%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3et%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3ee%3c/tspan%3e%3ctspan y='296' class='t1' dx='0 -21'%3en%3c/tspan%3e%3c/text%3e%3c/svg%3e";
+    this.fastenLogoInlineImage = "data:image/svg+xml,%3csvg version='1.2' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1640 1640' width='1640' height='1640'%3e%3ctitle%3esquare%3c/title%3e%3cstyle%3etspan %7b white-space:pre %7d .s0 %7b fill: white %7d .t1 %7b font-size: 282px%3bfill: %235b47fb%3bfont-weight: 700%3bfont-family: 'Poppins-Bold'%2c 'Poppins' %7d%3c/style%3e%3cpath id='Layer 1' fill-rule='evenodd' class='s0' d='m-90-48h1752v1727h-1752z'/%3e%3ctext id='fh' style='transform: matrix(4.298%2c0%2c0%2c4.298%2c252%2c393)'%3e%3ctspan x='0' y='208.4' class='t1' dx='0'%3ef%3c/tspan%3e%3ctspan y='208.4' class='t1' dx='0'%3eh%3c/tspan%3e%3ctspan y='208.4' class='t1' dx='0'%3e%3c/tspan%3e%3c/text%3e%3c/svg%3e";
+    this.unknownOrganizationInlineImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none'%3E%3Crect width='40' height='40' rx='8' fill='currentColor' /%3E%3Cpath d='M20 12V28M12 20H28' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' /%3E%3Cpath d='M12 12L28 28M28 12L12 28' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' opacity='0.2' /%3E%3C/svg%3E";
+  }
+  loadFallbackOnError() {
+    if (this.path(this.elementRef.nativeElement.src) == this.path(this.fallbackSrc())) {
+      return;
     }
-    let pendingIndex = this.pendingPatientAccounts?.findIndex((pendingAccount) => {
-      return pendingAccount.brand.id == brand_id && pendingAccount.portal.id == portal_id && pendingAccount.endpoint.id == endpoint_id;
-    });
-    if (pendingIndex != -1) {
-      let pendingAccount = this.pendingPatientAccounts?.splice(pendingIndex, 1)[0];
-      this.connectedPatientAccounts?.push({ org_connection_id, connection_status, platform_type, brand: pendingAccount.brand, portal: pendingAccount.portal, endpoint: pendingAccount.endpoint });
+    this.elementRef.nativeElement.src = this.fallbackSrc();
+  }
+  fallbackSrc() {
+    if (this.imageFallback === "hospital") {
+      return this.hospitalInlineImage;
+    } else if (this.imageFallback === "office") {
+      return this.officeInlineImage;
+    } else if (this.imageFallback === "fasten") {
+      return this.fastenSquareInlineImage;
+    } else if (this.imageFallback === "fasten-logo") {
+      return this.fastenLogoInlineImage;
+    } else if (this.imageFallback == "unknown-organization") {
+      return this.unknownOrganizationInlineImage;
     } else {
-      console.error("NOT SUPPORTED: could not find the brand, portal, endpoint information by ID");
+      return this.imageFallback || DEFAULT_IMAGE_FALLBACK_PATH;
     }
   }
-  addAvailableRecordLocatorAccount(recordLocatorFacility) {
-    if (!this.availableFacilities) {
-      this.availableFacilities = [];
-    }
-    this.availableFacilities?.push(recordLocatorFacility);
+  path(urlString) {
+    return urlString.replace(/^https?:\/\/[^\/]*/, "");
   }
-};
-var vaultConfigDefaults = {
-  publicId: "",
-  apiMode: ApiMode.Test
+  static {
+    this.\u0275fac = function ImageFallbackDirective_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _ImageFallbackDirective)(\u0275\u0275directiveInject(ElementRef));
+    };
+  }
+  static {
+    this.\u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({ type: _ImageFallbackDirective, selectors: [["img", "imageFallback", ""]], hostBindings: function ImageFallbackDirective_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("error", function ImageFallbackDirective_error_HostBindingHandler() {
+          return ctx.loadFallbackOnError();
+        });
+      }
+    }, inputs: { imageFallback: "imageFallback" }, standalone: false });
+  }
 };
 
-// projects/fasten-connect-stitch-embed/src/app/services/config.service.ts
+// projects/shared-library/src/lib/services/config.service.ts
 var import_lodash = __toESM(require_lodash());
 
 // node_modules/vlq/dist/vlq.es.js
@@ -45646,12 +45759,15 @@ LoggerModule.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
   }], null, null);
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/services/config.service.ts
+// projects/shared-library/src/lib/services/config.service.ts
+var defaultSystemConfig = {
+  publicId: "",
+  apiMode: ApiMode.Test
+};
 var ConfigService = class _ConfigService {
   constructor(logger) {
     this.logger = logger;
-    this._defaultSystemConfig = vaultConfigDefaults;
-    this.systemConfigSubject = new BehaviorSubject(this._defaultSystemConfig);
+    this.systemConfigSubject = new BehaviorSubject(defaultSystemConfig);
     this.vaultProfileConfigSubject = new BehaviorSubject(Object.setPrototypeOf({}, VaultProfileConfig.prototype));
     this.searchConfigSubject = new BehaviorSubject({});
   }
@@ -45726,6 +45842,164 @@ var ConfigService = class _ConfigService {
   }
   static {
     this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _ConfigService, factory: _ConfigService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// projects/shared-library/src/lib/models/config/vault-profile-config.ts
+var VaultProfileConfig = class {
+  addPendingAccount(brand, portal, endpoint) {
+    if (!this.pendingPatientAccounts) {
+      this.pendingPatientAccounts = [];
+    }
+    this.pendingPatientAccounts?.push({ brand, portal, endpoint });
+  }
+  addConnectedAccount(org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id) {
+    if (!this.connectedPatientAccounts) {
+      this.connectedPatientAccounts = [];
+    }
+    let pendingIndex = this.pendingPatientAccounts?.findIndex((pendingAccount) => {
+      return pendingAccount.brand.id == brand_id && pendingAccount.portal.id == portal_id && pendingAccount.endpoint.id == endpoint_id;
+    });
+    if (pendingIndex != -1) {
+      let pendingAccount = this.pendingPatientAccounts?.splice(pendingIndex, 1)[0];
+      this.connectedPatientAccounts?.push({ org_connection_id, connection_status, platform_type, brand: pendingAccount.brand, portal: pendingAccount.portal, endpoint: pendingAccount.endpoint });
+    } else {
+      console.error("NOT SUPPORTED: could not find the brand, portal, endpoint information by ID");
+    }
+  }
+  addAvailableRecordLocatorAccount(recordLocatorFacility) {
+    if (!this.availableFacilities) {
+      this.availableFacilities = [];
+    }
+    this.availableFacilities?.push(recordLocatorFacility);
+  }
+};
+
+// projects/shared-library/src/lib/models/fasten/vault-profile.ts
+var VaultProfile = class {
+  constructor() {
+    this.password_confirm = "";
+    this.agree_terms = false;
+  }
+};
+
+// projects/shared-library/src/lib/models/forms/form-health-system-request.ts
+var FormHealthSystemRequest = class {
+  constructor() {
+    this.name = "";
+    this.email = "";
+    this.website = "";
+    this.street_address = "";
+  }
+};
+
+// projects/shared-library/src/lib/models/forms/form-support-request.ts
+var FormSupportRequest = class {
+};
+
+// projects/shared-library/src/lib/models/message-bus/message-bus-event-payload.ts
+var MessageBusEventPayload = class {
+};
+
+// projects/shared-library/src/lib/models/search/search-filter.ts
+var SearchFilter = class {
+  constructor() {
+    this.query = "";
+    this.platformTypes = [];
+    this.categories = [];
+    this.showHidden = false;
+    this.locations = [];
+    this.searchAfter = "";
+    this.fields = [];
+  }
+};
+
+// projects/shared-library/src/lib/utils/post-message.ts
+function waitForOrgConnectionOrTimeout(logger, openedWindow) {
+  logger.info(`waiting for postMessage notification from popup window`);
+  return fromEvent(window, "message").pipe(
+    //throw an error if we wait more than 2 minutes (this will close the window)
+    timeout(ConnectWindowTimeout),
+    //make sure we're only listening to events from the "opened" window.
+    filter((event) => event.source == openedWindow),
+    //after filtering, we should only have one event to handle.
+    first(),
+    map((event) => {
+      logger.info(`received postMessage notification from popup window & sending acknowledgment`);
+      event.source.postMessage(JSON.stringify({ close: true }), event.origin);
+      logger.debug("postmessage data", event.data);
+      let parsedEventData = JSON.parse(event.data);
+      if (parsedEventData.error) {
+        throw new Error(event.data);
+      } else {
+        return parsedEventData;
+      }
+    }),
+    catchError((err) => {
+      openedWindow.self.close();
+      if (err instanceof TimeoutError) {
+        logger.warn(`timed out waiting for notification from popup (${ConnectWindowTimeout / 1e3}s), closing window`);
+        throw new Error(JSON.stringify({ error: "timeout", error_description: "timed out waiting for notification from popup" }));
+      } else {
+        logger.error(`an error occurred while verifying identity, closing window`, err);
+        throw err;
+      }
+      return throwError(err);
+    })
+  );
+}
+
+// projects/shared-library/src/lib/shared-library.service.ts
+var SharedLibraryService = class _SharedLibraryService {
+  constructor() {
+  }
+  static {
+    this.\u0275fac = function SharedLibraryService_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _SharedLibraryService)();
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _SharedLibraryService, factory: _SharedLibraryService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// projects/shared-library/src/lib/shared-library.component.ts
+var SharedLibraryComponent = class _SharedLibraryComponent {
+  constructor() {
+  }
+  ngOnInit() {
+  }
+  static {
+    this.\u0275fac = function SharedLibraryComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _SharedLibraryComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SharedLibraryComponent, selectors: [["lib-shared-library"]], standalone: false, decls: 2, vars: 0, template: function SharedLibraryComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "p");
+        \u0275\u0275text(1, " shared-library works! ");
+        \u0275\u0275elementEnd();
+      }
+    }, encapsulation: 2 });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SharedLibraryComponent, { className: "SharedLibraryComponent", filePath: "projects/shared-library/src/lib/shared-library.component.ts", lineNumber: 13 });
+})();
+
+// projects/shared-library/src/lib/shared-library.module.ts
+var SharedLibraryModule = class _SharedLibraryModule {
+  static {
+    this.\u0275fac = function SharedLibraryModule_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _SharedLibraryModule)();
+    };
+  }
+  static {
+    this.\u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({ type: _SharedLibraryModule });
+  }
+  static {
+    this.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({});
   }
 };
 
@@ -53730,57 +54004,6 @@ var ReactiveFormsModule = class _ReactiveFormsModule {
   }], null, null);
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/directives/image-fallback.directive.ts
-var DEFAULT_IMAGE_FALLBACK_PATH = "https://cdn.fastenhealth.com/images/no-image.svg";
-var ImageFallbackDirective = class _ImageFallbackDirective {
-  constructor(elementRef) {
-    this.elementRef = elementRef;
-    this.hospitalInlineImage = "data:image/svg+xml,%3csvg id='connecting-system-logo-placeholder' xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='text-gray-400'%3e%3cpath d='M12 6v4'/%3e%3cpath d='M14 14h-4'/%3e%3cpath d='M14 18h-4'/%3e%3cpath d='M14 8h-4'/%3e%3cpath d='M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2'/%3e%3cpath d='M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18'/%3e%3c/svg%3e";
-    this.officeInlineImage = "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-building-2 w-10 h-10 text-gray-400'%3e%3cpath d='M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z'/%3e%3cpath d='M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2'/%3e%3cpath d='M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2'/%3e%3cpath d='M10 6h4'/%3e%3cpath d='M10 10h4'/%3e%3cpath d='M10 14h4'/%3e%3cpath d='M10 18h4'/%3e%3c/svg%3e";
-    this.fastenSquareInlineImage = "data:image/svg+xml,%3csvg version='1.2' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1640 1640' width='1640' height='1640'%3e%3ctitle%3esquare%3c/title%3e%3cstyle%3etspan %7b white-space:pre %7d .s0 %7b fill: white %7d .t1 %7b font-size: 400px%3bfill: %235b47fb%3bfont-weight: 700%3bfont-family: 'Poppins-Bold'%2c 'Poppins' %7d%3c/style%3e%3cpath id='Layer 1' fill-rule='evenodd' class='s0' d='m-90-48h1752v1727h-1752z'/%3e%3ctext id='fasten' style='transform: matrix(1.356%2c0%2c0%2c1.356%2c8.863%2c630.478)'%3e%3ctspan x='0' y='296' class='t1' dx='0'%3ef%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3ea%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3es%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3et%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3ee%3c/tspan%3e%3ctspan y='296' class='t1' dx='0 -21'%3en%3c/tspan%3e%3c/text%3e%3c/svg%3e";
-    this.fastenLogoInlineImage = "data:image/svg+xml,%3csvg version='1.2' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1640 1640' width='1640' height='1640'%3e%3ctitle%3esquare%3c/title%3e%3cstyle%3etspan %7b white-space:pre %7d .s0 %7b fill: white %7d .t1 %7b font-size: 282px%3bfill: %235b47fb%3bfont-weight: 700%3bfont-family: 'Poppins-Bold'%2c 'Poppins' %7d%3c/style%3e%3cpath id='Layer 1' fill-rule='evenodd' class='s0' d='m-90-48h1752v1727h-1752z'/%3e%3ctext id='fh' style='transform: matrix(4.298%2c0%2c0%2c4.298%2c252%2c393)'%3e%3ctspan x='0' y='208.4' class='t1' dx='0'%3ef%3c/tspan%3e%3ctspan y='208.4' class='t1' dx='0'%3eh%3c/tspan%3e%3ctspan y='208.4' class='t1' dx='0'%3e%3c/tspan%3e%3c/text%3e%3c/svg%3e";
-    this.unknownOrganizationInlineImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none'%3E%3Crect width='40' height='40' rx='8' fill='currentColor' /%3E%3Cpath d='M20 12V28M12 20H28' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' /%3E%3Cpath d='M12 12L28 28M28 12L12 28' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' opacity='0.2' /%3E%3C/svg%3E";
-  }
-  loadFallbackOnError() {
-    if (this.path(this.elementRef.nativeElement.src) == this.path(this.fallbackSrc())) {
-      return;
-    }
-    this.elementRef.nativeElement.src = this.fallbackSrc();
-  }
-  fallbackSrc() {
-    if (this.imageFallback === "hospital") {
-      return this.hospitalInlineImage;
-    } else if (this.imageFallback === "office") {
-      return this.officeInlineImage;
-    } else if (this.imageFallback === "fasten") {
-      return this.fastenSquareInlineImage;
-    } else if (this.imageFallback === "fasten-logo") {
-      return this.fastenLogoInlineImage;
-    } else if (this.imageFallback == "unknown-organization") {
-      return this.unknownOrganizationInlineImage;
-    } else {
-      return this.imageFallback || DEFAULT_IMAGE_FALLBACK_PATH;
-    }
-  }
-  path(urlString) {
-    return urlString.replace(/^https?:\/\/[^\/]*/, "");
-  }
-  static {
-    this.\u0275fac = function ImageFallbackDirective_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _ImageFallbackDirective)(\u0275\u0275directiveInject(ElementRef));
-    };
-  }
-  static {
-    this.\u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({ type: _ImageFallbackDirective, selectors: [["img", "imageFallback", ""]], hostBindings: function ImageFallbackDirective_HostBindings(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275listener("error", function ImageFallbackDirective_error_HostBindingHandler() {
-          return ctx.loadFallbackOnError();
-        });
-      }
-    }, inputs: { imageFallback: "imageFallback" }, standalone: false });
-  }
-};
-
 // projects/fasten-connect-stitch-embed/src/app/components/spinner/spinner.component.ts
 var SpinnerComponent = class _SpinnerComponent {
   constructor() {
@@ -55466,9 +55689,8 @@ var DeviceDetectorService = class _DeviceDetectorService {
   }], null);
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/services/vault.service.ts
-var ConnectWindowTimeout2 = 20 * 60 * 1e3;
-var VaultService = class _VaultService {
+// projects/fasten-connect-stitch-embed/src/app/services/fasten.service.ts
+var FastenService = class _FastenService {
   constructor(_httpClient, deviceService, configService, logger) {
     this._httpClient = _httpClient;
     this.deviceService = deviceService;
@@ -55484,51 +55706,6 @@ var VaultService = class _VaultService {
         });
       }
     });
-  }
-  // waitForOrgConnectionOrTimeout will listen to the child popup window handler for events (via the postMessage API).
-  // it will close if the popup window sends  close message, an error message or the timeout is reached.
-  // A successful connection will return a OrganizationConnectionCallbackEvent
-  //
-  // This function must be ".subscribed()" to work. If not, the handler will not be registered and messages will be ignored.
-  // errors will be thrown if the connection is not completed during the timeout period. An error will also be thrown if the payload is an error.
-  // new Error('{"error":"error_code","error_description":"error message"}')
-  // Use `var errData = JSON.parse(err.toString())` parse the JSON payload from errors generated by this function.
-  //
-  // It would be ideal if we could also listen to window close events when the user manually closed the window.
-  // However, due to browser cross-origin limitations, it is not possible to do this.
-  // see: https://stackoverflow.com/questions/5712195/how-to-listen-for-child-window-closing
-  waitForOrgConnectionOrTimeout(openedWindow) {
-    this.logger.info(`waiting for postMessage notification from popup window`);
-    return fromEvent(window, "message").pipe(
-      //throw an error if we wait more than 2 minutes (this will close the window)
-      timeout(ConnectWindowTimeout2),
-      //make sure we're only listening to events from the "opened" window.
-      filter((event) => event.source == openedWindow),
-      //after filtering, we should only have one event to handle.
-      first(),
-      map((event) => {
-        this.logger.info(`received postMessage notification from popup window & sending acknowledgment`);
-        event.source.postMessage(JSON.stringify({ close: true }), event.origin);
-        this.logger.debug("postmessage data", event.data);
-        let parsedEventData = JSON.parse(event.data);
-        if (parsedEventData.error) {
-          throw new Error(event.data);
-        } else {
-          return parsedEventData;
-        }
-      }),
-      catchError((err) => {
-        openedWindow.self.close();
-        if (err instanceof TimeoutError) {
-          this.logger.warn(`timed out waiting for notification from popup (${ConnectWindowTimeout2 / 1e3}s), closing window`);
-          throw new Error(JSON.stringify({ error: "timeout", error_description: "timed out waiting for notification from popup" }));
-        } else {
-          this.logger.error(`an error occurred while verifying identity, closing window`, err);
-          throw err;
-        }
-        return throwError(err);
-      })
-    );
   }
   getRecordLocatorFacilities() {
     return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
@@ -55587,7 +55764,7 @@ var VaultService = class _VaultService {
       return {};
     }));
   }
-  // public verificationWithPopup(publicId: string, brandId: string, portalId: string, endpointId: string, reconnectOrgConnectionId?: string, connectMode?: ConnectMode, externalId?: string, externalState?: string): Observable<OrganizationConnectionCallbackEvent> {
+  // public verificationWithPopup(publicId: string, brandId: string, portalId: string, endpointId: string, reconnectOrgConnectionId?: string, connectMode?: ConnectMode, externalId?: string, externalState?: string): Observable<CallbackPayload> {
   verificationWithPopup() {
     const redirectUrl = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
     redirectUrl.searchParams.set("public_id", this.configService.systemConfig$.publicId);
@@ -55597,7 +55774,7 @@ var VaultService = class _VaultService {
       features = "popup=true,width=700,height=600";
     }
     let openedWindow = window.open(redirectUrl.toString(), "_blank", features);
-    return this.waitForOrgConnectionOrTimeout(openedWindow);
+    return waitForOrgConnectionOrTimeout(this.logger, openedWindow);
   }
   accountConnectWithPopup(brandId, portalId, endpointId, reconnectOrgConnectionId, externalId, externalState) {
     const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/connect`);
@@ -55624,15 +55801,15 @@ var VaultService = class _VaultService {
       features = "popup=true,width=700,height=600";
     }
     let openedWindow = window.open(redirectUrlParts.toString(), "_blank", features);
-    return this.waitForOrgConnectionOrTimeout(openedWindow);
+    return waitForOrgConnectionOrTimeout(this.logger, openedWindow);
   }
   static {
-    this.\u0275fac = function VaultService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _VaultService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
+    this.\u0275fac = function FastenService_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FastenService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
     };
   }
   static {
-    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _VaultService, factory: _VaultService.\u0275fac, providedIn: "root" });
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _FastenService, factory: _FastenService.\u0275fac, providedIn: "root" });
   }
 };
 
@@ -55645,8 +55822,8 @@ function IdentityVerificationComponent_div_19_Template(rf, ctx) {
   }
 }
 var IdentityVerificationComponent = class _IdentityVerificationComponent {
-  constructor(vaultService, router, logger) {
-    this.vaultService = vaultService;
+  constructor(fastenService, router, logger) {
+    this.fastenService = fastenService;
     this.router = router;
     this.logger = logger;
     this.loading = false;
@@ -55656,7 +55833,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   }
   verifyIdentity() {
     this.loading = true;
-    this.vaultService.verificationWithPopup().subscribe((result) => {
+    this.fastenService.verificationWithPopup().subscribe((result) => {
       this.loading = false;
       this.logger.info("verification result", result);
       this.router.navigateByUrl("dashboard");
@@ -55680,7 +55857,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   }
   static {
     this.\u0275fac = function IdentityVerificationComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _IdentityVerificationComponent)(\u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _IdentityVerificationComponent)(\u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -55724,10 +55901,6 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 12 });
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/models/event-payload.ts
-var EventPayload = class {
-};
-
 // projects/fasten-connect-stitch-embed/src/app/services/message-bus.service.ts
 var MessageBusService = class _MessageBusService {
   constructor(configService) {
@@ -55735,14 +55908,14 @@ var MessageBusService = class _MessageBusService {
     this.messageBusSubject = new BehaviorSubject(null);
   }
   publishWidgetConfigError() {
-    let eventPayload = new EventPayload();
+    let eventPayload = new MessageBusEventPayload();
     eventPayload.api_mode = this.configService.systemConfig$.apiMode;
     eventPayload.event_type = EventTypes.EventTypeWidgetConfigError;
     this.messageBusSubject.next(eventPayload);
   }
   //this event is published when the popup window is opened.
   publishOrgConnectionPending(pendingConnectData) {
-    let eventPayload = new EventPayload();
+    let eventPayload = new MessageBusEventPayload();
     eventPayload.api_mode = this.configService.systemConfig$.apiMode;
     eventPayload.data = pendingConnectData;
     eventPayload.event_type = EventTypes.EventTypeConnectionPending;
@@ -55750,7 +55923,7 @@ var MessageBusService = class _MessageBusService {
   }
   //this event is published when the popup window is closed, and the connection is successful or failed.
   publishOrgConnectionComplete(orgConnectionCallbackData) {
-    let eventPayload = new EventPayload();
+    let eventPayload = new MessageBusEventPayload();
     eventPayload.api_mode = this.configService.systemConfig$.apiMode;
     eventPayload.data = orgConnectionCallbackData;
     if (orgConnectionCallbackData.error) {
@@ -55762,7 +55935,7 @@ var MessageBusService = class _MessageBusService {
   }
   //this event is published when the widget is closed. It will publish a list of all
   publishComplete() {
-    let eventPayload = new EventPayload();
+    let eventPayload = new MessageBusEventPayload();
     eventPayload.api_mode = this.configService.systemConfig$.apiMode;
     eventPayload.data = this.configService.vaultProfileConfig$.connectedPatientAccounts?.map((account) => {
       return {
@@ -55848,8 +56021,7 @@ function DashboardComponent_div_12_Template(rf, ctx) {
   }
 }
 var DashboardComponent = class _DashboardComponent {
-  constructor(vaultService, configService, router, messageBus, logger) {
-    this.vaultService = vaultService;
+  constructor(configService, router, messageBus, logger) {
     this.configService = configService;
     this.router = router;
     this.messageBus = messageBus;
@@ -55874,7 +56046,7 @@ var DashboardComponent = class _DashboardComponent {
   }
   static {
     this.\u0275fac = function DashboardComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -55943,21 +56115,8 @@ var DashboardComponent = class _DashboardComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 18 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 17 });
 })();
-
-// projects/fasten-connect-stitch-embed/src/app/models/search-filter.ts
-var SearchFilter = class {
-  constructor() {
-    this.query = "";
-    this.platformTypes = [];
-    this.categories = [];
-    this.showHidden = false;
-    this.locations = [];
-    this.searchAfter = "";
-    this.fields = [];
-  }
-};
 
 // node_modules/ngx-infinite-scroll/fesm2022/ngx-infinite-scroll.mjs
 function resolveContainerElement(selector, scrollWindow, defaultElement, fromRoot) {
@@ -56466,110 +56625,6 @@ var InfiniteScrollModule = class _InfiniteScrollModule {
   }], null, null);
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/pipes/safe-html.pipe.ts
-var SafeHtmlPipe = class _SafeHtmlPipe {
-  constructor(sanitizer) {
-    this.sanitizer = sanitizer;
-  }
-  transform(value, args) {
-    return this.sanitizer.bypassSecurityTrustHtml(value);
-  }
-  static {
-    this.\u0275fac = function SafeHtmlPipe_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _SafeHtmlPipe)(\u0275\u0275directiveInject(DomSanitizer, 16));
-    };
-  }
-  static {
-    this.\u0275pipe = /* @__PURE__ */ \u0275\u0275definePipe({ name: "safeHtml", type: _SafeHtmlPipe, pure: true, standalone: false });
-  }
-};
-
-// projects/fasten-connect-stitch-embed/src/app/pipes/state-name.pipe.ts
-var StateNamePipe = class _StateNamePipe {
-  constructor() {
-    this.stateCodes = {
-      //CUSTOM
-      "ALL": "Nationwide",
-      //2 letter state codes.
-      "AL": "Alabama",
-      "AK": "Alaska",
-      "AZ": "Arizona",
-      "AR": "Arkansas",
-      "CA": "California",
-      "CO": "Colorado",
-      "CT": "Connecticut",
-      "DE": "Delaware",
-      "FL": "Florida",
-      "GA": "Georgia",
-      "HI": "Hawaii",
-      "ID": "Idaho",
-      "IL": "Illinois",
-      "IN": "Indiana",
-      "IA": "Iowa",
-      "KS": "Kansas",
-      "KY": "Kentucky",
-      "LA": "Louisiana",
-      "ME": "Maine",
-      "MD": "Maryland",
-      "MA": "Massachusetts",
-      "MI": "Michigan",
-      "MN": "Minnesota",
-      "MS": "Mississippi",
-      "MO": "Missouri",
-      "MT": "Montana",
-      "NE": "Nebraska",
-      "NV": "Nevada",
-      "NH": "New Hampshire",
-      "NJ": "New Jersey",
-      "NM": "New Mexico",
-      "NY": "New York",
-      "NC": "North Carolina",
-      "ND": "North Dakota",
-      "OH": "Ohio",
-      "OK": "Oklahoma",
-      "OR": "Oregon",
-      "PA": "Pennsylvania",
-      "RI": "Rhode Island",
-      "SC": "South Carolina",
-      "SD": "South Dakota",
-      "TN": "Tennessee",
-      "TX": "Texas",
-      "UT": "Utah",
-      "VT": "Vermont",
-      "VA": "Virginia",
-      "WA": "Washington",
-      "WV": "West Virginia",
-      "WI": "Wisconsin",
-      "WY": "Wyoming",
-      // Territories
-      "AS": "American Samoa",
-      "DC": "District of Columbia",
-      "FM": "Federated States of Micronesia",
-      "GU": "Guam",
-      "MH": "Marshall Islands",
-      "MP": "Northern Mariana Islands",
-      "PW": "Palau",
-      "PR": "Puerto Rico",
-      "VI": "Virgin Islands",
-      // Armed Forces (AE includes Europe, Africa, Canada, and the Middle East)
-      "AA": "Armed Forces Americas",
-      "AE": "Armed Forces Europe",
-      "AP": "Armed Forces Pacific"
-    };
-  }
-  transform(value) {
-    return this.stateCodes[value] || value;
-  }
-  static {
-    this.\u0275fac = function StateNamePipe_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _StateNamePipe)();
-    };
-  }
-  static {
-    this.\u0275pipe = /* @__PURE__ */ \u0275\u0275definePipe({ name: "stateName", type: _StateNamePipe, pure: true, standalone: false });
-  }
-};
-
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts
 var _c03 = () => [];
 function HealthSystemSearchComponent_div_7_Template(rf, ctx) {
@@ -56726,8 +56781,8 @@ function HealthSystemSearchComponent_div_18_Template(rf, ctx) {
   }
 }
 var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
-  constructor(vaultServiceApi, configService, router, logger) {
-    this.vaultServiceApi = vaultServiceApi;
+  constructor(fastenService, configService, router, logger) {
+    this.fastenService = fastenService;
     this.configService = configService;
     this.router = router;
     this.logger = logger;
@@ -56760,7 +56815,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     }
     this.filter.fields = ["*"];
     this.loading = true;
-    var searchObservable = this.vaultServiceApi.searchCatalogBrands(this.configService.systemConfig$.apiMode, this.filter);
+    var searchObservable = this.fastenService.searchCatalogBrands(this.configService.systemConfig$.apiMode, this.filter);
     searchObservable.subscribe((wrapper) => {
       this.logger.info("search sources", wrapper);
       this.resultLimits.totalItems = wrapper?.hits?.total.value || 0;
@@ -56809,7 +56864,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
   }
   static {
     this.\u0275fac = function HealthSystemSearchComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _HealthSystemSearchComponent)(\u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _HealthSystemSearchComponent)(\u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -57124,7 +57179,7 @@ var v4_default = v4;
 
 // projects/fasten-connect-stitch-embed/src/app/utils/connect-helper.ts
 function ConnectHelper(connectData) {
-  const vaultApi = inject(VaultService);
+  const vaultApi = inject(FastenService);
   const configService = inject(ConfigService);
   const router = inject(Router);
   const messageBusService = inject(MessageBusService);
@@ -57345,16 +57400,6 @@ var CompleteComponent = class _CompleteComponent {
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(CompleteComponent, { className: "CompleteComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/complete/complete.component.ts", lineNumber: 10 });
 })();
-
-// projects/fasten-connect-stitch-embed/src/app/models/forms/form-health-system-request.ts
-var FormHealthSystemRequest = class {
-  constructor() {
-    this.name = "";
-    this.email = "";
-    this.website = "";
-    this.street_address = "";
-  }
-};
 
 // projects/fasten-connect-stitch-embed/src/app/pages/form-health-system-request/form-health-system-request.component.ts
 function FormHealthSystemRequestComponent_form_7_p_15_span_1_Template(rf, ctx) {
@@ -57628,7 +57673,7 @@ var FormHealthSystemRequestComponent = class _FormHealthSystemRequestComponent {
   }
   static {
     this.\u0275fac = function FormHealthSystemRequestComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _FormHealthSystemRequestComponent)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(VaultService));
+      return new (__ngFactoryType__ || _FormHealthSystemRequestComponent)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(FastenService));
     };
   }
   static {
@@ -57660,10 +57705,6 @@ var FormHealthSystemRequestComponent = class _FormHealthSystemRequestComponent {
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormHealthSystemRequestComponent, { className: "FormHealthSystemRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-health-system-request/form-health-system-request.component.ts", lineNumber: 13 });
 })();
-
-// projects/fasten-connect-stitch-embed/src/app/models/forms/form-support-request.ts
-var FormSupportRequest = class {
-};
 
 // projects/fasten-connect-stitch-embed/src/app/pages/form-support-request/form-support-request.component.ts
 function FormSupportRequestComponent_form_7_app_spinner_27_Template(rf, ctx) {
@@ -57768,9 +57809,8 @@ function FormSupportRequestComponent_ng_template_8_Template(rf, ctx) {
   }
 }
 var FormSupportRequestComponent = class _FormSupportRequestComponent {
-  constructor(router, configService, vaultApi) {
+  constructor(router, vaultApi) {
     this.router = router;
-    this.configService = configService;
     this.vaultApi = vaultApi;
     this.formSupportRequest = {};
     this.loading = false;
@@ -57813,7 +57853,7 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
   }
   static {
     this.\u0275fac = function FormSupportRequestComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _FormSupportRequestComponent)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(VaultService));
+      return new (__ngFactoryType__ || _FormSupportRequestComponent)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(FastenService));
     };
   }
   static {
@@ -57843,7 +57883,7 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormSupportRequestComponent, { className: "FormSupportRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-support-request/form-support-request.component.ts", lineNumber: 13 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormSupportRequestComponent, { className: "FormSupportRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-support-request/form-support-request.component.ts", lineNumber: 12 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/auth-guards/is-authenticated-auth-guard.ts
@@ -57856,7 +57896,7 @@ var IsAuthenticatedAuthGuard = class _IsAuthenticatedAuthGuard {
   }
   canActivate(route, state) {
     return __async(this, null, function* () {
-      if (this.configService.systemConfig$.anonymousVaultProfile) {
+      if (this.configService.systemConfig$.searchOnly) {
         return Promise.resolve(true);
       }
       return this.authService.GetJWTPayload().then((jwtPayload) => {
@@ -57908,7 +57948,7 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
       };
       if ((this.configService.vaultProfileConfig$.identityVerificationFailureCount || 0) >= 2) {
         this.configService.systemConfig = __spreadProps(__spreadValues({}, this.configService.systemConfig$), {
-          anonymousVaultProfile: true
+          searchOnly: true
         });
         this.router.navigateByUrl("search");
       }
@@ -57983,6 +58023,8 @@ var routes = [
   { path: "form/healthsystem", component: FormHealthSystemRequestComponent },
   { path: "form/support", component: FormSupportRequestComponent },
   { path: "", redirectTo: "/auth/signin", pathMatch: "full" },
+  //TESTING ONLY - REMOVE, DOES NOTHING, JUST TO VERIFY THAT THE LIBRARY IS LOADED
+  { path: "sharedlib", component: SharedLibraryComponent },
   //must be at bottom of list
   { path: "**", redirectTo: "auth/signin" }
 ];
@@ -58059,20 +58101,20 @@ var AppComponent = class _AppComponent {
     this.externalId = urlParams.get("external-id") || "";
     this.externalState = urlParams.get("external-state") || "";
     this.reconnectOrgConnectionId = urlParams.get("reconnect-org-connection-id") || "";
-    this.anonymousVaultProfile = urlParams.get("anonymous-vault-profile") == "true";
+    this.searchOnly = urlParams.get("search-only") == "true";
     this.staticBackdrop = urlParams.get("static-backdrop") == "true";
   }
-  constructor(activatedRoute, configService, messageBus, vaultService, router, logger) {
+  constructor(activatedRoute, configService, messageBus, fastenService, router, logger) {
     this.activatedRoute = activatedRoute;
     this.configService = configService;
     this.messageBus = messageBus;
-    this.vaultService = vaultService;
+    this.fastenService = fastenService;
     this.router = router;
     this.logger = logger;
     this.publicId = "";
     this.externalId = "";
     this.externalState = "";
-    this.anonymousVaultProfile = false;
+    this.searchOnly = false;
     this.staticBackdrop = false;
   }
   ngOnInit() {
@@ -58085,14 +58127,14 @@ var AppComponent = class _AppComponent {
       externalId: this.externalId,
       reconnectOrgConnectionId: this.reconnectOrgConnectionId,
       staticBackdrop: this.staticBackdrop,
-      anonymousVaultProfile: this.anonymousVaultProfile
+      searchOnly: this.searchOnly
     };
     this.messageBus.messageBusSubject.subscribe((eventPayload) => {
       this.logger.debug("bubbling up event", eventPayload);
       this.sendPostMessage(eventPayload);
     });
     if (this.reconnectOrgConnectionId) {
-      this.vaultService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
+      this.fastenService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
         this.logger.info("Reconnect Org Connection", orgConnection);
         this.router.navigate(["dashboard/connecting"], {
           queryParams: {
@@ -58109,7 +58151,7 @@ var AppComponent = class _AppComponent {
         this.logger.error("Invalid Fasten Connect Connection ID", err);
       });
     } else {
-      if (this.anonymousVaultProfile) {
+      if (this.searchOnly) {
         this.router.navigateByUrl("search");
       }
     }
@@ -58130,7 +58172,7 @@ var AppComponent = class _AppComponent {
       return apiMode;
     } else {
       this.errorMessage = "";
-      this.vaultService.getOrgByPublicId(this.publicId).subscribe((org) => {
+      this.fastenService.getOrgByPublicId(this.publicId).subscribe((org) => {
         this.logger.info("Fasten Connect registration", org);
         this.configService.systemConfig = {
           org
@@ -58166,7 +58208,7 @@ var AppComponent = class _AppComponent {
   }
   static {
     this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(VaultService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -58176,7 +58218,7 @@ var AppComponent = class _AppComponent {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], anonymousVaultProfile: [0, "anonymous-vault-profile", "anonymousVaultProfile"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"] }, standalone: false, decls: 6, vars: 5, consts: [["errorMessagePanel", ""], ["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], ["id", "widget-container", "class", "w-full p-6 min-h-96", 4, "ngIf", "ngIfElse"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], searchOnly: [0, "search-only", "searchOnly"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"] }, standalone: false, decls: 6, vars: 5, consts: [["errorMessagePanel", ""], ["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], ["id", "widget-container", "class", "w-full p-6 min-h-96", 4, "ngIf", "ngIfElse"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275element(0, "link", 1);
         \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 2);
