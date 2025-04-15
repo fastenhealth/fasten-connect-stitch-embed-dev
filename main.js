@@ -45845,6 +45845,72 @@ var ConfigService = class _ConfigService {
   }
 };
 
+// projects/shared-library/src/lib/services/message-bus.service.ts
+var MessageBusService = class _MessageBusService {
+  constructor(configService) {
+    this.configService = configService;
+    this.messageBusSubject = new BehaviorSubject(null);
+  }
+  //notify the parent element that we could not register Fasten Connect installation: missing or invalid id
+  publishWidgetConfigError() {
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.event_type = EventTypes.EventTypeWidgetConfigError;
+    this.messageBusSubject.next(eventPayload);
+  }
+  //this event is published when the popup window is opened.
+  publishOrgConnectionPending(pendingConnectData) {
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.data = pendingConnectData;
+    eventPayload.event_type = EventTypes.EventTypeConnectionPending;
+    this.messageBusSubject.next(eventPayload);
+  }
+  //this event is published when the popup window is closed, and the connection is successful or failed.
+  publishOrgConnectionComplete(orgConnectionCallbackData) {
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.data = orgConnectionCallbackData;
+    if (orgConnectionCallbackData.error) {
+      eventPayload.event_type = EventTypes.EventTypeConnectionFailed;
+    } else {
+      eventPayload.event_type = EventTypes.EventTypeConnectionSuccess;
+    }
+    this.messageBusSubject.next(eventPayload);
+  }
+  //this event is published when the widget is closed. It will publish a list of all
+  publishComplete() {
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.data = this.configService.vaultProfileConfig$.connectedPatientAccounts?.map((account) => {
+      return {
+        org_connection_id: account.org_connection_id,
+        platform_type: account.platform_type,
+        brand_id: account.brand?.id,
+        portal_id: account.portal?.id,
+        endpoint_id: account.endpoint?.id
+      };
+    }) || {};
+    eventPayload.event_type = EventTypes.EventTypeWidgetComplete;
+    this.messageBusSubject.next(eventPayload);
+  }
+  //this event is published when the widget requests to close the modal.
+  publishRequestClose() {
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.event_type = EventTypes.EventTypeWidgetClose;
+    this.messageBusSubject.next(eventPayload);
+  }
+  static {
+    this.\u0275fac = function MessageBusService_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _MessageBusService)(\u0275\u0275inject(ConfigService));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _MessageBusService, factory: _MessageBusService.\u0275fac, providedIn: "root" });
+  }
+};
+
 // projects/shared-library/src/lib/models/config/vault-profile-config.ts
 var VaultProfileConfig = class {
   addPendingAccount(brand, portal, endpoint) {
@@ -55901,64 +55967,6 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 12 });
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/services/message-bus.service.ts
-var MessageBusService = class _MessageBusService {
-  constructor(configService) {
-    this.configService = configService;
-    this.messageBusSubject = new BehaviorSubject(null);
-  }
-  publishWidgetConfigError() {
-    let eventPayload = new MessageBusEventPayload();
-    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
-    eventPayload.event_type = EventTypes.EventTypeWidgetConfigError;
-    this.messageBusSubject.next(eventPayload);
-  }
-  //this event is published when the popup window is opened.
-  publishOrgConnectionPending(pendingConnectData) {
-    let eventPayload = new MessageBusEventPayload();
-    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
-    eventPayload.data = pendingConnectData;
-    eventPayload.event_type = EventTypes.EventTypeConnectionPending;
-    this.messageBusSubject.next(eventPayload);
-  }
-  //this event is published when the popup window is closed, and the connection is successful or failed.
-  publishOrgConnectionComplete(orgConnectionCallbackData) {
-    let eventPayload = new MessageBusEventPayload();
-    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
-    eventPayload.data = orgConnectionCallbackData;
-    if (orgConnectionCallbackData.error) {
-      eventPayload.event_type = EventTypes.EventTypeConnectionFailed;
-    } else {
-      eventPayload.event_type = EventTypes.EventTypeConnectionSuccess;
-    }
-    this.messageBusSubject.next(eventPayload);
-  }
-  //this event is published when the widget is closed. It will publish a list of all
-  publishComplete() {
-    let eventPayload = new MessageBusEventPayload();
-    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
-    eventPayload.data = this.configService.vaultProfileConfig$.connectedPatientAccounts?.map((account) => {
-      return {
-        org_connection_id: account.org_connection_id,
-        platform_type: account.platform_type,
-        brand_id: account.brand?.id,
-        portal_id: account.portal?.id,
-        endpoint_id: account.endpoint?.id
-      };
-    }) || {};
-    eventPayload.event_type = EventTypes.EventTypeWidgetComplete;
-    this.messageBusSubject.next(eventPayload);
-  }
-  static {
-    this.\u0275fac = function MessageBusService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _MessageBusService)(\u0275\u0275inject(ConfigService));
-    };
-  }
-  static {
-    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _MessageBusService, factory: _MessageBusService.\u0275fac, providedIn: "root" });
-  }
-};
-
 // projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts
 var _c02 = () => [];
 function DashboardComponent_div_10_Template(rf, ctx) {
@@ -57356,18 +57364,22 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
 
 // projects/fasten-connect-stitch-embed/src/app/pages/complete/complete.component.ts
 var CompleteComponent = class _CompleteComponent {
-  constructor(configService) {
+  constructor(configService, messageBus) {
     this.configService = configService;
+    this.messageBus = messageBus;
   }
   ngOnInit() {
   }
+  closeModal() {
+    this.messageBus.publishRequestClose();
+  }
   static {
     this.\u0275fac = function CompleteComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _CompleteComponent)(\u0275\u0275directiveInject(ConfigService));
+      return new (__ngFactoryType__ || _CompleteComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _CompleteComponent, selectors: [["app-complete"]], standalone: false, decls: 15, vars: 3, consts: [["id", "step-completion", 1, "text-center", "space-y-6"], [1, "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "space-y-2"], [1, "text-2xl", "font-bold"], [1, "text-gray-600"], ["id", "completion-close", 1, "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md"]], template: function CompleteComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _CompleteComponent, selectors: [["app-complete"]], standalone: false, decls: 15, vars: 3, consts: [["id", "step-completion", 1, "text-center", "space-y-6"], [1, "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "space-y-2"], [1, "text-2xl", "font-bold"], [1, "text-gray-600"], ["id", "completion-close", 1, "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", 3, "click"]], template: function CompleteComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h1", 2);
         \u0275\u0275text(3, "fasten");
@@ -57386,6 +57398,9 @@ var CompleteComponent = class _CompleteComponent {
         \u0275\u0275pipe(12, "async");
         \u0275\u0275elementEnd()();
         \u0275\u0275elementStart(13, "button", 9);
+        \u0275\u0275listener("click", function CompleteComponent_Template_button_click_13_listener() {
+          return ctx.closeModal();
+        });
         \u0275\u0275text(14, " Close ");
         \u0275\u0275elementEnd()();
       }
