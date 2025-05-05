@@ -55975,14 +55975,14 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
 var _c02 = () => [];
 function DashboardComponent_div_10_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 20)(1, "button", 21);
+    \u0275\u0275elementStart(0, "div", 24)(1, "button", 25);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 22);
-    \u0275\u0275element(3, "path", 23);
+    \u0275\u0275elementStart(2, "svg", 26);
+    \u0275\u0275element(3, "path", 27);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275element(4, "img", 24);
-    \u0275\u0275elementStart(5, "div", 25)(6, "p", 26);
+    \u0275\u0275element(4, "img", 28);
+    \u0275\u0275elementStart(5, "div", 29)(6, "p", 30);
     \u0275\u0275text(7);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(8, "p", 5);
@@ -56001,20 +56001,20 @@ function DashboardComponent_div_10_Template(rf, ctx) {
 function DashboardComponent_div_12_Template(rf, ctx) {
   if (rf & 1) {
     const _r2 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 20)(1, "div", 27);
+    \u0275\u0275elementStart(0, "div", 24)(1, "div", 31);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 28);
-    \u0275\u0275element(3, "path", 29)(4, "line", 30)(5, "line", 31);
+    \u0275\u0275elementStart(2, "svg", 32);
+    \u0275\u0275element(3, "path", 33)(4, "line", 34)(5, "line", 35);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275element(6, "img", 32);
-    \u0275\u0275elementStart(7, "div", 25)(8, "p", 26);
+    \u0275\u0275element(6, "img", 36);
+    \u0275\u0275elementStart(7, "div", 29)(8, "p", 30);
     \u0275\u0275text(9);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(10, "p", 5);
     \u0275\u0275text(11, "Sign in required");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(12, "a", 33);
+    \u0275\u0275elementStart(12, "a", 37);
     \u0275\u0275listener("click", function DashboardComponent_div_12_Template_a_click_12_listener() {
       const pendingAccount_r3 = \u0275\u0275restoreView(_r2).$implicit;
       const ctx_r3 = \u0275\u0275nextContext();
@@ -56062,7 +56062,7 @@ var DashboardComponent = class _DashboardComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], standalone: false, decls: 32, vars: 13, consts: [["id", "step-connecting-systems", 1, "space-y-6"], [1, "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], ["id", "connecting-systems-list", 1, "space-y-3"], ["class", "flex items-center p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all", 4, "ngFor", "ngForOf"], ["id", "search-button", 1, "w-full", "border", "border-gray-200", "rounded-lg", "flex", "justify-between", "items-center", "px-4", "py-3", "text-sm", "font-medium", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "routerLink"], [1, "flex", "items-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", 1, "w-5", "h-5"], ["d", "M21 21l-5.2-5.2m2.2-5.3a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-chevron-right", "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], [1, "flex", "items-center", "justify-between", "pt-4"], [1, "flex", "items-center", "gap-2", "text-sm", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-4", "h-4"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], ["id", "connecting-continue", 1, "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "disabled:opacity-50", 3, "click", "disabled"], [1, "flex", "items-center", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-[#5B47FB]", "bg-[#5B47FB]", "transition-all", "hover:bg-[#4936E8]", "hover:border-[#4936E8]", "animate-scale"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", 1, "w-4", "h-4", "mx-auto", "text-white", "animate-scale"], ["stroke-linecap", "round", "stroke-linejoin", "round", "stroke-width", "2", "d", "M5 13l4 4L19 7"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-4", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "animate-bounce"], ["xmlns", "http://www.w3.org/2000/svg", "width", "20", "height", "20", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "1.5", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "text-amber-500"], ["d", "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"], ["x1", "12", "y1", "9", "x2", "12", "y2", "13"], ["x1", "12", "y1", "17", "x2", "12.01", "y2", "17"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-3", "rounded", 3, "src", "alt"], [1, "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "px-4", "py-1.5", "rounded-lg", "text-sm", "font-medium", "transition-colors", 3, "click"]], template: function DashboardComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], standalone: false, decls: 44, vars: 19, consts: [["id", "step-connecting-systems", 1, "space-y-6"], [1, "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], ["id", "connecting-systems-list", 1, "space-y-3"], ["class", "flex items-center p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all", 4, "ngFor", "ngForOf"], ["id", "search-button", 1, "w-full", "border", "border-gray-200", "rounded-lg", "flex", "justify-between", "items-center", "px-4", "py-3", "text-sm", "font-medium", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "routerLink"], [1, "flex", "items-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", 1, "w-5", "h-5"], ["d", "M21 21l-5.2-5.2m2.2-5.3a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-chevron-right", "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], [1, "flex", "items-center", "justify-between", "pt-4"], [1, "flex", "items-center", "gap-2", "text-sm", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-4", "h-4"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], ["id", "connecting-continue", 1, "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "disabled:opacity-50", 3, "click", "disabled"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], [1, "flex", "items-center", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-[#5B47FB]", "bg-[#5B47FB]", "transition-all", "hover:bg-[#4936E8]", "hover:border-[#4936E8]", "animate-scale"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", 1, "w-4", "h-4", "mx-auto", "text-white", "animate-scale"], ["stroke-linecap", "round", "stroke-linejoin", "round", "stroke-width", "2", "d", "M5 13l4 4L19 7"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-4", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "animate-bounce"], ["xmlns", "http://www.w3.org/2000/svg", "width", "20", "height", "20", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "1.5", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "text-amber-500"], ["d", "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"], ["x1", "12", "y1", "9", "x2", "12", "y2", "13"], ["x1", "12", "y1", "17", "x2", "12.01", "y2", "17"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-3", "rounded", 3, "src", "alt"], [1, "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "px-4", "py-1.5", "rounded-lg", "text-sm", "font-medium", "transition-colors", 3, "click"]], template: function DashboardComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h1", 2);
         \u0275\u0275text(3, "fasten");
@@ -56108,20 +56108,41 @@ var DashboardComponent = class _DashboardComponent {
           return ctx.completeAccounts();
         });
         \u0275\u0275text(31, " Continue ");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(32, "p", 20);
+        \u0275\u0275text(33, " By clicking continue you agree to Fasten's ");
+        \u0275\u0275elementStart(34, "a", 21);
+        \u0275\u0275text(35, "Privacy Policy");
+        \u0275\u0275elementEnd();
+        \u0275\u0275text(36, ", ");
+        \u0275\u0275elementStart(37, "a", 22);
+        \u0275\u0275text(38, "Terms & Conditions");
+        \u0275\u0275elementEnd();
+        \u0275\u0275text(39);
+        \u0275\u0275pipe(40, "async");
+        \u0275\u0275elementStart(41, "a", 23);
+        \u0275\u0275pipe(42, "async");
+        \u0275\u0275text(43, "Privacy Policy");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
         let tmp_0_0;
         let tmp_1_0;
         let tmp_3_0;
+        let tmp_4_0;
+        let tmp_5_0;
         \u0275\u0275advance(10);
-        \u0275\u0275property("ngForOf", ((tmp_0_0 = \u0275\u0275pipeBind1(11, 4, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_0_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(10, _c02));
+        \u0275\u0275property("ngForOf", ((tmp_0_0 = \u0275\u0275pipeBind1(11, 6, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_0_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(16, _c02));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", ((tmp_1_0 = \u0275\u0275pipeBind1(13, 6, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_1_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(11, _c02));
+        \u0275\u0275property("ngForOf", ((tmp_1_0 = \u0275\u0275pipeBind1(13, 8, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_1_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(17, _c02));
         \u0275\u0275advance(2);
         \u0275\u0275property("routerLink", "/search");
         \u0275\u0275advance(15);
-        \u0275\u0275property("disabled", !(((tmp_3_0 = \u0275\u0275pipeBind1(30, 8, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(12, _c02)).length);
+        \u0275\u0275property("disabled", !(((tmp_3_0 = \u0275\u0275pipeBind1(30, 10, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(18, _c02)).length);
+        \u0275\u0275advance(10);
+        \u0275\u0275textInterpolate1(" and ", ((tmp_4_0 = \u0275\u0275pipeBind1(40, 12, ctx.configService.systemConfigSubject)) == null ? null : tmp_4_0.org == null ? null : tmp_4_0.org.name) || "Unknown", "'s ");
+        \u0275\u0275advance(2);
+        \u0275\u0275propertyInterpolate("href", (tmp_5_0 = \u0275\u0275pipeBind1(42, 14, ctx.configService.systemConfigSubject)) == null ? null : tmp_5_0.org == null ? null : tmp_5_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
       }
     }, dependencies: [NgForOf, RouterLink, ImageFallbackDirective, AsyncPipe], styles: ["\n\n.blurred[_ngcontent-%COMP%] {\n  filter: blur(3px);\n  filter: url(/assets/blur.svg#gaussian_blur);\n  -webkit-filter: blur(3px);\n}\n/*# sourceMappingURL=dashboard.component.css.map */"] });
   }
