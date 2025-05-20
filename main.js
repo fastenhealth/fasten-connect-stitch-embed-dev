@@ -58232,10 +58232,10 @@ var AppRoutingModule = class _AppRoutingModule {
 // projects/fasten-connect-stitch-embed/src/app/app.component.ts
 function AppComponent_div_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 5);
+    \u0275\u0275elementStart(0, "div", 3);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 6);
-    \u0275\u0275element(2, "rect", 7)(3, "path", 8)(4, "path", 9)(5, "path", 10)(6, "path", 11)(7, "path", 12)(8, "path", 13)(9, "path", 14);
+    \u0275\u0275elementStart(1, "svg", 4);
+    \u0275\u0275element(2, "rect", 5)(3, "path", 6)(4, "path", 7)(5, "path", 8)(6, "path", 9)(7, "path", 10)(8, "path", 11)(9, "path", 12);
     \u0275\u0275elementEnd();
     \u0275\u0275text(10, " You are using Fasten in test mode\n");
     \u0275\u0275elementEnd();
@@ -58244,70 +58244,72 @@ function AppComponent_div_1_Template(rf, ctx) {
 function AppComponent_ng_container_3_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 15)(2, "div", 16)(3, "h1", 17);
+    \u0275\u0275elementStart(1, "div", 13)(2, "div", 14)(3, "h1", 15);
     \u0275\u0275text(4, "fasten");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(5, "div", 18)(6, "div", 19);
-    \u0275\u0275element(7, "div", 20);
+    \u0275\u0275elementStart(5, "div", 16)(6, "div", 17);
+    \u0275\u0275element(7, "div", 18);
     \u0275\u0275elementEnd();
-    \u0275\u0275element(8, "div", 21);
+    \u0275\u0275element(8, "div", 19);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "div", 22)(10, "div", 23);
-    \u0275\u0275element(11, "div", 24);
-    \u0275\u0275elementStart(12, "div", 25);
-    \u0275\u0275element(13, "div", 26)(14, "div", 27);
+    \u0275\u0275elementStart(9, "div", 20)(10, "div", 21);
+    \u0275\u0275element(11, "div", 22);
+    \u0275\u0275elementStart(12, "div", 23);
+    \u0275\u0275element(13, "div", 24)(14, "div", 25);
     \u0275\u0275elementEnd();
-    \u0275\u0275element(15, "div", 28);
+    \u0275\u0275element(15, "div", 26);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "div", 23);
-    \u0275\u0275element(17, "div", 24);
-    \u0275\u0275elementStart(18, "div", 25);
-    \u0275\u0275element(19, "div", 26)(20, "div", 27);
+    \u0275\u0275elementStart(16, "div", 21);
+    \u0275\u0275element(17, "div", 22);
+    \u0275\u0275elementStart(18, "div", 23);
+    \u0275\u0275element(19, "div", 24)(20, "div", 25);
     \u0275\u0275elementEnd();
-    \u0275\u0275element(21, "div", 28);
+    \u0275\u0275element(21, "div", 26);
     \u0275\u0275elementEnd()()();
     \u0275\u0275elementContainerEnd();
   }
 }
 function AppComponent_ng_container_4_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementContainerStart(0, 29);
-    \u0275\u0275element(1, "router-outlet");
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 27);
+    \u0275\u0275element(2, "router-outlet");
+    \u0275\u0275elementEnd();
     \u0275\u0275elementContainerEnd();
   }
 }
 function AppComponent_ng_container_5_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementContainerStart(0, 30);
-    \u0275\u0275elementStart(1, "div", 31)(2, "div", 32)(3, "div", 33);
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 28)(2, "div", 29)(3, "div", 30)(4, "div", 31);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(4, "svg", 34);
-    \u0275\u0275element(5, "path", 35);
+    \u0275\u0275elementStart(5, "svg", 32);
+    \u0275\u0275element(6, "path", 33);
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(6, "span", 36);
-    \u0275\u0275text(7, "Error");
+    \u0275\u0275elementStart(7, "span", 34);
+    \u0275\u0275text(8, "Error");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "h3", 37);
-    \u0275\u0275text(9, "Configuration Error");
+    \u0275\u0275elementStart(9, "h3", 35);
+    \u0275\u0275text(10, "Configuration Error");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(10, "div", 38);
-    \u0275\u0275text(11);
+    \u0275\u0275elementStart(11, "div", 36);
+    \u0275\u0275text(12);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "div", 39)(13, "button", 40);
-    \u0275\u0275listener("click", function AppComponent_ng_container_5_Template_button_click_13_listener() {
+    \u0275\u0275elementStart(13, "div", 37)(14, "button", 38);
+    \u0275\u0275listener("click", function AppComponent_ng_container_5_Template_button_click_14_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.hideStitchModalExt());
     });
-    \u0275\u0275text(14, "Close");
-    \u0275\u0275elementEnd()()()();
+    \u0275\u0275text(15, "Close");
+    \u0275\u0275elementEnd()()()()();
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(11);
+    \u0275\u0275advance(12);
     \u0275\u0275textInterpolate1(" ", ctx_r1.errorMessage, " ");
   }
 }
@@ -58439,12 +58441,12 @@ var AppComponent = class _AppComponent {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], searchOnly: [0, "search-only", "searchOnly"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"] }, standalone: false, decls: 6, vars: 6, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "widget-container", "class", "w-full p-6 min-h-96", 4, "ngIf"], ["id", "error-container", "class", "w-full p-6 min-h-96", 4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "widget-container", "p-6", "space-y-6"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], searchOnly: [0, "search-only", "searchOnly"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"] }, standalone: false, decls: 6, vars: 6, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], ["id", "widget-container p-6 space-y-6"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275element(0, "link", 0);
         \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
         \u0275\u0275pipe(2, "async");
-        \u0275\u0275template(3, AppComponent_ng_container_3_Template, 22, 0, "ng-container", 2)(4, AppComponent_ng_container_4_Template, 2, 0, "ng-container", 3)(5, AppComponent_ng_container_5_Template, 15, 1, "ng-container", 4);
+        \u0275\u0275template(3, AppComponent_ng_container_3_Template, 22, 0, "ng-container", 2)(4, AppComponent_ng_container_4_Template, 3, 0, "ng-container", 2)(5, AppComponent_ng_container_5_Template, 16, 1, "ng-container", 2);
       }
       if (rf & 2) {
         let tmp_0_0;
