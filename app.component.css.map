@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["projects/fasten-connect-stitch-embed/src/app/app.component.scss"],
+  "sourcesContent": [".skeleton {\n  background-color: #e2e8f0; /* Tailwind's gray-200 */\n  position: relative;\n  overflow: hidden;\n  border-radius: 6px;\n}\n\n.skeleton::after {\n  content: '';\n  position: absolute;\n  top: 0;\n  left: -150px;\n  height: 100%;\n  width: 150px;\n  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);\n  animation: loading 1.2s infinite;\n}\n\n@keyframes loading {\n  0% {\n    left: -150px;\n  }\n  100% {\n    left: 100%;\n  }\n}\n\n.skeleton-text {\n  height: 1rem;\n  margin-bottom: 0.5rem;\n}\n\n.skeleton-circle {\n  width: 2rem;\n  height: 2rem;\n  border-radius: 9999px;\n}\n\n.skeleton-button {\n  height: 2.5rem;\n  width: 2.5rem;\n  border-radius: 0.5rem;\n}\n\n.skeleton-card {\n  padding: 0.75rem;\n  border: 1px solid #e5e7eb; /* gray-200 */\n  border-radius: 0.5rem;\n  display: flex;\n  gap: 0.75rem;\n  align-items: center;\n}\n"],
+  "mappings": ";AAAA,CAAA;AACE,oBAAA;AACA,YAAA;AACA,YAAA;AACA,iBAAA;;AAGF,CAPA,QAOA;AACE,WAAA;AACA,YAAA;AACA,OAAA;AACA,QAAA;AACA,UAAA;AACA,SAAA;AACA;IAAA;MAAA,KAAA;MAAA,WAAA;MAAA,KAAA,GAAA,EAAA,GAAA,EAAA,GAAA,EAAA,IAAA;MAAA;AACA,aAAA,QAAA,KAAA;;AAGF,WAHE;AAIA;AACE,UAAA;;AAEF;AACE,UAAA;;;AAIJ,CAAA;AACE,UAAA;AACA,iBAAA;;AAGF,CAAA;AACE,SAAA;AACA,UAAA;AACA,iBAAA;;AAGF,CAAA;AACE,UAAA;AACA,SAAA;AACA,iBAAA;;AAGF,CAAA;AACE,WAAA;AACA,UAAA,IAAA,MAAA;AACA,iBAAA;AACA,WAAA;AACA,OAAA;AACA,eAAA;;",
+  "names": []
+}
