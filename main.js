@@ -57378,6 +57378,10 @@ function ConnectHelper(connectData) {
     connectData.external_state = v4_default();
   }
   messageBusService.publishOrgConnectionPending(connectData);
+  let onSuccessNavigateByUrl = "dashboard";
+  if (connectData.org_connection_id) {
+    onSuccessNavigateByUrl = "dashboard/complete";
+  }
   vaultApi.accountConnectWithPopup(connectData.brand_id, connectData.portal_id, connectData.endpoint_id, connectData.org_connection_id, connectData.external_id, connectData.external_state).subscribe((orgConnectionCallbackData) => {
     console.log(orgConnectionCallbackData);
     if (!orgConnectionCallbackData) {
@@ -57385,13 +57389,13 @@ function ConnectHelper(connectData) {
     }
     messageBusService.publishOrgConnectionComplete(orgConnectionCallbackData);
     configService.vaultProfileAddConnectedAccount(orgConnectionCallbackData);
-    router.navigateByUrl("dashboard");
+    router.navigateByUrl(onSuccessNavigateByUrl);
   }, (err) => {
     console.error("Error parsing error data", err);
     try {
       var errData = JSON.parse(err.toString());
       if (errData.error == "timeout") {
-        return router.navigateByUrl("dashboard");
+        return router.navigateByUrl(onSuccessNavigateByUrl);
       } else {
         console.error("an error occurred while attempting to connect health system", err);
         router.navigate(["form/support"], {
