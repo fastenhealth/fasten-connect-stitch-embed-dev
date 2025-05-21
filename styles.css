@@ -1080,7 +1080,7 @@ video {
 .redirect-logo-container {
   animation: logoFloat 2s ease-in-out infinite, pulseGlow 2s ease-in-out infinite;
 }
-// required for 3-dot pulse animation .animate-delay-100 {
+.animate-delay-100 {
   animation-delay: 0s !important;
 }
 .animate-delay-200 {
@@ -1101,6 +1101,77 @@ video {
 }
 .animate-pulse-flow {
   animation: pulseFlow 2s ease-in-out infinite;
+}
+.skeleton {
+  background-color: #e2e8f0;
+  position: relative;
+  overflow: hidden;
+  border-radius: 6px;
+}
+.skeleton::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -150px;
+  height: 100%;
+  width: 150px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.3),
+      transparent);
+  animation: loading 1.2s infinite;
+}
+@keyframes loading {
+  0% {
+    left: -150px;
+  }
+  100% {
+    left: 100%;
+  }
+}
+.skeleton-text {
+  height: 1rem;
+  margin-bottom: 0.5rem;
+}
+.skeleton-circle {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+}
+.skeleton-button {
+  height: 2.5rem;
+  width: 2.5rem;
+  border-radius: 0.5rem;
+}
+.skeleton-card {
+  padding: 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+.fade-in {
+  -webkit-animation: fade-in .5s steps(20, end) both;
+  animation: fade-in .5s steps(20, end) both;
+}
+@-webkit-keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 .hover\:border-\[\#4936E8\]:hover {
   --tw-border-opacity: 1;

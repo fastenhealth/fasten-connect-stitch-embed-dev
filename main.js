@@ -56745,11 +56745,11 @@ var InfiniteScrollModule = class _InfiniteScrollModule {
 var _c03 = () => [];
 function HealthSystemSearchComponent_div_7_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 17);
+    \u0275\u0275elementStart(0, "div", 18);
     \u0275\u0275text(1, " We were unable to verify your identity. Please search for your healthcare system below. ");
     \u0275\u0275element(2, "br");
     \u0275\u0275text(3, " You can also ");
-    \u0275\u0275elementStart(4, "a", 18);
+    \u0275\u0275elementStart(4, "a", 19);
     \u0275\u0275text(5, "file a ticket");
     \u0275\u0275elementEnd();
     \u0275\u0275text(6, " if you need help. ");
@@ -56762,7 +56762,7 @@ function HealthSystemSearchComponent_div_7_Template(rf, ctx) {
 }
 function HealthSystemSearchComponent_div_15_option_11_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "option", 35);
+    \u0275\u0275elementStart(0, "option", 36);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -56776,13 +56776,13 @@ function HealthSystemSearchComponent_div_15_option_11_Template(rf, ctx) {
 function HealthSystemSearchComponent_div_15_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 19)(1, "h3", 20);
+    \u0275\u0275elementStart(0, "div", 20)(1, "h3", 21);
     \u0275\u0275text(2, "Filters");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 21)(4, "label", 22);
+    \u0275\u0275elementStart(3, "div", 22)(4, "label", 23);
     \u0275\u0275text(5, "State");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "select", 23);
+    \u0275\u0275elementStart(6, "select", 24);
     \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_15_Template_select_ngModelChange_6_listener($event) {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
@@ -56794,61 +56794,61 @@ function HealthSystemSearchComponent_div_15_Template(rf, ctx) {
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.querySources(true));
     });
-    \u0275\u0275elementStart(7, "option", 24);
+    \u0275\u0275elementStart(7, "option", 25);
     \u0275\u0275text(8, "All States");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "option", 25);
+    \u0275\u0275elementStart(9, "option", 26);
     \u0275\u0275text(10, "-------");
     \u0275\u0275elementEnd();
-    \u0275\u0275template(11, HealthSystemSearchComponent_div_15_option_11_Template, 2, 2, "option", 26);
+    \u0275\u0275template(11, HealthSystemSearchComponent_div_15_option_11_Template, 2, 2, "option", 27);
     \u0275\u0275pipe(12, "keyvalue");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "div", 27)(14, "div", 28)(15, "button", 29)(16, "span");
+    \u0275\u0275elementStart(13, "div", 28)(14, "div", 29)(15, "button", 30)(16, "span");
     \u0275\u0275text(17, "All States");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(18, "svg", 30);
-    \u0275\u0275element(19, "polyline", 31);
+    \u0275\u0275elementStart(18, "svg", 31);
+    \u0275\u0275element(19, "polyline", 32);
     \u0275\u0275elementEnd()()()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(20, "div", 32)(21, "div", 28)(22, "button", 29)(23, "span");
+    \u0275\u0275elementStart(20, "div", 33)(21, "div", 29)(22, "button", 30)(23, "span");
     \u0275\u0275text(24, "All States");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(25, "svg", 33);
-    \u0275\u0275element(26, "polyline", 31);
+    \u0275\u0275elementStart(25, "svg", 34);
+    \u0275\u0275element(26, "polyline", 32);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(27, "button", 29)(28, "span");
+    \u0275\u0275elementStart(27, "button", 30)(28, "span");
     \u0275\u0275text(29, "California");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(30, "svg", 33);
-    \u0275\u0275element(31, "polyline", 31);
+    \u0275\u0275elementStart(30, "svg", 34);
+    \u0275\u0275element(31, "polyline", 32);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(32, "button", 29)(33, "span");
+    \u0275\u0275elementStart(32, "button", 30)(33, "span");
     \u0275\u0275text(34, "New Jersey");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(35, "svg", 33);
-    \u0275\u0275element(36, "polyline", 31);
+    \u0275\u0275elementStart(35, "svg", 34);
+    \u0275\u0275element(36, "polyline", 32);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(37, "button", 34)(38, "span");
+    \u0275\u0275elementStart(37, "button", 35)(38, "span");
     \u0275\u0275text(39, "New York");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(40, "svg", 30);
-    \u0275\u0275element(41, "polyline", 31);
+    \u0275\u0275elementStart(40, "svg", 31);
+    \u0275\u0275element(41, "polyline", 32);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(42, "button", 29)(43, "span");
+    \u0275\u0275elementStart(42, "button", 30)(43, "span");
     \u0275\u0275text(44, "Washington");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(45, "svg", 33);
-    \u0275\u0275element(46, "polyline", 31);
+    \u0275\u0275elementStart(45, "svg", 34);
+    \u0275\u0275element(46, "polyline", 32);
     \u0275\u0275elementEnd()()()()()();
   }
   if (rf & 2) {
@@ -56861,7 +56861,7 @@ function HealthSystemSearchComponent_div_15_Template(rf, ctx) {
 }
 function HealthSystemSearchComponent_button_17_p_5_span_2_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "span", 48);
+    \u0275\u0275element(0, "span", 49);
     \u0275\u0275pipe(1, "safeHtml");
   }
   if (rf & 2) {
@@ -56871,9 +56871,9 @@ function HealthSystemSearchComponent_button_17_p_5_span_2_Template(rf, ctx) {
 }
 function HealthSystemSearchComponent_button_17_p_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 41);
+    \u0275\u0275elementStart(0, "p", 42);
     \u0275\u0275text(1, "Found match(es): ");
-    \u0275\u0275template(2, HealthSystemSearchComponent_button_17_p_5_span_2_Template, 2, 3, "span", 47);
+    \u0275\u0275template(2, HealthSystemSearchComponent_button_17_p_5_span_2_Template, 2, 3, "span", 48);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -56884,7 +56884,7 @@ function HealthSystemSearchComponent_button_17_p_5_Template(rf, ctx) {
 }
 function HealthSystemSearchComponent_button_17_span_7_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 49);
+    \u0275\u0275elementStart(0, "span", 50);
     \u0275\u0275text(1);
     \u0275\u0275pipe(2, "stateName");
     \u0275\u0275elementEnd();
@@ -56897,7 +56897,7 @@ function HealthSystemSearchComponent_button_17_span_7_Template(rf, ctx) {
 }
 function HealthSystemSearchComponent_button_17_span_9_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 49);
+    \u0275\u0275elementStart(0, "span", 50);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -56910,26 +56910,26 @@ function HealthSystemSearchComponent_button_17_span_9_Template(rf, ctx) {
 function HealthSystemSearchComponent_button_17_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 36);
+    \u0275\u0275elementStart(0, "button", 37);
     \u0275\u0275listener("click", function HealthSystemSearchComponent_button_17_Template_button_click_0_listener() {
       const brand_r5 = \u0275\u0275restoreView(_r4).$implicit;
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.selectBrand(brand_r5.brand));
     });
-    \u0275\u0275element(1, "img", 37);
-    \u0275\u0275elementStart(2, "div", 38)(3, "p", 39);
+    \u0275\u0275element(1, "img", 38);
+    \u0275\u0275elementStart(2, "div", 39)(3, "p", 40);
     \u0275\u0275text(4);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(5, HealthSystemSearchComponent_button_17_p_5_Template, 3, 1, "p", 40);
-    \u0275\u0275elementStart(6, "p", 41);
-    \u0275\u0275template(7, HealthSystemSearchComponent_button_17_span_7_Template, 3, 3, "span", 42);
+    \u0275\u0275template(5, HealthSystemSearchComponent_button_17_p_5_Template, 3, 1, "p", 41);
+    \u0275\u0275elementStart(6, "p", 42);
+    \u0275\u0275template(7, HealthSystemSearchComponent_button_17_span_7_Template, 3, 3, "span", 43);
     \u0275\u0275pipe(8, "slice");
-    \u0275\u0275template(9, HealthSystemSearchComponent_button_17_span_9_Template, 2, 2, "span", 43);
+    \u0275\u0275template(9, HealthSystemSearchComponent_button_17_span_9_Template, 2, 2, "span", 44);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(10, "div", 44);
+    \u0275\u0275elementStart(10, "div", 45);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(11, "svg", 45);
-    \u0275\u0275element(12, "polyline", 46);
+    \u0275\u0275elementStart(11, "svg", 46);
+    \u0275\u0275element(12, "polyline", 47);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
@@ -56949,19 +56949,37 @@ function HealthSystemSearchComponent_button_17_Template(rf, ctx) {
 }
 function HealthSystemSearchComponent_div_18_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 50)(1, "div", 51)(2, "div", 52);
+    \u0275\u0275elementStart(0, "div")(1, "div", 51)(2, "div", 52);
+    \u0275\u0275element(3, "div", 53);
+    \u0275\u0275elementStart(4, "div", 54);
+    \u0275\u0275element(5, "div", 55)(6, "div", 56);
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(7, "div", 57);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "div", 52);
+    \u0275\u0275element(9, "div", 53);
+    \u0275\u0275elementStart(10, "div", 54);
+    \u0275\u0275element(11, "div", 55)(12, "div", 56);
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(13, "div", 57);
+    \u0275\u0275elementEnd()()();
+  }
+}
+function HealthSystemSearchComponent_div_19_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 58)(1, "div", 59)(2, "div", 60);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(3, "svg", 53);
-    \u0275\u0275element(4, "circle", 54)(5, "path", 55);
+    \u0275\u0275elementStart(3, "svg", 61);
+    \u0275\u0275element(4, "circle", 62)(5, "path", 63);
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(6, "span", 56);
+    \u0275\u0275elementStart(6, "span", 64);
     \u0275\u0275text(7, "No results found");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(8, "p", 41);
+    \u0275\u0275elementStart(8, "p", 42);
     \u0275\u0275text(9, " We couldn't find any health systems matching your search ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "button", 57);
+    \u0275\u0275elementStart(10, "button", 65);
     \u0275\u0275text(11, " Request this health system ");
     \u0275\u0275elementEnd()()();
   }
@@ -57059,7 +57077,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], standalone: false, decls: 19, vars: 11, consts: [["id", "step-search", 1, "space-y-6"], [1, "relative", "flex", "justify-center", "items-center"], ["type", "button", "id", "search-back", 1, "absolute", "left-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "routerLink"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", 1, "w-5", "h-5"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M15 19l-7-7 7-7"], [1, "az-logo"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], [1, "flex", "gap-2"], [1, "flex-1"], ["id", "search-input", "type", "text", "placeholder", "Search for your health system...", 1, "w-full", "block", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "keyup", "ngModel"], ["id", "search-filters", 1, "border", "border-gray-200", "rounded-lg", "w-10", "h-10", "flex", "items-center", "justify-center", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-filter", "w-5", "h-5"], ["points", "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"], ["id", "filters-container", "class", "space-y-4 p-4 border rounded-lg", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "space-y-2", "overflow-scroll", 2, "max-height", "600px", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "scrollWindow"], ["type", "button", "class", "w-full flex items-center gap-3 p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-[#5B47FB] focus:ring-opacity-20", 3, "click", 4, "ngFor", "ngForOf"], ["class", "space-y-4", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["id", "filters-container", 1, "space-y-4", "p-4", "border", "rounded-lg"], [1, "font-semibold", "text-lg"], [1, "relative"], [1, "block", "text-sm", "font-medium", "mb-1"], [1, "w-full", "flex", "items-center", "justify-between", "px-3", "py-2", "text-sm", "border", "rounded-md", "bg-white", "hover:bg-gray-50", 3, "ngModelChange", "ngModel"], ["value", "ALL", "selected", ""], ["disabled", ""], [3, "value", 4, "ngFor", "ngForOf"], ["id", "state-filter-menu", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], [1, "py-1"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]"], ["points", "20 6 9 17 4 12"], ["id", "state-filter-menu-hidden", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]", "hidden"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between", "bg-gray-50"], [3, "value"], ["type", "button", 1, "w-full", "flex", "items-center", "gap-3", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all", "text-left", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "click"], ["imageFallback", "", 1, "w-8", "max-h-8", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], ["class", "text-sm text-gray-600", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "flex", "items-center"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], ["class", "comma", 3, "innerHTML", 4, "ngFor", "ngForOf"], [1, "comma", 3, "innerHTML"], [1, "comma"], [1, "space-y-4"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "11", "cy", "11", "r", "8"], ["d", "m21 21-4.3-4.3"], [1, "font-medium"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], standalone: false, decls: 20, vars: 12, consts: [["id", "step-search", 1, "space-y-6"], [1, "relative", "flex", "justify-center", "items-center"], ["type", "button", "id", "search-back", 1, "absolute", "left-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "routerLink"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", 1, "w-5", "h-5"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M15 19l-7-7 7-7"], [1, "az-logo"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], [1, "flex", "gap-2"], [1, "flex-1"], ["id", "search-input", "type", "text", "placeholder", "Search for your health system...", 1, "w-full", "block", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "keyup", "ngModel"], ["id", "search-filters", 1, "border", "border-gray-200", "rounded-lg", "w-10", "h-10", "flex", "items-center", "justify-center", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-filter", "w-5", "h-5"], ["points", "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"], ["id", "filters-container", "class", "space-y-4 p-4 border rounded-lg", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "space-y-2", "overflow-scroll", 2, "max-height", "600px", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "scrollWindow"], ["type", "button", "class", "w-full flex items-center gap-3 p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-[#5B47FB] focus:ring-opacity-20", 3, "click", 4, "ngFor", "ngForOf"], [4, "ngIf"], ["class", "space-y-4", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["id", "filters-container", 1, "space-y-4", "p-4", "border", "rounded-lg"], [1, "font-semibold", "text-lg"], [1, "relative"], [1, "block", "text-sm", "font-medium", "mb-1"], [1, "w-full", "flex", "items-center", "justify-between", "px-3", "py-2", "text-sm", "border", "rounded-md", "bg-white", "hover:bg-gray-50", 3, "ngModelChange", "ngModel"], ["value", "ALL", "selected", ""], ["disabled", ""], [3, "value", 4, "ngFor", "ngForOf"], ["id", "state-filter-menu", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], [1, "py-1"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]"], ["points", "20 6 9 17 4 12"], ["id", "state-filter-menu-hidden", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]", "hidden"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between", "bg-gray-50"], [3, "value"], ["type", "button", 1, "w-full", "flex", "items-center", "gap-3", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all", "text-left", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "click"], ["imageFallback", "", 1, "w-8", "max-h-8", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], ["class", "text-sm text-gray-600", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "flex", "items-center"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], ["class", "comma", 3, "innerHTML", 4, "ngFor", "ngForOf"], [1, "comma", 3, "innerHTML"], [1, "comma"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], [1, "space-y-4"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "11", "cy", "11", "r", "8"], ["d", "m21 21-4.3-4.3"], [1, "font-medium"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "button", 2);
         \u0275\u0275namespaceSVG();
@@ -57097,7 +57115,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
         });
         \u0275\u0275template(17, HealthSystemSearchComponent_button_17_Template, 13, 14, "button", 15);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(18, HealthSystemSearchComponent_div_18_Template, 12, 1, "div", 16);
+        \u0275\u0275template(18, HealthSystemSearchComponent_div_18_Template, 14, 0, "div", 16)(19, HealthSystemSearchComponent_div_19_Template, 12, 1, "div", 17);
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
@@ -57105,7 +57123,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
         \u0275\u0275advance(2);
         \u0275\u0275property("routerLink", "/dashboard");
         \u0275\u0275advance(5);
-        \u0275\u0275property("ngIf", (((tmp_1_0 = \u0275\u0275pipeBind1(8, 9, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_1_0.identityVerificationFailureCount) || 0) >= 2);
+        \u0275\u0275property("ngIf", (((tmp_1_0 = \u0275\u0275pipeBind1(8, 10, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_1_0.identityVerificationFailureCount) || 0) >= 2);
         \u0275\u0275advance(4);
         \u0275\u0275twoWayProperty("ngModel", ctx.filter.query);
         \u0275\u0275advance(4);
@@ -57114,6 +57132,8 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
         \u0275\u0275property("infiniteScrollDistance", 2)("infiniteScrollThrottle", 50)("scrollWindow", false);
         \u0275\u0275advance();
         \u0275\u0275property("ngForOf", ctx.lighthouseBrandList);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.loading);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.loading && ctx.lighthouseBrandList.length == 0);
       }
@@ -58472,7 +58492,7 @@ var AppComponent = class _AppComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.loading && ctx.errorMessage);
       }
-    }, dependencies: [NgIf, RouterOutlet, AsyncPipe], styles: ['\n\n.skeleton[_ngcontent-%COMP%] {\n  background-color: #e2e8f0;\n  position: relative;\n  overflow: hidden;\n  border-radius: 6px;\n}\n.skeleton[_ngcontent-%COMP%]::after {\n  content: "";\n  position: absolute;\n  top: 0;\n  left: -150px;\n  height: 100%;\n  width: 150px;\n  background:\n    linear-gradient(\n      90deg,\n      transparent,\n      rgba(255, 255, 255, 0.3),\n      transparent);\n  animation: _ngcontent-%COMP%_loading 1.2s infinite;\n}\n@keyframes _ngcontent-%COMP%_loading {\n  0% {\n    left: -150px;\n  }\n  100% {\n    left: 100%;\n  }\n}\n.skeleton-text[_ngcontent-%COMP%] {\n  height: 1rem;\n  margin-bottom: 0.5rem;\n}\n.skeleton-circle[_ngcontent-%COMP%] {\n  width: 2rem;\n  height: 2rem;\n  border-radius: 9999px;\n}\n.skeleton-button[_ngcontent-%COMP%] {\n  height: 2.5rem;\n  width: 2.5rem;\n  border-radius: 0.5rem;\n}\n.skeleton-card[_ngcontent-%COMP%] {\n  padding: 0.75rem;\n  border: 1px solid #e5e7eb;\n  border-radius: 0.5rem;\n  display: flex;\n  gap: 0.75rem;\n  align-items: center;\n}\n.fade-in[_ngcontent-%COMP%] {\n  -webkit-animation: _ngcontent-%COMP%_fade-in .5s steps(20, end) both;\n  animation: _ngcontent-%COMP%_fade-in .5s steps(20, end) both;\n}\n@-webkit-keyframes _ngcontent-%COMP%_fade-in {\n  0% {\n    opacity: 0;\n  }\n  100% {\n    opacity: 1;\n  }\n}\n@keyframes _ngcontent-%COMP%_fade-in {\n  0% {\n    opacity: 0;\n  }\n  100% {\n    opacity: 1;\n  }\n}\n/*# sourceMappingURL=app.component.css.map */'] });
+    }, dependencies: [NgIf, RouterOutlet, AsyncPipe], encapsulation: 2 });
   }
 };
 (() => {
