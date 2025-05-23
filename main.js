@@ -56065,7 +56065,6 @@ var DashboardComponent = class _DashboardComponent {
     });
   }
   completeAccounts() {
-    this.messageBus.publishComplete();
     this.router.navigateByUrl("dashboard/complete");
   }
   static {
@@ -57576,6 +57575,7 @@ var CompleteComponent = class _CompleteComponent {
     this.messageBus = messageBus;
   }
   ngOnInit() {
+    this.messageBus.publishComplete();
   }
   closeModal() {
     this.messageBus.publishRequestClose();
