@@ -56053,7 +56053,7 @@ var DashboardComponent = class _DashboardComponent {
     this.logger = logger;
   }
   ngOnInit() {
-    if (!this.configService.systemConfig$.tefcaMode) {
+    if (this.configService.systemConfig$.tefcaMode) {
       this.fastenService.getRecordLocatorFacilities().subscribe((rlsResponse) => {
         console.log("record locator response", rlsResponse);
         for (let vaultProfileConnectionId in rlsResponse.connected_patient_accounts) {
