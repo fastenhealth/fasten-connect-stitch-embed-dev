@@ -56045,13 +56045,27 @@ function DashboardComponent_div_12_Template(rf, ctx) {
   }
 }
 var DashboardComponent = class _DashboardComponent {
-  constructor(configService, router, messageBus, logger) {
+  constructor(configService, router, fastenService, messageBus, logger) {
     this.configService = configService;
     this.router = router;
+    this.fastenService = fastenService;
     this.messageBus = messageBus;
     this.logger = logger;
   }
   ngOnInit() {
+    if (!this.configService.systemConfig$.tefcaMode) {
+      this.fastenService.getRecordLocatorFacilities().subscribe((rlsResponse) => {
+        console.log("record locator response", rlsResponse);
+        for (let vaultProfileConnectionId in rlsResponse.connected_patient_accounts) {
+          const connectedFacility = rlsResponse.connected_patient_accounts[vaultProfileConnectionId];
+          console.log("CONNECTED", connectedFacility);
+        }
+        for (let vaultProfileConnectionId in rlsResponse.pending_patient_accounts) {
+          const pendingFacility = rlsResponse.pending_patient_accounts[vaultProfileConnectionId];
+          console.log("PENDING", pendingFacility);
+        }
+      });
+    }
   }
   connectAccount(pendingAccount) {
     this.logger.info("connecting account", pendingAccount);
@@ -56069,7 +56083,7 @@ var DashboardComponent = class _DashboardComponent {
   }
   static {
     this.\u0275fac = function DashboardComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -56162,7 +56176,7 @@ var DashboardComponent = class _DashboardComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 17 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 18 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/state-codes.ts
@@ -58129,13 +58143,6 @@ var IsAuthenticatedAuthGuard = class _IsAuthenticatedAuthGuard {
             this.logger.info("User is not authenticated, redirecting to login page");
             return this.router.navigate(["/auth/signin"]);
           }
-        } else if (!jwtPayload.has_verified_identity) {
-          if (route.url.toString() === "/auth/identity/verification") {
-            return true;
-          } else {
-            this.logger.info("Profile does not have a verified identity, redirecting to id verification step", jwtPayload);
-            return this.router.navigate(["/auth/identity/verification"]);
-          }
         }
         return true;
       }).catch((err) => {
@@ -58228,6 +58235,52 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationErrorComponent, { className: "IdentityVerificationErrorComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification-error/identity-verification-error.component.ts", lineNumber: 12 });
 })();
 
+// projects/fasten-connect-stitch-embed/src/app/auth-guards/is-tefca-mode-auth-guard.ts
+var IsTefcaModeAuthGuard = class _IsTefcaModeAuthGuard {
+  constructor(authService, router, configService, logger) {
+    this.authService = authService;
+    this.router = router;
+    this.configService = configService;
+    this.logger = logger;
+  }
+  canActivate(route, state) {
+    return __async(this, null, function* () {
+      if (!this.configService.systemConfig$.tefcaMode) {
+        return Promise.resolve(true);
+      }
+      return this.authService.GetJWTPayload().then((jwtPayload) => {
+        if (!jwtPayload) {
+          if (route.url.toString() === "/auth/signin") {
+            return true;
+          } else {
+            this.logger.info("User is not authenticated, redirecting to login page");
+            return this.router.navigate(["/auth/signin"]);
+          }
+        } else if (!jwtPayload.has_verified_identity) {
+          if (route.url.toString() === "/auth/identity/verification") {
+            return true;
+          } else {
+            this.logger.info("Profile does not have a verified identity, redirecting to id verification step", jwtPayload);
+            return this.router.navigate(["/auth/identity/verification"]);
+          }
+        }
+        return true;
+      }).catch((err) => {
+        this.logger.error("error checking if user is authenticated, forcing user back to /auth/signin", err);
+        return this.router.navigate(["/auth/signin"]);
+      });
+    });
+  }
+  static {
+    this.\u0275fac = function IsTefcaModeAuthGuard_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _IsTefcaModeAuthGuard)(\u0275\u0275inject(AuthService), \u0275\u0275inject(Router), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _IsTefcaModeAuthGuard, factory: _IsTefcaModeAuthGuard.\u0275fac });
+  }
+};
+
 // projects/fasten-connect-stitch-embed/src/app/app-routing.module.ts
 var routes = [
   { path: "auth/signin", component: VaultProfileSigninComponent },
@@ -58236,7 +58289,7 @@ var routes = [
   //canActivate: [IsAuthenticatedAuthGuard] },
   { path: "auth/identity/verification/error", component: IdentityVerificationErrorComponent },
   //canActivate: [IsAuthenticatedAuthGuard] },
-  { path: "dashboard", component: DashboardComponent, canActivate: [IsAuthenticatedAuthGuard] },
+  { path: "dashboard", component: DashboardComponent, canActivate: [IsAuthenticatedAuthGuard, IsTefcaModeAuthGuard] },
   { path: "search", component: HealthSystemSearchComponent, canActivate: [IsAuthenticatedAuthGuard] },
   { path: "brand/details", component: HealthSystemBrandDetailsComponent, canActivate: [IsAuthenticatedAuthGuard] },
   //cannot be authenticated, must be publically accessible for reconnecting
@@ -58354,6 +58407,7 @@ var AppComponent = class _AppComponent {
     this.externalState = urlParams.get("external-state") || "";
     this.reconnectOrgConnectionId = urlParams.get("reconnect-org-connection-id") || "";
     this.searchOnly = urlParams.get("search-only") == "true";
+    this.tefcaMode = urlParams.get("tefca-mode") == "true";
     this.staticBackdrop = urlParams.get("static-backdrop") == "true";
   }
   constructor(activatedRoute, configService, messageBus, fastenService, router, logger) {
@@ -58367,6 +58421,7 @@ var AppComponent = class _AppComponent {
     this.externalId = "";
     this.externalState = "";
     this.searchOnly = false;
+    this.tefcaMode = false;
     this.staticBackdrop = false;
     this.loading = true;
   }
@@ -58380,7 +58435,8 @@ var AppComponent = class _AppComponent {
       externalId: this.externalId,
       reconnectOrgConnectionId: this.reconnectOrgConnectionId,
       staticBackdrop: this.staticBackdrop,
-      searchOnly: this.searchOnly
+      searchOnly: this.searchOnly,
+      tefcaMode: this.tefcaMode
     };
     this.messageBus.messageBusSubject.subscribe((eventPayload) => {
       this.logger.debug("bubbling up event", eventPayload);
@@ -58477,7 +58533,7 @@ var AppComponent = class _AppComponent {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], searchOnly: [0, "search-only", "searchOnly"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"] }, standalone: false, features: [\u0275\u0275NgOnChangesFeature], decls: 6, vars: 6, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], searchOnly: [0, "search-only", "searchOnly"], tefcaMode: [0, "tefca-mode", "tefcaMode"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"] }, standalone: false, features: [\u0275\u0275NgOnChangesFeature], decls: 6, vars: 6, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275element(0, "link", 0);
         \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
@@ -58558,6 +58614,7 @@ var AppModule = class _AppModule {
         // deps: [AuthService, NavOutletService]
       },
       IsAuthenticatedAuthGuard,
+      IsTefcaModeAuthGuard,
       provideHttpClient(withInterceptorsFromDi()),
       provideRouter(routes, withComponentInputBinding())
     ], imports: [
