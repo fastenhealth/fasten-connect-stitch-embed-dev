@@ -55859,7 +55859,7 @@ var FastenService = class _FastenService {
     let openedWindow = window.open(redirectUrl.toString(), "_blank", features);
     return waitForOrgConnectionOrTimeout(this.logger, openedWindow);
   }
-  accountConnectWithPopup(brandId, portalId, endpointId, reconnectOrgConnectionId, externalId, externalState) {
+  accountConnectWithPopup(brandId, portalId, endpointId, reconnectOrgConnectionId, externalId, externalState, vaultProfileConnectionId) {
     const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/connect`);
     const redirectParams = new URLSearchParams();
     redirectParams.set("public_id", this.configService.systemConfig$.publicId);
@@ -55875,6 +55875,9 @@ var FastenService = class _FastenService {
     }
     if (externalState) {
       redirectParams.set("external_state", externalState);
+    }
+    if (vaultProfileConnectionId) {
+      redirectParams.set("vault_profile_connection_id", vaultProfileConnectionId);
     }
     redirectUrlParts.search = redirectParams.toString();
     this.logger.debug(redirectUrlParts.toString());
@@ -56107,7 +56110,8 @@ var DashboardComponent = class _DashboardComponent {
         "brandId": pendingAccount.brand?.id,
         "portalId": pendingAccount.portal?.id,
         "endpointId": pendingAccount.endpoint?.id,
-        "externalId": this.configService.systemConfig$.externalId
+        "externalId": this.configService.systemConfig$.externalId,
+        "vaultProfileConnectionId": pendingAccount.vaultProfileConnectionId
       }
     });
   }
@@ -57453,7 +57457,7 @@ function ConnectHelper(connectData) {
   if (connectData.org_connection_id) {
     onSuccessNavigateByUrl = "dashboard/complete";
   }
-  vaultApi.accountConnectWithPopup(connectData.brand_id, connectData.portal_id, connectData.endpoint_id, connectData.org_connection_id, connectData.external_id, connectData.external_state).subscribe((orgConnectionCallbackData) => {
+  vaultApi.accountConnectWithPopup(connectData.brand_id, connectData.portal_id, connectData.endpoint_id, connectData.org_connection_id, connectData.external_id, connectData.external_state, connectData.vault_profile_connection_id).subscribe((orgConnectionCallbackData) => {
     console.log(orgConnectionCallbackData);
     if (!orgConnectionCallbackData) {
       return;
@@ -57477,6 +57481,7 @@ function ConnectHelper(connectData) {
             "portal_id": connectData.portal_id,
             "endpoint_id": connectData.endpoint_id,
             "org_connection_id": connectData.org_connection_id,
+            "vault_profile_connection_id": connectData.vault_profile_connection_id,
             "external_id": connectData.external_id,
             "external_state": connectData.external_state || err["external_state"],
             "request_id": err["request_id"]
@@ -57492,6 +57497,7 @@ function ConnectHelper(connectData) {
           "portal_id": connectData.portal_id,
           "endpoint_id": connectData.endpoint_id,
           "org_connection_id": connectData.org_connection_id,
+          "vault_profile_connection_id": connectData.vault_profile_connection_id,
           "external_id": connectData.external_id,
           "external_state": connectData.external_state || err["external_state"]
         }
@@ -57535,9 +57541,10 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
     this.brandId = "";
     this.portalId = "";
     this.endpointId = "";
-    this.orgConnectionId = "";
     this.externalId = "";
     this.externalState = "";
+    this.orgConnectionId = "";
+    this.vaultProfileConnectionId = "";
   }
   ngOnInit() {
     this.injector.runInContext(() => {
@@ -57548,7 +57555,8 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         endpoint_id: this.endpointId,
         org_connection_id: this.orgConnectionId,
         external_id: this.externalId,
-        external_state: this.externalState
+        external_state: this.externalState,
+        vault_profile_connection_id: this.vaultProfileConnectionId
         // connect_mode: this.connectMode,
       });
     });
@@ -57562,7 +57570,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", orgConnectionId: "orgConnectionId", externalId: "externalId", externalState: "externalState" }, standalone: false, decls: 33, vars: 16, consts: [[1, "space-y-6"], [1, "relative", "flex", "justify-center", "items-center"], ["type", "button", "id", "connecting-back", "class", "absolute left-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "click", 4, "ngIf"], ["type", "button", "id", "connecting-close", "class", "absolute right-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 4, "ngIf"], [1, "az-logo"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["id", "connecting-subtitle", 1, "text-sm", "text-gray-600"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"], ["type", "button", "id", "connecting-back", 1, "absolute", "left-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", 1, "w-5", "h-5"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M15 19l-7-7 7-7"], ["type", "button", "id", "connecting-close", 1, "absolute", "right-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 18L18 6M6 6l12 12"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId" }, standalone: false, decls: 33, vars: 16, consts: [[1, "space-y-6"], [1, "relative", "flex", "justify-center", "items-center"], ["type", "button", "id", "connecting-back", "class", "absolute left-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "click", 4, "ngIf"], ["type", "button", "id", "connecting-close", "class", "absolute right-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 4, "ngIf"], [1, "az-logo"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["id", "connecting-subtitle", 1, "text-sm", "text-gray-600"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"], ["type", "button", "id", "connecting-back", 1, "absolute", "left-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", 1, "w-5", "h-5"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M15 19l-7-7 7-7"], ["type", "button", "id", "connecting-close", 1, "absolute", "right-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 18L18 6M6 6l12 12"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1);
         \u0275\u0275template(2, HealthSystemConnectingComponent_button_2_Template, 3, 0, "button", 2)(3, HealthSystemConnectingComponent_button_3_Template, 3, 0, "button", 3);
