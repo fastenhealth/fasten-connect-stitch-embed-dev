@@ -55791,7 +55791,6 @@ var FastenService = class _FastenService {
   }
   getRecordLocatorFacilities() {
     return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
-      this.logger.info("Record Locator Response", response);
       return response.data;
     }));
   }
