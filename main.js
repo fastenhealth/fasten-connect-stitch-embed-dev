@@ -55859,7 +55859,7 @@ var FastenService = class _FastenService {
     let openedWindow = window.open(redirectUrl.toString(), "_blank", features);
     return waitForOrgConnectionOrTimeout(this.logger, openedWindow);
   }
-  accountConnectWithPopup(brandId, portalId, endpointId, reconnectOrgConnectionId, externalId, externalState, vaultProfileConnectionId) {
+  accountConnectWithPopup(brandId, portalId, endpointId, reconnectOrgConnectionId, externalId, externalState, reconnectVaultProfileConnectionId) {
     const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/connect`);
     const redirectParams = new URLSearchParams();
     redirectParams.set("public_id", this.configService.systemConfig$.publicId);
@@ -55876,8 +55876,8 @@ var FastenService = class _FastenService {
     if (externalState) {
       redirectParams.set("external_state", externalState);
     }
-    if (vaultProfileConnectionId) {
-      redirectParams.set("vault_profile_connection_id", vaultProfileConnectionId);
+    if (reconnectVaultProfileConnectionId) {
+      redirectParams.set("reconnect_vault_profile_connection_id", reconnectVaultProfileConnectionId);
     }
     redirectUrlParts.search = redirectParams.toString();
     this.logger.debug(redirectUrlParts.toString());
