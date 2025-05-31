@@ -56111,7 +56111,7 @@ var DashboardComponent = class _DashboardComponent {
         "portalId": pendingAccount.portal?.id,
         "endpointId": pendingAccount.endpoint?.id,
         "externalId": this.configService.systemConfig$.externalId,
-        "vaultProfileConnectionId": pendingAccount.vaultProfileConnectionId
+        "vaultProfileConnectionId": pendingAccount.vault_profile_connection_id
       }
     });
   }
