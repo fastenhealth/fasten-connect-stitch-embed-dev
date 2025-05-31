@@ -45942,12 +45942,6 @@ var VaultProfileConfig = class {
       });
     }
   }
-  addAvailableRecordLocatorAccount(recordLocatorFacility) {
-    if (!this.availableFacilities) {
-      this.availableFacilities = [];
-    }
-    this.availableFacilities?.push(recordLocatorFacility);
-  }
 };
 
 // projects/shared-library/src/lib/models/fasten/vault-profile.ts
@@ -56086,7 +56080,7 @@ var DashboardComponent = class _DashboardComponent {
     this.loadingTefcaRLS = false;
   }
   ngOnInit() {
-    if (this.configService.systemConfig$.tefcaMode) {
+    if (this.configService.systemConfig$.tefcaMode && !this.configService.vaultProfileConfig$.rlsQueryComplete) {
       this.loadingTefcaRLS = true;
       this.fastenService.getRecordLocatorFacilities().subscribe((rlsResponse) => {
         console.log("record locator response", rlsResponse);
@@ -56100,6 +56094,9 @@ var DashboardComponent = class _DashboardComponent {
           console.log("PENDING", pendingFacility);
         }
         this.loadingTefcaRLS = false;
+        this.configService.vaultProfileConfig = {
+          rlsQueryComplete: true
+        };
       });
     }
   }
