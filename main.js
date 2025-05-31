@@ -46016,7 +46016,7 @@ function waitForOrgConnectionOrTimeout(logger, openedWindow) {
         logger.warn(`timed out waiting for notification from popup (${ConnectWindowTimeout / 1e3}s), closing window`);
         throw new Error(JSON.stringify({ error: "timeout", error_description: "timed out waiting for notification from popup" }));
       } else {
-        logger.error(`an error occurred while verifying identity, closing window`, err);
+        logger.error(`an error was sent from the popup, closing window`, err);
         throw err;
       }
       return throwError(err);
@@ -57466,13 +57466,22 @@ function ConnectHelper(connectData) {
     configService.vaultProfileAddConnectedAccount(orgConnectionCallbackData);
     router.navigateByUrl(onSuccessNavigateByUrl);
   }, (err) => {
-    console.error("Error parsing error data", err);
+    console.error("popup error data", err);
     try {
       var errData = JSON.parse(err.toString());
       if (errData.error == "timeout") {
         return router.navigateByUrl(onSuccessNavigateByUrl);
       } else {
         console.error("an error occurred while attempting to connect health system", err);
+        messageBusService.publishOrgConnectionComplete({
+          org_connection_id: connectData.org_connection_id,
+          endpoint_id: connectData.endpoint_id,
+          brand_id: connectData.brand_id,
+          portal_id: connectData.portal_id,
+          request_id: err["request_id"],
+          error: err["error"] || "unknown_error_during_connect",
+          error_description: err["error_description"] || "an unknown error occurred during the connection process"
+        });
         router.navigate(["form/support"], {
           queryParams: {
             "error": err["error"] || "unknown_error_during_connect",
@@ -57489,6 +57498,14 @@ function ConnectHelper(connectData) {
         });
       }
     } catch (e) {
+      messageBusService.publishOrgConnectionComplete({
+        org_connection_id: connectData.org_connection_id,
+        endpoint_id: connectData.endpoint_id,
+        brand_id: connectData.brand_id,
+        portal_id: connectData.portal_id,
+        error: "unknown_error_during_connect",
+        error_description: "an unknown error occurred during the connection process"
+      });
       router.navigate(["form/support"], {
         queryParams: {
           "error": "unknown_error_during_connect",
