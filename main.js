@@ -56097,6 +56097,8 @@ var DashboardComponent = class _DashboardComponent {
         this.configService.vaultProfileConfig = {
           rlsQueryComplete: true
         };
+      }, (err) => {
+        this.loadingTefcaRLS = false;
       });
     }
   }
