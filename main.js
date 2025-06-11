@@ -57506,6 +57506,7 @@ function ConnectHelper(connectData) {
         });
       }
     } catch (e) {
+      console.error("caught error parsing error data", e);
       messageBusService.publishOrgConnectionComplete({
         org_connection_id: connectData.org_connection_id,
         endpoint_id: connectData.endpoint_id,
