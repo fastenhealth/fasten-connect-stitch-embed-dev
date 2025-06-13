@@ -56143,6 +56143,17 @@ var DashboardComponent = class _DashboardComponent {
         console.log("record locator response", rlsResponse);
         for (let vaultProfileConnectionId in rlsResponse.connected_patient_accounts) {
           const connectedFacility = rlsResponse.connected_patient_accounts[vaultProfileConnectionId];
+          let callbackPayload = {
+            org_connection_id: vaultProfileConnectionId,
+            endpoint_id: connectedFacility.endpoint.id,
+            brand_id: connectedFacility.brand.id,
+            portal_id: connectedFacility.portal.id,
+            connection_status: "authorized",
+            platform_type: "tefca",
+            external_state: vaultProfileConnectionId
+            // external_id:
+          };
+          this.configService.vaultProfileAddConnectedAccount(callbackPayload);
           console.log("CONNECTED", connectedFacility);
         }
         for (let vaultProfileConnectionId in rlsResponse.pending_patient_accounts) {
