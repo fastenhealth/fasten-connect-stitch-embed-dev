@@ -56188,8 +56188,8 @@ var DashboardComponent = class _DashboardComponent {
       this.loadingTefcaRLS = true;
       this.fastenService.getRecordLocatorFacilities().subscribe((rlsResponse) => {
         console.log("record locator response", rlsResponse);
-        for (let vaultProfileConnectionId in rlsResponse.connected_patient_accounts) {
-          const discoveredFacility = rlsResponse.connected_patient_accounts[vaultProfileConnectionId];
+        for (let vaultProfileConnectionId in rlsResponse.discovered_patient_accounts) {
+          const discoveredFacility = rlsResponse.discovered_patient_accounts[vaultProfileConnectionId];
           this.configService.vaultProfileAddDiscoveredRecordLocatorAccount(discoveredFacility, vaultProfileConnectionId);
           console.log("DISCOVERED", discoveredFacility);
         }
