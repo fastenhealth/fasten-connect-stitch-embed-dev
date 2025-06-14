@@ -55909,7 +55909,32 @@ var FastenService = class _FastenService {
   }
   requestSupport(request) {
     const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/support/request`);
-    return this._httpClient.post(endpointUrl.toString(), request).pipe(map((response) => {
+    let body = request.request_content + "\n\n\n```" + JSON.stringify({
+      healthsystem_name: request.healthsystem_name,
+      version: request.version,
+      arch: request.arch,
+      os: request.os,
+      //these fields will be filled out if an error occured while connecting the account
+      error: request.error,
+      error_description: request.error_description,
+      brand_id: request.brand_id,
+      portal_id: request.portal_id,
+      endpoint_id: request.endpoint_id,
+      org_connection_id: request.org_connection_id,
+      external_id: request.external_id,
+      external_state: request.external_state,
+      request_id: request.request_id
+    }) + "```";
+    let zendeskTicket = {
+      name: request.email,
+      email: request.email,
+      body,
+      subject: `Support Request from ${request.healthsystem_name}`,
+      organization_id: this.configService.systemConfig$.org?.id || "",
+      organization_name: this.configService.systemConfig$.org?.name || "",
+      api_mode: this.configService.systemConfig$.apiMode || "test"
+    };
+    return this._httpClient.post(endpointUrl.toString(), zendeskTicket).pipe(map((response) => {
       return {};
     }));
   }
