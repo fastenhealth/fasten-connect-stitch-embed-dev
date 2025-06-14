@@ -466,6 +466,9 @@ video {
 .h-5 {
   height: 1.25rem;
 }
+.h-6 {
+  height: 1.5rem;
+}
 .h-8 {
   height: 2rem;
 }
@@ -496,14 +499,26 @@ video {
 .w-20 {
   width: 5rem;
 }
+.w-24 {
+  width: 6rem;
+}
 .w-32 {
   width: 8rem;
 }
 .w-4 {
   width: 1rem;
 }
+.w-40 {
+  width: 10rem;
+}
+.w-48 {
+  width: 12rem;
+}
 .w-5 {
   width: 1.25rem;
+}
+.w-64 {
+  width: 16rem;
 }
 .w-8 {
   width: 2rem;
@@ -1164,6 +1179,15 @@ video {
   display: flex;
   gap: 0.75rem;
   align-items: center;
+}
+.skeleton-info-card {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #f3f4f6;
+  height: 100px;
 }
 .fade-in {
   -webkit-animation: fade-in .5s steps(20, end) both;
