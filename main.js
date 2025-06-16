@@ -57723,9 +57723,10 @@ function ConnectHelper(connectData) {
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts
 var _c05 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
 var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
-  constructor(configService, router, injector) {
+  constructor(configService, router, messageBus, injector) {
     this.configService = configService;
     this.router = router;
+    this.messageBus = messageBus;
     this.injector = injector;
     this.brandId = "";
     this.portalId = "";
@@ -57753,17 +57754,23 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
   cancelAccountConnect() {
     console.log("cancel account connect");
   }
+  //close modal will only be visible when reconnecting.
+  closeModal() {
+    this.messageBus.publishRequestClose();
+  }
   static {
     this.\u0275fac = function HealthSystemConnectingComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _HealthSystemConnectingComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(EnvironmentInjector));
+      return new (__ngFactoryType__ || _HealthSystemConnectingComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(EnvironmentInjector));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId" }, standalone: false, decls: 29, vars: 15, consts: [[1, "space-y-6"], [3, "backButtonEvent", "backButtonLink"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["id", "connecting-subtitle", 1, "text-sm", "text-gray-600"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId" }, standalone: false, decls: 29, vars: 16, consts: [[1, "space-y-6"], [3, "backButtonEvent", "closeButtonEvent", "backButtonLink", "showClose"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["id", "connecting-subtitle", 1, "text-sm", "text-gray-600"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "app-header", 1);
         \u0275\u0275listener("backButtonEvent", function HealthSystemConnectingComponent_Template_app_header_backButtonEvent_1_listener() {
           return ctx.cancelAccountConnect();
+        })("closeButtonEvent", function HealthSystemConnectingComponent_Template_app_header_closeButtonEvent_1_listener() {
+          return ctx.closeModal();
         });
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(2, "div", 2)(3, "div", 3);
@@ -57798,15 +57805,15 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
-        let tmp_1_0;
+        let tmp_2_0;
         \u0275\u0275advance();
-        \u0275\u0275property("backButtonLink", ctx.orgConnectionId ? "" : "/dashboard");
+        \u0275\u0275property("backButtonLink", ctx.orgConnectionId ? "" : "/dashboard")("showClose", ctx.orgConnectionId ? true : false);
         \u0275\u0275advance(3);
-        \u0275\u0275property("src", (tmp_1_0 = \u0275\u0275pipeBind1(5, 6, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.org == null ? null : tmp_1_0.org.logo_uri, \u0275\u0275sanitizeUrl);
+        \u0275\u0275property("src", (tmp_2_0 = \u0275\u0275pipeBind1(5, 7, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.logo_uri, \u0275\u0275sanitizeUrl);
         \u0275\u0275advance(8);
         \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", ctx.brandId, ".png", \u0275\u0275sanitizeUrl);
         \u0275\u0275advance(15);
-        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(8, _c05, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
+        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(9, _c05, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
       }
     }, dependencies: [RouterLink, ImageFallbackDirective, HeaderComponent, AsyncPipe], encapsulation: 2 });
   }
