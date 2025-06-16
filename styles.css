@@ -391,9 +391,6 @@ video {
 .z-50 {
   z-index: 50;
 }
-.float-right {
-  float: right;
-}
 .float-none {
   float: none;
 }
