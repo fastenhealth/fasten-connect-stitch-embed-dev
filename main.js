@@ -56365,8 +56365,10 @@ var DashboardComponent = class _DashboardComponent {
       this.loadingTefcaRLS = true;
       this.fastenService.recordLocatorRegisterAndPollForStatus().pipe(switchMap((rlsStatusResponse) => {
         if (rlsStatusResponse.data.status == "success") {
+          console.log("RLS status response", rlsStatusResponse);
           return this.fastenService.recordLocatorResults(rlsStatusResponse.data.task_id);
         } else {
+          console.log("RLS status response was not successful", rlsStatusResponse);
           throw new Error("RLS status response was not successful");
         }
       })).subscribe((rlsResponse) => {
