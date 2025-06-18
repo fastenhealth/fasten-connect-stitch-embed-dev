@@ -56389,6 +56389,7 @@ var DashboardComponent = class _DashboardComponent {
         };
       }, (err) => {
         this.loadingTefcaRLS = false;
+        console.error("Error fetching RLS data", err);
       });
     }
   }
