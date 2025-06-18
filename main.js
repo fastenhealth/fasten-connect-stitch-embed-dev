@@ -4586,7 +4586,7 @@ var require_lodash = __commonJS({
           }
           return nativeParseInt(toString(string).replace(reTrimStart, ""), radix || 0);
         }
-        function repeat(string, n, guard) {
+        function repeat2(string, n, guard) {
           if (guard ? isIterateeCall(string, n, guard) : n === undefined2) {
             n = 1;
           } else {
@@ -5243,7 +5243,7 @@ var require_lodash = __commonJS({
         lodash.random = random;
         lodash.reduce = reduce;
         lodash.reduceRight = reduceRight;
-        lodash.repeat = repeat;
+        lodash.repeat = repeat2;
         lodash.replace = replace;
         lodash.result = result;
         lodash.round = round2;
@@ -7299,17 +7299,17 @@ function process(asyncIterable, subscriber) {
 }
 
 // node_modules/rxjs/dist/esm/internal/util/executeSchedule.js
-function executeSchedule(parentSubscription, scheduler, work, delay = 0, repeat = false) {
+function executeSchedule(parentSubscription, scheduler, work, delay = 0, repeat2 = false) {
   const scheduleSubscription = scheduler.schedule(function() {
     work();
-    if (repeat) {
+    if (repeat2) {
       parentSubscription.add(this.schedule(null, delay));
     } else {
       this.unsubscribe();
     }
   }, delay);
   parentSubscription.add(scheduleSubscription);
-  if (!repeat) {
+  if (!repeat2) {
     return scheduleSubscription;
   }
 }
@@ -7975,6 +7975,58 @@ function takeLast(count) {
 function last2(predicate, defaultValue) {
   const hasDefaultValue = arguments.length >= 2;
   return (source) => source.pipe(predicate ? filter((v, i) => predicate(v, i, source)) : identity, takeLast(1), hasDefaultValue ? defaultIfEmpty(defaultValue) : throwIfEmpty(() => new EmptyError()));
+}
+
+// node_modules/rxjs/dist/esm/internal/operators/repeat.js
+function repeat(countOrConfig) {
+  let count = Infinity;
+  let delay;
+  if (countOrConfig != null) {
+    if (typeof countOrConfig === "object") {
+      ({
+        count = Infinity,
+        delay
+      } = countOrConfig);
+    } else {
+      count = countOrConfig;
+    }
+  }
+  return count <= 0 ? () => EMPTY : operate((source, subscriber) => {
+    let soFar = 0;
+    let sourceSub;
+    const resubscribe = () => {
+      sourceSub === null || sourceSub === void 0 ? void 0 : sourceSub.unsubscribe();
+      sourceSub = null;
+      if (delay != null) {
+        const notifier = typeof delay === "number" ? timer(delay) : innerFrom(delay(soFar));
+        const notifierSubscriber = createOperatorSubscriber(subscriber, () => {
+          notifierSubscriber.unsubscribe();
+          subscribeToSource();
+        });
+        notifier.subscribe(notifierSubscriber);
+      } else {
+        subscribeToSource();
+      }
+    };
+    const subscribeToSource = () => {
+      let syncUnsub = false;
+      sourceSub = source.subscribe(createOperatorSubscriber(subscriber, void 0, () => {
+        if (++soFar < count) {
+          if (sourceSub) {
+            resubscribe();
+          } else {
+            syncUnsub = true;
+          }
+        } else {
+          subscriber.complete();
+        }
+      }));
+      if (syncUnsub) {
+        resubscribe();
+      }
+    };
+    subscribeToSource();
+  });
 }
 
 // node_modules/rxjs/dist/esm/internal/operators/retry.js
@@ -55020,8 +55072,26 @@ var FastenService = class _FastenService {
       }
     });
   }
-  getRecordLocatorFacilities() {
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
+  recordLocatorRegisterAndPollForStatus() {
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(switchMap((registerResponse) => {
+      if (registerResponse.data.status == "failed") {
+        console.error("record locator registration failed", registerResponse.data);
+        return throwError(() => new Error("Record locator registration failed"));
+      } else if (registerResponse.data.status == "success") {
+        console.info("record locator already successful, no need to poll");
+        return of(registerResponse);
+      } else {
+        console.log("start polling for record locator status");
+        return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator/${registerResponse.data.taskId}/status`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(
+          repeat({ delay: 3e3 }),
+          //check every 3 seconds
+          takeWhile((statusResponse) => statusResponse.data.status === "pending", true)
+        );
+      }
+    }));
+  }
+  recordLocatorResults(taskId) {
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator/${taskId}/results`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
       return response.data;
     }));
   }
@@ -56291,7 +56361,13 @@ var DashboardComponent = class _DashboardComponent {
   ngOnInit() {
     if (this.configService.systemConfig$.tefcaMode && !this.configService.vaultProfileConfig$.rlsQueryComplete) {
       this.loadingTefcaRLS = true;
-      this.fastenService.getRecordLocatorFacilities().subscribe((rlsResponse) => {
+      this.fastenService.recordLocatorRegisterAndPollForStatus().pipe(switchMap((rlsStatusResponse) => {
+        if (rlsStatusResponse.data.status == "success") {
+          return this.fastenService.recordLocatorResults(rlsStatusResponse.data.task_id);
+        } else {
+          throw new Error("RLS status response was not successful");
+        }
+      })).subscribe((rlsResponse) => {
         console.log("record locator response", rlsResponse);
         for (let vaultProfileConnectionId in rlsResponse.discovered_patient_accounts) {
           const discoveredFacility = rlsResponse.discovered_patient_accounts[vaultProfileConnectionId];
@@ -56453,7 +56529,7 @@ var DashboardComponent = class _DashboardComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 18 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 19 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/state-codes.ts
