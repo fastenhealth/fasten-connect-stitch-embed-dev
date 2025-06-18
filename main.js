@@ -55093,7 +55093,7 @@ var FastenService = class _FastenService {
     }));
   }
   recordLocatorResults(taskId) {
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator/${taskId}/results`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator/${taskId}/result`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
       return response.data;
     }));
   }
