@@ -55085,7 +55085,9 @@ var FastenService = class _FastenService {
         return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator/${registerResponse.data.task_id}`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(
           repeat({ delay: 3e3 }),
           //check every 3 seconds
-          takeWhile((statusResponse) => statusResponse.data.status === "pending", true),
+          filter((statusResponse) => statusResponse.data.status === "success" || statusResponse.data.status === "failed"),
+          //only pass through successful or failed status
+          take(1),
           timeout(3e5)
           // Stop polling after 5 minutes
         );
