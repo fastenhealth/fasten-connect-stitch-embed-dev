@@ -44564,6 +44564,12 @@ var ApiMode;
   ApiMode2["Live"] = "live";
   ApiMode2["Test"] = "test";
 })(ApiMode || (ApiMode = {}));
+var WidgetMode;
+(function(WidgetMode2) {
+  WidgetMode2["SearchOnly"] = "search-only";
+  WidgetMode2["Connect"] = "connect";
+  WidgetMode2["Tefca"] = "tefca";
+})(WidgetMode || (WidgetMode = {}));
 var ConnectionStatus;
 (function(ConnectionStatus2) {
   ConnectionStatus2["Authorized"] = "authorized";
