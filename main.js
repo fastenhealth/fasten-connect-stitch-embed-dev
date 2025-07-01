@@ -55099,7 +55099,7 @@ var FastenService = class _FastenService {
       return response.data;
     }));
   }
-  searchCatalogBrands(apiMode, filter2) {
+  searchCatalog(apiMode, filter2) {
     if ((typeof filter2.searchAfter === "string" || filter2.searchAfter instanceof String) && filter2.searchAfter.length > 0) {
       filter2.searchAfter = filter2.searchAfter.split(",");
     } else {
@@ -55107,6 +55107,16 @@ var FastenService = class _FastenService {
     }
     const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/bridge/catalog/search`);
     return this._httpClient.post(endpointUrl.toString(), filter2, { params: {
+      "public_id": this.configService.systemConfig$.publicId,
+      "api_mode": apiMode
+    } }).pipe(map((response) => {
+      this.logger.info("Metadata RESPONSE", response);
+      return response.data;
+    }));
+  }
+  searchCatalogBrand(apiMode, brandId) {
+    const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/bridge/catalog/search/${brandId}`);
+    return this._httpClient.post(endpointUrl.toString(), {}, { params: {
       "public_id": this.configService.systemConfig$.publicId,
       "api_mode": apiMode
     } }).pipe(map((response) => {
@@ -57362,6 +57372,9 @@ function HealthSystemSearchComponent_div_14_Template(rf, ctx) {
   }
 }
 var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
+  set searchQuery(newQuery) {
+    this.filter.query = newQuery;
+  }
   constructor(fastenService, configService, router, logger) {
     this.fastenService = fastenService;
     this.configService = configService;
@@ -57397,7 +57410,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     }
     this.filter.fields = ["*"];
     this.loading = true;
-    var searchObservable = this.fastenService.searchCatalogBrands(this.configService.systemConfig$.apiMode, this.filter);
+    var searchObservable = this.fastenService.searchCatalog(this.configService.systemConfig$.apiMode, this.filter);
     searchObservable.subscribe((wrapper) => {
       this.logger.info("search sources", wrapper);
       this.resultLimits.totalItems = wrapper?.hits?.total.value || 0;
@@ -57450,7 +57463,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], standalone: false, decls: 15, vars: 12, consts: [["id", "step-search", 1, "space-y-6"], [3, "backButtonLink"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], [1, "flex", "gap-2"], [1, "flex-1"], ["id", "search-input", "type", "text", "placeholder", "Search for your health system...", 1, "w-full", "block", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "keyup", "ngModel"], ["id", "search-filters", 1, "border", "border-gray-200", "rounded-lg", "w-10", "h-10", "flex", "items-center", "justify-center", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-filter", "w-5", "h-5"], ["points", "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"], ["id", "filters-container", "class", "space-y-4 p-4 border rounded-lg", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "space-y-2", "overflow-scroll", 2, "max-height", "600px", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "scrollWindow"], ["type", "button", "class", "w-full flex items-center gap-3 p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-[#5B47FB] focus:ring-opacity-20", 3, "click", 4, "ngFor", "ngForOf"], [4, "ngIf"], ["class", "space-y-4", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["id", "filters-container", 1, "space-y-4", "p-4", "border", "rounded-lg"], [1, "font-semibold", "text-lg"], [1, "relative"], [1, "block", "text-sm", "font-medium", "mb-1"], [1, "w-full", "flex", "items-center", "justify-between", "px-3", "py-2", "text-sm", "border", "rounded-md", "bg-white", "hover:bg-gray-50", 3, "ngModelChange", "ngModel"], ["value", "ALL", "selected", ""], ["disabled", ""], [3, "value", 4, "ngFor", "ngForOf"], ["id", "state-filter-menu", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], [1, "py-1"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]"], ["points", "20 6 9 17 4 12"], ["id", "state-filter-menu-hidden", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]", "hidden"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between", "bg-gray-50"], [3, "value"], ["type", "button", 1, "w-full", "flex", "items-center", "gap-3", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all", "text-left", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "click"], ["imageFallback", "", 1, "w-8", "max-h-8", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], ["class", "text-sm text-gray-600", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "flex", "items-center"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], ["class", "comma", 3, "innerHTML", 4, "ngFor", "ngForOf"], [1, "comma", 3, "innerHTML"], [1, "comma"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], [1, "space-y-4"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "11", "cy", "11", "r", "8"], ["d", "m21 21-4.3-4.3"], [1, "font-medium"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], inputs: { searchQuery: "searchQuery" }, standalone: false, decls: 15, vars: 12, consts: [["id", "step-search", 1, "space-y-6"], [3, "backButtonLink"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], [1, "flex", "gap-2"], [1, "flex-1"], ["id", "search-input", "type", "text", "placeholder", "Search for your health system...", 1, "w-full", "block", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "keyup", "ngModel"], ["id", "search-filters", 1, "border", "border-gray-200", "rounded-lg", "w-10", "h-10", "flex", "items-center", "justify-center", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-filter", "w-5", "h-5"], ["points", "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"], ["id", "filters-container", "class", "space-y-4 p-4 border rounded-lg", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "space-y-2", "overflow-scroll", 2, "max-height", "600px", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "scrollWindow"], ["type", "button", "class", "w-full flex items-center gap-3 p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-[#5B47FB] focus:ring-opacity-20", 3, "click", 4, "ngFor", "ngForOf"], [4, "ngIf"], ["class", "space-y-4", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["id", "filters-container", 1, "space-y-4", "p-4", "border", "rounded-lg"], [1, "font-semibold", "text-lg"], [1, "relative"], [1, "block", "text-sm", "font-medium", "mb-1"], [1, "w-full", "flex", "items-center", "justify-between", "px-3", "py-2", "text-sm", "border", "rounded-md", "bg-white", "hover:bg-gray-50", 3, "ngModelChange", "ngModel"], ["value", "ALL", "selected", ""], ["disabled", ""], [3, "value", 4, "ngFor", "ngForOf"], ["id", "state-filter-menu", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], [1, "py-1"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]"], ["points", "20 6 9 17 4 12"], ["id", "state-filter-menu-hidden", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]", "hidden"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between", "bg-gray-50"], [3, "value"], ["type", "button", 1, "w-full", "flex", "items-center", "gap-3", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all", "text-left", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "click"], ["imageFallback", "", 1, "w-8", "max-h-8", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], ["class", "text-sm text-gray-600", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "flex", "items-center"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], ["class", "comma", 3, "innerHTML", 4, "ngFor", "ngForOf"], [1, "comma", 3, "innerHTML"], [1, "comma"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], [1, "space-y-4"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "11", "cy", "11", "r", "8"], ["d", "m21 21-4.3-4.3"], [1, "font-medium"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header", 1);
@@ -58748,6 +58761,10 @@ var AppComponent = class _AppComponent {
     this.searchOnly = urlParams.get("search-only") == "true";
     this.tefcaMode = urlParams.get("tefca-mode") == "true";
     this.staticBackdrop = urlParams.get("static-backdrop") == "true";
+    this.searchQuery = urlParams.get("search-query") || "";
+    this.brandId = urlParams.get("brand-id") || "";
+    this.portalId = urlParams.get("portal-id") || "";
+    this.endpointId = urlParams.get("endpoint-id") || "";
   }
   constructor(activatedRoute, configService, messageBus, fastenService, router, logger) {
     this.activatedRoute = activatedRoute;
@@ -58759,9 +58776,13 @@ var AppComponent = class _AppComponent {
     this.publicId = "";
     this.externalId = "";
     this.externalState = "";
-    this.searchOnly = false;
     this.tefcaMode = false;
     this.staticBackdrop = false;
+    this.searchOnly = false;
+    this.searchQuery = "";
+    this.brandId = "";
+    this.portalId = "";
+    this.endpointId = "";
     this.loading = true;
   }
   ngOnInit() {
@@ -58783,7 +58804,7 @@ var AppComponent = class _AppComponent {
     });
     if (this.reconnectOrgConnectionId) {
       this.fastenService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
-        this.logger.info("Reconnect Org Connection", orgConnection);
+        this.logger.info("state: dashboard/connecting#reconnectOrgConnectionId", orgConnection);
         this.router.navigate(["dashboard/connecting"], {
           queryParams: {
             "brandId": orgConnection.catalog_brand_id,
@@ -58798,9 +58819,33 @@ var AppComponent = class _AppComponent {
         this.errorMessage = "Could not find the patient connection using id. Please contact the developer of this app.";
         this.logger.error("Invalid Fasten Connect Connection ID", err);
       });
+    } else if (this.brandId && this.portalId && this.endpointId) {
+      this.logger.info("state: dashboard/connecting");
+      this.router.navigate(["dashboard/connecting"], {
+        queryParams: {
+          "brandId": this.brandId,
+          "portalId": this.portalId,
+          "endpointId": this.endpointId,
+          "externalId": this.externalId,
+          "externalState": this.externalState
+        }
+      });
+    } else if (this.brandId) {
+      this.fastenService.searchCatalogBrand(apiMode, this.brandId).subscribe((brandItem) => {
+        this.logger.info("state: brand/details");
+        this.configService.searchConfig$.selectedBrand = brandItem._source;
+        this.router.navigateByUrl("brand/details");
+      });
     } else {
       if (this.searchOnly) {
-        this.router.navigateByUrl("search");
+        this.logger.info("state: search");
+        let queryParams = {};
+        if (this.searchQuery) {
+          queryParams["searchQuery"] = this.searchQuery;
+        }
+        this.router.navigate(["search"], {
+          queryParams
+        });
       }
     }
   }
@@ -58872,7 +58917,7 @@ var AppComponent = class _AppComponent {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], searchOnly: [0, "search-only", "searchOnly"], tefcaMode: [0, "tefca-mode", "tefcaMode"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"] }, standalone: false, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"] }, standalone: false, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275element(0, "link", 0);
         \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
