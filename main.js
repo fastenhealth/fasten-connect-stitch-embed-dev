@@ -44588,6 +44588,7 @@ var EventTypes;
   EventTypes2["EventTypeConnectionPending"] = "patient.connection_pending";
   EventTypes2["EventTypeConnectionSuccess"] = "patient.connection_success";
   EventTypes2["EventTypeConnectionFailed"] = "patient.connection_failed";
+  EventTypes2["EventTypeSearchQuery"] = "search.query";
 })(EventTypes || (EventTypes = {}));
 var ConnectWindowTimeout = 20 * 60 * 1e3;
 
@@ -46021,6 +46022,20 @@ var MessageBusService = class _MessageBusService {
     let eventPayload = new MessageBusEventPayload();
     eventPayload.api_mode = this.configService.systemConfig$.apiMode;
     eventPayload.event_type = EventTypes.EventTypeWidgetClose;
+    this.messageBusSubject.next(eventPayload);
+  }
+  //this event is published when a widget search is performed
+  publishSearchQuery(query, state, external_id) {
+    console.log("DEBUG: TESTING FIRING");
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.event_type = EventTypes.EventTypeSearchQuery;
+    eventPayload.data = {
+      query,
+      timestamp: Date.now(),
+      state,
+      external_id
+    };
     this.messageBusSubject.next(eventPayload);
   }
   static {
@@ -57383,11 +57398,12 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
   set searchQuery(newQuery) {
     this.filter.query = newQuery;
   }
-  constructor(fastenService, configService, router, logger) {
+  constructor(fastenService, configService, router, logger, messageBus) {
     this.fastenService = fastenService;
     this.configService = configService;
     this.router = router;
     this.logger = logger;
+    this.messageBus = messageBus;
     this.loading = false;
     this.lighthouseBrandList = [];
     this.stateCodes = StateCodes;
@@ -57436,6 +57452,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
         this.filter.searchAfter = wrapper.hits.hits[wrapper.hits.hits.length - 1].sort.join(",");
       }
       this.loading = false;
+      this.messageBus.publishSearchQuery(this.filter.query, this.filter.locations, this.configService.systemConfig$.externalId);
     }, (error) => {
       this.loading = false;
       this.logger.error("sources FAILED", error);
@@ -57467,7 +57484,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
   }
   static {
     this.\u0275fac = function HealthSystemSearchComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _HealthSystemSearchComponent)(\u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _HealthSystemSearchComponent)(\u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(MessageBusService));
     };
   }
   static {
