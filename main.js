@@ -46025,7 +46025,7 @@ var MessageBusService = class _MessageBusService {
     this.messageBusSubject.next(eventPayload);
   }
   //this event is published when a widget search is performed
-  publishSearchQuery(query, state, external_id) {
+  publishSearchQuery(query, locations, external_id) {
     if (!this.configService.systemConfig$.eventTypes?.includes(EventTypes.EventTypeSearchQuery)) {
       return;
     }
@@ -46035,7 +46035,9 @@ var MessageBusService = class _MessageBusService {
     eventPayload.data = {
       query,
       timestamp: Date.now(),
-      state,
+      filter: {
+        locations: locations || []
+      },
       external_id
     };
     this.messageBusSubject.next(eventPayload);
