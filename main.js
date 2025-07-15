@@ -58823,8 +58823,8 @@ var AppComponent = class _AppComponent {
     let eventTypes = [];
     if (this.eventTypes) {
       eventTypes = this.eventTypes.split(",").map((eventType) => {
-        return EventTypes[eventType.trim()];
-      }).filter((eventType) => eventType !== void 0);
+        return eventType;
+      }).filter((eventType) => Object.values(EventTypes).indexOf(eventType) >= 0);
     }
     this.configService.systemConfig = {
       apiMode,
