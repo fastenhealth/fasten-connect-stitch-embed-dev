@@ -46090,7 +46090,7 @@ var MessageBusService = class _MessageBusService {
     if (!this.configService.systemConfig$.eventTypes?.includes(EventTypes.EventTypeSearchQuery)) {
       return;
     }
-    if (!query) {
+    if (!query?.trim()) {
       return;
     }
     let eventPayload = new MessageBusEventPayload();
@@ -57521,7 +57521,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     this.filter.fields = ["*"];
     this.loading = true;
     var searchObservable = this.fastenService.searchCatalog(this.configService.systemConfig$.apiMode, this.filter);
-    searchObservable.pipe(debounceTime(1e5), distinctUntilChanged()).subscribe((wrapper) => {
+    searchObservable.subscribe((wrapper) => {
       this.logger.info("search sources", wrapper);
       this.resultLimits.totalItems = wrapper?.hits?.total.value || 0;
       this.lighthouseBrandList = this.lighthouseBrandList.concat((wrapper?.hits?.hits || []).map((result) => {
