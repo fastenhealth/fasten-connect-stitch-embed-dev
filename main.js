@@ -7891,6 +7891,47 @@ function concatMap(project, resultSelector) {
   return isFunction(resultSelector) ? mergeMap(project, resultSelector, 1) : mergeMap(project, 1);
 }
 
+// node_modules/rxjs/dist/esm/internal/operators/debounceTime.js
+function debounceTime(dueTime, scheduler = asyncScheduler) {
+  return operate((source, subscriber) => {
+    let activeTask = null;
+    let lastValue = null;
+    let lastTime = null;
+    const emit = () => {
+      if (activeTask) {
+        activeTask.unsubscribe();
+        activeTask = null;
+        const value = lastValue;
+        lastValue = null;
+        subscriber.next(value);
+      }
+    };
+    function emitWhenIdle() {
+      const targetTime = lastTime + dueTime;
+      const now = scheduler.now();
+      if (now < targetTime) {
+        activeTask = this.schedule(void 0, targetTime - now);
+        subscriber.add(activeTask);
+        return;
+      }
+      emit();
+    }
+    source.subscribe(createOperatorSubscriber(subscriber, (value) => {
+      lastValue = value;
+      lastTime = scheduler.now();
+      if (!activeTask) {
+        activeTask = scheduler.schedule(emitWhenIdle, dueTime);
+        subscriber.add(activeTask);
+      }
+    }, () => {
+      emit();
+      subscriber.complete();
+    }, void 0, () => {
+      lastValue = activeTask = null;
+    }));
+  });
+}
+
 // node_modules/rxjs/dist/esm/internal/operators/defaultIfEmpty.js
 function defaultIfEmpty(defaultValue) {
   return operate((source, subscriber) => {
@@ -7920,6 +7961,26 @@ function take(count) {
       }
     }));
   });
+}
+
+// node_modules/rxjs/dist/esm/internal/operators/distinctUntilChanged.js
+function distinctUntilChanged(comparator, keySelector = identity) {
+  comparator = comparator !== null && comparator !== void 0 ? comparator : defaultCompare;
+  return operate((source, subscriber) => {
+    let previousKey;
+    let first2 = true;
+    source.subscribe(createOperatorSubscriber(subscriber, (value) => {
+      const currentKey = keySelector(value);
+      if (first2 || !comparator(previousKey, currentKey)) {
+        first2 = false;
+        previousKey = currentKey;
+        subscriber.next(value);
+      }
+    }));
+  });
+}
+function defaultCompare(a, b) {
+  return a === b;
 }
 
 // node_modules/rxjs/dist/esm/internal/operators/throwIfEmpty.js
@@ -46029,6 +46090,9 @@ var MessageBusService = class _MessageBusService {
     if (!this.configService.systemConfig$.eventTypes?.includes(EventTypes.EventTypeSearchQuery)) {
       return;
     }
+    if (!query) {
+      return;
+    }
     let eventPayload = new MessageBusEventPayload();
     eventPayload.api_mode = this.configService.systemConfig$.apiMode;
     eventPayload.event_type = EventTypes.EventTypeSearchQuery;
@@ -57419,9 +57483,27 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
       platformTypesBuckets: void 0,
       categoryBuckets: void 0
     };
+    this.searchTermChanged = new Subject();
   }
   ngOnInit() {
     this.querySources(true);
+    this.searchTermSubscription = this.searchTermChanged.pipe(
+      // filter out empty strings
+      distinctUntilChanged(),
+      // debounce to avoid too many requests
+      debounceTime(500)
+    ).subscribe(() => {
+      this.logger.info("searchTermChanged", this.filter.query);
+      this.querySources(true);
+    });
+  }
+  ngOnDestroy() {
+    if (this.searchTermSubscription) {
+      this.searchTermSubscription.unsubscribe();
+    }
+  }
+  onKeyup(event) {
+    this.searchTermChanged.next(this.filter.query);
   }
   querySources(reset) {
     if (reset) {
@@ -57439,7 +57521,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     this.filter.fields = ["*"];
     this.loading = true;
     var searchObservable = this.fastenService.searchCatalog(this.configService.systemConfig$.apiMode, this.filter);
-    searchObservable.subscribe((wrapper) => {
+    searchObservable.pipe(debounceTime(1e5), distinctUntilChanged()).subscribe((wrapper) => {
       this.logger.info("search sources", wrapper);
       this.resultLimits.totalItems = wrapper?.hits?.total.value || 0;
       this.lighthouseBrandList = this.lighthouseBrandList.concat((wrapper?.hits?.hits || []).map((result) => {
@@ -57456,7 +57538,9 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
         this.filter.searchAfter = wrapper.hits.hits[wrapper.hits.hits.length - 1].sort.join(",");
       }
       this.loading = false;
-      this.messageBus.publishSearchQuery(this.filter.query, this.filter.locations, this.configService.systemConfig$.externalId);
+      if (reset) {
+        this.messageBus.publishSearchQuery(this.filter.query, this.filter.locations, this.configService.systemConfig$.externalId);
+      }
     }, (error) => {
       this.loading = false;
       this.logger.error("sources FAILED", error);
@@ -57503,8 +57587,8 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
           \u0275\u0275twoWayBindingSet(ctx.filter.query, $event) || (ctx.filter.query = $event);
           return $event;
         });
-        \u0275\u0275listener("keyup", function HealthSystemSearchComponent_Template_input_keyup_6_listener() {
-          return ctx.querySources(true);
+        \u0275\u0275listener("keyup", function HealthSystemSearchComponent_Template_input_keyup_6_listener($event) {
+          return ctx.onKeyup($event);
         });
         \u0275\u0275elementEnd()();
         \u0275\u0275elementStart(7, "button", 6);
