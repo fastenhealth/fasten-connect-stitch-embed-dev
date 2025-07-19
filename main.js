@@ -44651,6 +44651,11 @@ var EventTypes;
   EventTypes2["EventTypeConnectionFailed"] = "patient.connection_failed";
   EventTypes2["EventTypeSearchQuery"] = "search.query";
 })(EventTypes || (EventTypes = {}));
+var SDKMode;
+(function(SDKMode2) {
+  SDKMode2["None"] = "none";
+  SDKMode2["ReactNative"] = "react-native";
+})(SDKMode || (SDKMode = {}));
 var CommunicationEntity;
 (function(CommunicationEntity2) {
   CommunicationEntity2["PrimaryWebView"] = "FASTEN_CONNECT_PRIMARY_WEBVIEW";
@@ -45944,7 +45949,8 @@ LoggerModule.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
 // projects/shared-library/src/lib/services/config.service.ts
 var defaultSystemConfig = {
   publicId: "",
-  apiMode: ApiMode.Test
+  apiMode: ApiMode.Test,
+  sdkMode: SDKMode.None
 };
 var ConfigService = class _ConfigService {
   constructor(logger) {
@@ -46204,14 +46210,14 @@ var SearchFilter = class {
 };
 
 // projects/shared-library/src/lib/utils/post-message.ts
-function waitForOrgConnectionOrTimeout(logger, openedWindow) {
+function waitForOrgConnectionOrTimeout(logger, openedWindow, sdkMode) {
   logger.info(`waiting for postMessage notification from popup window`);
   return fromEvent(window, "message").pipe(
     //throw an error if we wait more than 2 minutes (this will close the window)
     timeout(ConnectWindowTimeout),
     filter((event) => {
       logger.debug(`received postMessage event, must determine if this message is safe to process`, event);
-      if (window.ReactNativeWebView) {
+      if (sdkMode == SDKMode.ReactNative && window.ReactNativeWebView) {
         if (event.source || event.origin) {
           logger.debug(`ignoring postMessage event from unknown source or origin. React-native webview should be null for both`, event.source, event.origin);
           return false;
@@ -55299,7 +55305,7 @@ var FastenService = class _FastenService {
     }));
   }
   // public verificationWithPopup(publicId: string, brandId: string, portalId: string, endpointId: string, reconnectOrgConnectionId?: string, connectMode?: ConnectMode, externalId?: string, externalState?: string): Observable<CallbackPayload> {
-  verificationWithPopup() {
+  verificationWithPopup(sdkMode) {
     const redirectUrl = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
     redirectUrl.searchParams.set("public_id", this.configService.systemConfig$.publicId);
     const isDesktop = this.deviceService.isDesktop();
@@ -55308,9 +55314,9 @@ var FastenService = class _FastenService {
       features = "popup=true,width=700,height=600";
     }
     let openedWindow = window.open(redirectUrl.toString(), "_blank", features);
-    return waitForOrgConnectionOrTimeout(this.logger, openedWindow);
+    return waitForOrgConnectionOrTimeout(this.logger, openedWindow, sdkMode);
   }
-  accountConnectWithPopup(brandId, portalId, endpointId, reconnectOrgConnectionId, externalId, externalState, reconnectVaultProfileConnectionId) {
+  accountConnectWithPopup(brandId, portalId, endpointId, reconnectOrgConnectionId, externalId, externalState, reconnectVaultProfileConnectionId, sdkMode) {
     const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/connect`);
     const redirectParams = new URLSearchParams();
     redirectParams.set("public_id", this.configService.systemConfig$.publicId);
@@ -55318,6 +55324,11 @@ var FastenService = class _FastenService {
     redirectParams.set("portal_id", portalId);
     redirectParams.set("endpoint_id", endpointId);
     redirectParams.set("connect_mode", "popup");
+    let selectedSDKMode = SDKMode.None;
+    if (sdkMode && sdkMode != SDKMode.None) {
+      redirectParams.set("sdk_mode", sdkMode);
+      selectedSDKMode = sdkMode;
+    }
     if (reconnectOrgConnectionId) {
       redirectParams.set("reconnect_org_connection_id", reconnectOrgConnectionId);
     }
@@ -55338,7 +55349,7 @@ var FastenService = class _FastenService {
       features = "popup=true,width=700,height=600";
     }
     let openedWindow = window.open(redirectUrlParts.toString(), "_blank", features);
-    return waitForOrgConnectionOrTimeout(this.logger, openedWindow);
+    return waitForOrgConnectionOrTimeout(this.logger, openedWindow, selectedSDKMode);
   }
   static {
     this.\u0275fac = function FastenService_Factory(__ngFactoryType__) {
@@ -56277,8 +56288,9 @@ function IdentityVerificationComponent_div_17_Template(rf, ctx) {
   }
 }
 var IdentityVerificationComponent = class _IdentityVerificationComponent {
-  constructor(fastenService, router, logger) {
+  constructor(fastenService, configService, router, logger) {
     this.fastenService = fastenService;
+    this.configService = configService;
     this.router = router;
     this.logger = logger;
     this.loading = false;
@@ -56288,7 +56300,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   }
   verifyIdentity() {
     this.loading = true;
-    this.fastenService.verificationWithPopup().subscribe((result) => {
+    this.fastenService.verificationWithPopup(this.configService.systemConfig$.sdkMode || SDKMode.None).subscribe((result) => {
       this.loading = false;
       this.logger.info("verification result", result);
       this.router.navigateByUrl("dashboard");
@@ -56312,7 +56324,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   }
   static {
     this.\u0275fac = function IdentityVerificationComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _IdentityVerificationComponent)(\u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _IdentityVerificationComponent)(\u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -56352,7 +56364,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 12 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 13 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts
@@ -57876,7 +57888,7 @@ function ConnectHelper(connectData) {
   if (connectData.org_connection_id) {
     onSuccessNavigateByUrl = "dashboard/complete";
   }
-  vaultApi.accountConnectWithPopup(connectData.brand_id, connectData.portal_id, connectData.endpoint_id, connectData.org_connection_id, connectData.external_id, connectData.external_state, connectData.vault_profile_connection_id).subscribe((orgConnectionCallbackData) => {
+  vaultApi.accountConnectWithPopup(connectData.brand_id, connectData.portal_id, connectData.endpoint_id, connectData.org_connection_id, connectData.external_id, connectData.external_state, connectData.vault_profile_connection_id, connectData.sdk_mode).subscribe((orgConnectionCallbackData) => {
     if (!orgConnectionCallbackData) {
       return;
     }
@@ -57965,6 +57977,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
     this.externalState = "";
     this.orgConnectionId = "";
     this.vaultProfileConnectionId = "";
+    this.sdkMode = SDKMode.None;
   }
   ngOnInit() {
     this.injector.runInContext(() => {
@@ -57976,8 +57989,9 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         org_connection_id: this.orgConnectionId,
         external_id: this.externalId,
         external_state: this.externalState,
-        vault_profile_connection_id: this.vaultProfileConnectionId
+        vault_profile_connection_id: this.vaultProfileConnectionId,
         // connect_mode: this.connectMode,
+        sdk_mode: this.sdkMode
       });
     });
   }
@@ -57994,7 +58008,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId" }, standalone: false, decls: 29, vars: 16, consts: [[1, "space-y-6"], [3, "backButtonEvent", "closeButtonEvent", "backButtonLink", "showClose"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["id", "connecting-subtitle", 1, "text-sm", "text-gray-600"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId", sdkMode: "sdkMode" }, standalone: false, decls: 29, vars: 16, consts: [[1, "space-y-6"], [3, "backButtonEvent", "closeButtonEvent", "backButtonLink", "showClose"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["id", "connecting-subtitle", 1, "text-sm", "text-gray-600"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "app-header", 1);
         \u0275\u0275listener("backButtonEvent", function HealthSystemConnectingComponent_Template_app_header_backButtonEvent_1_listener() {
@@ -58900,6 +58914,7 @@ var AppComponent = class _AppComponent {
     this.brandId = urlParams.get("brand-id") || "";
     this.portalId = urlParams.get("portal-id") || "";
     this.endpointId = urlParams.get("endpoint-id") || "";
+    this.sdkMode = urlParams.get("sdk-mode") || SDKMode.None;
   }
   constructor(activatedRoute, configService, messageBus, fastenService, router, logger) {
     this.activatedRoute = activatedRoute;
@@ -58919,6 +58934,7 @@ var AppComponent = class _AppComponent {
     this.brandId = "";
     this.portalId = "";
     this.endpointId = "";
+    this.sdkMode = "";
     this.loading = true;
   }
   ngOnInit() {
@@ -58931,6 +58947,9 @@ var AppComponent = class _AppComponent {
         return eventType;
       }).filter((eventType) => Object.values(EventTypes).indexOf(eventType) >= 0);
     }
+    if (!this.sdkMode) {
+      this.sdkMode = SDKMode.None;
+    }
     this.configService.systemConfig = {
       apiMode,
       publicId: this.publicId,
@@ -58939,7 +58958,8 @@ var AppComponent = class _AppComponent {
       staticBackdrop: this.staticBackdrop,
       searchOnly: this.searchOnly,
       tefcaMode: this.tefcaMode,
-      eventTypes
+      eventTypes,
+      sdkMode: this.sdkMode
     };
     this.messageBus.messageBusSubject.subscribe((eventPayload) => {
       this.logger.debug("bubbling up event", eventPayload);
@@ -58955,7 +58975,8 @@ var AppComponent = class _AppComponent {
             "endpointId": orgConnection.catalog_endpoint_id,
             "orgConnectionId": orgConnection.org_connection_id,
             "externalId": this.externalId,
-            "externalState": this.externalState
+            "externalState": this.externalState,
+            "sdkMode": this.sdkMode
           }
         });
       }, (err) => {
@@ -58970,7 +58991,8 @@ var AppComponent = class _AppComponent {
           "portalId": this.portalId,
           "endpointId": this.endpointId,
           "externalId": this.externalId,
-          "externalState": this.externalState
+          "externalState": this.externalState,
+          "sdkMode": this.sdkMode
         }
       });
     } else if (this.brandId) {
@@ -59040,7 +59062,7 @@ var AppComponent = class _AppComponent {
       this.logger.warn("No eventPayload to send");
       return;
     }
-    if (window.ReactNativeWebView) {
+    if (this.sdkMode == SDKMode.ReactNative && window.ReactNativeWebView) {
       this.logger.info("sending postMessage to React Native WebView", eventPayload);
       window.ReactNativeWebView.postMessage(JSON.stringify({
         "from": CommunicationEntity.PrimaryWebView,
@@ -59052,7 +59074,7 @@ var AppComponent = class _AppComponent {
       let parentWindowRef = window.parent || window.opener;
       parentWindowRef.postMessage(JSON.stringify(eventPayload), "*");
     } else {
-      this.logger.debug("No parent window to send message to");
+      this.logger.debug("No parent window to send message to", this.sdkMode);
       return;
     }
   }
@@ -59068,7 +59090,7 @@ var AppComponent = class _AppComponent {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"] }, standalone: false, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"] }, standalone: false, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275element(0, "link", 0);
         \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
@@ -59092,7 +59114,7 @@ var AppComponent = class _AppComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 24 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 29 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/services/auth-interceptor.service.ts
