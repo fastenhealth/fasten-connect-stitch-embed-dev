@@ -46205,6 +46205,10 @@ function waitForOrgConnectionOrTimeout(logger, openedWindow) {
     filter((event) => {
       logger.debug(`received postMessage event, must determine if this message is safe to process`, event);
       if (window.ReactNativeWebView) {
+        if (event.source || event.origin) {
+          logger.debug(`ignoring postMessage event from unknown source or origin. React-native webview should be null`, event.source, event.origin);
+          return false;
+        }
         return true;
       } else {
         if (event.source != openedWindow) {
@@ -57867,7 +57871,6 @@ function ConnectHelper(connectData) {
     onSuccessNavigateByUrl = "dashboard/complete";
   }
   vaultApi.accountConnectWithPopup(connectData.brand_id, connectData.portal_id, connectData.endpoint_id, connectData.org_connection_id, connectData.external_id, connectData.external_state, connectData.vault_profile_connection_id).subscribe((orgConnectionCallbackData) => {
-    console.log("!!!!!!!!!! ORG CONNECT CALLBACK DATA", orgConnectionCallbackData);
     if (!orgConnectionCallbackData) {
       return;
     }
