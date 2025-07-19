@@ -55305,7 +55305,7 @@ var FastenService = class _FastenService {
     }));
   }
   // public verificationWithPopup(publicId: string, brandId: string, portalId: string, endpointId: string, reconnectOrgConnectionId?: string, connectMode?: ConnectMode, externalId?: string, externalState?: string): Observable<CallbackPayload> {
-  verificationWithPopup(sdkMode) {
+  verificationWithPopup() {
     const redirectUrl = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
     redirectUrl.searchParams.set("public_id", this.configService.systemConfig$.publicId);
     const isDesktop = this.deviceService.isDesktop();
@@ -55314,9 +55314,9 @@ var FastenService = class _FastenService {
       features = "popup=true,width=700,height=600";
     }
     let openedWindow = window.open(redirectUrl.toString(), "_blank", features);
-    return waitForOrgConnectionOrTimeout(this.logger, openedWindow, sdkMode);
+    return waitForOrgConnectionOrTimeout(this.logger, openedWindow, this.configService.systemConfig$.sdkMode);
   }
-  accountConnectWithPopup(brandId, portalId, endpointId, reconnectOrgConnectionId, externalId, externalState, reconnectVaultProfileConnectionId, sdkMode) {
+  accountConnectWithPopup(brandId, portalId, endpointId, reconnectOrgConnectionId, externalId, externalState, reconnectVaultProfileConnectionId) {
     const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/connect`);
     const redirectParams = new URLSearchParams();
     redirectParams.set("public_id", this.configService.systemConfig$.publicId);
@@ -55324,11 +55324,7 @@ var FastenService = class _FastenService {
     redirectParams.set("portal_id", portalId);
     redirectParams.set("endpoint_id", endpointId);
     redirectParams.set("connect_mode", "popup");
-    let selectedSDKMode = SDKMode.None;
-    if (sdkMode && sdkMode != SDKMode.None) {
-      redirectParams.set("sdk_mode", sdkMode);
-      selectedSDKMode = sdkMode;
-    }
+    redirectParams.set("sdk_mode", this.configService.systemConfig$.sdkMode);
     if (reconnectOrgConnectionId) {
       redirectParams.set("reconnect_org_connection_id", reconnectOrgConnectionId);
     }
@@ -55349,7 +55345,7 @@ var FastenService = class _FastenService {
       features = "popup=true,width=700,height=600";
     }
     let openedWindow = window.open(redirectUrlParts.toString(), "_blank", features);
-    return waitForOrgConnectionOrTimeout(this.logger, openedWindow, selectedSDKMode);
+    return waitForOrgConnectionOrTimeout(this.logger, openedWindow, this.configService.systemConfig$.sdkMode);
   }
   static {
     this.\u0275fac = function FastenService_Factory(__ngFactoryType__) {
@@ -56300,7 +56296,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   }
   verifyIdentity() {
     this.loading = true;
-    this.fastenService.verificationWithPopup(this.configService.systemConfig$.sdkMode || SDKMode.None).subscribe((result) => {
+    this.fastenService.verificationWithPopup().subscribe((result) => {
       this.loading = false;
       this.logger.info("verification result", result);
       this.router.navigateByUrl("dashboard");
@@ -57888,7 +57884,7 @@ function ConnectHelper(connectData) {
   if (connectData.org_connection_id) {
     onSuccessNavigateByUrl = "dashboard/complete";
   }
-  vaultApi.accountConnectWithPopup(connectData.brand_id, connectData.portal_id, connectData.endpoint_id, connectData.org_connection_id, connectData.external_id, connectData.external_state, connectData.vault_profile_connection_id, connectData.sdk_mode).subscribe((orgConnectionCallbackData) => {
+  vaultApi.accountConnectWithPopup(connectData.brand_id, connectData.portal_id, connectData.endpoint_id, connectData.org_connection_id, connectData.external_id, connectData.external_state, connectData.vault_profile_connection_id).subscribe((orgConnectionCallbackData) => {
     if (!orgConnectionCallbackData) {
       return;
     }
@@ -57989,9 +57985,8 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         org_connection_id: this.orgConnectionId,
         external_id: this.externalId,
         external_state: this.externalState,
-        vault_profile_connection_id: this.vaultProfileConnectionId,
+        vault_profile_connection_id: this.vaultProfileConnectionId
         // connect_mode: this.connectMode,
-        sdk_mode: this.sdkMode
       });
     });
   }
