@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cookie Popup</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .popup {
+      text-align: center;
+      border: 1px solid #ccc;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    button {
+      background-color: #5B47FB;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #4936E8;
+    }
+  </style>
+</head>
+<body>
+<div class="popup">
+  <h1>Cookie Consent</h1>
+  <p>We need your consent to set a cookie for this session.</p>
+  <button onclick="userInteractionCompleted()">Allow</button>
+</div>
+
+<script>
+  function userInteractionCompleted() {
+    // Set the cookie
+    document.cookie = "embedFirstPartyCookie=true; SameSite=None; Secure; path=/";
+
+    // Notify the opener window
+    if (window.opener) {
+      window.opener.postMessage('{"success":true}', "*");
+    }
+
+    // Close the popup window
+    window.close();
+  }
+</script>
+</body>
+</html>

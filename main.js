@@ -58858,47 +58858,8 @@ var IsTefcaModeAuthGuard = class _IsTefcaModeAuthGuard {
   }
 };
 
-// projects/fasten-connect-stitch-embed/src/app/pages/cookie/cookie.component.ts
-var CookieComponent = class _CookieComponent {
-  // we're now in a cookie popup. This will be our opportunity to "Meet and Greet the User as the first party"
-  // https://webkit.org/blog/11545/updates-to-the-storage-access-api/
-  //
-  userInteractionCompleted() {
-    document.cookie = "embedFirstPartyCookie=true; SameSite=None; Secure; path=/";
-    window.opener.postMessage(`{"success":true}`, "*");
-    window.close();
-  }
-  static {
-    this.\u0275fac = function CookieComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _CookieComponent)();
-    };
-  }
-  static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _CookieComponent, selectors: [["app-cookie"]], standalone: false, decls: 8, vars: 0, consts: [[1, "fixed", "inset-0", "bg-black", "bg-opacity-50", "flex", "justify-center", "items-center"], [1, "bg-white", "p-6", "rounded-lg", "shadow-lg", "text-center"], [1, "text-lg", "font-bold", "mb-2"], [1, "text-gray-600", "mb-4"], [1, "bg-blue-500", "text-white", "px-4", "py-2", "rounded", "hover:bg-blue-700", 3, "click"]], template: function CookieComponent_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "h2", 2);
-        \u0275\u0275text(3, "Enable Storage Access");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(4, "p", 3);
-        \u0275\u0275text(5, " Safari blocks third-party cookies by default. Click the button below to allow access. ");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(6, "button", 4);
-        \u0275\u0275listener("click", function CookieComponent_Template_button_click_6_listener() {
-          return ctx.userInteractionCompleted();
-        });
-        \u0275\u0275text(7, " Allow Storage Access ");
-        \u0275\u0275elementEnd()()();
-      }
-    }, encapsulation: 2 });
-  }
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(CookieComponent, { className: "CookieComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/cookie/cookie.component.ts", lineNumber: 9 });
-})();
-
 // projects/fasten-connect-stitch-embed/src/app/app-routing.module.ts
 var routes = [
-  { path: "cookie", component: CookieComponent },
   { path: "auth/signin", component: VaultProfileSigninComponent },
   { path: "auth/signin/code", component: VaultProfileSigninCodeComponent },
   { path: "auth/identity/verification", component: IdentityVerificationComponent },
