@@ -55614,10 +55614,15 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       return Promise.resolve(true);
     }
     return document.hasStorageAccess().then((result) => {
-      console.log("Storage access already granted!", result);
-      return true;
+      console.log("Storage access unpartitioned or already granted!", result);
+      if (document.cookie.split("; ").find((row) => row.startsWith("embedFirstPartyCookie="))?.split("=")[1]) {
+        return true;
+      } else {
+        console.log("no embedFirstPartyCookie found, storage access is partitioned or not granted yet.");
+        return false;
+      }
     }).catch((error) => {
-      console.error("Storage access has not been granted", error);
+      console.error("Storage access is partitioned and has not been granted", error);
       return false;
     });
   }
