@@ -48822,7 +48822,7 @@ var FastenService = class _FastenService {
   }
   // public storageApiWithPopup(): Observable<CallbackPayload> {
   storageApiUserInteractionWithPopup() {
-    const redirectUrl = new URL(`/cookie`);
+    const redirectUrl = new URL(`${window.location.origin}/cookie`);
     const isDesktop = this.deviceService.isDesktop();
     let features = "";
     if (isDesktop) {
