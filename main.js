@@ -55728,6 +55728,10 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     }
   }
   awaitUserInteractionCompleted() {
+    if (!this.requiresStorageAccessSubject.getValue()) {
+      console.log("No storage access required, no user interaction needed.");
+      return;
+    }
     this.fastenService.storageApiUserInteractionWithPopup().subscribe((result) => {
       console.log("User interaction completed", result);
       this.requiresStorageAccessSubject.next(false);
