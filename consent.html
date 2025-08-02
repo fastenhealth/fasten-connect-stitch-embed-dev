@@ -9,14 +9,15 @@
       margin: 0;
       padding: 0;
       font-family: Arial, sans-serif;
+      height: 100vh;
       display: flex;
       flex-direction: column;
-      height: 100%; /* Use 100% height for the body */
     }
     iframe {
       flex: 1;
       width: 100%;
       border: none;
+      height: calc(100svh - 60px); /* Adjust height to leave space for the consent bar */
     }
     .consent-bar {
       height: 60px; /* Fixed height for the consent bar */
@@ -50,32 +51,30 @@
 <iframe src="https://policy.fastenhealth.com/connect/privacy_policy.html"></iframe>
 <div class="consent-bar">
   <p><button onclick="userInteractionCompleted()">I Agree</button></p>
+
 </div>
 
 <script>
-  function adjustIframeHeight() {
-    const iframe = document.querySelector('iframe');
-    const consentBarHeight = document.querySelector('.consent-bar').offsetHeight;
-    iframe.style.height = `${window.innerHeight - consentBarHeight}px`;
-  }
-
-  // Adjust the iframe height on load and resize
-  window.addEventListener('load', adjustIframeHeight);
-  window.addEventListener('resize', adjustIframeHeight);
-
   let userInteraction = false;
-  window.addEventListener('beforeunload', function () {
+  window.addEventListener('beforeunload', function (event) {
+    // Your code to execute before the page unloads
+    console.log("Page is about to unload!");
     if (window.opener && !userInteraction) {
       window.opener.postMessage('{"success":false}', "*");
     }
   });
 
+
   function userInteractionCompleted() {
+    // Set the cookie
     document.cookie = "embedFirstPartyCookie=true; SameSite=None; Secure; path=/";
-    userInteraction = true;
+    userInteraction = true
+    // Notify the opener window
     if (window.opener) {
       window.opener.postMessage('{"success":true}', "*");
     }
+
+    // Close the popup window
     window.close();
   }
 </script>
