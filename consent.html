@@ -54,10 +54,20 @@
 </div>
 
 <script>
+  let userInteraction = false;
+  window.addEventListener('beforeunload', function (event) {
+    // Your code to execute before the page unloads
+    console.log("Page is about to unload!");
+    if (window.opener && !userInteraction) {
+      window.opener.postMessage('{"success":false}', "*");
+    }
+  });
+
+
   function userInteractionCompleted() {
     // Set the cookie
     document.cookie = "embedFirstPartyCookie=true; SameSite=None; Secure; path=/";
-
+    userInteraction = true
     // Notify the opener window
     if (window.opener) {
       window.opener.postMessage('{"success":true}', "*");
