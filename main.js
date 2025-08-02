@@ -55733,7 +55733,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.userInteractionWindowOpened = true;
     this.fastenService.storageApiUserInteractionWithPopup().subscribe((result) => {
       this.logger.log("User interaction completed", result);
-      this.userInteractionCompletedSubject.next(result.success || true);
+      this.userInteractionCompletedSubject.next(result.success);
       this.userInteractionWindowOpened = false;
     });
   }
