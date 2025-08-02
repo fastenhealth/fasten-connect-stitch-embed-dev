@@ -55452,29 +55452,30 @@ var HeaderComponent = class _HeaderComponent {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts
-var _c0 = (a0) => ({ "custom-checkbox-checked": a0 });
-function VaultProfileSigninComponent_p_49_span_1_Template(rf, ctx) {
+var _c0 = (a0, a1) => ({ "space-y-3": a0, "space-y-6": a1 });
+var _c1 = (a0) => ({ "custom-checkbox-checked": a0 });
+function VaultProfileSigninComponent_p_51_span_1_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, " Email is required. ");
     \u0275\u0275elementEnd();
   }
 }
-function VaultProfileSigninComponent_p_49_span_2_Template(rf, ctx) {
+function VaultProfileSigninComponent_p_51_span_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, " Email must be at least 4 characters long. ");
     \u0275\u0275elementEnd();
   }
 }
-function VaultProfileSigninComponent_p_49_span_3_Template(rf, ctx) {
+function VaultProfileSigninComponent_p_51_span_3_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, " Email must be a valid email address. ");
     \u0275\u0275elementEnd();
   }
 }
-function VaultProfileSigninComponent_p_49_span_4_Template(rf, ctx) {
+function VaultProfileSigninComponent_p_51_span_4_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span", 39)(1, "strong");
     \u0275\u0275text(2, "Error");
@@ -55488,15 +55489,15 @@ function VaultProfileSigninComponent_p_49_span_4_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r1.errorMsg, " ");
   }
 }
-function VaultProfileSigninComponent_p_49_Template(rf, ctx) {
+function VaultProfileSigninComponent_p_51_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "p", 37);
-    \u0275\u0275template(1, VaultProfileSigninComponent_p_49_span_1_Template, 2, 0, "span", 36)(2, VaultProfileSigninComponent_p_49_span_2_Template, 2, 0, "span", 36)(3, VaultProfileSigninComponent_p_49_span_3_Template, 2, 0, "span", 36)(4, VaultProfileSigninComponent_p_49_span_4_Template, 4, 1, "span", 38);
+    \u0275\u0275template(1, VaultProfileSigninComponent_p_51_span_1_Template, 2, 0, "span", 36)(2, VaultProfileSigninComponent_p_51_span_2_Template, 2, 0, "span", 36)(3, VaultProfileSigninComponent_p_51_span_3_Template, 2, 0, "span", 36)(4, VaultProfileSigninComponent_p_51_span_4_Template, 4, 1, "span", 38);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    const email_r3 = \u0275\u0275reference(48);
+    const email_r3 = \u0275\u0275reference(50);
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", email_r3.errors == null ? null : email_r3.errors["required"]);
     \u0275\u0275advance();
@@ -55507,7 +55508,7 @@ function VaultProfileSigninComponent_p_49_Template(rf, ctx) {
     \u0275\u0275property("ngIf", ctx_r1.errorMsg);
   }
 }
-function VaultProfileSigninComponent_p_50_Template(rf, ctx) {
+function VaultProfileSigninComponent_p_52_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "p", 40);
     \u0275\u0275text(1, " By clicking continue you agree to: ");
@@ -55538,14 +55539,14 @@ function VaultProfileSigninComponent_p_50_Template(rf, ctx) {
     \u0275\u0275propertyInterpolate("href", (tmp_5_0 = \u0275\u0275pipeBind1(13, 4, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_5_0.org == null ? null : tmp_5_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
   }
 }
-function VaultProfileSigninComponent_ng_template_52_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_template_54_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "p", 40);
     \u0275\u0275element(1, "br");
     \u0275\u0275text(2, "Fasten's ");
     \u0275\u0275elementStart(3, "span", 44);
-    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_52_Template_span_click_3_listener() {
+    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_54_Template_span_click_3_listener() {
       \u0275\u0275restoreView(_r4);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.awaitUserInteractionCompleted());
@@ -55565,7 +55566,7 @@ function VaultProfileSigninComponent_ng_template_52_Template(rf, ctx) {
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(14, "div", 45)(15, "span", 46);
     \u0275\u0275pipe(16, "async");
-    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_52_Template_span_click_15_listener() {
+    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_54_Template_span_click_15_listener() {
       \u0275\u0275restoreView(_r4);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.awaitUserInteractionCompleted());
@@ -55582,10 +55583,10 @@ function VaultProfileSigninComponent_ng_template_52_Template(rf, ctx) {
     \u0275\u0275advance(2);
     \u0275\u0275propertyInterpolate("href", (tmp_5_0 = \u0275\u0275pipeBind1(12, 5, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_5_0.org == null ? null : tmp_5_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
     \u0275\u0275advance(4);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction1(9, _c0, \u0275\u0275pipeBind1(16, 7, ctx_r1.userInteractionCompletedSubject)));
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction1(9, _c1, \u0275\u0275pipeBind1(16, 7, ctx_r1.userInteractionCompletedSubject)));
   }
 }
-function VaultProfileSigninComponent_app_spinner_57_Template(rf, ctx) {
+function VaultProfileSigninComponent_app_spinner_59_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275element(0, "app-spinner");
   }
@@ -55742,7 +55743,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], standalone: false, decls: 59, vars: 18, consts: [["vaultProfileForm", "ngForm"], ["email", "ngModel"], ["needStorageAccessPermissionTemplate", ""], ["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [1, "space-y-3", 3, "ngSubmit"], [1, "block", "text-sm", "font-medium", "text-gray-700"], ["name", "email", "required", "", "email", "", "minlength", "4", "type", "email", "placeholder", "you@example.com", 1, "block", "w-full", "mt-2", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["id", "initialError", "class", "text-sm text-red-500", 4, "ngIf"], ["class", "text-xs text-gray-400 text-center", 4, "ngIf", "ngIfElse"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "disabled"], [4, "ngIf"], ["id", "initialError", 1, "text-sm", "text-red-500"], ["class", "alert alert-danger mt-3", "role", "alert", 4, "ngIf"], ["role", "alert", 1, "alert", "alert-danger", "mt-3"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], [1, "text-gray-500", "hover:text-gray-600", "underline", 3, "click"], [1, "flex", "items-center", "justify-center"], [1, "custom-checkbox", "ml-2", "text-sm", "text-gray-600", 3, "click", "ngClass"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], standalone: false, decls: 61, vars: 26, consts: [["vaultProfileForm", "ngForm"], ["email", "ngModel"], ["needStorageAccessPermissionTemplate", ""], ["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [3, "ngSubmit", "ngClass"], [1, "block", "text-sm", "font-medium", "text-gray-700"], ["name", "email", "required", "", "email", "", "minlength", "4", "type", "email", "placeholder", "you@example.com", 1, "block", "w-full", "mt-2", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["id", "initialError", "class", "text-sm text-red-500", 4, "ngIf"], ["class", "text-xs text-gray-400 text-center", 4, "ngIf", "ngIfElse"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "disabled"], [4, "ngIf"], ["id", "initialError", 1, "text-sm", "text-red-500"], ["class", "alert alert-danger mt-3", "role", "alert", 4, "ngIf"], ["role", "alert", 1, "alert", "alert-danger", "mt-3"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], [1, "text-gray-500", "hover:text-gray-600", "underline", 3, "click"], [1, "flex", "items-center", "justify-center"], [1, "custom-checkbox", "ml-2", "text-sm", "text-gray-600", 3, "click", "ngClass"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
       if (rf & 1) {
         const _r1 = \u0275\u0275getCurrentView();
         \u0275\u0275elementStart(0, "div", 3);
@@ -55791,48 +55792,52 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
         \u0275\u0275text(42, " We never sell your personal info and only use it with your permission ");
         \u0275\u0275elementEnd()()()();
         \u0275\u0275elementStart(43, "form", 30, 0);
+        \u0275\u0275pipe(45, "async");
+        \u0275\u0275pipe(46, "async");
         \u0275\u0275listener("ngSubmit", function VaultProfileSigninComponent_Template_form_ngSubmit_43_listener() {
           \u0275\u0275restoreView(_r1);
           return \u0275\u0275resetView(ctx.signinSubmit());
         });
-        \u0275\u0275elementStart(45, "label", 31);
-        \u0275\u0275text(46, "Email address");
+        \u0275\u0275elementStart(47, "label", 31);
+        \u0275\u0275text(48, "Email address");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(47, "input", 32, 1);
-        \u0275\u0275twoWayListener("ngModelChange", function VaultProfileSigninComponent_Template_input_ngModelChange_47_listener($event) {
+        \u0275\u0275elementStart(49, "input", 32, 1);
+        \u0275\u0275twoWayListener("ngModelChange", function VaultProfileSigninComponent_Template_input_ngModelChange_49_listener($event) {
           \u0275\u0275restoreView(_r1);
           \u0275\u0275twoWayBindingSet(ctx.existingVaultProfile.email, $event) || (ctx.existingVaultProfile.email = $event);
           return \u0275\u0275resetView($event);
         });
         \u0275\u0275elementEnd();
-        \u0275\u0275template(49, VaultProfileSigninComponent_p_49_Template, 5, 4, "p", 33)(50, VaultProfileSigninComponent_p_50_Template, 15, 6, "p", 34);
-        \u0275\u0275pipe(51, "async");
-        \u0275\u0275template(52, VaultProfileSigninComponent_ng_template_52_Template, 18, 11, "ng-template", null, 2, \u0275\u0275templateRefExtractor);
-        \u0275\u0275elementStart(54, "button", 35);
-        \u0275\u0275pipe(55, "async");
-        \u0275\u0275pipe(56, "async");
-        \u0275\u0275template(57, VaultProfileSigninComponent_app_spinner_57_Template, 1, 0, "app-spinner", 36);
-        \u0275\u0275text(58, " Continue ");
+        \u0275\u0275template(51, VaultProfileSigninComponent_p_51_Template, 5, 4, "p", 33)(52, VaultProfileSigninComponent_p_52_Template, 15, 6, "p", 34);
+        \u0275\u0275pipe(53, "async");
+        \u0275\u0275template(54, VaultProfileSigninComponent_ng_template_54_Template, 18, 11, "ng-template", null, 2, \u0275\u0275templateRefExtractor);
+        \u0275\u0275elementStart(56, "button", 35);
+        \u0275\u0275pipe(57, "async");
+        \u0275\u0275pipe(58, "async");
+        \u0275\u0275template(59, VaultProfileSigninComponent_app_spinner_59_Template, 1, 0, "app-spinner", 36);
+        \u0275\u0275text(60, " Continue ");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
         let tmp_3_0;
         let tmp_4_0;
         const vaultProfileForm_r5 = \u0275\u0275reference(44);
-        const email_r3 = \u0275\u0275reference(48);
-        const needStorageAccessPermissionTemplate_r6 = \u0275\u0275reference(53);
+        const email_r3 = \u0275\u0275reference(50);
+        const needStorageAccessPermissionTemplate_r6 = \u0275\u0275reference(55);
         \u0275\u0275advance(4);
-        \u0275\u0275property("src", (tmp_3_0 = \u0275\u0275pipeBind1(5, 8, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.logo_uri, \u0275\u0275sanitizeUrl);
+        \u0275\u0275property("src", (tmp_3_0 = \u0275\u0275pipeBind1(5, 9, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.logo_uri, \u0275\u0275sanitizeUrl);
         \u0275\u0275advance(17);
-        \u0275\u0275textInterpolate1(" ", ((tmp_4_0 = \u0275\u0275pipeBind1(22, 10, ctx.configService.systemConfigSubject)) == null ? null : tmp_4_0.org == null ? null : tmp_4_0.org.name) || "Unknown", " uses Fasten to securely link your health systems ");
-        \u0275\u0275advance(26);
+        \u0275\u0275textInterpolate1(" ", ((tmp_4_0 = \u0275\u0275pipeBind1(22, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_4_0.org == null ? null : tmp_4_0.org.name) || "Unknown", " uses Fasten to securely link your health systems ");
+        \u0275\u0275advance(22);
+        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(23, _c0, \u0275\u0275pipeBind1(45, 13, ctx.needStorageAccessPermissionSubject), !\u0275\u0275pipeBind1(46, 15, ctx.needStorageAccessPermissionSubject)));
+        \u0275\u0275advance(6);
         \u0275\u0275twoWayProperty("ngModel", ctx.existingVaultProfile.email);
         \u0275\u0275advance(2);
         \u0275\u0275property("ngIf", email_r3.invalid && (email_r3.dirty || email_r3.touched));
         \u0275\u0275advance();
-        \u0275\u0275property("ngIf", !\u0275\u0275pipeBind1(51, 12, ctx.needStorageAccessPermissionSubject))("ngIfElse", needStorageAccessPermissionTemplate_r6);
+        \u0275\u0275property("ngIf", !\u0275\u0275pipeBind1(53, 17, ctx.needStorageAccessPermissionSubject))("ngIfElse", needStorageAccessPermissionTemplate_r6);
         \u0275\u0275advance(4);
-        \u0275\u0275property("disabled", !vaultProfileForm_r5.form.valid || ctx.loading || \u0275\u0275pipeBind1(55, 14, ctx.needStorageAccessPermissionSubject) && !\u0275\u0275pipeBind1(56, 16, ctx.userInteractionCompletedSubject));
+        \u0275\u0275property("disabled", !vaultProfileForm_r5.form.valid || ctx.loading || \u0275\u0275pipeBind1(57, 19, ctx.needStorageAccessPermissionSubject) && !\u0275\u0275pipeBind1(58, 21, ctx.userInteractionCompletedSubject));
         \u0275\u0275advance(3);
         \u0275\u0275property("ngIf", ctx.loading);
       }
@@ -56572,7 +56577,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
 
 // projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts
 var _c03 = () => [];
-var _c1 = () => ({});
+var _c12 = () => ({});
 function DashboardComponent_div_7_div_5_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 27);
@@ -56858,9 +56863,9 @@ var DashboardComponent = class _DashboardComponent {
         \u0275\u0275advance(3);
         \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(11, 11, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(27, _c03));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(14, 15, ((tmp_3_0 = \u0275\u0275pipeBind1(13, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(28, _c1)));
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(14, 15, ((tmp_3_0 = \u0275\u0275pipeBind1(13, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(28, _c12)));
         \u0275\u0275advance(3);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(17, 19, ((tmp_4_0 = \u0275\u0275pipeBind1(16, 17, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(29, _c1)));
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(17, 19, ((tmp_4_0 = \u0275\u0275pipeBind1(16, 17, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(29, _c12)));
         \u0275\u0275advance(3);
         \u0275\u0275property("routerLink", "/search");
         \u0275\u0275advance(15);
