@@ -55591,10 +55591,6 @@ function VaultProfileSigninComponent_app_spinner_57_Template(rf, ctx) {
   }
 }
 var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
-  //   requiresStorageAccessSubject: BehaviorSubject<boolean> = new BehaviorSubject(false)
-  // //this field is only rquired if requiresStorageAccessSubject is true.
-  // // in that case, we need the patient to interact with the domain, so we'll open the privacy policy in a new window with an agree button.
-  // privacyPolicyAgreed: boolean = false
   constructor(configService, authService, fastenService, router, logger) {
     this.configService = configService;
     this.authService = authService;
@@ -55610,7 +55606,6 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.needStorageAccessPermissionSubject = new BehaviorSubject(false);
     this.userInteractionWindowOpened = false;
     this.userInteractionCompletedSubject = new BehaviorSubject(false);
-    this.haveCheckedStorageAccessPermission = new BehaviorSubject(false);
   }
   ngOnInit() {
     const urlParams = new URLSearchParams(window.location.search);
