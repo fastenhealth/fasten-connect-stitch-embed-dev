@@ -55683,40 +55683,40 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   // this function must be called from an event handler (where the user interacted wiht the page) -- ie. a click handler
   requestStorageAccess() {
     if (!document.requestStorageAccess) {
-      console.warn("Storage Access API not available in this browser.");
+      this.logger.warn("Storage Access API not available in this browser.");
       return Promise.resolve(true);
     }
     return document.requestStorageAccess().then(() => {
-      console.log("Storage access granted!");
+      this.logger.log("Storage access granted!");
       return Promise.resolve(true);
     }).catch((error) => {
-      console.log("Storage access denied by user", error);
-      alert("Storage access denied by user. Please allow storage access to continue.");
+      this.logger.log("Storage access denied by user", error);
+      alert("Cookies are required for the Fasten widget to function. Please allow storage access to continue.");
       return Promise.reject(false);
     });
   }
   hasStorageAccess() {
     if (!document.requestStorageAccess || !document.hasStorageAccess) {
-      console.warn("Storage Access API not available in this browser.");
+      this.logger.warn("Storage Access API not available in this browser.");
       return Promise.resolve(true);
     }
     return document.hasStorageAccess().then((result) => {
-      console.log("Storage access unpartitioned or already granted!", result);
+      this.logger.log("Storage access unpartitioned or already granted!", result);
       if (document.cookie.split("; ").find((row) => row.startsWith("embedFirstPartyCookie="))?.split("=")[1]) {
         return true;
       } else {
-        console.log("no embedFirstPartyCookie found, storage access is partitioned or not granted yet.");
+        this.logger.log("no embedFirstPartyCookie found, storage access is partitioned or not granted yet.");
         return false;
       }
     }).catch((error) => {
-      console.error("Storage access is partitioned and has not been granted", error);
+      this.logger.error("Storage access is partitioned and has not been granted", error);
       return false;
     });
   }
   checkRequiresStorageAccess() {
-    console.log("checking requires storage access.");
+    this.logger.log("checking requires storage access.");
     if (!(this.isSafari() || this.isChrome())) {
-      console.log("Not Safari and not Chrome, no storage access needed.");
+      this.logger.log("Not Safari and not Chrome, no storage access needed.");
       this.requiresStorageAccessSubject.next(false);
     } else {
       this.hasStorageAccess().then((hasAccess) => {
@@ -55730,11 +55730,11 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
   awaitUserInteractionCompleted() {
     if (!this.requiresStorageAccessSubject.getValue()) {
-      console.log("No storage access required, no user interaction needed.");
+      this.logger.log("No storage access required, no user interaction needed.");
       return;
     }
     this.fastenService.storageApiUserInteractionWithPopup().subscribe((result) => {
-      console.log("User interaction completed", result);
+      this.logger.log("User interaction completed", result);
       this.requiresStorageAccessSubject.next(false);
       this.privacyPolicyAgreed = true;
     });
