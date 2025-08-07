@@ -59363,6 +59363,38 @@ var AuthInterceptorService = class _AuthInterceptorService {
   }
 };
 
+// projects/fasten-connect-stitch-embed/src/app/components/footer/footer.component.ts
+var FooterComponent = class _FooterComponent {
+  constructor() {
+  }
+  ngOnInit() {
+  }
+  static {
+    this.\u0275fac = function FooterComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FooterComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FooterComponent, selectors: [["app-footer"]], standalone: false, decls: 8, vars: 1, consts: [[1, "az-footer", "ht-40", "page-footer", "fixed-bottom"], [1, "container", "ht-100p", "pd-t-0-f"], [1, "d-sm-flex", "justify-content-center", "justify-content-sm-between", "py-2", "w-100"], [1, "text-muted", "text-center", "text-sm-left", "d-block", "d-sm-inline-block"], [1, "float-none", "float-sm-right", "d-block", "mt-1", "mt-sm-0", "text-center"], ["href", "https://www.fastenhealth.com/connect"]], template: function FooterComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "div", 2)(3, "span", 3);
+        \u0275\u0275text(4);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(5, "span", 4)(6, "a", 5);
+        \u0275\u0275text(7, "Fasten Connect: Unified API For Medical Records");
+        \u0275\u0275elementEnd()()()()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance(4);
+        \u0275\u0275textInterpolate1("Copyright \xA9 Fasten Health, Inc. 2022 | ", ctx.appVersion, "");
+      }
+    }, encapsulation: 2 });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FooterComponent, { className: "FooterComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/footer/footer.component.ts", lineNumber: 10 });
+})();
+
 // projects/fasten-connect-stitch-embed/src/app/app.module.ts
 var AppModule = class _AppModule {
   static {
