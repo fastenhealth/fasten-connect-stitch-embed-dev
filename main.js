@@ -22,6 +22,18 @@ var __spreadValues = (a, b) => {
   return a;
 };
 var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
+var __objRest = (source, exclude) => {
+  var target = {};
+  for (var prop in source)
+    if (__hasOwnProp.call(source, prop) && exclude.indexOf(prop) < 0)
+      target[prop] = source[prop];
+  if (source != null && __getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(source)) {
+      if (exclude.indexOf(prop) < 0 && __propIsEnum.call(source, prop))
+        target[prop] = source[prop];
+    }
+  return target;
+};
 var __commonJS = (cb, mod) => function __require() {
   return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
 };
@@ -8234,7 +8246,7 @@ function handleReset(reset, on, ...args) {
       reset();
     }
   });
-  return on(...args).subscribe(onSubscriber);
+  return innerFrom(on(...args)).subscribe(onSubscriber);
 }
 
 // node_modules/rxjs/dist/esm/internal/operators/shareReplay.js
@@ -8345,16 +8357,12 @@ function tap(observerOrNext, error, complete) {
 }
 
 // node_modules/rxjs/dist/esm/internal/operators/throttle.js
-var defaultThrottleConfig = {
-  leading: true,
-  trailing: false
-};
-function throttle(durationSelector, config2 = defaultThrottleConfig) {
+function throttle(durationSelector, config2) {
   return operate((source, subscriber) => {
     const {
-      leading,
-      trailing
-    } = config2;
+      leading = true,
+      trailing = false
+    } = config2 !== null && config2 !== void 0 ? config2 : {};
     let hasValue = false;
     let sendValue = null;
     let throttled = null;
@@ -8393,7 +8401,7 @@ function throttle(durationSelector, config2 = defaultThrottleConfig) {
 }
 
 // node_modules/rxjs/dist/esm/internal/operators/throttleTime.js
-function throttleTime(duration, scheduler = asyncScheduler, config2 = defaultThrottleConfig) {
+function throttleTime(duration, scheduler = asyncScheduler, config2) {
   const duration$ = timer(duration, scheduler);
   return throttle(() => duration$, config2);
 }
@@ -13365,32 +13373,32 @@ var AfterRenderImpl = class _AfterRenderImpl {
     }
     this.executing = true;
     for (const phase of AFTER_RENDER_PHASES) {
-      for (const sequence of this.sequences) {
-        if (sequence.erroredOrDestroyed || !sequence.hooks[phase]) {
+      for (const sequence2 of this.sequences) {
+        if (sequence2.erroredOrDestroyed || !sequence2.hooks[phase]) {
           continue;
         }
         try {
-          sequence.pipelinedValue = this.ngZone.runOutsideAngular(() => this.maybeTrace(() => {
-            const hookFn = sequence.hooks[phase];
-            const value = hookFn(sequence.pipelinedValue);
+          sequence2.pipelinedValue = this.ngZone.runOutsideAngular(() => this.maybeTrace(() => {
+            const hookFn = sequence2.hooks[phase];
+            const value = hookFn(sequence2.pipelinedValue);
             return value;
-          }, sequence.snapshot));
+          }, sequence2.snapshot));
         } catch (err) {
-          sequence.erroredOrDestroyed = true;
+          sequence2.erroredOrDestroyed = true;
           this.errorHandler?.handleError(err);
         }
       }
     }
     this.executing = false;
-    for (const sequence of this.sequences) {
-      sequence.afterRun();
-      if (sequence.once) {
-        this.sequences.delete(sequence);
-        sequence.destroy();
+    for (const sequence2 of this.sequences) {
+      sequence2.afterRun();
+      if (sequence2.once) {
+        this.sequences.delete(sequence2);
+        sequence2.destroy();
       }
     }
-    for (const sequence of this.deferredRegistrations) {
-      this.sequences.add(sequence);
+    for (const sequence2 of this.deferredRegistrations) {
+      this.sequences.add(sequence2);
     }
     if (this.deferredRegistrations.size > 0) {
       this.scheduler.notify(
@@ -13406,35 +13414,35 @@ var AfterRenderImpl = class _AfterRenderImpl {
       );
     }
   }
-  register(sequence) {
+  register(sequence2) {
     const {
       view
-    } = sequence;
+    } = sequence2;
     if (view !== void 0) {
-      (view[AFTER_RENDER_SEQUENCES_TO_ADD] ??= []).push(sequence);
+      (view[AFTER_RENDER_SEQUENCES_TO_ADD] ??= []).push(sequence2);
       markAncestorsForTraversal(view);
       view[FLAGS] |= 8192;
     } else if (!this.executing) {
-      this.addSequence(sequence);
+      this.addSequence(sequence2);
     } else {
-      this.deferredRegistrations.add(sequence);
+      this.deferredRegistrations.add(sequence2);
     }
   }
-  addSequence(sequence) {
-    this.sequences.add(sequence);
+  addSequence(sequence2) {
+    this.sequences.add(sequence2);
     this.scheduler.notify(
       7
       /* NotificationSource.RenderHook */
     );
   }
-  unregister(sequence) {
-    if (this.executing && this.sequences.has(sequence)) {
-      sequence.erroredOrDestroyed = true;
-      sequence.pipelinedValue = void 0;
-      sequence.once = true;
+  unregister(sequence2) {
+    if (this.executing && this.sequences.has(sequence2)) {
+      sequence2.erroredOrDestroyed = true;
+      sequence2.pipelinedValue = void 0;
+      sequence2.once = true;
     } else {
-      this.sequences.delete(sequence);
-      this.deferredRegistrations.delete(sequence);
+      this.sequences.delete(sequence2);
+      this.deferredRegistrations.delete(sequence2);
     }
   }
   maybeTrace(fn, snapshot) {
@@ -13541,9 +13549,9 @@ function afterRenderImpl(callbackOrSpec, injector, options, once) {
   const viewContext = injector.get(ViewContext, null, {
     optional: true
   });
-  const sequence = new AfterRenderSequence(manager.impl, getHooks(callbackOrSpec, hooks), viewContext?.view, once, destroyRef, tracing?.snapshot(null));
-  manager.impl.register(sequence);
-  return sequence;
+  const sequence2 = new AfterRenderSequence(manager.impl, getHooks(callbackOrSpec, hooks), viewContext?.view, once, destroyRef, tracing?.snapshot(null));
+  manager.impl.register(sequence2);
+  return sequence2;
 }
 var DeferDependenciesLoadingState;
 (function(DeferDependenciesLoadingState2) {
@@ -14609,6 +14617,13 @@ function maybeUnwrapFn(value) {
   }
 }
 var VALUE_STRING_LENGTH_LIMIT = 200;
+function assertStandaloneComponentType(type) {
+  assertComponentDef(type);
+  const componentDef = getComponentDef(type);
+  if (!componentDef.standalone) {
+    throw new RuntimeError(907, `The ${stringifyForError(type)} component is not marked as standalone, but Angular expects to have a standalone component here. Please make sure the ${stringifyForError(type)} component has the \`standalone: true\` flag in the decorator.`);
+  }
+}
 function assertComponentDef(type) {
   if (!getComponentDef(type)) {
     throw new RuntimeError(906, `The ${stringifyForError(type)} is not an Angular component, make sure it has the \`@Component\` decorator.`);
@@ -16088,8 +16103,8 @@ function collectNativeNodesInLContainer(lContainer, result) {
 }
 function addAfterRenderSequencesForView(lView) {
   if (lView[AFTER_RENDER_SEQUENCES_TO_ADD] !== null) {
-    for (const sequence of lView[AFTER_RENDER_SEQUENCES_TO_ADD]) {
-      sequence.impl.addSequence(sequence);
+    for (const sequence2 of lView[AFTER_RENDER_SEQUENCES_TO_ADD]) {
+      sequence2.impl.addSequence(sequence2);
     }
     lView[AFTER_RENDER_SEQUENCES_TO_ADD].length = 0;
   }
@@ -17826,9 +17841,9 @@ function computeStaticStyling(tNode, attrs, writeToHost) {
       } else if (mode == 1) {
         classes = concatStringsWithSpace(classes, value);
       } else if (mode == 2) {
-        const style = value;
+        const style2 = value;
         const styleValue = attrs[++i];
-        styles = concatStringsWithSpace(styles, style + ": " + styleValue + ";");
+        styles = concatStringsWithSpace(styles, style2 + ": " + styleValue + ";");
       }
     }
   }
@@ -19180,8 +19195,8 @@ function resolveComponentResources(resourceResolver) {
       const styleUrls = component.styleUrls;
       component.styleUrls.forEach((styleUrl, index) => {
         styles.push("");
-        promises.push(cachedResourceResolve(styleUrl).then((style) => {
-          styles[styleOffset + index] = style;
+        promises.push(cachedResourceResolve(styleUrl).then((style2) => {
+          styles[styleOffset + index] = style2;
           styleUrls.splice(styleUrls.indexOf(styleUrl), 1);
           if (styleUrls.length == 0) {
             component.styleUrls = void 0;
@@ -19189,8 +19204,8 @@ function resolveComponentResources(resourceResolver) {
         }));
       });
     } else if (component.styleUrl) {
-      promises.push(cachedResourceResolve(component.styleUrl).then((style) => {
-        styles.push(style);
+      promises.push(cachedResourceResolve(component.styleUrl).then((style2) => {
+        styles.push(style2);
         component.styleUrl = void 0;
       }));
     }
@@ -27861,6 +27876,29 @@ function internalProvideZoneChangeDetection({
     }
   ];
 }
+function provideZoneChangeDetection(options) {
+  const ignoreChangesOutsideZone = options?.ignoreChangesOutsideZone;
+  const scheduleInRootZone = options?.scheduleInRootZone;
+  const zoneProviders = internalProvideZoneChangeDetection({
+    ngZoneFactory: () => {
+      const ngZoneOptions = getNgZoneOptions(options);
+      ngZoneOptions.scheduleInRootZone = scheduleInRootZone;
+      if (ngZoneOptions.shouldCoalesceEventChangeDetection) {
+        performanceMarkFeature("NgZone_CoalesceEvent");
+      }
+      return new NgZone(ngZoneOptions);
+    },
+    ignoreChangesOutsideZone,
+    scheduleInRootZone
+  });
+  return makeEnvironmentProviders([{
+    provide: PROVIDED_NG_ZONE,
+    useValue: true
+  }, {
+    provide: ZONELESS_ENABLED,
+    useValue: false
+  }, zoneProviders]);
+}
 function getNgZoneOptions(options) {
   return {
     enableLongStackTrace: typeof ngDevMode === "undefined" ? false : !!ngDevMode,
@@ -28559,6 +28597,15 @@ function assertPlatform(requiredToken) {
 }
 function getPlatform() {
   return _platformInjector?.get(PlatformRef) ?? null;
+}
+function createOrReusePlatformInjector(providers = []) {
+  if (_platformInjector) return _platformInjector;
+  publishDefaultGlobalUtils();
+  const injector = createPlatformInjector(providers);
+  _platformInjector = injector;
+  publishSignalConfiguration();
+  runPlatformInitializers(injector);
+  return injector;
 }
 function runPlatformInitializers(injector) {
   const inits = injector.get(PLATFORM_INITIALIZER, null);
@@ -29537,6 +29584,47 @@ var ApplicationModule = class _ApplicationModule {
     type: ApplicationRef
   }], null);
 })();
+function internalCreateApplication(config2) {
+  profiler(
+    8
+    /* ProfilerEvent.BootstrapApplicationStart */
+  );
+  try {
+    const {
+      rootComponent,
+      appProviders,
+      platformProviders
+    } = config2;
+    if ((typeof ngDevMode === "undefined" || ngDevMode) && rootComponent !== void 0) {
+      assertStandaloneComponentType(rootComponent);
+    }
+    const platformInjector = createOrReusePlatformInjector(platformProviders);
+    const allAppProviders = [internalProvideZoneChangeDetection({}), {
+      provide: ChangeDetectionScheduler,
+      useExisting: ChangeDetectionSchedulerImpl
+    }, ...appProviders || []];
+    const adapter = new EnvironmentNgModuleRefAdapter({
+      providers: allAppProviders,
+      parent: platformInjector,
+      debugName: typeof ngDevMode === "undefined" || ngDevMode ? "Environment Injector" : "",
+      // We skip environment initializers because we need to run them inside the NgZone, which
+      // happens after we get the NgZone instance from the Injector.
+      runEnvironmentInitializers: false
+    });
+    return bootstrap({
+      r3Injector: adapter.injector,
+      platformInjector,
+      rootComponent
+    });
+  } catch (e) {
+    return Promise.reject(e);
+  } finally {
+    profiler(
+      9
+      /* ProfilerEvent.BootstrapApplicationEnd */
+    );
+  }
+}
 function booleanAttribute(value) {
   return typeof value === "boolean" ? value : value != null && value !== "false";
 }
@@ -30097,6 +30185,20 @@ if (typeof ngDevMode !== "undefined" && ngDevMode) {
     throw new Error("It looks like your application or one of its dependencies is using i18n.\nAngular 9 introduced a global `$localize()` function that needs to be loaded.\nPlease run `ng add @angular/localize` from the Angular CLI.\n(For non-CLI projects, add `import '@angular/localize/init';` to your `polyfills.ts` file.\nFor server-side rendering applications add the import to your `main.server.ts` file.)");
   };
 }
+
+// projects/fasten-connect-stitch-embed/src/environments/environment.ts
+var environment = {
+  name: "development",
+  //specify the lighthouse base that we're going to use to authenticate against all our source/providers. Must not have trailing slash
+  lighthouse_api_endpoint_base: "https://lighthouse.fastenhealth.com",
+  //used to specify the api server that we're going to use (can be relative or absolute). Must not have trailing slash
+  // connect_api_endpoint_base: 'https://api.connect-dev.fastenhealth.com/v1',
+  // if relative, must start with /
+  connect_api_endpoint_base: "https://api.connect-dev.fastenhealth.com/v1",
+  connect_api_jwt_issuer_host: "https://api.connect-dev.fastenhealth.com/v1",
+  //JWKS for JWT verification
+  jwks_uri: "https://cdn.fastenhealth.com/jwks/fasten-connect/dev.json"
+};
 
 // node_modules/@angular/common/fesm2022/common.mjs
 var _DOM = null;
@@ -37426,9 +37528,9 @@ function removeElements(elements) {
     element.remove();
   }
 }
-function createStyleElement(style, doc) {
+function createStyleElement(style2, doc) {
   const styleElement = doc.createElement("style");
-  styleElement.textContent = style;
+  styleElement.textContent = style2;
   return styleElement;
 }
 function addServerStyles(doc, appId, inline, external) {
@@ -37546,10 +37648,10 @@ var SharedStylesHost = class _SharedStylesHost {
    */
   addHost(hostNode) {
     this.hosts.add(hostNode);
-    for (const [style, {
+    for (const [style2, {
       elements
     }] of this.inline) {
-      elements.push(this.addElement(hostNode, createStyleElement(style, this.doc)));
+      elements.push(this.addElement(hostNode, createStyleElement(style2, this.doc)));
     }
     for (const [url, {
       elements
@@ -37885,18 +37987,18 @@ var DefaultDomRenderer2 = class {
   removeClass(el, name) {
     el.classList.remove(name);
   }
-  setStyle(el, style, value, flags) {
+  setStyle(el, style2, value, flags) {
     if (flags & (RendererStyleFlags2.DashCase | RendererStyleFlags2.Important)) {
-      el.style.setProperty(style, value, flags & RendererStyleFlags2.Important ? "important" : "");
+      el.style.setProperty(style2, value, flags & RendererStyleFlags2.Important ? "important" : "");
     } else {
-      el.style[style] = value;
+      el.style[style2] = value;
     }
   }
-  removeStyle(el, style, flags) {
+  removeStyle(el, style2, flags) {
     if (flags & RendererStyleFlags2.DashCase) {
-      el.style.removeProperty(style);
+      el.style.removeProperty(style2);
     } else {
-      el.style[style] = "";
+      el.style[style2] = "";
     }
   }
   setProperty(el, name, value) {
@@ -37965,12 +38067,12 @@ var ShadowDomRenderer = class extends DefaultDomRenderer2 {
       styles = addBaseHrefToCssSourceMap(baseHref, styles);
     }
     styles = shimStylesContent(component.id, styles);
-    for (const style of styles) {
+    for (const style2 of styles) {
       const styleEl = document.createElement("style");
       if (nonce) {
         styleEl.setAttribute("nonce", nonce);
       }
-      styleEl.textContent = style;
+      styleEl.textContent = style2;
       this.shadowRoot.appendChild(styleEl);
     }
     const styleUrls = component.getExternalStyles?.();
@@ -38247,6 +38349,17 @@ var KeyEventsPlugin = class _KeyEventsPlugin extends EventManagerPlugin {
     }]
   }], null);
 })();
+function bootstrapApplication(rootComponent, options) {
+  return internalCreateApplication(__spreadValues({
+    rootComponent
+  }, createProvidersConfig(options)));
+}
+function createProvidersConfig(options) {
+  return {
+    appProviders: [...BROWSER_MODULE_PROVIDERS, ...options?.providers ?? []],
+    platformProviders: INTERNAL_BROWSER_PLATFORM_PROVIDERS
+  };
+}
 function initDomAdapter() {
   BrowserDomAdapter.makeCurrent();
 }
@@ -38920,6 +39033,1705 @@ var HydrationFeatureKind;
 })(HydrationFeatureKind || (HydrationFeatureKind = {}));
 var VERSION3 = new Version("19.2.1");
 
+// projects/shared-library/src/lib/shared-library.constants.ts
+var ApiMode;
+(function(ApiMode2) {
+  ApiMode2["Live"] = "live";
+  ApiMode2["Test"] = "test";
+})(ApiMode || (ApiMode = {}));
+var WidgetMode;
+(function(WidgetMode2) {
+  WidgetMode2["SearchOnly"] = "search-only";
+  WidgetMode2["Connect"] = "connect";
+  WidgetMode2["Tefca"] = "tefca";
+})(WidgetMode || (WidgetMode = {}));
+var ConnectionStatus;
+(function(ConnectionStatus2) {
+  ConnectionStatus2["Authorized"] = "authorized";
+  ConnectionStatus2["Revoked"] = "revoked";
+})(ConnectionStatus || (ConnectionStatus = {}));
+var ConnectMode;
+(function(ConnectMode2) {
+  ConnectMode2["Redirect"] = "redirect";
+  ConnectMode2["Popup"] = "popup";
+})(ConnectMode || (ConnectMode = {}));
+var EventTypes;
+(function(EventTypes2) {
+  EventTypes2["EventTypeWidgetConfigError"] = "widget.config_error";
+  EventTypes2["EventTypeWidgetClose"] = "widget.close";
+  EventTypes2["EventTypeWidgetComplete"] = "widget.complete";
+  EventTypes2["EventTypeConnectionPending"] = "patient.connection_pending";
+  EventTypes2["EventTypeConnectionSuccess"] = "patient.connection_success";
+  EventTypes2["EventTypeConnectionFailed"] = "patient.connection_failed";
+  EventTypes2["EventTypeSearchQuery"] = "search.query";
+})(EventTypes || (EventTypes = {}));
+var SDKMode;
+(function(SDKMode2) {
+  SDKMode2["None"] = "none";
+  SDKMode2["ReactNative"] = "react-native";
+})(SDKMode || (SDKMode = {}));
+var CommunicationEntity;
+(function(CommunicationEntity2) {
+  CommunicationEntity2["PrimaryWebView"] = "FASTEN_CONNECT_PRIMARY_WEBVIEW";
+  CommunicationEntity2["ModalWebView"] = "FASTEN_CONNECT_MODAL_WEBVIEW";
+  CommunicationEntity2["ReactNativeComponent"] = "FASTEN_CONNECT_REACT_WEBVIEW";
+  CommunicationEntity2["External"] = "FASTEN_CONNECT_EXTERNAL";
+})(CommunicationEntity || (CommunicationEntity = {}));
+var ConnectWindowTimeout = 20 * 60 * 1e3;
+
+// projects/shared-library/src/lib/pipes/safe-html.pipe.ts
+var SafeHtmlPipe = class _SafeHtmlPipe {
+  constructor(sanitizer) {
+    this.sanitizer = sanitizer;
+  }
+  transform(value, args) {
+    return this.sanitizer.bypassSecurityTrustHtml(value);
+  }
+  static {
+    this.\u0275fac = function SafeHtmlPipe_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _SafeHtmlPipe)(\u0275\u0275directiveInject(DomSanitizer, 16));
+    };
+  }
+  static {
+    this.\u0275pipe = /* @__PURE__ */ \u0275\u0275definePipe({ name: "safeHtml", type: _SafeHtmlPipe, pure: true });
+  }
+};
+
+// projects/shared-library/src/lib/pipes/state-name.pipe.ts
+var StateNamePipe = class _StateNamePipe {
+  constructor() {
+    this.stateCodes = {
+      //CUSTOM
+      "ALL": "Nationwide",
+      //2 letter state codes.
+      "AL": "Alabama",
+      "AK": "Alaska",
+      "AZ": "Arizona",
+      "AR": "Arkansas",
+      "CA": "California",
+      "CO": "Colorado",
+      "CT": "Connecticut",
+      "DE": "Delaware",
+      "FL": "Florida",
+      "GA": "Georgia",
+      "HI": "Hawaii",
+      "ID": "Idaho",
+      "IL": "Illinois",
+      "IN": "Indiana",
+      "IA": "Iowa",
+      "KS": "Kansas",
+      "KY": "Kentucky",
+      "LA": "Louisiana",
+      "ME": "Maine",
+      "MD": "Maryland",
+      "MA": "Massachusetts",
+      "MI": "Michigan",
+      "MN": "Minnesota",
+      "MS": "Mississippi",
+      "MO": "Missouri",
+      "MT": "Montana",
+      "NE": "Nebraska",
+      "NV": "Nevada",
+      "NH": "New Hampshire",
+      "NJ": "New Jersey",
+      "NM": "New Mexico",
+      "NY": "New York",
+      "NC": "North Carolina",
+      "ND": "North Dakota",
+      "OH": "Ohio",
+      "OK": "Oklahoma",
+      "OR": "Oregon",
+      "PA": "Pennsylvania",
+      "RI": "Rhode Island",
+      "SC": "South Carolina",
+      "SD": "South Dakota",
+      "TN": "Tennessee",
+      "TX": "Texas",
+      "UT": "Utah",
+      "VT": "Vermont",
+      "VA": "Virginia",
+      "WA": "Washington",
+      "WV": "West Virginia",
+      "WI": "Wisconsin",
+      "WY": "Wyoming",
+      // Territories
+      "AS": "American Samoa",
+      "DC": "District of Columbia",
+      "FM": "Federated States of Micronesia",
+      "GU": "Guam",
+      "MH": "Marshall Islands",
+      "MP": "Northern Mariana Islands",
+      "PW": "Palau",
+      "PR": "Puerto Rico",
+      "VI": "Virgin Islands",
+      // Armed Forces (AE includes Europe, Africa, Canada, and the Middle East)
+      "AA": "Armed Forces Americas",
+      "AE": "Armed Forces Europe",
+      "AP": "Armed Forces Pacific"
+    };
+  }
+  transform(value) {
+    return this.stateCodes[value] || value;
+  }
+  static {
+    this.\u0275fac = function StateNamePipe_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _StateNamePipe)();
+    };
+  }
+  static {
+    this.\u0275pipe = /* @__PURE__ */ \u0275\u0275definePipe({ name: "stateName", type: _StateNamePipe, pure: true });
+  }
+};
+
+// projects/shared-library/src/lib/directives/image-fallback.directive.ts
+var DEFAULT_IMAGE_FALLBACK_PATH = "https://cdn.fastenhealth.com/images/no-image.svg";
+var ImageFallbackDirective = class _ImageFallbackDirective {
+  constructor(elementRef) {
+    this.elementRef = elementRef;
+    this.hospitalInlineImage = "data:image/svg+xml,%3csvg id='connecting-system-logo-placeholder' xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='text-gray-400'%3e%3cpath d='M12 6v4'/%3e%3cpath d='M14 14h-4'/%3e%3cpath d='M14 18h-4'/%3e%3cpath d='M14 8h-4'/%3e%3cpath d='M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2'/%3e%3cpath d='M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18'/%3e%3c/svg%3e";
+    this.officeInlineImage = "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-building-2 w-10 h-10 text-gray-400'%3e%3cpath d='M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z'/%3e%3cpath d='M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2'/%3e%3cpath d='M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2'/%3e%3cpath d='M10 6h4'/%3e%3cpath d='M10 10h4'/%3e%3cpath d='M10 14h4'/%3e%3cpath d='M10 18h4'/%3e%3c/svg%3e";
+    this.fastenSquareInlineImage = "data:image/svg+xml,%3csvg version='1.2' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1640 1640' width='1640' height='1640'%3e%3ctitle%3esquare%3c/title%3e%3cstyle%3etspan %7b white-space:pre %7d .s0 %7b fill: white %7d .t1 %7b font-size: 400px%3bfill: %235b47fb%3bfont-weight: 700%3bfont-family: 'Poppins-Bold'%2c 'Poppins' %7d%3c/style%3e%3cpath id='Layer 1' fill-rule='evenodd' class='s0' d='m-90-48h1752v1727h-1752z'/%3e%3ctext id='fasten' style='transform: matrix(1.356%2c0%2c0%2c1.356%2c8.863%2c630.478)'%3e%3ctspan x='0' y='296' class='t1' dx='0'%3ef%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3ea%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3es%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3et%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3ee%3c/tspan%3e%3ctspan y='296' class='t1' dx='0 -21'%3en%3c/tspan%3e%3c/text%3e%3c/svg%3e";
+    this.fastenLogoInlineImage = "data:image/svg+xml,%3csvg version='1.2' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1640 1640' width='1640' height='1640'%3e%3ctitle%3esquare%3c/title%3e%3cstyle%3etspan %7b white-space:pre %7d .s0 %7b fill: white %7d .t1 %7b font-size: 282px%3bfill: %235b47fb%3bfont-weight: 700%3bfont-family: 'Poppins-Bold'%2c 'Poppins' %7d%3c/style%3e%3cpath id='Layer 1' fill-rule='evenodd' class='s0' d='m-90-48h1752v1727h-1752z'/%3e%3ctext id='fh' style='transform: matrix(4.298%2c0%2c0%2c4.298%2c252%2c393)'%3e%3ctspan x='0' y='208.4' class='t1' dx='0'%3ef%3c/tspan%3e%3ctspan y='208.4' class='t1' dx='0'%3eh%3c/tspan%3e%3ctspan y='208.4' class='t1' dx='0'%3e%3c/tspan%3e%3c/text%3e%3c/svg%3e";
+    this.unknownOrganizationInlineImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none'%3E%3Crect width='40' height='40' rx='8' fill='currentColor' /%3E%3Cpath d='M20 12V28M12 20H28' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' /%3E%3Cpath d='M12 12L28 28M28 12L12 28' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' opacity='0.2' /%3E%3C/svg%3E";
+  }
+  loadFallbackOnError() {
+    if (this.path(this.elementRef.nativeElement.src) == this.path(this.fallbackSrc())) {
+      return;
+    }
+    this.elementRef.nativeElement.src = this.fallbackSrc();
+  }
+  fallbackSrc() {
+    if (this.imageFallback === "hospital") {
+      return this.hospitalInlineImage;
+    } else if (this.imageFallback === "office") {
+      return this.officeInlineImage;
+    } else if (this.imageFallback === "fasten") {
+      return this.fastenSquareInlineImage;
+    } else if (this.imageFallback === "fasten-logo") {
+      return this.fastenLogoInlineImage;
+    } else if (this.imageFallback == "unknown-organization") {
+      return this.unknownOrganizationInlineImage;
+    } else {
+      return this.imageFallback || DEFAULT_IMAGE_FALLBACK_PATH;
+    }
+  }
+  path(urlString) {
+    return urlString.replace(/^https?:\/\/[^\/]*/, "");
+  }
+  static {
+    this.\u0275fac = function ImageFallbackDirective_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _ImageFallbackDirective)(\u0275\u0275directiveInject(ElementRef));
+    };
+  }
+  static {
+    this.\u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({ type: _ImageFallbackDirective, selectors: [["img", "imageFallback", ""]], hostBindings: function ImageFallbackDirective_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("error", function ImageFallbackDirective_error_HostBindingHandler() {
+          return ctx.loadFallbackOnError();
+        });
+      }
+    }, inputs: { imageFallback: "imageFallback" } });
+  }
+};
+
+// projects/shared-library/src/lib/services/config.service.ts
+var import_lodash = __toESM(require_lodash());
+
+// node_modules/uuid/dist/esm-browser/rng.js
+var getRandomValues;
+var rnds8 = new Uint8Array(16);
+function rng() {
+  if (!getRandomValues) {
+    getRandomValues = typeof crypto !== "undefined" && crypto.getRandomValues && crypto.getRandomValues.bind(crypto) || typeof msCrypto !== "undefined" && typeof msCrypto.getRandomValues === "function" && msCrypto.getRandomValues.bind(msCrypto);
+    if (!getRandomValues) {
+      throw new Error("crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported");
+    }
+  }
+  return getRandomValues(rnds8);
+}
+
+// node_modules/uuid/dist/esm-browser/regex.js
+var regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
+
+// node_modules/uuid/dist/esm-browser/validate.js
+function validate(uuid) {
+  return typeof uuid === "string" && regex_default.test(uuid);
+}
+var validate_default = validate;
+
+// node_modules/uuid/dist/esm-browser/stringify.js
+var byteToHex = [];
+for (i = 0; i < 256; ++i) {
+  byteToHex.push((i + 256).toString(16).substr(1));
+}
+var i;
+function stringify2(arr) {
+  var offset = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : 0;
+  var uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
+  if (!validate_default(uuid)) {
+    throw TypeError("Stringified UUID is invalid");
+  }
+  return uuid;
+}
+var stringify_default = stringify2;
+
+// node_modules/uuid/dist/esm-browser/v4.js
+function v4(options, buf, offset) {
+  options = options || {};
+  var rnds = options.random || (options.rng || rng)();
+  rnds[6] = rnds[6] & 15 | 64;
+  rnds[8] = rnds[8] & 63 | 128;
+  if (buf) {
+    offset = offset || 0;
+    for (var i = 0; i < 16; ++i) {
+      buf[offset + i] = rnds[i];
+    }
+    return buf;
+  }
+  return stringify_default(rnds);
+}
+var v4_default = v4;
+
+// node_modules/vlq/dist/vlq.es.js
+var charToInteger = {};
+var integerToChar = {};
+"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".split("").forEach(function(char, i) {
+  charToInteger[char] = i;
+  integerToChar[i] = char;
+});
+function decode(string) {
+  var result = [];
+  var shift = 0;
+  var value = 0;
+  for (var i = 0; i < string.length; i += 1) {
+    var integer = charToInteger[string[i]];
+    if (integer === void 0) {
+      throw new Error("Invalid character (" + string[i] + ")");
+    }
+    var hasContinuationBit = integer & 32;
+    integer &= 31;
+    value += integer << shift;
+    if (hasContinuationBit) {
+      shift += 5;
+    } else {
+      var shouldNegate = value & 1;
+      value >>>= 1;
+      if (shouldNegate) {
+        result.push(value === 0 ? -2147483648 : -value);
+      } else {
+        result.push(value);
+      }
+      value = shift = 0;
+    }
+  }
+  return result;
+}
+
+// node_modules/ngx-logger/fesm2020/ngx-logger.mjs
+var TOKEN_LOGGER_CONFIG = "TOKEN_LOGGER_CONFIG";
+var NGXLoggerConfigEngine = class {
+  constructor(config2) {
+    this.config = this._clone(config2);
+  }
+  /** Get a readonly access to the level configured for the NGXLogger */
+  get level() {
+    return this.config.level;
+  }
+  /** Get a readonly access to the serverLogLevel configured for the NGXLogger */
+  get serverLogLevel() {
+    return this.config.serverLogLevel;
+  }
+  updateConfig(config2) {
+    this.config = this._clone(config2);
+  }
+  /** Update the config partially
+   * This is useful if you want to update only one parameter of the config
+   */
+  partialUpdateConfig(partialConfig) {
+    if (!partialConfig) {
+      return;
+    }
+    Object.keys(partialConfig).forEach((configParamKey) => {
+      this.config[configParamKey] = partialConfig[configParamKey];
+    });
+  }
+  getConfig() {
+    return this._clone(this.config);
+  }
+  // TODO: This is a shallow clone, If the config ever becomes hierarchical we must make this a deep clone
+  _clone(object) {
+    const cloneConfig = {
+      level: null
+    };
+    Object.keys(object).forEach((key) => {
+      cloneConfig[key] = object[key];
+    });
+    return cloneConfig;
+  }
+};
+var TOKEN_LOGGER_CONFIG_ENGINE_FACTORY = "TOKEN_LOGGER_CONFIG_ENGINE_FACTORY";
+var NGXLoggerConfigEngineFactory = class {
+  provideConfigEngine(config2) {
+    return new NGXLoggerConfigEngine(config2);
+  }
+};
+var TOKEN_LOGGER_MAPPER_SERVICE = "TOKEN_LOGGER_MAPPER_SERVICE";
+var NGXLoggerMapperService = class {
+  constructor(httpBackend) {
+    this.httpBackend = httpBackend;
+    this.sourceMapCache = /* @__PURE__ */ new Map();
+    this.logPositionCache = /* @__PURE__ */ new Map();
+  }
+  /**
+   * Returns the log position of the caller
+   * If sourceMaps are enabled, it attemps to get the source map from the server, and use that to parse the position
+   * @param config
+   * @param metadata
+   * @returns
+   */
+  getLogPosition(config2, metadata) {
+    const stackLine = this.getStackLine(config2);
+    if (!stackLine) {
+      return of({
+        fileName: "",
+        lineNumber: 0,
+        columnNumber: 0
+      });
+    }
+    const logPosition = this.getLocalPosition(stackLine);
+    if (!config2.enableSourceMaps) {
+      return of(logPosition);
+    }
+    const sourceMapLocation = this.getSourceMapLocation(stackLine);
+    return this.getSourceMap(sourceMapLocation, logPosition);
+  }
+  /**
+   * Get the stackline of the original caller
+   * @param config
+   * @returns null if stackline was not found
+   */
+  getStackLine(config2) {
+    const error = new Error();
+    try {
+      throw error;
+    } catch (e) {
+      try {
+        let defaultProxy = 4;
+        const firstStackLine = error.stack.split("\n")[0];
+        if (!firstStackLine.includes(".js:")) {
+          defaultProxy = defaultProxy + 1;
+        }
+        return error.stack.split("\n")[defaultProxy + (config2.proxiedSteps || 0)];
+      } catch (e2) {
+        return null;
+      }
+    }
+  }
+  /**
+   * Get position of caller without using sourceMaps
+   * @param stackLine
+   * @returns
+   */
+  getLocalPosition(stackLine) {
+    const positionStartIndex = stackLine.lastIndexOf("/");
+    let positionEndIndex = stackLine.indexOf(")");
+    if (positionEndIndex < 0) {
+      positionEndIndex = void 0;
+    }
+    const position = stackLine.substring(positionStartIndex + 1, positionEndIndex);
+    const dataArray = position.split(":");
+    if (dataArray.length === 3) {
+      return {
+        fileName: dataArray[0],
+        lineNumber: +dataArray[1],
+        columnNumber: +dataArray[2]
+      };
+    }
+    return {
+      fileName: "unknown",
+      lineNumber: 0,
+      columnNumber: 0
+    };
+  }
+  getTranspileLocation(stackLine) {
+    let locationStartIndex = stackLine.indexOf("(");
+    if (locationStartIndex < 0) {
+      locationStartIndex = stackLine.lastIndexOf("@");
+      if (locationStartIndex < 0) {
+        locationStartIndex = stackLine.lastIndexOf(" ");
+      }
+    }
+    let locationEndIndex = stackLine.indexOf(")");
+    if (locationEndIndex < 0) {
+      locationEndIndex = void 0;
+    }
+    return stackLine.substring(locationStartIndex + 1, locationEndIndex);
+  }
+  /**
+   * Gets the URL of the sourcemap (the URL can be relative or absolute, it is browser dependant)
+   * @param stackLine
+   * @returns
+   */
+  getSourceMapLocation(stackLine) {
+    const file = this.getTranspileLocation(stackLine);
+    const mapFullPath = file.substring(0, file.lastIndexOf(":"));
+    return mapFullPath.substring(0, mapFullPath.lastIndexOf(":")) + ".map";
+  }
+  getMapping(sourceMap, position) {
+    let sourceFileIndex = 0, sourceCodeLine = 0, sourceCodeColumn = 0;
+    const lines = sourceMap.mappings.split(";");
+    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+      let generatedCodeColumn = 0;
+      const columns = lines[lineIndex].split(",");
+      for (let columnIndex = 0; columnIndex < columns.length; columnIndex++) {
+        const decodedSection = decode(columns[columnIndex]);
+        if (decodedSection.length >= 4) {
+          generatedCodeColumn += decodedSection[0];
+          sourceFileIndex += decodedSection[1];
+          sourceCodeLine += decodedSection[2];
+          sourceCodeColumn += decodedSection[3];
+        }
+        if (lineIndex === position.lineNumber) {
+          if (generatedCodeColumn === position.columnNumber) {
+            return {
+              fileName: sourceMap.sources[sourceFileIndex],
+              lineNumber: sourceCodeLine,
+              columnNumber: sourceCodeColumn
+            };
+          } else if (columnIndex + 1 === columns.length) {
+            return {
+              fileName: sourceMap.sources[sourceFileIndex],
+              lineNumber: sourceCodeLine,
+              columnNumber: 0
+            };
+          }
+        }
+      }
+    }
+    return {
+      fileName: "unknown",
+      lineNumber: 0,
+      columnNumber: 0
+    };
+  }
+  /**
+   * does the http get request to get the source map
+   * @param sourceMapLocation
+   * @param distPosition
+   */
+  getSourceMap(sourceMapLocation, distPosition) {
+    const req = new HttpRequest("GET", sourceMapLocation);
+    const distPositionKey = `${distPosition.fileName}:${distPosition.lineNumber}:${distPosition.columnNumber}`;
+    if (this.logPositionCache.has(distPositionKey)) {
+      return this.logPositionCache.get(distPositionKey);
+    }
+    if (!this.sourceMapCache.has(sourceMapLocation)) {
+      if (!this.httpBackend) {
+        console.error("NGXLogger : Can't get sourcemap because HttpBackend is not provided. You need to import HttpClientModule");
+        this.sourceMapCache.set(sourceMapLocation, of(null));
+      } else {
+        this.sourceMapCache.set(sourceMapLocation, this.httpBackend.handle(req).pipe(filter((e) => e instanceof HttpResponse), map((httpResponse) => httpResponse.body), retry(3), shareReplay(1)));
+      }
+    }
+    const logPosition$ = this.sourceMapCache.get(sourceMapLocation).pipe(map((sourceMap) => {
+      if (!sourceMap) {
+        return distPosition;
+      }
+      return this.getMapping(sourceMap, distPosition);
+    }), catchError(() => of(distPosition)), shareReplay(1));
+    this.logPositionCache.set(distPositionKey, logPosition$);
+    return logPosition$;
+  }
+};
+NGXLoggerMapperService.\u0275fac = function NGXLoggerMapperService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLoggerMapperService)(\u0275\u0275inject(HttpBackend, 8));
+};
+NGXLoggerMapperService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLoggerMapperService,
+  factory: NGXLoggerMapperService.\u0275fac
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerMapperService, [{
+    type: Injectable
+  }], function() {
+    return [{
+      type: HttpBackend,
+      decorators: [{
+        type: Optional
+      }]
+    }];
+  }, null);
+})();
+var TOKEN_LOGGER_METADATA_SERVICE = "TOKEN_LOGGER_METADATA_SERVICE";
+var NGXLoggerMetadataService = class {
+  constructor(datePipe) {
+    this.datePipe = datePipe;
+  }
+  computeTimestamp(config2) {
+    const defaultTimestamp = () => (/* @__PURE__ */ new Date()).toISOString();
+    if (config2.timestampFormat) {
+      if (!this.datePipe) {
+        console.error("NGXLogger : Can't use timeStampFormat because DatePipe is not provided. You need to provide DatePipe");
+        return defaultTimestamp();
+      } else {
+        return this.datePipe.transform(/* @__PURE__ */ new Date(), config2.timestampFormat);
+      }
+    }
+    return defaultTimestamp();
+  }
+  getMetadata(level, config2, message2, additional) {
+    const metadata = {
+      level,
+      additional
+    };
+    if (message2 && typeof message2 === "function") {
+      metadata.message = message2();
+    } else {
+      metadata.message = message2;
+    }
+    metadata.timestamp = this.computeTimestamp(config2);
+    return metadata;
+  }
+};
+NGXLoggerMetadataService.\u0275fac = function NGXLoggerMetadataService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLoggerMetadataService)(\u0275\u0275inject(DatePipe, 8));
+};
+NGXLoggerMetadataService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLoggerMetadataService,
+  factory: NGXLoggerMetadataService.\u0275fac
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerMetadataService, [{
+    type: Injectable
+  }], function() {
+    return [{
+      type: DatePipe,
+      decorators: [{
+        type: Optional
+      }]
+    }];
+  }, null);
+})();
+var TOKEN_LOGGER_RULES_SERVICE = "TOKEN_LOGGER_RULES_SERVICE";
+var NGXLoggerRulesService = class {
+  shouldCallWriter(level, config2, message2, additional) {
+    return !config2.disableConsoleLogging && level >= config2.level;
+  }
+  shouldCallServer(level, config2, message2, additional) {
+    return !!config2.serverLoggingUrl && level >= config2.serverLogLevel;
+  }
+  shouldCallMonitor(level, config2, message2, additional) {
+    return this.shouldCallWriter(level, config2, message2, additional) || this.shouldCallServer(level, config2, message2, additional);
+  }
+};
+NGXLoggerRulesService.\u0275fac = function NGXLoggerRulesService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLoggerRulesService)();
+};
+NGXLoggerRulesService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLoggerRulesService,
+  factory: NGXLoggerRulesService.\u0275fac
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerRulesService, [{
+    type: Injectable
+  }], null, null);
+})();
+var TOKEN_LOGGER_SERVER_SERVICE = "TOKEN_LOGGER_SERVER_SERVICE";
+var NGXLoggerServerService = class {
+  constructor(httpBackend, ngZone) {
+    this.httpBackend = httpBackend;
+    this.ngZone = ngZone;
+    this.serverCallsQueue = [];
+    this.flushingQueue = new BehaviorSubject(false);
+  }
+  ngOnDestroy() {
+    if (this.flushingQueue) {
+      this.flushingQueue.complete();
+      this.flushingQueue = null;
+    }
+    if (this.addToQueueTimer) {
+      this.addToQueueTimer.unsubscribe();
+      this.addToQueueTimer = null;
+    }
+  }
+  /**
+   * Transforms an error object into a readable string (taking only the stack)
+   * This is needed because JSON.stringify would return "{}"
+   * @param err the error object
+   * @returns The stack of the error
+   */
+  secureErrorObject(err) {
+    return err?.stack;
+  }
+  /**
+   * Transforms the additional parameters to avoid any json error when sending the data to the server
+   * Basically it just replaces unstringifiable object to a string mentioning an error
+   * @param additional The additional data to be sent
+   * @returns The additional data secured
+   */
+  secureAdditionalParameters(additional) {
+    if (additional === null || additional === void 0) {
+      return null;
+    }
+    return additional.map((next, idx) => {
+      try {
+        if (next instanceof Error) {
+          return this.secureErrorObject(next);
+        }
+        if (typeof next === "object") {
+          JSON.stringify(next);
+        }
+        return next;
+      } catch (e) {
+        return `The additional[${idx}] value could not be parsed using JSON.stringify().`;
+      }
+    });
+  }
+  /**
+   * Transforms the message so that it can be sent to the server
+   * @param message the message to be sent
+   * @returns the message secured
+   */
+  secureMessage(message2) {
+    try {
+      if (message2 instanceof Error) {
+        return this.secureErrorObject(message2);
+      }
+      if (typeof message2 !== "string") {
+        message2 = JSON.stringify(message2, null, 2);
+      }
+    } catch (e) {
+      message2 = 'The provided "message" value could not be parsed with JSON.stringify().';
+    }
+    return message2;
+  }
+  /**
+   * Edits HttpRequest object before sending request to server
+   * @param httpRequest default request object
+   * @returns altered httprequest
+   */
+  alterHttpRequest(httpRequest) {
+    return httpRequest;
+  }
+  /**
+   * Sends request to server
+   * @param url
+   * @param logContent
+   * @param options
+   * @returns
+   */
+  logOnServer(url, logContent, options) {
+    if (!this.httpBackend) {
+      console.error("NGXLogger : Can't log on server because HttpBackend is not provided. You need to import HttpClientModule");
+      return of(null);
+    }
+    let defaultRequest = new HttpRequest("POST", url, logContent, options || {});
+    let finalRequest = of(defaultRequest);
+    const alteredRequest = this.alterHttpRequest(defaultRequest);
+    if (isObservable(alteredRequest)) {
+      finalRequest = alteredRequest;
+    } else if (alteredRequest) {
+      finalRequest = of(alteredRequest);
+    } else {
+      console.warn("NGXLogger : alterHttpRequest returned an invalid request. Using default one instead");
+    }
+    return finalRequest.pipe(concatMap((req) => {
+      if (!req) {
+        console.warn("NGXLogger : alterHttpRequest returned an invalid request (observable). Using default one instead");
+        return this.httpBackend.handle(defaultRequest);
+      }
+      return this.httpBackend.handle(req);
+    }), filter((e) => e instanceof HttpResponse), map((httpResponse) => httpResponse.body));
+  }
+  /**
+   * Customise the data sent to the API
+   * @param metadata the data provided by NGXLogger
+   * @returns the data that will be sent to the API in the body
+   */
+  customiseRequestBody(metadata) {
+    return metadata;
+  }
+  /**
+   * Flush the queue of the logger
+   * @param config
+   */
+  flushQueue(config2) {
+    this.flushingQueue.next(true);
+    if (this.addToQueueTimer) {
+      this.addToQueueTimer.unsubscribe();
+      this.addToQueueTimer = null;
+    }
+    if (!!this.serverCallsQueue && this.serverCallsQueue.length > 0) {
+      this.sendToServerAction(this.serverCallsQueue, config2);
+    }
+    this.serverCallsQueue = [];
+    this.flushingQueue.next(false);
+  }
+  sendToServerAction(metadata, config2) {
+    let requestBody;
+    const secureMetadata = (pMetadata) => {
+      const securedMetadata = __spreadValues({}, pMetadata);
+      securedMetadata.additional = this.secureAdditionalParameters(securedMetadata.additional);
+      securedMetadata.message = this.secureMessage(securedMetadata.message);
+      return securedMetadata;
+    };
+    if (Array.isArray(metadata)) {
+      requestBody = [];
+      metadata.forEach((m) => {
+        requestBody.push(secureMetadata(m));
+      });
+    } else {
+      requestBody = secureMetadata(metadata);
+    }
+    requestBody = this.customiseRequestBody(requestBody);
+    const headers = config2.customHttpHeaders || new HttpHeaders();
+    if (!headers.has("Content-Type")) {
+      headers.set("Content-Type", "application/json");
+    }
+    const logOnServerAction = () => {
+      this.logOnServer(config2.serverLoggingUrl, requestBody, {
+        headers,
+        params: config2.customHttpParams || new HttpParams(),
+        responseType: config2.httpResponseType || "json",
+        withCredentials: config2.withCredentials || false
+      }).pipe(catchError((err) => {
+        console.error("NGXLogger: Failed to log on server", err);
+        return throwError(err);
+      })).subscribe();
+    };
+    if (config2.serverCallsOutsideNgZone === true) {
+      if (!this.ngZone) {
+        console.error("NGXLogger: NgZone is not provided and serverCallsOutsideNgZone is set to true");
+        return;
+      }
+      this.ngZone.runOutsideAngular(logOnServerAction);
+    } else {
+      logOnServerAction();
+    }
+  }
+  /**
+   * Sends the content to be logged to the server according to the config
+   * @param metadata
+   * @param config
+   */
+  sendToServer(metadata, config2) {
+    if ((!config2.serverCallsBatchSize || config2.serverCallsBatchSize <= 0) && (!config2.serverCallsTimer || config2.serverCallsTimer <= 0)) {
+      this.sendToServerAction(metadata, config2);
+      return;
+    }
+    const addLogToQueueAction = () => {
+      this.serverCallsQueue.push(__spreadValues({}, metadata));
+      if (!!config2.serverCallsBatchSize && this.serverCallsQueue.length > config2.serverCallsBatchSize) {
+        this.flushQueue(config2);
+      }
+      if (config2.serverCallsTimer > 0 && !this.addToQueueTimer) {
+        this.addToQueueTimer = timer(config2.serverCallsTimer).subscribe((_) => {
+          this.flushQueue(config2);
+        });
+      }
+    };
+    if (this.flushingQueue.value === true) {
+      this.flushingQueue.pipe(filter((fq) => fq === false), take(1)).subscribe((_) => {
+        addLogToQueueAction();
+      });
+    } else {
+      addLogToQueueAction();
+    }
+  }
+};
+NGXLoggerServerService.\u0275fac = function NGXLoggerServerService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLoggerServerService)(\u0275\u0275inject(HttpBackend, 8), \u0275\u0275inject(NgZone, 8));
+};
+NGXLoggerServerService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLoggerServerService,
+  factory: NGXLoggerServerService.\u0275fac
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerServerService, [{
+    type: Injectable
+  }], function() {
+    return [{
+      type: HttpBackend,
+      decorators: [{
+        type: Optional
+      }]
+    }, {
+      type: NgZone,
+      decorators: [{
+        type: Optional
+      }]
+    }];
+  }, null);
+})();
+var TOKEN_LOGGER_WRITER_SERVICE = "TOKEN_LOGGER_WRITER_SERVICE";
+var NgxLoggerLevel;
+(function(NgxLoggerLevel2) {
+  NgxLoggerLevel2[NgxLoggerLevel2["TRACE"] = 0] = "TRACE";
+  NgxLoggerLevel2[NgxLoggerLevel2["DEBUG"] = 1] = "DEBUG";
+  NgxLoggerLevel2[NgxLoggerLevel2["INFO"] = 2] = "INFO";
+  NgxLoggerLevel2[NgxLoggerLevel2["LOG"] = 3] = "LOG";
+  NgxLoggerLevel2[NgxLoggerLevel2["WARN"] = 4] = "WARN";
+  NgxLoggerLevel2[NgxLoggerLevel2["ERROR"] = 5] = "ERROR";
+  NgxLoggerLevel2[NgxLoggerLevel2["FATAL"] = 6] = "FATAL";
+  NgxLoggerLevel2[NgxLoggerLevel2["OFF"] = 7] = "OFF";
+})(NgxLoggerLevel || (NgxLoggerLevel = {}));
+var DEFAULT_COLOR_SCHEME = ["purple", "teal", "gray", "gray", "red", "red", "red"];
+var NGXLoggerWriterService = class {
+  constructor(platformId) {
+    this.platformId = platformId;
+    this.prepareMetaStringFuncs = [this.getTimestampToWrite, this.getLevelToWrite, this.getFileDetailsToWrite, this.getContextToWrite];
+    this.isIE = isPlatformBrowser(platformId) && navigator && navigator.userAgent && !!(navigator.userAgent.indexOf("MSIE") !== -1 || navigator.userAgent.match(/Trident\//) || navigator.userAgent.match(/Edge\//));
+    this.logFunc = this.isIE ? this.logIE.bind(this) : this.logModern.bind(this);
+  }
+  getTimestampToWrite(metadata, config2) {
+    return metadata.timestamp;
+  }
+  getLevelToWrite(metadata, config2) {
+    return NgxLoggerLevel[metadata.level];
+  }
+  getFileDetailsToWrite(metadata, config2) {
+    return config2.disableFileDetails === true ? "" : `[${metadata.fileName}:${metadata.lineNumber}:${metadata.columnNumber}]`;
+  }
+  getContextToWrite(metadata, config2) {
+    return config2.context ? `{${config2.context}}` : "";
+  }
+  /** Generate a "meta" string that is displayed before the content sent to the log function */
+  prepareMetaString(metadata, config2) {
+    let metaString = "";
+    this.prepareMetaStringFuncs.forEach((prepareMetaStringFunc) => {
+      const metaItem = prepareMetaStringFunc(metadata, config2);
+      if (metaItem) {
+        metaString = metaString + " " + metaItem;
+      }
+    });
+    return metaString.trim();
+  }
+  /** Get the color to use when writing to console */
+  getColor(metadata, config2) {
+    const configColorScheme = config2.colorScheme ?? DEFAULT_COLOR_SCHEME;
+    if (metadata.level === NgxLoggerLevel.OFF) {
+      return void 0;
+    }
+    return configColorScheme[metadata.level];
+  }
+  /** Log to the console specifically for IE */
+  logIE(metadata, config2, metaString) {
+    const additional = metadata.additional || [];
+    switch (metadata.level) {
+      case NgxLoggerLevel.WARN:
+        console.warn(`${metaString} `, metadata.message, ...additional);
+        break;
+      case NgxLoggerLevel.ERROR:
+      case NgxLoggerLevel.FATAL:
+        console.error(`${metaString} `, metadata.message, ...additional);
+        break;
+      case NgxLoggerLevel.INFO:
+        console.info(`${metaString} `, metadata.message, ...additional);
+        break;
+      default:
+        console.log(`${metaString} `, metadata.message, ...additional);
+    }
+  }
+  /** Log to the console */
+  logModern(metadata, config2, metaString) {
+    const color = this.getColor(metadata, config2);
+    const additional = metadata.additional || [];
+    switch (metadata.level) {
+      case NgxLoggerLevel.WARN:
+        console.warn(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
+        break;
+      case NgxLoggerLevel.ERROR:
+      case NgxLoggerLevel.FATAL:
+        console.error(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
+        break;
+      case NgxLoggerLevel.INFO:
+        console.info(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
+        break;
+      //  Disabling console.trace since the stack trace is not helpful. it is showing the stack trace of
+      // the console.trace statement
+      // case NgxLoggerLevel.TRACE:
+      //   console.trace(`%c${metaString}`, `color:${color}`, message, ...additional);
+      //   break;
+      case NgxLoggerLevel.DEBUG:
+        console.debug(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
+        break;
+      default:
+        console.log(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
+    }
+  }
+  /** Write the content sent to the log function to the console */
+  writeMessage(metadata, config2) {
+    const metaString = this.prepareMetaString(metadata, config2);
+    this.logFunc(metadata, config2, metaString);
+  }
+};
+NGXLoggerWriterService.\u0275fac = function NGXLoggerWriterService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLoggerWriterService)(\u0275\u0275inject(PLATFORM_ID));
+};
+NGXLoggerWriterService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLoggerWriterService,
+  factory: NGXLoggerWriterService.\u0275fac
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerWriterService, [{
+    type: Injectable
+  }], function() {
+    return [{
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [PLATFORM_ID]
+      }]
+    }];
+  }, null);
+})();
+var NGXLogger = class {
+  constructor(config2, configEngineFactory, metadataService, ruleService, mapperService, writerService, serverService) {
+    this.metadataService = metadataService;
+    this.ruleService = ruleService;
+    this.mapperService = mapperService;
+    this.writerService = writerService;
+    this.serverService = serverService;
+    this.configEngine = configEngineFactory.provideConfigEngine(config2);
+  }
+  /** Get a readonly access to the level configured for the NGXLogger */
+  get level() {
+    return this.configEngine.level;
+  }
+  /** Get a readonly access to the serverLogLevel configured for the NGXLogger */
+  get serverLogLevel() {
+    return this.configEngine.serverLogLevel;
+  }
+  trace(message2, ...additional) {
+    this._log(NgxLoggerLevel.TRACE, message2, additional);
+  }
+  debug(message2, ...additional) {
+    this._log(NgxLoggerLevel.DEBUG, message2, additional);
+  }
+  info(message2, ...additional) {
+    this._log(NgxLoggerLevel.INFO, message2, additional);
+  }
+  log(message2, ...additional) {
+    this._log(NgxLoggerLevel.LOG, message2, additional);
+  }
+  warn(message2, ...additional) {
+    this._log(NgxLoggerLevel.WARN, message2, additional);
+  }
+  error(message2, ...additional) {
+    this._log(NgxLoggerLevel.ERROR, message2, additional);
+  }
+  fatal(message2, ...additional) {
+    this._log(NgxLoggerLevel.FATAL, message2, additional);
+  }
+  /** @deprecated customHttpHeaders is now part of the config, this should be updated via @see updateConfig */
+  setCustomHttpHeaders(headers) {
+    const config2 = this.getConfigSnapshot();
+    config2.customHttpHeaders = headers;
+    this.updateConfig(config2);
+  }
+  /** @deprecated customHttpParams is now part of the config, this should be updated via @see updateConfig */
+  setCustomParams(params) {
+    const config2 = this.getConfigSnapshot();
+    config2.customHttpParams = params;
+    this.updateConfig(config2);
+  }
+  /** @deprecated withCredentials is now part of the config, this should be updated via @see updateConfig */
+  setWithCredentialsOptionValue(withCredentials) {
+    const config2 = this.getConfigSnapshot();
+    config2.withCredentials = withCredentials;
+    this.updateConfig(config2);
+  }
+  /**
+   * Register a INGXLoggerMonitor that will be trigger when a log is either written or sent to server
+   *
+   * There is only one monitor, registering one will overwrite the last one if there was one
+   * @param monitor
+   */
+  registerMonitor(monitor) {
+    this._loggerMonitor = monitor;
+  }
+  /** Set config of logger
+   *
+   * Warning : This overwrites all the config, if you want to update only one property, you should use @see getConfigSnapshot before
+   */
+  updateConfig(config2) {
+    this.configEngine.updateConfig(config2);
+  }
+  partialUpdateConfig(partialConfig) {
+    this.configEngine.partialUpdateConfig(partialConfig);
+  }
+  /** Get config of logger */
+  getConfigSnapshot() {
+    return this.configEngine.getConfig();
+  }
+  /**
+   * Flush the serveur queue
+   */
+  flushServerQueue() {
+    this.serverService.flushQueue(this.getConfigSnapshot());
+  }
+  _log(level, message2, additional = []) {
+    const config2 = this.configEngine.getConfig();
+    const shouldCallWriter = this.ruleService.shouldCallWriter(level, config2, message2, additional);
+    const shouldCallServer = this.ruleService.shouldCallServer(level, config2, message2, additional);
+    const shouldCallMonitor = this.ruleService.shouldCallMonitor(level, config2, message2, additional);
+    if (!shouldCallWriter && !shouldCallServer && !shouldCallMonitor) {
+      return;
+    }
+    const metadata = this.metadataService.getMetadata(level, config2, message2, additional);
+    this.mapperService.getLogPosition(config2, metadata).pipe(take(1)).subscribe((logPosition) => {
+      if (logPosition) {
+        metadata.fileName = logPosition.fileName;
+        metadata.lineNumber = logPosition.lineNumber;
+        metadata.columnNumber = logPosition.columnNumber;
+      }
+      if (shouldCallMonitor && this._loggerMonitor) {
+        this._loggerMonitor.onLog(metadata, config2);
+      }
+      if (shouldCallWriter) {
+        this.writerService.writeMessage(metadata, config2);
+      }
+      if (shouldCallServer) {
+        this.serverService.sendToServer(metadata, config2);
+      }
+    });
+  }
+};
+NGXLogger.\u0275fac = function NGXLogger_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || NGXLogger)(\u0275\u0275inject(TOKEN_LOGGER_CONFIG), \u0275\u0275inject(TOKEN_LOGGER_CONFIG_ENGINE_FACTORY), \u0275\u0275inject(TOKEN_LOGGER_METADATA_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_RULES_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_MAPPER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_WRITER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_SERVER_SERVICE));
+};
+NGXLogger.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: NGXLogger,
+  factory: NGXLogger.\u0275fac,
+  providedIn: "root"
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLogger, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root"
+    }]
+  }], function() {
+    return [{
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_CONFIG]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_CONFIG_ENGINE_FACTORY]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_METADATA_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_RULES_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_MAPPER_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_WRITER_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_SERVER_SERVICE]
+      }]
+    }];
+  }, null);
+})();
+var CustomNGXLoggerService = class {
+  constructor(logger, configEngineFactory, metadataService, ruleService, mapperService, writerService, serverService) {
+    this.logger = logger;
+    this.configEngineFactory = configEngineFactory;
+    this.metadataService = metadataService;
+    this.ruleService = ruleService;
+    this.mapperService = mapperService;
+    this.writerService = writerService;
+    this.serverService = serverService;
+  }
+  /**
+   * Create an instance of a logger
+   * @deprecated this function does not have all the features, @see getNewInstance for every params available
+   * @param config
+   * @param serverService
+   * @param logMonitor
+   * @param mapperService
+   * @returns
+   */
+  create(config2, serverService, logMonitor, mapperService) {
+    return this.getNewInstance({
+      config: config2,
+      serverService,
+      logMonitor,
+      mapperService
+    });
+  }
+  /**
+   * Get a new instance of NGXLogger
+   * @param params list of optional params to use when creating an instance of NGXLogger
+   * @returns the new instance of NGXLogger
+   */
+  getNewInstance(params) {
+    const logger = new NGXLogger(params?.config ?? this.logger.getConfigSnapshot(), params?.configEngineFactory ?? this.configEngineFactory, params?.metadataService ?? this.metadataService, params?.ruleService ?? this.ruleService, params?.mapperService ?? this.mapperService, params?.writerService ?? this.writerService, params?.serverService ?? this.serverService);
+    if (params?.partialConfig) {
+      logger.partialUpdateConfig(params.partialConfig);
+    }
+    if (params?.logMonitor) {
+      logger.registerMonitor(params.logMonitor);
+    }
+    return logger;
+  }
+};
+CustomNGXLoggerService.\u0275fac = function CustomNGXLoggerService_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || CustomNGXLoggerService)(\u0275\u0275inject(NGXLogger), \u0275\u0275inject(TOKEN_LOGGER_CONFIG_ENGINE_FACTORY), \u0275\u0275inject(TOKEN_LOGGER_METADATA_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_RULES_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_MAPPER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_WRITER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_SERVER_SERVICE));
+};
+CustomNGXLoggerService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+  token: CustomNGXLoggerService,
+  factory: CustomNGXLoggerService.\u0275fac,
+  providedIn: "root"
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CustomNGXLoggerService, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root"
+    }]
+  }], function() {
+    return [{
+      type: NGXLogger
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_CONFIG_ENGINE_FACTORY]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_METADATA_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_RULES_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_MAPPER_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_WRITER_SERVICE]
+      }]
+    }, {
+      type: void 0,
+      decorators: [{
+        type: Inject,
+        args: [TOKEN_LOGGER_SERVER_SERVICE]
+      }]
+    }];
+  }, null);
+})();
+var LoggerModule = class _LoggerModule {
+  static forRoot(config2, customProvider) {
+    if (!customProvider) {
+      customProvider = {};
+    }
+    if (!customProvider.configProvider) {
+      customProvider.configProvider = {
+        provide: TOKEN_LOGGER_CONFIG,
+        useValue: config2 || {}
+      };
+    } else {
+      if (customProvider.configProvider.provide !== TOKEN_LOGGER_CONFIG) {
+        throw new Error(`Wrong injection token for configProvider, it should be ${TOKEN_LOGGER_CONFIG} and you used ${customProvider.configProvider.provide}`);
+      }
+    }
+    if (!customProvider.configEngineFactoryProvider) {
+      customProvider.configEngineFactoryProvider = {
+        provide: TOKEN_LOGGER_CONFIG_ENGINE_FACTORY,
+        useClass: NGXLoggerConfigEngineFactory
+      };
+    } else {
+      if (customProvider.configEngineFactoryProvider.provide !== TOKEN_LOGGER_CONFIG_ENGINE_FACTORY) {
+        throw new Error(`Wrong injection token for configEngineFactoryProvider, it should be '${TOKEN_LOGGER_CONFIG_ENGINE_FACTORY}' and you used '${customProvider.configEngineFactoryProvider.provide}'`);
+      }
+    }
+    if (!customProvider.metadataProvider) {
+      customProvider.metadataProvider = {
+        provide: TOKEN_LOGGER_METADATA_SERVICE,
+        useClass: NGXLoggerMetadataService
+      };
+    } else {
+      if (customProvider.metadataProvider.provide !== TOKEN_LOGGER_METADATA_SERVICE) {
+        throw new Error(`Wrong injection token for metadataProvider, it should be '${TOKEN_LOGGER_METADATA_SERVICE}' and you used '${customProvider.metadataProvider.provide}'`);
+      }
+    }
+    if (!customProvider.ruleProvider) {
+      customProvider.ruleProvider = {
+        provide: TOKEN_LOGGER_RULES_SERVICE,
+        useClass: NGXLoggerRulesService
+      };
+    } else {
+      if (customProvider.ruleProvider.provide !== TOKEN_LOGGER_RULES_SERVICE) {
+        throw new Error(`Wrong injection token for ruleProvider, it should be '${TOKEN_LOGGER_RULES_SERVICE}' and you used '${customProvider.ruleProvider.provide}'`);
+      }
+    }
+    if (!customProvider.mapperProvider) {
+      customProvider.mapperProvider = {
+        provide: TOKEN_LOGGER_MAPPER_SERVICE,
+        useClass: NGXLoggerMapperService
+      };
+    } else {
+      if (customProvider.mapperProvider.provide !== TOKEN_LOGGER_MAPPER_SERVICE) {
+        throw new Error(`Wrong injection token for mapperProvider, it should be '${TOKEN_LOGGER_MAPPER_SERVICE}' and you used '${customProvider.mapperProvider.provide}'`);
+      }
+    }
+    if (!customProvider.writerProvider) {
+      customProvider.writerProvider = {
+        provide: TOKEN_LOGGER_WRITER_SERVICE,
+        useClass: NGXLoggerWriterService
+      };
+    } else {
+      if (customProvider.writerProvider.provide !== TOKEN_LOGGER_WRITER_SERVICE) {
+        throw new Error(`Wrong injection token for writerProvider, it should be '${TOKEN_LOGGER_WRITER_SERVICE}' and you used '${customProvider.writerProvider.provide}'`);
+      }
+    }
+    if (!customProvider.serverProvider) {
+      customProvider.serverProvider = {
+        provide: TOKEN_LOGGER_SERVER_SERVICE,
+        useClass: NGXLoggerServerService
+      };
+    } else {
+      if (customProvider.serverProvider.provide !== TOKEN_LOGGER_SERVER_SERVICE) {
+        throw new Error(`Wrong injection token for serverProvider, it should be '${TOKEN_LOGGER_SERVER_SERVICE}' and you used '${customProvider.writerProvider.provide}'`);
+      }
+    }
+    return {
+      ngModule: _LoggerModule,
+      providers: [NGXLogger, customProvider.configProvider, customProvider.configEngineFactoryProvider, customProvider.metadataProvider, customProvider.ruleProvider, customProvider.mapperProvider, customProvider.writerProvider, customProvider.serverProvider, CustomNGXLoggerService]
+    };
+  }
+  static forChild() {
+    return {
+      ngModule: _LoggerModule
+    };
+  }
+};
+LoggerModule.\u0275fac = function LoggerModule_Factory(__ngFactoryType__) {
+  return new (__ngFactoryType__ || LoggerModule)();
+};
+LoggerModule.\u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+  type: LoggerModule
+});
+LoggerModule.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+  imports: [[CommonModule]]
+});
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(LoggerModule, [{
+    type: NgModule,
+    args: [{
+      imports: [CommonModule]
+    }]
+  }], null, null);
+})();
+
+// projects/shared-library/src/lib/services/config.service.ts
+var defaultSystemConfig = {
+  publicId: "",
+  apiMode: ApiMode.Test,
+  sdkMode: SDKMode.None
+};
+var ConfigService = class _ConfigService {
+  constructor(logger) {
+    this.logger = logger;
+    this.systemConfigSubject = new BehaviorSubject(defaultSystemConfig);
+    this.vaultProfileConfigSubject = new BehaviorSubject(Object.setPrototypeOf({}, VaultProfileConfig.prototype));
+    this.searchConfigSubject = new BehaviorSubject({});
+  }
+  // -----------------------------------------------------------------------------------------------------
+  // @ Accessors
+  // -----------------------------------------------------------------------------------------------------
+  /**
+   * Setter & getter for config
+   */
+  //Setter
+  set systemConfig(value) {
+    const mergedSettings = (0, import_lodash.merge)({}, this.systemConfigSubject.getValue(), value);
+    if (JSON.stringify(mergedSettings) !== JSON.stringify(this.systemConfigSubject.getValue())) {
+      this.logger.info("updating system settings:", mergedSettings);
+      this.systemConfigSubject.next(mergedSettings);
+    }
+  }
+  //Getter
+  get systemConfig$() {
+    this.logger.info("getting cached system settings:", this.systemConfigSubject.getValue());
+    return this.systemConfigSubject.getValue();
+  }
+  //Setter
+  set vaultProfileConfig(value) {
+    const mergedSettings = (0, import_lodash.merge)({}, this.vaultProfileConfigSubject.getValue(), value);
+    if (JSON.stringify(mergedSettings) !== JSON.stringify(this.vaultProfileConfigSubject.getValue())) {
+      this.logger.info("updating vault profile settings:", mergedSettings);
+      this.vaultProfileConfigSubject.next(Object.setPrototypeOf(mergedSettings, VaultProfileConfig.prototype));
+    }
+  }
+  //Getter
+  get vaultProfileConfig$() {
+    this.logger.info("getting vault profile settings:", this.vaultProfileConfigSubject.getValue());
+    return this.vaultProfileConfigSubject.getValue();
+  }
+  vaultProfileAddPendingAccount(brand, portal, endpoint) {
+    let updatedVaultProfile = this.vaultProfileConfig$;
+    let externalState = v4_default();
+    updatedVaultProfile.addPendingAccount(externalState, brand, portal, endpoint);
+    this.vaultProfileConfig = updatedVaultProfile;
+  }
+  vaultProfileAddConnectedAccount(connectedAccount) {
+    if (connectedAccount.error) {
+      this.logger.error("Error connecting account", connectedAccount);
+      return;
+    }
+    let updatedVaultProfile = this.vaultProfileConfig$;
+    updatedVaultProfile.addConnectedAccount(connectedAccount.external_state || "", connectedAccount.org_connection_id, connectedAccount.connection_status, connectedAccount.platform_type, connectedAccount.brand_id, connectedAccount.portal_id, connectedAccount.endpoint_id);
+    this.vaultProfileConfig = updatedVaultProfile;
+  }
+  vaultProfileAddPendingRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId) {
+    let updatedVaultProfile = this.vaultProfileConfig$;
+    let externalState = v4_default();
+    updatedVaultProfile.addPendingAccount(externalState, recordLocatorFacility.brand, recordLocatorFacility.portal, recordLocatorFacility.endpoint, vaultProfileConnectionId);
+    this.vaultProfileConfig = updatedVaultProfile;
+  }
+  vaultProfileAddDiscoveredRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId) {
+    let updatedVaultProfile = this.vaultProfileConfig$;
+    let externalState = v4_default();
+    updatedVaultProfile.addDiscoveredAccount(externalState, recordLocatorFacility.brand, recordLocatorFacility.portal, recordLocatorFacility.endpoint, vaultProfileConnectionId);
+    this.vaultProfileConfig = updatedVaultProfile;
+  }
+  //Setter
+  set searchConfig(value) {
+    const mergedSettings = (0, import_lodash.merge)({}, this.searchConfigSubject.getValue(), value);
+    if (JSON.stringify(mergedSettings) !== JSON.stringify(this.searchConfigSubject.getValue())) {
+      this.logger.info("updating search settings:", mergedSettings);
+      this.searchConfigSubject.next(mergedSettings);
+    }
+  }
+  //Getter
+  get searchConfig$() {
+    this.logger.info("getting search settings:", this.searchConfigSubject.getValue());
+    return this.searchConfigSubject.getValue();
+  }
+  static {
+    this.\u0275fac = function ConfigService_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _ConfigService)(\u0275\u0275inject(NGXLogger));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _ConfigService, factory: _ConfigService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// projects/shared-library/src/lib/services/message-bus.service.ts
+var MessageBusService = class _MessageBusService {
+  constructor(configService) {
+    this.configService = configService;
+    this.messageBusSubject = new BehaviorSubject(null);
+  }
+  //notify the parent element that we could not register Fasten Connect installation: missing or invalid id
+  publishWidgetConfigError() {
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.event_type = EventTypes.EventTypeWidgetConfigError;
+    this.messageBusSubject.next(eventPayload);
+  }
+  //this event is published when the popup window is opened.
+  publishOrgConnectionPending(pendingConnectData) {
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.data = pendingConnectData;
+    eventPayload.event_type = EventTypes.EventTypeConnectionPending;
+    this.messageBusSubject.next(eventPayload);
+  }
+  //this event is published when the popup window is closed, and the connection is successful or failed.
+  publishOrgConnectionComplete(orgConnectionCallbackData) {
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.data = orgConnectionCallbackData;
+    if (orgConnectionCallbackData.error) {
+      eventPayload.event_type = EventTypes.EventTypeConnectionFailed;
+    } else {
+      eventPayload.event_type = EventTypes.EventTypeConnectionSuccess;
+    }
+    this.messageBusSubject.next(eventPayload);
+  }
+  //this event is published when the widget is closed. It will publish a list of all
+  publishComplete() {
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.data = this.configService.vaultProfileConfig$.connectedPatientAccounts?.map((account) => {
+      return {
+        connection_status: account.connection_status,
+        org_connection_id: account.org_connection_id,
+        platform_type: account.platform_type,
+        brand_id: account.brand?.id,
+        portal_id: account.portal?.id,
+        endpoint_id: account.endpoint?.id
+      };
+    }) || [];
+    eventPayload.event_type = EventTypes.EventTypeWidgetComplete;
+    this.messageBusSubject.next(eventPayload);
+  }
+  //this event is published when the widget requests to close the modal.
+  publishRequestClose() {
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.event_type = EventTypes.EventTypeWidgetClose;
+    this.messageBusSubject.next(eventPayload);
+  }
+  //this event is published when a widget search is performed
+  publishSearchQuery(query, locations, external_id, total_results) {
+    if (!this.configService.systemConfig$.eventTypes?.includes(EventTypes.EventTypeSearchQuery)) {
+      return;
+    }
+    if (!query?.trim()) {
+      return;
+    }
+    let eventPayload = new MessageBusEventPayload();
+    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
+    eventPayload.event_type = EventTypes.EventTypeSearchQuery;
+    eventPayload.data = {
+      query,
+      timestamp: Date.now(),
+      filter: {
+        locations: locations || []
+      },
+      results: {
+        total: total_results
+      },
+      external_id
+    };
+    this.messageBusSubject.next(eventPayload);
+  }
+  static {
+    this.\u0275fac = function MessageBusService_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _MessageBusService)(\u0275\u0275inject(ConfigService));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _MessageBusService, factory: _MessageBusService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// projects/shared-library/src/lib/models/config/vault-profile-config.ts
+var VaultProfileConfig = class {
+  addPendingAccount(externalState, brand, portal, endpoint, vaultProfileConnectionId) {
+    if (!this.pendingPatientAccounts) {
+      this.pendingPatientAccounts = {};
+    }
+    this.pendingPatientAccounts[externalState] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId };
+  }
+  addDiscoveredAccount(externalState, brand, portal, endpoint, vaultProfileConnectionId) {
+    if (!this.discoveredPatientAccounts) {
+      this.discoveredPatientAccounts = {};
+    }
+    this.discoveredPatientAccounts[externalState] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId };
+  }
+  addConnectedAccount(external_state, org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id) {
+    if (!this.connectedPatientAccounts) {
+      this.connectedPatientAccounts = [];
+    }
+    let foundPendingPatientAccount = this.pendingPatientAccounts?.[external_state];
+    let foundDiscoveredPatientAccount = this.discoveredPatientAccounts?.[external_state];
+    if (foundPendingPatientAccount) {
+      delete this.pendingPatientAccounts[external_state];
+      this.connectedPatientAccounts?.push({ org_connection_id, connection_status, platform_type, brand: foundPendingPatientAccount.brand, portal: foundPendingPatientAccount.portal, endpoint: foundPendingPatientAccount.endpoint });
+    } else if (foundDiscoveredPatientAccount) {
+      delete this.discoveredPatientAccounts[external_state];
+      this.connectedPatientAccounts?.push({ org_connection_id, connection_status, platform_type, brand: foundDiscoveredPatientAccount.brand, portal: foundDiscoveredPatientAccount.portal, endpoint: foundDiscoveredPatientAccount.endpoint });
+    } else {
+      console.warn("we may not know the brand, portal, endpoint information, so generating it with placeholders. Most likely this is a reconnect operation.");
+      console.warn("pendingAccounts", this.pendingPatientAccounts, "connectionParams", org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id);
+      this.connectedPatientAccounts?.push({
+        org_connection_id,
+        connection_status,
+        platform_type,
+        brand: { id: brand_id, name: "unknown", portals: [], hidden: false, last_updated: "", portal_ids: [portal_id] },
+        portal: { id: portal_id, last_updated: "", endpoint_ids: [endpoint_id], name: "unknown" },
+        endpoint: { id: endpoint_id, platform_type }
+      });
+    }
+  }
+};
+
+// projects/shared-library/src/lib/models/fasten/vault-profile.ts
+var VaultProfile = class {
+  constructor() {
+    this.password_confirm = "";
+    this.agree_terms = false;
+  }
+};
+
+// projects/shared-library/src/lib/models/forms/form-health-system-request.ts
+var FormHealthSystemRequest = class {
+  constructor() {
+    this.name = "";
+    this.email = "";
+    this.website = "";
+    this.street_address = "";
+  }
+};
+
+// projects/shared-library/src/lib/models/forms/form-support-request.ts
+var FormSupportRequest = class {
+};
+
+// projects/shared-library/src/lib/models/message-bus/message-bus-event-payload.ts
+var MessageBusEventPayload = class {
+};
+
+// projects/shared-library/src/lib/models/search/search-filter.ts
+var SearchFilter = class {
+  constructor() {
+    this.query = "";
+    this.platformTypes = [];
+    this.categories = [];
+    this.showHidden = false;
+    this.locations = ["ALL"];
+    this.searchAfter = "";
+    this.fields = [];
+  }
+};
+
+// projects/shared-library/src/lib/utils/post-message.ts
+function waitForOrgConnectionOrTimeout(logger, openedWindow, sdkMode) {
+  logger.info(`waiting for postMessage notification from popup window`);
+  return fromEvent(window, "message").pipe(
+    //throw an error if we wait more than 2 minutes (this will close the window)
+    timeout(ConnectWindowTimeout),
+    filter((event) => {
+      logger.debug(`received postMessage event, must determine if this message is safe to process`, event);
+      if (sdkMode == SDKMode.ReactNative && window.ReactNativeWebView) {
+        if (event.source || event.origin) {
+          logger.debug(`ignoring postMessage event from unknown source or origin. React-native webview should be null for both`, event.source, event.origin);
+          return false;
+        }
+        return true;
+      } else {
+        if (event.source != openedWindow) {
+          logger.debug(`ignoring postMessage event from unknown source window`, event.source);
+          return false;
+        }
+        if (event.origin != "https://api.connect-dev.fastenhealth.com" && event.origin != "https://api.connect.fastenhealth.com" && event.origin != "https://embed.connect-dev.fastenhealth.com" && event.origin != "https://embed.connect.fastenhealth.com") {
+          logger.debug(`ignoring postMessage event from unknown origin`, event.origin);
+          return false;
+        }
+      }
+      return true;
+    }),
+    //after filtering, we should only have one event to handle.
+    first(),
+    map((event) => {
+      logger.info(`received postMessage notification from popup window & sending acknowledgment`, event.data);
+      event?.source?.postMessage(JSON.stringify({ close: true }), event.origin);
+      let parsedEventData = JSON.parse(event.data);
+      if (parsedEventData.error) {
+        throw new Error(event.data);
+      } else {
+        return parsedEventData;
+      }
+    }),
+    catchError((err) => {
+      openedWindow.self.close();
+      if (err instanceof TimeoutError) {
+        logger.warn(`timed out waiting for notification from popup (${ConnectWindowTimeout / 1e3}s), closing window`);
+        throw new Error(JSON.stringify({ error: "timeout", error_description: "timed out waiting for notification from popup" }));
+      } else {
+        logger.error(`an error was sent from the popup, closing window`, err);
+        throw err;
+      }
+      return throwError(err);
+    })
+  );
+}
+
+// projects/shared-library/src/lib/shared-library.service.ts
+var SharedLibraryService = class _SharedLibraryService {
+  constructor() {
+  }
+  static {
+    this.\u0275fac = function SharedLibraryService_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _SharedLibraryService)();
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _SharedLibraryService, factory: _SharedLibraryService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// projects/shared-library/src/lib/shared-library.component.ts
+var SharedLibraryComponent = class _SharedLibraryComponent {
+  constructor() {
+  }
+  ngOnInit() {
+  }
+  static {
+    this.\u0275fac = function SharedLibraryComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _SharedLibraryComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SharedLibraryComponent, selectors: [["lib-shared-library"]], standalone: false, decls: 2, vars: 0, template: function SharedLibraryComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "p");
+        \u0275\u0275text(1, " shared-library works! ");
+        \u0275\u0275elementEnd();
+      }
+    }, encapsulation: 2 });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SharedLibraryComponent, { className: "SharedLibraryComponent", filePath: "projects/shared-library/src/lib/shared-library.component.ts", lineNumber: 13 });
+})();
+
+// projects/shared-library/src/lib/shared-library.module.ts
+var SharedLibraryModule = class _SharedLibraryModule {
+  static {
+    this.\u0275fac = function SharedLibraryModule_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _SharedLibraryModule)();
+    };
+  }
+  static {
+    this.\u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({ type: _SharedLibraryModule });
+  }
+  static {
+    this.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({});
+  }
+};
+
 // node_modules/@angular/router/fesm2022/router.mjs
 var PRIMARY_OUTLET = "primary";
 var RouteTitleKey = /* @__PURE__ */ Symbol("RouteTitle");
@@ -39249,11 +41061,11 @@ function encodeUriFragment(s) {
 function encodeUriSegment(s) {
   return encodeUriString(s).replace(/\(/g, "%28").replace(/\)/g, "%29").replace(/%26/gi, "&");
 }
-function decode(s) {
+function decode2(s) {
   return decodeURIComponent(s);
 }
 function decodeQuery(s) {
-  return decode(s.replace(/\+/g, "%20"));
+  return decode2(s.replace(/\+/g, "%20"));
 }
 function serializePath(path) {
   return `${encodeUriSegment(path.path)}${serializeMatrixParams(path.parameters)}`;
@@ -39348,7 +41160,7 @@ var UrlParser = class {
       throw new RuntimeError(4009, (typeof ngDevMode === "undefined" || ngDevMode) && `Empty path url segment cannot have parameters: '${this.remaining}'.`);
     }
     this.capture(path);
-    return new UrlSegment(decode(path), this.parseMatrixParams());
+    return new UrlSegment(decode2(path), this.parseMatrixParams());
   }
   parseMatrixParams() {
     const params = {};
@@ -39371,7 +41183,7 @@ var UrlParser = class {
         this.capture(value);
       }
     }
-    params[decode(key)] = decode(value);
+    params[decode2(key)] = decode2(value);
   }
   // Parse a single query parameter `name[=value]`
   parseQueryParam(params) {
@@ -39741,14 +41553,14 @@ function createNewSegmentGroup(segmentGroup, startIndex, commands) {
     }
     if (i === 0 && isMatrixParams(commands[0])) {
       const p = segmentGroup.segments[startIndex];
-      paths.push(new UrlSegment(p.path, stringify2(commands[0])));
+      paths.push(new UrlSegment(p.path, stringify3(commands[0])));
       i++;
       continue;
     }
     const curr = isCommandWithOutlets(command) ? command.outlets[PRIMARY_OUTLET] : `${command}`;
     const next = i < commands.length - 1 ? commands[i + 1] : null;
     if (curr && next && isMatrixParams(next)) {
-      paths.push(new UrlSegment(curr, stringify2(next)));
+      paths.push(new UrlSegment(curr, stringify3(next)));
       i += 2;
     } else {
       paths.push(new UrlSegment(curr, {}));
@@ -39769,7 +41581,7 @@ function createNewSegmentChildren(outlets) {
   });
   return children;
 }
-function stringify2(params) {
+function stringify3(params) {
   const res = {};
   Object.entries(params).forEach(([k, v]) => res[k] = `${v}`);
   return res;
@@ -44619,3248 +46431,6 @@ function getLoadedRoutes(route) {
 }
 publishExternalGlobalUtil("\u0275getLoadedRoutes", getLoadedRoutes);
 
-// projects/shared-library/src/lib/shared-library.constants.ts
-var ApiMode;
-(function(ApiMode2) {
-  ApiMode2["Live"] = "live";
-  ApiMode2["Test"] = "test";
-})(ApiMode || (ApiMode = {}));
-var WidgetMode;
-(function(WidgetMode2) {
-  WidgetMode2["SearchOnly"] = "search-only";
-  WidgetMode2["Connect"] = "connect";
-  WidgetMode2["Tefca"] = "tefca";
-})(WidgetMode || (WidgetMode = {}));
-var ConnectionStatus;
-(function(ConnectionStatus2) {
-  ConnectionStatus2["Authorized"] = "authorized";
-  ConnectionStatus2["Revoked"] = "revoked";
-})(ConnectionStatus || (ConnectionStatus = {}));
-var ConnectMode;
-(function(ConnectMode2) {
-  ConnectMode2["Redirect"] = "redirect";
-  ConnectMode2["Popup"] = "popup";
-})(ConnectMode || (ConnectMode = {}));
-var EventTypes;
-(function(EventTypes2) {
-  EventTypes2["EventTypeWidgetConfigError"] = "widget.config_error";
-  EventTypes2["EventTypeWidgetClose"] = "widget.close";
-  EventTypes2["EventTypeWidgetComplete"] = "widget.complete";
-  EventTypes2["EventTypeConnectionPending"] = "patient.connection_pending";
-  EventTypes2["EventTypeConnectionSuccess"] = "patient.connection_success";
-  EventTypes2["EventTypeConnectionFailed"] = "patient.connection_failed";
-  EventTypes2["EventTypeSearchQuery"] = "search.query";
-})(EventTypes || (EventTypes = {}));
-var SDKMode;
-(function(SDKMode2) {
-  SDKMode2["None"] = "none";
-  SDKMode2["ReactNative"] = "react-native";
-})(SDKMode || (SDKMode = {}));
-var CommunicationEntity;
-(function(CommunicationEntity2) {
-  CommunicationEntity2["PrimaryWebView"] = "FASTEN_CONNECT_PRIMARY_WEBVIEW";
-  CommunicationEntity2["ModalWebView"] = "FASTEN_CONNECT_MODAL_WEBVIEW";
-  CommunicationEntity2["ReactNativeComponent"] = "FASTEN_CONNECT_REACT_WEBVIEW";
-  CommunicationEntity2["External"] = "FASTEN_CONNECT_EXTERNAL";
-})(CommunicationEntity || (CommunicationEntity = {}));
-var ConnectWindowTimeout = 20 * 60 * 1e3;
-
-// projects/shared-library/src/lib/pipes/safe-html.pipe.ts
-var SafeHtmlPipe = class _SafeHtmlPipe {
-  constructor(sanitizer) {
-    this.sanitizer = sanitizer;
-  }
-  transform(value, args) {
-    return this.sanitizer.bypassSecurityTrustHtml(value);
-  }
-  static {
-    this.\u0275fac = function SafeHtmlPipe_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _SafeHtmlPipe)(\u0275\u0275directiveInject(DomSanitizer, 16));
-    };
-  }
-  static {
-    this.\u0275pipe = /* @__PURE__ */ \u0275\u0275definePipe({ name: "safeHtml", type: _SafeHtmlPipe, pure: true, standalone: false });
-  }
-};
-
-// projects/shared-library/src/lib/pipes/state-name.pipe.ts
-var StateNamePipe = class _StateNamePipe {
-  constructor() {
-    this.stateCodes = {
-      //CUSTOM
-      "ALL": "Nationwide",
-      //2 letter state codes.
-      "AL": "Alabama",
-      "AK": "Alaska",
-      "AZ": "Arizona",
-      "AR": "Arkansas",
-      "CA": "California",
-      "CO": "Colorado",
-      "CT": "Connecticut",
-      "DE": "Delaware",
-      "FL": "Florida",
-      "GA": "Georgia",
-      "HI": "Hawaii",
-      "ID": "Idaho",
-      "IL": "Illinois",
-      "IN": "Indiana",
-      "IA": "Iowa",
-      "KS": "Kansas",
-      "KY": "Kentucky",
-      "LA": "Louisiana",
-      "ME": "Maine",
-      "MD": "Maryland",
-      "MA": "Massachusetts",
-      "MI": "Michigan",
-      "MN": "Minnesota",
-      "MS": "Mississippi",
-      "MO": "Missouri",
-      "MT": "Montana",
-      "NE": "Nebraska",
-      "NV": "Nevada",
-      "NH": "New Hampshire",
-      "NJ": "New Jersey",
-      "NM": "New Mexico",
-      "NY": "New York",
-      "NC": "North Carolina",
-      "ND": "North Dakota",
-      "OH": "Ohio",
-      "OK": "Oklahoma",
-      "OR": "Oregon",
-      "PA": "Pennsylvania",
-      "RI": "Rhode Island",
-      "SC": "South Carolina",
-      "SD": "South Dakota",
-      "TN": "Tennessee",
-      "TX": "Texas",
-      "UT": "Utah",
-      "VT": "Vermont",
-      "VA": "Virginia",
-      "WA": "Washington",
-      "WV": "West Virginia",
-      "WI": "Wisconsin",
-      "WY": "Wyoming",
-      // Territories
-      "AS": "American Samoa",
-      "DC": "District of Columbia",
-      "FM": "Federated States of Micronesia",
-      "GU": "Guam",
-      "MH": "Marshall Islands",
-      "MP": "Northern Mariana Islands",
-      "PW": "Palau",
-      "PR": "Puerto Rico",
-      "VI": "Virgin Islands",
-      // Armed Forces (AE includes Europe, Africa, Canada, and the Middle East)
-      "AA": "Armed Forces Americas",
-      "AE": "Armed Forces Europe",
-      "AP": "Armed Forces Pacific"
-    };
-  }
-  transform(value) {
-    return this.stateCodes[value] || value;
-  }
-  static {
-    this.\u0275fac = function StateNamePipe_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _StateNamePipe)();
-    };
-  }
-  static {
-    this.\u0275pipe = /* @__PURE__ */ \u0275\u0275definePipe({ name: "stateName", type: _StateNamePipe, pure: true, standalone: false });
-  }
-};
-
-// projects/shared-library/src/lib/directives/image-fallback.directive.ts
-var DEFAULT_IMAGE_FALLBACK_PATH = "https://cdn.fastenhealth.com/images/no-image.svg";
-var ImageFallbackDirective = class _ImageFallbackDirective {
-  constructor(elementRef) {
-    this.elementRef = elementRef;
-    this.hospitalInlineImage = "data:image/svg+xml,%3csvg id='connecting-system-logo-placeholder' xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='text-gray-400'%3e%3cpath d='M12 6v4'/%3e%3cpath d='M14 14h-4'/%3e%3cpath d='M14 18h-4'/%3e%3cpath d='M14 8h-4'/%3e%3cpath d='M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2'/%3e%3cpath d='M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18'/%3e%3c/svg%3e";
-    this.officeInlineImage = "data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' class='lucide lucide-building-2 w-10 h-10 text-gray-400'%3e%3cpath d='M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z'/%3e%3cpath d='M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2'/%3e%3cpath d='M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2'/%3e%3cpath d='M10 6h4'/%3e%3cpath d='M10 10h4'/%3e%3cpath d='M10 14h4'/%3e%3cpath d='M10 18h4'/%3e%3c/svg%3e";
-    this.fastenSquareInlineImage = "data:image/svg+xml,%3csvg version='1.2' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1640 1640' width='1640' height='1640'%3e%3ctitle%3esquare%3c/title%3e%3cstyle%3etspan %7b white-space:pre %7d .s0 %7b fill: white %7d .t1 %7b font-size: 400px%3bfill: %235b47fb%3bfont-weight: 700%3bfont-family: 'Poppins-Bold'%2c 'Poppins' %7d%3c/style%3e%3cpath id='Layer 1' fill-rule='evenodd' class='s0' d='m-90-48h1752v1727h-1752z'/%3e%3ctext id='fasten' style='transform: matrix(1.356%2c0%2c0%2c1.356%2c8.863%2c630.478)'%3e%3ctspan x='0' y='296' class='t1' dx='0'%3ef%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3ea%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3es%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3et%3c/tspan%3e%3ctspan y='296' class='t1' dx='0'%3ee%3c/tspan%3e%3ctspan y='296' class='t1' dx='0 -21'%3en%3c/tspan%3e%3c/text%3e%3c/svg%3e";
-    this.fastenLogoInlineImage = "data:image/svg+xml,%3csvg version='1.2' xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1640 1640' width='1640' height='1640'%3e%3ctitle%3esquare%3c/title%3e%3cstyle%3etspan %7b white-space:pre %7d .s0 %7b fill: white %7d .t1 %7b font-size: 282px%3bfill: %235b47fb%3bfont-weight: 700%3bfont-family: 'Poppins-Bold'%2c 'Poppins' %7d%3c/style%3e%3cpath id='Layer 1' fill-rule='evenodd' class='s0' d='m-90-48h1752v1727h-1752z'/%3e%3ctext id='fh' style='transform: matrix(4.298%2c0%2c0%2c4.298%2c252%2c393)'%3e%3ctspan x='0' y='208.4' class='t1' dx='0'%3ef%3c/tspan%3e%3ctspan y='208.4' class='t1' dx='0'%3eh%3c/tspan%3e%3ctspan y='208.4' class='t1' dx='0'%3e%3c/tspan%3e%3c/text%3e%3c/svg%3e";
-    this.unknownOrganizationInlineImage = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40' fill='none'%3E%3Crect width='40' height='40' rx='8' fill='currentColor' /%3E%3Cpath d='M20 12V28M12 20H28' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' /%3E%3Cpath d='M12 12L28 28M28 12L12 28' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' opacity='0.2' /%3E%3C/svg%3E";
-  }
-  loadFallbackOnError() {
-    if (this.path(this.elementRef.nativeElement.src) == this.path(this.fallbackSrc())) {
-      return;
-    }
-    this.elementRef.nativeElement.src = this.fallbackSrc();
-  }
-  fallbackSrc() {
-    if (this.imageFallback === "hospital") {
-      return this.hospitalInlineImage;
-    } else if (this.imageFallback === "office") {
-      return this.officeInlineImage;
-    } else if (this.imageFallback === "fasten") {
-      return this.fastenSquareInlineImage;
-    } else if (this.imageFallback === "fasten-logo") {
-      return this.fastenLogoInlineImage;
-    } else if (this.imageFallback == "unknown-organization") {
-      return this.unknownOrganizationInlineImage;
-    } else {
-      return this.imageFallback || DEFAULT_IMAGE_FALLBACK_PATH;
-    }
-  }
-  path(urlString) {
-    return urlString.replace(/^https?:\/\/[^\/]*/, "");
-  }
-  static {
-    this.\u0275fac = function ImageFallbackDirective_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _ImageFallbackDirective)(\u0275\u0275directiveInject(ElementRef));
-    };
-  }
-  static {
-    this.\u0275dir = /* @__PURE__ */ \u0275\u0275defineDirective({ type: _ImageFallbackDirective, selectors: [["img", "imageFallback", ""]], hostBindings: function ImageFallbackDirective_HostBindings(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275listener("error", function ImageFallbackDirective_error_HostBindingHandler() {
-          return ctx.loadFallbackOnError();
-        });
-      }
-    }, inputs: { imageFallback: "imageFallback" }, standalone: false });
-  }
-};
-
-// projects/shared-library/src/lib/services/config.service.ts
-var import_lodash = __toESM(require_lodash());
-
-// node_modules/uuid/dist/esm-browser/rng.js
-var getRandomValues;
-var rnds8 = new Uint8Array(16);
-function rng() {
-  if (!getRandomValues) {
-    getRandomValues = typeof crypto !== "undefined" && crypto.getRandomValues && crypto.getRandomValues.bind(crypto) || typeof msCrypto !== "undefined" && typeof msCrypto.getRandomValues === "function" && msCrypto.getRandomValues.bind(msCrypto);
-    if (!getRandomValues) {
-      throw new Error("crypto.getRandomValues() not supported. See https://github.com/uuidjs/uuid#getrandomvalues-not-supported");
-    }
-  }
-  return getRandomValues(rnds8);
-}
-
-// node_modules/uuid/dist/esm-browser/regex.js
-var regex_default = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}|00000000-0000-0000-0000-000000000000)$/i;
-
-// node_modules/uuid/dist/esm-browser/validate.js
-function validate(uuid) {
-  return typeof uuid === "string" && regex_default.test(uuid);
-}
-var validate_default = validate;
-
-// node_modules/uuid/dist/esm-browser/stringify.js
-var byteToHex = [];
-for (i = 0; i < 256; ++i) {
-  byteToHex.push((i + 256).toString(16).substr(1));
-}
-var i;
-function stringify3(arr) {
-  var offset = arguments.length > 1 && arguments[1] !== void 0 ? arguments[1] : 0;
-  var uuid = (byteToHex[arr[offset + 0]] + byteToHex[arr[offset + 1]] + byteToHex[arr[offset + 2]] + byteToHex[arr[offset + 3]] + "-" + byteToHex[arr[offset + 4]] + byteToHex[arr[offset + 5]] + "-" + byteToHex[arr[offset + 6]] + byteToHex[arr[offset + 7]] + "-" + byteToHex[arr[offset + 8]] + byteToHex[arr[offset + 9]] + "-" + byteToHex[arr[offset + 10]] + byteToHex[arr[offset + 11]] + byteToHex[arr[offset + 12]] + byteToHex[arr[offset + 13]] + byteToHex[arr[offset + 14]] + byteToHex[arr[offset + 15]]).toLowerCase();
-  if (!validate_default(uuid)) {
-    throw TypeError("Stringified UUID is invalid");
-  }
-  return uuid;
-}
-var stringify_default = stringify3;
-
-// node_modules/uuid/dist/esm-browser/v4.js
-function v4(options, buf, offset) {
-  options = options || {};
-  var rnds = options.random || (options.rng || rng)();
-  rnds[6] = rnds[6] & 15 | 64;
-  rnds[8] = rnds[8] & 63 | 128;
-  if (buf) {
-    offset = offset || 0;
-    for (var i = 0; i < 16; ++i) {
-      buf[offset + i] = rnds[i];
-    }
-    return buf;
-  }
-  return stringify_default(rnds);
-}
-var v4_default = v4;
-
-// node_modules/vlq/dist/vlq.es.js
-var charToInteger = {};
-var integerToChar = {};
-"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".split("").forEach(function(char, i) {
-  charToInteger[char] = i;
-  integerToChar[i] = char;
-});
-function decode2(string) {
-  var result = [];
-  var shift = 0;
-  var value = 0;
-  for (var i = 0; i < string.length; i += 1) {
-    var integer = charToInteger[string[i]];
-    if (integer === void 0) {
-      throw new Error("Invalid character (" + string[i] + ")");
-    }
-    var hasContinuationBit = integer & 32;
-    integer &= 31;
-    value += integer << shift;
-    if (hasContinuationBit) {
-      shift += 5;
-    } else {
-      var shouldNegate = value & 1;
-      value >>>= 1;
-      if (shouldNegate) {
-        result.push(value === 0 ? -2147483648 : -value);
-      } else {
-        result.push(value);
-      }
-      value = shift = 0;
-    }
-  }
-  return result;
-}
-
-// node_modules/ngx-logger/fesm2020/ngx-logger.mjs
-var TOKEN_LOGGER_CONFIG = "TOKEN_LOGGER_CONFIG";
-var NGXLoggerConfigEngine = class {
-  constructor(config2) {
-    this.config = this._clone(config2);
-  }
-  /** Get a readonly access to the level configured for the NGXLogger */
-  get level() {
-    return this.config.level;
-  }
-  /** Get a readonly access to the serverLogLevel configured for the NGXLogger */
-  get serverLogLevel() {
-    return this.config.serverLogLevel;
-  }
-  updateConfig(config2) {
-    this.config = this._clone(config2);
-  }
-  /** Update the config partially
-   * This is useful if you want to update only one parameter of the config
-   */
-  partialUpdateConfig(partialConfig) {
-    if (!partialConfig) {
-      return;
-    }
-    Object.keys(partialConfig).forEach((configParamKey) => {
-      this.config[configParamKey] = partialConfig[configParamKey];
-    });
-  }
-  getConfig() {
-    return this._clone(this.config);
-  }
-  // TODO: This is a shallow clone, If the config ever becomes hierarchical we must make this a deep clone
-  _clone(object) {
-    const cloneConfig = {
-      level: null
-    };
-    Object.keys(object).forEach((key) => {
-      cloneConfig[key] = object[key];
-    });
-    return cloneConfig;
-  }
-};
-var TOKEN_LOGGER_CONFIG_ENGINE_FACTORY = "TOKEN_LOGGER_CONFIG_ENGINE_FACTORY";
-var NGXLoggerConfigEngineFactory = class {
-  provideConfigEngine(config2) {
-    return new NGXLoggerConfigEngine(config2);
-  }
-};
-var TOKEN_LOGGER_MAPPER_SERVICE = "TOKEN_LOGGER_MAPPER_SERVICE";
-var NGXLoggerMapperService = class {
-  constructor(httpBackend) {
-    this.httpBackend = httpBackend;
-    this.sourceMapCache = /* @__PURE__ */ new Map();
-    this.logPositionCache = /* @__PURE__ */ new Map();
-  }
-  /**
-   * Returns the log position of the caller
-   * If sourceMaps are enabled, it attemps to get the source map from the server, and use that to parse the position
-   * @param config
-   * @param metadata
-   * @returns
-   */
-  getLogPosition(config2, metadata) {
-    const stackLine = this.getStackLine(config2);
-    if (!stackLine) {
-      return of({
-        fileName: "",
-        lineNumber: 0,
-        columnNumber: 0
-      });
-    }
-    const logPosition = this.getLocalPosition(stackLine);
-    if (!config2.enableSourceMaps) {
-      return of(logPosition);
-    }
-    const sourceMapLocation = this.getSourceMapLocation(stackLine);
-    return this.getSourceMap(sourceMapLocation, logPosition);
-  }
-  /**
-   * Get the stackline of the original caller
-   * @param config
-   * @returns null if stackline was not found
-   */
-  getStackLine(config2) {
-    const error = new Error();
-    try {
-      throw error;
-    } catch (e) {
-      try {
-        let defaultProxy = 4;
-        const firstStackLine = error.stack.split("\n")[0];
-        if (!firstStackLine.includes(".js:")) {
-          defaultProxy = defaultProxy + 1;
-        }
-        return error.stack.split("\n")[defaultProxy + (config2.proxiedSteps || 0)];
-      } catch (e2) {
-        return null;
-      }
-    }
-  }
-  /**
-   * Get position of caller without using sourceMaps
-   * @param stackLine
-   * @returns
-   */
-  getLocalPosition(stackLine) {
-    const positionStartIndex = stackLine.lastIndexOf("/");
-    let positionEndIndex = stackLine.indexOf(")");
-    if (positionEndIndex < 0) {
-      positionEndIndex = void 0;
-    }
-    const position = stackLine.substring(positionStartIndex + 1, positionEndIndex);
-    const dataArray = position.split(":");
-    if (dataArray.length === 3) {
-      return {
-        fileName: dataArray[0],
-        lineNumber: +dataArray[1],
-        columnNumber: +dataArray[2]
-      };
-    }
-    return {
-      fileName: "unknown",
-      lineNumber: 0,
-      columnNumber: 0
-    };
-  }
-  getTranspileLocation(stackLine) {
-    let locationStartIndex = stackLine.indexOf("(");
-    if (locationStartIndex < 0) {
-      locationStartIndex = stackLine.lastIndexOf("@");
-      if (locationStartIndex < 0) {
-        locationStartIndex = stackLine.lastIndexOf(" ");
-      }
-    }
-    let locationEndIndex = stackLine.indexOf(")");
-    if (locationEndIndex < 0) {
-      locationEndIndex = void 0;
-    }
-    return stackLine.substring(locationStartIndex + 1, locationEndIndex);
-  }
-  /**
-   * Gets the URL of the sourcemap (the URL can be relative or absolute, it is browser dependant)
-   * @param stackLine
-   * @returns
-   */
-  getSourceMapLocation(stackLine) {
-    const file = this.getTranspileLocation(stackLine);
-    const mapFullPath = file.substring(0, file.lastIndexOf(":"));
-    return mapFullPath.substring(0, mapFullPath.lastIndexOf(":")) + ".map";
-  }
-  getMapping(sourceMap, position) {
-    let sourceFileIndex = 0, sourceCodeLine = 0, sourceCodeColumn = 0;
-    const lines = sourceMap.mappings.split(";");
-    for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-      let generatedCodeColumn = 0;
-      const columns = lines[lineIndex].split(",");
-      for (let columnIndex = 0; columnIndex < columns.length; columnIndex++) {
-        const decodedSection = decode2(columns[columnIndex]);
-        if (decodedSection.length >= 4) {
-          generatedCodeColumn += decodedSection[0];
-          sourceFileIndex += decodedSection[1];
-          sourceCodeLine += decodedSection[2];
-          sourceCodeColumn += decodedSection[3];
-        }
-        if (lineIndex === position.lineNumber) {
-          if (generatedCodeColumn === position.columnNumber) {
-            return {
-              fileName: sourceMap.sources[sourceFileIndex],
-              lineNumber: sourceCodeLine,
-              columnNumber: sourceCodeColumn
-            };
-          } else if (columnIndex + 1 === columns.length) {
-            return {
-              fileName: sourceMap.sources[sourceFileIndex],
-              lineNumber: sourceCodeLine,
-              columnNumber: 0
-            };
-          }
-        }
-      }
-    }
-    return {
-      fileName: "unknown",
-      lineNumber: 0,
-      columnNumber: 0
-    };
-  }
-  /**
-   * does the http get request to get the source map
-   * @param sourceMapLocation
-   * @param distPosition
-   */
-  getSourceMap(sourceMapLocation, distPosition) {
-    const req = new HttpRequest("GET", sourceMapLocation);
-    const distPositionKey = `${distPosition.fileName}:${distPosition.lineNumber}:${distPosition.columnNumber}`;
-    if (this.logPositionCache.has(distPositionKey)) {
-      return this.logPositionCache.get(distPositionKey);
-    }
-    if (!this.sourceMapCache.has(sourceMapLocation)) {
-      if (!this.httpBackend) {
-        console.error("NGXLogger : Can't get sourcemap because HttpBackend is not provided. You need to import HttpClientModule");
-        this.sourceMapCache.set(sourceMapLocation, of(null));
-      } else {
-        this.sourceMapCache.set(sourceMapLocation, this.httpBackend.handle(req).pipe(filter((e) => e instanceof HttpResponse), map((httpResponse) => httpResponse.body), retry(3), shareReplay(1)));
-      }
-    }
-    const logPosition$ = this.sourceMapCache.get(sourceMapLocation).pipe(map((sourceMap) => {
-      if (!sourceMap) {
-        return distPosition;
-      }
-      return this.getMapping(sourceMap, distPosition);
-    }), catchError(() => of(distPosition)), shareReplay(1));
-    this.logPositionCache.set(distPositionKey, logPosition$);
-    return logPosition$;
-  }
-};
-NGXLoggerMapperService.\u0275fac = function NGXLoggerMapperService_Factory(__ngFactoryType__) {
-  return new (__ngFactoryType__ || NGXLoggerMapperService)(\u0275\u0275inject(HttpBackend, 8));
-};
-NGXLoggerMapperService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-  token: NGXLoggerMapperService,
-  factory: NGXLoggerMapperService.\u0275fac
-});
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerMapperService, [{
-    type: Injectable
-  }], function() {
-    return [{
-      type: HttpBackend,
-      decorators: [{
-        type: Optional
-      }]
-    }];
-  }, null);
-})();
-var TOKEN_LOGGER_METADATA_SERVICE = "TOKEN_LOGGER_METADATA_SERVICE";
-var NGXLoggerMetadataService = class {
-  constructor(datePipe) {
-    this.datePipe = datePipe;
-  }
-  computeTimestamp(config2) {
-    const defaultTimestamp = () => (/* @__PURE__ */ new Date()).toISOString();
-    if (config2.timestampFormat) {
-      if (!this.datePipe) {
-        console.error("NGXLogger : Can't use timeStampFormat because DatePipe is not provided. You need to provide DatePipe");
-        return defaultTimestamp();
-      } else {
-        return this.datePipe.transform(/* @__PURE__ */ new Date(), config2.timestampFormat);
-      }
-    }
-    return defaultTimestamp();
-  }
-  getMetadata(level, config2, message2, additional) {
-    const metadata = {
-      level,
-      additional
-    };
-    if (message2 && typeof message2 === "function") {
-      metadata.message = message2();
-    } else {
-      metadata.message = message2;
-    }
-    metadata.timestamp = this.computeTimestamp(config2);
-    return metadata;
-  }
-};
-NGXLoggerMetadataService.\u0275fac = function NGXLoggerMetadataService_Factory(__ngFactoryType__) {
-  return new (__ngFactoryType__ || NGXLoggerMetadataService)(\u0275\u0275inject(DatePipe, 8));
-};
-NGXLoggerMetadataService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-  token: NGXLoggerMetadataService,
-  factory: NGXLoggerMetadataService.\u0275fac
-});
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerMetadataService, [{
-    type: Injectable
-  }], function() {
-    return [{
-      type: DatePipe,
-      decorators: [{
-        type: Optional
-      }]
-    }];
-  }, null);
-})();
-var TOKEN_LOGGER_RULES_SERVICE = "TOKEN_LOGGER_RULES_SERVICE";
-var NGXLoggerRulesService = class {
-  shouldCallWriter(level, config2, message2, additional) {
-    return !config2.disableConsoleLogging && level >= config2.level;
-  }
-  shouldCallServer(level, config2, message2, additional) {
-    return !!config2.serverLoggingUrl && level >= config2.serverLogLevel;
-  }
-  shouldCallMonitor(level, config2, message2, additional) {
-    return this.shouldCallWriter(level, config2, message2, additional) || this.shouldCallServer(level, config2, message2, additional);
-  }
-};
-NGXLoggerRulesService.\u0275fac = function NGXLoggerRulesService_Factory(__ngFactoryType__) {
-  return new (__ngFactoryType__ || NGXLoggerRulesService)();
-};
-NGXLoggerRulesService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-  token: NGXLoggerRulesService,
-  factory: NGXLoggerRulesService.\u0275fac
-});
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerRulesService, [{
-    type: Injectable
-  }], null, null);
-})();
-var TOKEN_LOGGER_SERVER_SERVICE = "TOKEN_LOGGER_SERVER_SERVICE";
-var NGXLoggerServerService = class {
-  constructor(httpBackend, ngZone) {
-    this.httpBackend = httpBackend;
-    this.ngZone = ngZone;
-    this.serverCallsQueue = [];
-    this.flushingQueue = new BehaviorSubject(false);
-  }
-  ngOnDestroy() {
-    if (this.flushingQueue) {
-      this.flushingQueue.complete();
-      this.flushingQueue = null;
-    }
-    if (this.addToQueueTimer) {
-      this.addToQueueTimer.unsubscribe();
-      this.addToQueueTimer = null;
-    }
-  }
-  /**
-   * Transforms an error object into a readable string (taking only the stack)
-   * This is needed because JSON.stringify would return "{}"
-   * @param err the error object
-   * @returns The stack of the error
-   */
-  secureErrorObject(err) {
-    return err?.stack;
-  }
-  /**
-   * Transforms the additional parameters to avoid any json error when sending the data to the server
-   * Basically it just replaces unstringifiable object to a string mentioning an error
-   * @param additional The additional data to be sent
-   * @returns The additional data secured
-   */
-  secureAdditionalParameters(additional) {
-    if (additional === null || additional === void 0) {
-      return null;
-    }
-    return additional.map((next, idx) => {
-      try {
-        if (next instanceof Error) {
-          return this.secureErrorObject(next);
-        }
-        if (typeof next === "object") {
-          JSON.stringify(next);
-        }
-        return next;
-      } catch (e) {
-        return `The additional[${idx}] value could not be parsed using JSON.stringify().`;
-      }
-    });
-  }
-  /**
-   * Transforms the message so that it can be sent to the server
-   * @param message the message to be sent
-   * @returns the message secured
-   */
-  secureMessage(message2) {
-    try {
-      if (message2 instanceof Error) {
-        return this.secureErrorObject(message2);
-      }
-      if (typeof message2 !== "string") {
-        message2 = JSON.stringify(message2, null, 2);
-      }
-    } catch (e) {
-      message2 = 'The provided "message" value could not be parsed with JSON.stringify().';
-    }
-    return message2;
-  }
-  /**
-   * Edits HttpRequest object before sending request to server
-   * @param httpRequest default request object
-   * @returns altered httprequest
-   */
-  alterHttpRequest(httpRequest) {
-    return httpRequest;
-  }
-  /**
-   * Sends request to server
-   * @param url
-   * @param logContent
-   * @param options
-   * @returns
-   */
-  logOnServer(url, logContent, options) {
-    if (!this.httpBackend) {
-      console.error("NGXLogger : Can't log on server because HttpBackend is not provided. You need to import HttpClientModule");
-      return of(null);
-    }
-    let defaultRequest = new HttpRequest("POST", url, logContent, options || {});
-    let finalRequest = of(defaultRequest);
-    const alteredRequest = this.alterHttpRequest(defaultRequest);
-    if (isObservable(alteredRequest)) {
-      finalRequest = alteredRequest;
-    } else if (alteredRequest) {
-      finalRequest = of(alteredRequest);
-    } else {
-      console.warn("NGXLogger : alterHttpRequest returned an invalid request. Using default one instead");
-    }
-    return finalRequest.pipe(concatMap((req) => {
-      if (!req) {
-        console.warn("NGXLogger : alterHttpRequest returned an invalid request (observable). Using default one instead");
-        return this.httpBackend.handle(defaultRequest);
-      }
-      return this.httpBackend.handle(req);
-    }), filter((e) => e instanceof HttpResponse), map((httpResponse) => httpResponse.body));
-  }
-  /**
-   * Customise the data sent to the API
-   * @param metadata the data provided by NGXLogger
-   * @returns the data that will be sent to the API in the body
-   */
-  customiseRequestBody(metadata) {
-    return metadata;
-  }
-  /**
-   * Flush the queue of the logger
-   * @param config
-   */
-  flushQueue(config2) {
-    this.flushingQueue.next(true);
-    if (this.addToQueueTimer) {
-      this.addToQueueTimer.unsubscribe();
-      this.addToQueueTimer = null;
-    }
-    if (!!this.serverCallsQueue && this.serverCallsQueue.length > 0) {
-      this.sendToServerAction(this.serverCallsQueue, config2);
-    }
-    this.serverCallsQueue = [];
-    this.flushingQueue.next(false);
-  }
-  sendToServerAction(metadata, config2) {
-    let requestBody;
-    const secureMetadata = (pMetadata) => {
-      const securedMetadata = __spreadValues({}, pMetadata);
-      securedMetadata.additional = this.secureAdditionalParameters(securedMetadata.additional);
-      securedMetadata.message = this.secureMessage(securedMetadata.message);
-      return securedMetadata;
-    };
-    if (Array.isArray(metadata)) {
-      requestBody = [];
-      metadata.forEach((m) => {
-        requestBody.push(secureMetadata(m));
-      });
-    } else {
-      requestBody = secureMetadata(metadata);
-    }
-    requestBody = this.customiseRequestBody(requestBody);
-    const headers = config2.customHttpHeaders || new HttpHeaders();
-    if (!headers.has("Content-Type")) {
-      headers.set("Content-Type", "application/json");
-    }
-    const logOnServerAction = () => {
-      this.logOnServer(config2.serverLoggingUrl, requestBody, {
-        headers,
-        params: config2.customHttpParams || new HttpParams(),
-        responseType: config2.httpResponseType || "json",
-        withCredentials: config2.withCredentials || false
-      }).pipe(catchError((err) => {
-        console.error("NGXLogger: Failed to log on server", err);
-        return throwError(err);
-      })).subscribe();
-    };
-    if (config2.serverCallsOutsideNgZone === true) {
-      if (!this.ngZone) {
-        console.error("NGXLogger: NgZone is not provided and serverCallsOutsideNgZone is set to true");
-        return;
-      }
-      this.ngZone.runOutsideAngular(logOnServerAction);
-    } else {
-      logOnServerAction();
-    }
-  }
-  /**
-   * Sends the content to be logged to the server according to the config
-   * @param metadata
-   * @param config
-   */
-  sendToServer(metadata, config2) {
-    if ((!config2.serverCallsBatchSize || config2.serverCallsBatchSize <= 0) && (!config2.serverCallsTimer || config2.serverCallsTimer <= 0)) {
-      this.sendToServerAction(metadata, config2);
-      return;
-    }
-    const addLogToQueueAction = () => {
-      this.serverCallsQueue.push(__spreadValues({}, metadata));
-      if (!!config2.serverCallsBatchSize && this.serverCallsQueue.length > config2.serverCallsBatchSize) {
-        this.flushQueue(config2);
-      }
-      if (config2.serverCallsTimer > 0 && !this.addToQueueTimer) {
-        this.addToQueueTimer = timer(config2.serverCallsTimer).subscribe((_) => {
-          this.flushQueue(config2);
-        });
-      }
-    };
-    if (this.flushingQueue.value === true) {
-      this.flushingQueue.pipe(filter((fq) => fq === false), take(1)).subscribe((_) => {
-        addLogToQueueAction();
-      });
-    } else {
-      addLogToQueueAction();
-    }
-  }
-};
-NGXLoggerServerService.\u0275fac = function NGXLoggerServerService_Factory(__ngFactoryType__) {
-  return new (__ngFactoryType__ || NGXLoggerServerService)(\u0275\u0275inject(HttpBackend, 8), \u0275\u0275inject(NgZone, 8));
-};
-NGXLoggerServerService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-  token: NGXLoggerServerService,
-  factory: NGXLoggerServerService.\u0275fac
-});
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerServerService, [{
-    type: Injectable
-  }], function() {
-    return [{
-      type: HttpBackend,
-      decorators: [{
-        type: Optional
-      }]
-    }, {
-      type: NgZone,
-      decorators: [{
-        type: Optional
-      }]
-    }];
-  }, null);
-})();
-var TOKEN_LOGGER_WRITER_SERVICE = "TOKEN_LOGGER_WRITER_SERVICE";
-var NgxLoggerLevel;
-(function(NgxLoggerLevel2) {
-  NgxLoggerLevel2[NgxLoggerLevel2["TRACE"] = 0] = "TRACE";
-  NgxLoggerLevel2[NgxLoggerLevel2["DEBUG"] = 1] = "DEBUG";
-  NgxLoggerLevel2[NgxLoggerLevel2["INFO"] = 2] = "INFO";
-  NgxLoggerLevel2[NgxLoggerLevel2["LOG"] = 3] = "LOG";
-  NgxLoggerLevel2[NgxLoggerLevel2["WARN"] = 4] = "WARN";
-  NgxLoggerLevel2[NgxLoggerLevel2["ERROR"] = 5] = "ERROR";
-  NgxLoggerLevel2[NgxLoggerLevel2["FATAL"] = 6] = "FATAL";
-  NgxLoggerLevel2[NgxLoggerLevel2["OFF"] = 7] = "OFF";
-})(NgxLoggerLevel || (NgxLoggerLevel = {}));
-var DEFAULT_COLOR_SCHEME = ["purple", "teal", "gray", "gray", "red", "red", "red"];
-var NGXLoggerWriterService = class {
-  constructor(platformId) {
-    this.platformId = platformId;
-    this.prepareMetaStringFuncs = [this.getTimestampToWrite, this.getLevelToWrite, this.getFileDetailsToWrite, this.getContextToWrite];
-    this.isIE = isPlatformBrowser(platformId) && navigator && navigator.userAgent && !!(navigator.userAgent.indexOf("MSIE") !== -1 || navigator.userAgent.match(/Trident\//) || navigator.userAgent.match(/Edge\//));
-    this.logFunc = this.isIE ? this.logIE.bind(this) : this.logModern.bind(this);
-  }
-  getTimestampToWrite(metadata, config2) {
-    return metadata.timestamp;
-  }
-  getLevelToWrite(metadata, config2) {
-    return NgxLoggerLevel[metadata.level];
-  }
-  getFileDetailsToWrite(metadata, config2) {
-    return config2.disableFileDetails === true ? "" : `[${metadata.fileName}:${metadata.lineNumber}:${metadata.columnNumber}]`;
-  }
-  getContextToWrite(metadata, config2) {
-    return config2.context ? `{${config2.context}}` : "";
-  }
-  /** Generate a "meta" string that is displayed before the content sent to the log function */
-  prepareMetaString(metadata, config2) {
-    let metaString = "";
-    this.prepareMetaStringFuncs.forEach((prepareMetaStringFunc) => {
-      const metaItem = prepareMetaStringFunc(metadata, config2);
-      if (metaItem) {
-        metaString = metaString + " " + metaItem;
-      }
-    });
-    return metaString.trim();
-  }
-  /** Get the color to use when writing to console */
-  getColor(metadata, config2) {
-    const configColorScheme = config2.colorScheme ?? DEFAULT_COLOR_SCHEME;
-    if (metadata.level === NgxLoggerLevel.OFF) {
-      return void 0;
-    }
-    return configColorScheme[metadata.level];
-  }
-  /** Log to the console specifically for IE */
-  logIE(metadata, config2, metaString) {
-    const additional = metadata.additional || [];
-    switch (metadata.level) {
-      case NgxLoggerLevel.WARN:
-        console.warn(`${metaString} `, metadata.message, ...additional);
-        break;
-      case NgxLoggerLevel.ERROR:
-      case NgxLoggerLevel.FATAL:
-        console.error(`${metaString} `, metadata.message, ...additional);
-        break;
-      case NgxLoggerLevel.INFO:
-        console.info(`${metaString} `, metadata.message, ...additional);
-        break;
-      default:
-        console.log(`${metaString} `, metadata.message, ...additional);
-    }
-  }
-  /** Log to the console */
-  logModern(metadata, config2, metaString) {
-    const color = this.getColor(metadata, config2);
-    const additional = metadata.additional || [];
-    switch (metadata.level) {
-      case NgxLoggerLevel.WARN:
-        console.warn(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
-        break;
-      case NgxLoggerLevel.ERROR:
-      case NgxLoggerLevel.FATAL:
-        console.error(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
-        break;
-      case NgxLoggerLevel.INFO:
-        console.info(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
-        break;
-      //  Disabling console.trace since the stack trace is not helpful. it is showing the stack trace of
-      // the console.trace statement
-      // case NgxLoggerLevel.TRACE:
-      //   console.trace(`%c${metaString}`, `color:${color}`, message, ...additional);
-      //   break;
-      case NgxLoggerLevel.DEBUG:
-        console.debug(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
-        break;
-      default:
-        console.log(`%c${metaString}`, `color:${color}`, metadata.message, ...additional);
-    }
-  }
-  /** Write the content sent to the log function to the console */
-  writeMessage(metadata, config2) {
-    const metaString = this.prepareMetaString(metadata, config2);
-    this.logFunc(metadata, config2, metaString);
-  }
-};
-NGXLoggerWriterService.\u0275fac = function NGXLoggerWriterService_Factory(__ngFactoryType__) {
-  return new (__ngFactoryType__ || NGXLoggerWriterService)(\u0275\u0275inject(PLATFORM_ID));
-};
-NGXLoggerWriterService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-  token: NGXLoggerWriterService,
-  factory: NGXLoggerWriterService.\u0275fac
-});
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLoggerWriterService, [{
-    type: Injectable
-  }], function() {
-    return [{
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [PLATFORM_ID]
-      }]
-    }];
-  }, null);
-})();
-var NGXLogger = class {
-  constructor(config2, configEngineFactory, metadataService, ruleService, mapperService, writerService, serverService) {
-    this.metadataService = metadataService;
-    this.ruleService = ruleService;
-    this.mapperService = mapperService;
-    this.writerService = writerService;
-    this.serverService = serverService;
-    this.configEngine = configEngineFactory.provideConfigEngine(config2);
-  }
-  /** Get a readonly access to the level configured for the NGXLogger */
-  get level() {
-    return this.configEngine.level;
-  }
-  /** Get a readonly access to the serverLogLevel configured for the NGXLogger */
-  get serverLogLevel() {
-    return this.configEngine.serverLogLevel;
-  }
-  trace(message2, ...additional) {
-    this._log(NgxLoggerLevel.TRACE, message2, additional);
-  }
-  debug(message2, ...additional) {
-    this._log(NgxLoggerLevel.DEBUG, message2, additional);
-  }
-  info(message2, ...additional) {
-    this._log(NgxLoggerLevel.INFO, message2, additional);
-  }
-  log(message2, ...additional) {
-    this._log(NgxLoggerLevel.LOG, message2, additional);
-  }
-  warn(message2, ...additional) {
-    this._log(NgxLoggerLevel.WARN, message2, additional);
-  }
-  error(message2, ...additional) {
-    this._log(NgxLoggerLevel.ERROR, message2, additional);
-  }
-  fatal(message2, ...additional) {
-    this._log(NgxLoggerLevel.FATAL, message2, additional);
-  }
-  /** @deprecated customHttpHeaders is now part of the config, this should be updated via @see updateConfig */
-  setCustomHttpHeaders(headers) {
-    const config2 = this.getConfigSnapshot();
-    config2.customHttpHeaders = headers;
-    this.updateConfig(config2);
-  }
-  /** @deprecated customHttpParams is now part of the config, this should be updated via @see updateConfig */
-  setCustomParams(params) {
-    const config2 = this.getConfigSnapshot();
-    config2.customHttpParams = params;
-    this.updateConfig(config2);
-  }
-  /** @deprecated withCredentials is now part of the config, this should be updated via @see updateConfig */
-  setWithCredentialsOptionValue(withCredentials) {
-    const config2 = this.getConfigSnapshot();
-    config2.withCredentials = withCredentials;
-    this.updateConfig(config2);
-  }
-  /**
-   * Register a INGXLoggerMonitor that will be trigger when a log is either written or sent to server
-   *
-   * There is only one monitor, registering one will overwrite the last one if there was one
-   * @param monitor
-   */
-  registerMonitor(monitor) {
-    this._loggerMonitor = monitor;
-  }
-  /** Set config of logger
-   *
-   * Warning : This overwrites all the config, if you want to update only one property, you should use @see getConfigSnapshot before
-   */
-  updateConfig(config2) {
-    this.configEngine.updateConfig(config2);
-  }
-  partialUpdateConfig(partialConfig) {
-    this.configEngine.partialUpdateConfig(partialConfig);
-  }
-  /** Get config of logger */
-  getConfigSnapshot() {
-    return this.configEngine.getConfig();
-  }
-  /**
-   * Flush the serveur queue
-   */
-  flushServerQueue() {
-    this.serverService.flushQueue(this.getConfigSnapshot());
-  }
-  _log(level, message2, additional = []) {
-    const config2 = this.configEngine.getConfig();
-    const shouldCallWriter = this.ruleService.shouldCallWriter(level, config2, message2, additional);
-    const shouldCallServer = this.ruleService.shouldCallServer(level, config2, message2, additional);
-    const shouldCallMonitor = this.ruleService.shouldCallMonitor(level, config2, message2, additional);
-    if (!shouldCallWriter && !shouldCallServer && !shouldCallMonitor) {
-      return;
-    }
-    const metadata = this.metadataService.getMetadata(level, config2, message2, additional);
-    this.mapperService.getLogPosition(config2, metadata).pipe(take(1)).subscribe((logPosition) => {
-      if (logPosition) {
-        metadata.fileName = logPosition.fileName;
-        metadata.lineNumber = logPosition.lineNumber;
-        metadata.columnNumber = logPosition.columnNumber;
-      }
-      if (shouldCallMonitor && this._loggerMonitor) {
-        this._loggerMonitor.onLog(metadata, config2);
-      }
-      if (shouldCallWriter) {
-        this.writerService.writeMessage(metadata, config2);
-      }
-      if (shouldCallServer) {
-        this.serverService.sendToServer(metadata, config2);
-      }
-    });
-  }
-};
-NGXLogger.\u0275fac = function NGXLogger_Factory(__ngFactoryType__) {
-  return new (__ngFactoryType__ || NGXLogger)(\u0275\u0275inject(TOKEN_LOGGER_CONFIG), \u0275\u0275inject(TOKEN_LOGGER_CONFIG_ENGINE_FACTORY), \u0275\u0275inject(TOKEN_LOGGER_METADATA_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_RULES_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_MAPPER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_WRITER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_SERVER_SERVICE));
-};
-NGXLogger.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-  token: NGXLogger,
-  factory: NGXLogger.\u0275fac,
-  providedIn: "root"
-});
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NGXLogger, [{
-    type: Injectable,
-    args: [{
-      providedIn: "root"
-    }]
-  }], function() {
-    return [{
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_CONFIG]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_CONFIG_ENGINE_FACTORY]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_METADATA_SERVICE]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_RULES_SERVICE]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_MAPPER_SERVICE]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_WRITER_SERVICE]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_SERVER_SERVICE]
-      }]
-    }];
-  }, null);
-})();
-var CustomNGXLoggerService = class {
-  constructor(logger, configEngineFactory, metadataService, ruleService, mapperService, writerService, serverService) {
-    this.logger = logger;
-    this.configEngineFactory = configEngineFactory;
-    this.metadataService = metadataService;
-    this.ruleService = ruleService;
-    this.mapperService = mapperService;
-    this.writerService = writerService;
-    this.serverService = serverService;
-  }
-  /**
-   * Create an instance of a logger
-   * @deprecated this function does not have all the features, @see getNewInstance for every params available
-   * @param config
-   * @param serverService
-   * @param logMonitor
-   * @param mapperService
-   * @returns
-   */
-  create(config2, serverService, logMonitor, mapperService) {
-    return this.getNewInstance({
-      config: config2,
-      serverService,
-      logMonitor,
-      mapperService
-    });
-  }
-  /**
-   * Get a new instance of NGXLogger
-   * @param params list of optional params to use when creating an instance of NGXLogger
-   * @returns the new instance of NGXLogger
-   */
-  getNewInstance(params) {
-    const logger = new NGXLogger(params?.config ?? this.logger.getConfigSnapshot(), params?.configEngineFactory ?? this.configEngineFactory, params?.metadataService ?? this.metadataService, params?.ruleService ?? this.ruleService, params?.mapperService ?? this.mapperService, params?.writerService ?? this.writerService, params?.serverService ?? this.serverService);
-    if (params?.partialConfig) {
-      logger.partialUpdateConfig(params.partialConfig);
-    }
-    if (params?.logMonitor) {
-      logger.registerMonitor(params.logMonitor);
-    }
-    return logger;
-  }
-};
-CustomNGXLoggerService.\u0275fac = function CustomNGXLoggerService_Factory(__ngFactoryType__) {
-  return new (__ngFactoryType__ || CustomNGXLoggerService)(\u0275\u0275inject(NGXLogger), \u0275\u0275inject(TOKEN_LOGGER_CONFIG_ENGINE_FACTORY), \u0275\u0275inject(TOKEN_LOGGER_METADATA_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_RULES_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_MAPPER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_WRITER_SERVICE), \u0275\u0275inject(TOKEN_LOGGER_SERVER_SERVICE));
-};
-CustomNGXLoggerService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-  token: CustomNGXLoggerService,
-  factory: CustomNGXLoggerService.\u0275fac,
-  providedIn: "root"
-});
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CustomNGXLoggerService, [{
-    type: Injectable,
-    args: [{
-      providedIn: "root"
-    }]
-  }], function() {
-    return [{
-      type: NGXLogger
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_CONFIG_ENGINE_FACTORY]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_METADATA_SERVICE]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_RULES_SERVICE]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_MAPPER_SERVICE]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_WRITER_SERVICE]
-      }]
-    }, {
-      type: void 0,
-      decorators: [{
-        type: Inject,
-        args: [TOKEN_LOGGER_SERVER_SERVICE]
-      }]
-    }];
-  }, null);
-})();
-var LoggerModule = class _LoggerModule {
-  static forRoot(config2, customProvider) {
-    if (!customProvider) {
-      customProvider = {};
-    }
-    if (!customProvider.configProvider) {
-      customProvider.configProvider = {
-        provide: TOKEN_LOGGER_CONFIG,
-        useValue: config2 || {}
-      };
-    } else {
-      if (customProvider.configProvider.provide !== TOKEN_LOGGER_CONFIG) {
-        throw new Error(`Wrong injection token for configProvider, it should be ${TOKEN_LOGGER_CONFIG} and you used ${customProvider.configProvider.provide}`);
-      }
-    }
-    if (!customProvider.configEngineFactoryProvider) {
-      customProvider.configEngineFactoryProvider = {
-        provide: TOKEN_LOGGER_CONFIG_ENGINE_FACTORY,
-        useClass: NGXLoggerConfigEngineFactory
-      };
-    } else {
-      if (customProvider.configEngineFactoryProvider.provide !== TOKEN_LOGGER_CONFIG_ENGINE_FACTORY) {
-        throw new Error(`Wrong injection token for configEngineFactoryProvider, it should be '${TOKEN_LOGGER_CONFIG_ENGINE_FACTORY}' and you used '${customProvider.configEngineFactoryProvider.provide}'`);
-      }
-    }
-    if (!customProvider.metadataProvider) {
-      customProvider.metadataProvider = {
-        provide: TOKEN_LOGGER_METADATA_SERVICE,
-        useClass: NGXLoggerMetadataService
-      };
-    } else {
-      if (customProvider.metadataProvider.provide !== TOKEN_LOGGER_METADATA_SERVICE) {
-        throw new Error(`Wrong injection token for metadataProvider, it should be '${TOKEN_LOGGER_METADATA_SERVICE}' and you used '${customProvider.metadataProvider.provide}'`);
-      }
-    }
-    if (!customProvider.ruleProvider) {
-      customProvider.ruleProvider = {
-        provide: TOKEN_LOGGER_RULES_SERVICE,
-        useClass: NGXLoggerRulesService
-      };
-    } else {
-      if (customProvider.ruleProvider.provide !== TOKEN_LOGGER_RULES_SERVICE) {
-        throw new Error(`Wrong injection token for ruleProvider, it should be '${TOKEN_LOGGER_RULES_SERVICE}' and you used '${customProvider.ruleProvider.provide}'`);
-      }
-    }
-    if (!customProvider.mapperProvider) {
-      customProvider.mapperProvider = {
-        provide: TOKEN_LOGGER_MAPPER_SERVICE,
-        useClass: NGXLoggerMapperService
-      };
-    } else {
-      if (customProvider.mapperProvider.provide !== TOKEN_LOGGER_MAPPER_SERVICE) {
-        throw new Error(`Wrong injection token for mapperProvider, it should be '${TOKEN_LOGGER_MAPPER_SERVICE}' and you used '${customProvider.mapperProvider.provide}'`);
-      }
-    }
-    if (!customProvider.writerProvider) {
-      customProvider.writerProvider = {
-        provide: TOKEN_LOGGER_WRITER_SERVICE,
-        useClass: NGXLoggerWriterService
-      };
-    } else {
-      if (customProvider.writerProvider.provide !== TOKEN_LOGGER_WRITER_SERVICE) {
-        throw new Error(`Wrong injection token for writerProvider, it should be '${TOKEN_LOGGER_WRITER_SERVICE}' and you used '${customProvider.writerProvider.provide}'`);
-      }
-    }
-    if (!customProvider.serverProvider) {
-      customProvider.serverProvider = {
-        provide: TOKEN_LOGGER_SERVER_SERVICE,
-        useClass: NGXLoggerServerService
-      };
-    } else {
-      if (customProvider.serverProvider.provide !== TOKEN_LOGGER_SERVER_SERVICE) {
-        throw new Error(`Wrong injection token for serverProvider, it should be '${TOKEN_LOGGER_SERVER_SERVICE}' and you used '${customProvider.writerProvider.provide}'`);
-      }
-    }
-    return {
-      ngModule: _LoggerModule,
-      providers: [NGXLogger, customProvider.configProvider, customProvider.configEngineFactoryProvider, customProvider.metadataProvider, customProvider.ruleProvider, customProvider.mapperProvider, customProvider.writerProvider, customProvider.serverProvider, CustomNGXLoggerService]
-    };
-  }
-  static forChild() {
-    return {
-      ngModule: _LoggerModule
-    };
-  }
-};
-LoggerModule.\u0275fac = function LoggerModule_Factory(__ngFactoryType__) {
-  return new (__ngFactoryType__ || LoggerModule)();
-};
-LoggerModule.\u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
-  type: LoggerModule
-});
-LoggerModule.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
-  imports: [[CommonModule]]
-});
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(LoggerModule, [{
-    type: NgModule,
-    args: [{
-      imports: [CommonModule]
-    }]
-  }], null, null);
-})();
-
-// projects/shared-library/src/lib/services/config.service.ts
-var defaultSystemConfig = {
-  publicId: "",
-  apiMode: ApiMode.Test,
-  sdkMode: SDKMode.None
-};
-var ConfigService = class _ConfigService {
-  constructor(logger) {
-    this.logger = logger;
-    this.systemConfigSubject = new BehaviorSubject(defaultSystemConfig);
-    this.vaultProfileConfigSubject = new BehaviorSubject(Object.setPrototypeOf({}, VaultProfileConfig.prototype));
-    this.searchConfigSubject = new BehaviorSubject({});
-  }
-  // -----------------------------------------------------------------------------------------------------
-  // @ Accessors
-  // -----------------------------------------------------------------------------------------------------
-  /**
-   * Setter & getter for config
-   */
-  //Setter
-  set systemConfig(value) {
-    const mergedSettings = (0, import_lodash.merge)({}, this.systemConfigSubject.getValue(), value);
-    if (JSON.stringify(mergedSettings) !== JSON.stringify(this.systemConfigSubject.getValue())) {
-      this.logger.info("updating system settings:", mergedSettings);
-      this.systemConfigSubject.next(mergedSettings);
-    }
-  }
-  //Getter
-  get systemConfig$() {
-    this.logger.info("getting cached system settings:", this.systemConfigSubject.getValue());
-    return this.systemConfigSubject.getValue();
-  }
-  //Setter
-  set vaultProfileConfig(value) {
-    const mergedSettings = (0, import_lodash.merge)({}, this.vaultProfileConfigSubject.getValue(), value);
-    if (JSON.stringify(mergedSettings) !== JSON.stringify(this.vaultProfileConfigSubject.getValue())) {
-      this.logger.info("updating vault profile settings:", mergedSettings);
-      this.vaultProfileConfigSubject.next(Object.setPrototypeOf(mergedSettings, VaultProfileConfig.prototype));
-    }
-  }
-  //Getter
-  get vaultProfileConfig$() {
-    this.logger.info("getting vault profile settings:", this.vaultProfileConfigSubject.getValue());
-    return this.vaultProfileConfigSubject.getValue();
-  }
-  vaultProfileAddPendingAccount(brand, portal, endpoint) {
-    let updatedVaultProfile = this.vaultProfileConfig$;
-    let externalState = v4_default();
-    updatedVaultProfile.addPendingAccount(externalState, brand, portal, endpoint);
-    this.vaultProfileConfig = updatedVaultProfile;
-  }
-  vaultProfileAddConnectedAccount(connectedAccount) {
-    if (connectedAccount.error) {
-      this.logger.error("Error connecting account", connectedAccount);
-      return;
-    }
-    let updatedVaultProfile = this.vaultProfileConfig$;
-    updatedVaultProfile.addConnectedAccount(connectedAccount.external_state || "", connectedAccount.org_connection_id, connectedAccount.connection_status, connectedAccount.platform_type, connectedAccount.brand_id, connectedAccount.portal_id, connectedAccount.endpoint_id);
-    this.vaultProfileConfig = updatedVaultProfile;
-  }
-  vaultProfileAddPendingRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId) {
-    let updatedVaultProfile = this.vaultProfileConfig$;
-    let externalState = v4_default();
-    updatedVaultProfile.addPendingAccount(externalState, recordLocatorFacility.brand, recordLocatorFacility.portal, recordLocatorFacility.endpoint, vaultProfileConnectionId);
-    this.vaultProfileConfig = updatedVaultProfile;
-  }
-  vaultProfileAddDiscoveredRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId) {
-    let updatedVaultProfile = this.vaultProfileConfig$;
-    let externalState = v4_default();
-    updatedVaultProfile.addDiscoveredAccount(externalState, recordLocatorFacility.brand, recordLocatorFacility.portal, recordLocatorFacility.endpoint, vaultProfileConnectionId);
-    this.vaultProfileConfig = updatedVaultProfile;
-  }
-  //Setter
-  set searchConfig(value) {
-    const mergedSettings = (0, import_lodash.merge)({}, this.searchConfigSubject.getValue(), value);
-    if (JSON.stringify(mergedSettings) !== JSON.stringify(this.searchConfigSubject.getValue())) {
-      this.logger.info("updating search settings:", mergedSettings);
-      this.searchConfigSubject.next(mergedSettings);
-    }
-  }
-  //Getter
-  get searchConfig$() {
-    this.logger.info("getting search settings:", this.searchConfigSubject.getValue());
-    return this.searchConfigSubject.getValue();
-  }
-  static {
-    this.\u0275fac = function ConfigService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _ConfigService)(\u0275\u0275inject(NGXLogger));
-    };
-  }
-  static {
-    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _ConfigService, factory: _ConfigService.\u0275fac, providedIn: "root" });
-  }
-};
-
-// projects/shared-library/src/lib/services/message-bus.service.ts
-var MessageBusService = class _MessageBusService {
-  constructor(configService) {
-    this.configService = configService;
-    this.messageBusSubject = new BehaviorSubject(null);
-  }
-  //notify the parent element that we could not register Fasten Connect installation: missing or invalid id
-  publishWidgetConfigError() {
-    let eventPayload = new MessageBusEventPayload();
-    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
-    eventPayload.event_type = EventTypes.EventTypeWidgetConfigError;
-    this.messageBusSubject.next(eventPayload);
-  }
-  //this event is published when the popup window is opened.
-  publishOrgConnectionPending(pendingConnectData) {
-    let eventPayload = new MessageBusEventPayload();
-    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
-    eventPayload.data = pendingConnectData;
-    eventPayload.event_type = EventTypes.EventTypeConnectionPending;
-    this.messageBusSubject.next(eventPayload);
-  }
-  //this event is published when the popup window is closed, and the connection is successful or failed.
-  publishOrgConnectionComplete(orgConnectionCallbackData) {
-    let eventPayload = new MessageBusEventPayload();
-    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
-    eventPayload.data = orgConnectionCallbackData;
-    if (orgConnectionCallbackData.error) {
-      eventPayload.event_type = EventTypes.EventTypeConnectionFailed;
-    } else {
-      eventPayload.event_type = EventTypes.EventTypeConnectionSuccess;
-    }
-    this.messageBusSubject.next(eventPayload);
-  }
-  //this event is published when the widget is closed. It will publish a list of all
-  publishComplete() {
-    let eventPayload = new MessageBusEventPayload();
-    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
-    eventPayload.data = this.configService.vaultProfileConfig$.connectedPatientAccounts?.map((account) => {
-      return {
-        connection_status: account.connection_status,
-        org_connection_id: account.org_connection_id,
-        platform_type: account.platform_type,
-        brand_id: account.brand?.id,
-        portal_id: account.portal?.id,
-        endpoint_id: account.endpoint?.id
-      };
-    }) || [];
-    eventPayload.event_type = EventTypes.EventTypeWidgetComplete;
-    this.messageBusSubject.next(eventPayload);
-  }
-  //this event is published when the widget requests to close the modal.
-  publishRequestClose() {
-    let eventPayload = new MessageBusEventPayload();
-    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
-    eventPayload.event_type = EventTypes.EventTypeWidgetClose;
-    this.messageBusSubject.next(eventPayload);
-  }
-  //this event is published when a widget search is performed
-  publishSearchQuery(query, locations, external_id, total_results) {
-    if (!this.configService.systemConfig$.eventTypes?.includes(EventTypes.EventTypeSearchQuery)) {
-      return;
-    }
-    if (!query?.trim()) {
-      return;
-    }
-    let eventPayload = new MessageBusEventPayload();
-    eventPayload.api_mode = this.configService.systemConfig$.apiMode;
-    eventPayload.event_type = EventTypes.EventTypeSearchQuery;
-    eventPayload.data = {
-      query,
-      timestamp: Date.now(),
-      filter: {
-        locations: locations || []
-      },
-      results: {
-        total: total_results
-      },
-      external_id
-    };
-    this.messageBusSubject.next(eventPayload);
-  }
-  static {
-    this.\u0275fac = function MessageBusService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _MessageBusService)(\u0275\u0275inject(ConfigService));
-    };
-  }
-  static {
-    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _MessageBusService, factory: _MessageBusService.\u0275fac, providedIn: "root" });
-  }
-};
-
-// projects/shared-library/src/lib/models/config/vault-profile-config.ts
-var VaultProfileConfig = class {
-  addPendingAccount(externalState, brand, portal, endpoint, vaultProfileConnectionId) {
-    if (!this.pendingPatientAccounts) {
-      this.pendingPatientAccounts = {};
-    }
-    this.pendingPatientAccounts[externalState] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId };
-  }
-  addDiscoveredAccount(externalState, brand, portal, endpoint, vaultProfileConnectionId) {
-    if (!this.discoveredPatientAccounts) {
-      this.discoveredPatientAccounts = {};
-    }
-    this.discoveredPatientAccounts[externalState] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId };
-  }
-  addConnectedAccount(external_state, org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id) {
-    if (!this.connectedPatientAccounts) {
-      this.connectedPatientAccounts = [];
-    }
-    let foundPendingPatientAccount = this.pendingPatientAccounts?.[external_state];
-    let foundDiscoveredPatientAccount = this.discoveredPatientAccounts?.[external_state];
-    if (foundPendingPatientAccount) {
-      delete this.pendingPatientAccounts[external_state];
-      this.connectedPatientAccounts?.push({ org_connection_id, connection_status, platform_type, brand: foundPendingPatientAccount.brand, portal: foundPendingPatientAccount.portal, endpoint: foundPendingPatientAccount.endpoint });
-    } else if (foundDiscoveredPatientAccount) {
-      delete this.discoveredPatientAccounts[external_state];
-      this.connectedPatientAccounts?.push({ org_connection_id, connection_status, platform_type, brand: foundDiscoveredPatientAccount.brand, portal: foundDiscoveredPatientAccount.portal, endpoint: foundDiscoveredPatientAccount.endpoint });
-    } else {
-      console.warn("we may not know the brand, portal, endpoint information, so generating it with placeholders. Most likely this is a reconnect operation.");
-      console.warn("pendingAccounts", this.pendingPatientAccounts, "connectionParams", org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id);
-      this.connectedPatientAccounts?.push({
-        org_connection_id,
-        connection_status,
-        platform_type,
-        brand: { id: brand_id, name: "unknown", portals: [], hidden: false, last_updated: "", portal_ids: [portal_id] },
-        portal: { id: portal_id, last_updated: "", endpoint_ids: [endpoint_id], name: "unknown" },
-        endpoint: { id: endpoint_id, platform_type }
-      });
-    }
-  }
-};
-
-// projects/shared-library/src/lib/models/fasten/vault-profile.ts
-var VaultProfile = class {
-  constructor() {
-    this.password_confirm = "";
-    this.agree_terms = false;
-  }
-};
-
-// projects/shared-library/src/lib/models/forms/form-health-system-request.ts
-var FormHealthSystemRequest = class {
-  constructor() {
-    this.name = "";
-    this.email = "";
-    this.website = "";
-    this.street_address = "";
-  }
-};
-
-// projects/shared-library/src/lib/models/forms/form-support-request.ts
-var FormSupportRequest = class {
-};
-
-// projects/shared-library/src/lib/models/message-bus/message-bus-event-payload.ts
-var MessageBusEventPayload = class {
-};
-
-// projects/shared-library/src/lib/models/search/search-filter.ts
-var SearchFilter = class {
-  constructor() {
-    this.query = "";
-    this.platformTypes = [];
-    this.categories = [];
-    this.showHidden = false;
-    this.locations = ["ALL"];
-    this.searchAfter = "";
-    this.fields = [];
-  }
-};
-
-// projects/shared-library/src/lib/utils/post-message.ts
-function waitForOrgConnectionOrTimeout(logger, openedWindow, sdkMode) {
-  logger.info(`waiting for postMessage notification from popup window`);
-  return fromEvent(window, "message").pipe(
-    //throw an error if we wait more than 2 minutes (this will close the window)
-    timeout(ConnectWindowTimeout),
-    filter((event) => {
-      logger.debug(`received postMessage event, must determine if this message is safe to process`, event);
-      if (sdkMode == SDKMode.ReactNative && window.ReactNativeWebView) {
-        if (event.source || event.origin) {
-          logger.debug(`ignoring postMessage event from unknown source or origin. React-native webview should be null for both`, event.source, event.origin);
-          return false;
-        }
-        return true;
-      } else {
-        if (event.source != openedWindow) {
-          logger.debug(`ignoring postMessage event from unknown source window`, event.source);
-          return false;
-        }
-        if (event.origin != "https://api.connect-dev.fastenhealth.com" && event.origin != "https://api.connect.fastenhealth.com" && event.origin != "https://embed.connect-dev.fastenhealth.com" && event.origin != "https://embed.connect.fastenhealth.com") {
-          logger.debug(`ignoring postMessage event from unknown origin`, event.origin);
-          return false;
-        }
-      }
-      return true;
-    }),
-    //after filtering, we should only have one event to handle.
-    first(),
-    map((event) => {
-      logger.info(`received postMessage notification from popup window & sending acknowledgment`, event.data);
-      event?.source?.postMessage(JSON.stringify({ close: true }), event.origin);
-      let parsedEventData = JSON.parse(event.data);
-      if (parsedEventData.error) {
-        throw new Error(event.data);
-      } else {
-        return parsedEventData;
-      }
-    }),
-    catchError((err) => {
-      openedWindow.self.close();
-      if (err instanceof TimeoutError) {
-        logger.warn(`timed out waiting for notification from popup (${ConnectWindowTimeout / 1e3}s), closing window`);
-        throw new Error(JSON.stringify({ error: "timeout", error_description: "timed out waiting for notification from popup" }));
-      } else {
-        logger.error(`an error was sent from the popup, closing window`, err);
-        throw err;
-      }
-      return throwError(err);
-    })
-  );
-}
-
-// projects/shared-library/src/lib/shared-library.service.ts
-var SharedLibraryService = class _SharedLibraryService {
-  constructor() {
-  }
-  static {
-    this.\u0275fac = function SharedLibraryService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _SharedLibraryService)();
-    };
-  }
-  static {
-    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _SharedLibraryService, factory: _SharedLibraryService.\u0275fac, providedIn: "root" });
-  }
-};
-
-// projects/shared-library/src/lib/shared-library.component.ts
-var SharedLibraryComponent = class _SharedLibraryComponent {
-  constructor() {
-  }
-  ngOnInit() {
-  }
-  static {
-    this.\u0275fac = function SharedLibraryComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _SharedLibraryComponent)();
-    };
-  }
-  static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SharedLibraryComponent, selectors: [["lib-shared-library"]], standalone: false, decls: 2, vars: 0, template: function SharedLibraryComponent_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275elementStart(0, "p");
-        \u0275\u0275text(1, " shared-library works! ");
-        \u0275\u0275elementEnd();
-      }
-    }, encapsulation: 2 });
-  }
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SharedLibraryComponent, { className: "SharedLibraryComponent", filePath: "projects/shared-library/src/lib/shared-library.component.ts", lineNumber: 13 });
-})();
-
-// projects/shared-library/src/lib/shared-library.module.ts
-var SharedLibraryModule = class _SharedLibraryModule {
-  static {
-    this.\u0275fac = function SharedLibraryModule_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _SharedLibraryModule)();
-    };
-  }
-  static {
-    this.\u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({ type: _SharedLibraryModule });
-  }
-  static {
-    this.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({});
-  }
-};
-
-// projects/fasten-connect-stitch-embed/src/environments/environment.ts
-var environment = {
-  name: "development",
-  //specify the lighthouse base that we're going to use to authenticate against all our source/providers. Must not have trailing slash
-  lighthouse_api_endpoint_base: "https://lighthouse.fastenhealth.com",
-  //used to specify the api server that we're going to use (can be relative or absolute). Must not have trailing slash
-  // connect_api_endpoint_base: 'https://api.connect-dev.fastenhealth.com/v1',
-  // if relative, must start with /
-  connect_api_endpoint_base: "https://api.connect-dev.fastenhealth.com/v1",
-  connect_api_jwt_issuer_host: "https://api.connect-dev.fastenhealth.com/v1",
-  //JWKS for JWT verification
-  jwks_uri: "https://cdn.fastenhealth.com/jwks/fasten-connect/dev.json"
-};
-
-// node_modules/jose/dist/browser/runtime/webcrypto.js
-var webcrypto_default = crypto;
-var isCryptoKey = (key) => key instanceof CryptoKey;
-
-// node_modules/jose/dist/browser/lib/buffer_utils.js
-var encoder = new TextEncoder();
-var decoder = new TextDecoder();
-var MAX_INT32 = 2 ** 32;
-function concat2(...buffers) {
-  const size = buffers.reduce((acc, {
-    length
-  }) => acc + length, 0);
-  const buf = new Uint8Array(size);
-  let i = 0;
-  for (const buffer of buffers) {
-    buf.set(buffer, i);
-    i += buffer.length;
-  }
-  return buf;
-}
-
-// node_modules/jose/dist/browser/runtime/base64url.js
-var decodeBase64 = (encoded) => {
-  const binary = atob(encoded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-};
-var decode3 = (input2) => {
-  let encoded = input2;
-  if (encoded instanceof Uint8Array) {
-    encoded = decoder.decode(encoded);
-  }
-  encoded = encoded.replace(/-/g, "+").replace(/_/g, "/").replace(/\s/g, "");
-  try {
-    return decodeBase64(encoded);
-  } catch {
-    throw new TypeError("The input to be decoded is not correctly encoded.");
-  }
-};
-
-// node_modules/jose/dist/browser/util/errors.js
-var JOSEError = class extends Error {
-  constructor(message2, options) {
-    super(message2, options);
-    this.code = "ERR_JOSE_GENERIC";
-    this.name = this.constructor.name;
-    Error.captureStackTrace?.(this, this.constructor);
-  }
-};
-JOSEError.code = "ERR_JOSE_GENERIC";
-var JWTClaimValidationFailed = class extends JOSEError {
-  constructor(message2, payload, claim = "unspecified", reason = "unspecified") {
-    super(message2, {
-      cause: {
-        claim,
-        reason,
-        payload
-      }
-    });
-    this.code = "ERR_JWT_CLAIM_VALIDATION_FAILED";
-    this.claim = claim;
-    this.reason = reason;
-    this.payload = payload;
-  }
-};
-JWTClaimValidationFailed.code = "ERR_JWT_CLAIM_VALIDATION_FAILED";
-var JWTExpired = class extends JOSEError {
-  constructor(message2, payload, claim = "unspecified", reason = "unspecified") {
-    super(message2, {
-      cause: {
-        claim,
-        reason,
-        payload
-      }
-    });
-    this.code = "ERR_JWT_EXPIRED";
-    this.claim = claim;
-    this.reason = reason;
-    this.payload = payload;
-  }
-};
-JWTExpired.code = "ERR_JWT_EXPIRED";
-var JOSEAlgNotAllowed = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JOSE_ALG_NOT_ALLOWED";
-  }
-};
-JOSEAlgNotAllowed.code = "ERR_JOSE_ALG_NOT_ALLOWED";
-var JOSENotSupported = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JOSE_NOT_SUPPORTED";
-  }
-};
-JOSENotSupported.code = "ERR_JOSE_NOT_SUPPORTED";
-var JWEDecryptionFailed = class extends JOSEError {
-  constructor(message2 = "decryption operation failed", options) {
-    super(message2, options);
-    this.code = "ERR_JWE_DECRYPTION_FAILED";
-  }
-};
-JWEDecryptionFailed.code = "ERR_JWE_DECRYPTION_FAILED";
-var JWEInvalid = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JWE_INVALID";
-  }
-};
-JWEInvalid.code = "ERR_JWE_INVALID";
-var JWSInvalid = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JWS_INVALID";
-  }
-};
-JWSInvalid.code = "ERR_JWS_INVALID";
-var JWTInvalid = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JWT_INVALID";
-  }
-};
-JWTInvalid.code = "ERR_JWT_INVALID";
-var JWKInvalid = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JWK_INVALID";
-  }
-};
-JWKInvalid.code = "ERR_JWK_INVALID";
-var JWKSInvalid = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JWKS_INVALID";
-  }
-};
-JWKSInvalid.code = "ERR_JWKS_INVALID";
-var JWKSNoMatchingKey = class extends JOSEError {
-  constructor(message2 = "no applicable key found in the JSON Web Key Set", options) {
-    super(message2, options);
-    this.code = "ERR_JWKS_NO_MATCHING_KEY";
-  }
-};
-JWKSNoMatchingKey.code = "ERR_JWKS_NO_MATCHING_KEY";
-var JWKSMultipleMatchingKeys = class extends JOSEError {
-  constructor(message2 = "multiple matching keys found in the JSON Web Key Set", options) {
-    super(message2, options);
-    this.code = "ERR_JWKS_MULTIPLE_MATCHING_KEYS";
-  }
-};
-JWKSMultipleMatchingKeys.code = "ERR_JWKS_MULTIPLE_MATCHING_KEYS";
-var JWKSTimeout = class extends JOSEError {
-  constructor(message2 = "request timed out", options) {
-    super(message2, options);
-    this.code = "ERR_JWKS_TIMEOUT";
-  }
-};
-JWKSTimeout.code = "ERR_JWKS_TIMEOUT";
-var JWSSignatureVerificationFailed = class extends JOSEError {
-  constructor(message2 = "signature verification failed", options) {
-    super(message2, options);
-    this.code = "ERR_JWS_SIGNATURE_VERIFICATION_FAILED";
-  }
-};
-JWSSignatureVerificationFailed.code = "ERR_JWS_SIGNATURE_VERIFICATION_FAILED";
-
-// node_modules/jose/dist/browser/lib/crypto_key.js
-function unusable(name, prop = "algorithm.name") {
-  return new TypeError(`CryptoKey does not support this operation, its ${prop} must be ${name}`);
-}
-function isAlgorithm(algorithm, name) {
-  return algorithm.name === name;
-}
-function getHashLength(hash) {
-  return parseInt(hash.name.slice(4), 10);
-}
-function getNamedCurve(alg) {
-  switch (alg) {
-    case "ES256":
-      return "P-256";
-    case "ES384":
-      return "P-384";
-    case "ES512":
-      return "P-521";
-    default:
-      throw new Error("unreachable");
-  }
-}
-function checkUsage(key, usages) {
-  if (usages.length && !usages.some((expected) => key.usages.includes(expected))) {
-    let msg = "CryptoKey does not support this operation, its usages must include ";
-    if (usages.length > 2) {
-      const last4 = usages.pop();
-      msg += `one of ${usages.join(", ")}, or ${last4}.`;
-    } else if (usages.length === 2) {
-      msg += `one of ${usages[0]} or ${usages[1]}.`;
-    } else {
-      msg += `${usages[0]}.`;
-    }
-    throw new TypeError(msg);
-  }
-}
-function checkSigCryptoKey(key, alg, ...usages) {
-  switch (alg) {
-    case "HS256":
-    case "HS384":
-    case "HS512": {
-      if (!isAlgorithm(key.algorithm, "HMAC")) throw unusable("HMAC");
-      const expected = parseInt(alg.slice(2), 10);
-      const actual = getHashLength(key.algorithm.hash);
-      if (actual !== expected) throw unusable(`SHA-${expected}`, "algorithm.hash");
-      break;
-    }
-    case "RS256":
-    case "RS384":
-    case "RS512": {
-      if (!isAlgorithm(key.algorithm, "RSASSA-PKCS1-v1_5")) throw unusable("RSASSA-PKCS1-v1_5");
-      const expected = parseInt(alg.slice(2), 10);
-      const actual = getHashLength(key.algorithm.hash);
-      if (actual !== expected) throw unusable(`SHA-${expected}`, "algorithm.hash");
-      break;
-    }
-    case "PS256":
-    case "PS384":
-    case "PS512": {
-      if (!isAlgorithm(key.algorithm, "RSA-PSS")) throw unusable("RSA-PSS");
-      const expected = parseInt(alg.slice(2), 10);
-      const actual = getHashLength(key.algorithm.hash);
-      if (actual !== expected) throw unusable(`SHA-${expected}`, "algorithm.hash");
-      break;
-    }
-    case "EdDSA": {
-      if (key.algorithm.name !== "Ed25519" && key.algorithm.name !== "Ed448") {
-        throw unusable("Ed25519 or Ed448");
-      }
-      break;
-    }
-    case "Ed25519": {
-      if (!isAlgorithm(key.algorithm, "Ed25519")) throw unusable("Ed25519");
-      break;
-    }
-    case "ES256":
-    case "ES384":
-    case "ES512": {
-      if (!isAlgorithm(key.algorithm, "ECDSA")) throw unusable("ECDSA");
-      const expected = getNamedCurve(alg);
-      const actual = key.algorithm.namedCurve;
-      if (actual !== expected) throw unusable(expected, "algorithm.namedCurve");
-      break;
-    }
-    default:
-      throw new TypeError("CryptoKey does not support this operation");
-  }
-  checkUsage(key, usages);
-}
-
-// node_modules/jose/dist/browser/lib/invalid_key_input.js
-function message(msg, actual, ...types2) {
-  types2 = types2.filter(Boolean);
-  if (types2.length > 2) {
-    const last4 = types2.pop();
-    msg += `one of type ${types2.join(", ")}, or ${last4}.`;
-  } else if (types2.length === 2) {
-    msg += `one of type ${types2[0]} or ${types2[1]}.`;
-  } else {
-    msg += `of type ${types2[0]}.`;
-  }
-  if (actual == null) {
-    msg += ` Received ${actual}`;
-  } else if (typeof actual === "function" && actual.name) {
-    msg += ` Received function ${actual.name}`;
-  } else if (typeof actual === "object" && actual != null) {
-    if (actual.constructor?.name) {
-      msg += ` Received an instance of ${actual.constructor.name}`;
-    }
-  }
-  return msg;
-}
-var invalid_key_input_default = (actual, ...types2) => {
-  return message("Key must be ", actual, ...types2);
-};
-function withAlg(alg, actual, ...types2) {
-  return message(`Key for the ${alg} algorithm must be `, actual, ...types2);
-}
-
-// node_modules/jose/dist/browser/runtime/is_key_like.js
-var is_key_like_default = (key) => {
-  if (isCryptoKey(key)) {
-    return true;
-  }
-  return key?.[Symbol.toStringTag] === "KeyObject";
-};
-var types = ["CryptoKey"];
-
-// node_modules/jose/dist/browser/lib/is_disjoint.js
-var isDisjoint = (...headers) => {
-  const sources = headers.filter(Boolean);
-  if (sources.length === 0 || sources.length === 1) {
-    return true;
-  }
-  let acc;
-  for (const header of sources) {
-    const parameters = Object.keys(header);
-    if (!acc || acc.size === 0) {
-      acc = new Set(parameters);
-      continue;
-    }
-    for (const parameter of parameters) {
-      if (acc.has(parameter)) {
-        return false;
-      }
-      acc.add(parameter);
-    }
-  }
-  return true;
-};
-var is_disjoint_default = isDisjoint;
-
-// node_modules/jose/dist/browser/lib/is_object.js
-function isObjectLike(value) {
-  return typeof value === "object" && value !== null;
-}
-function isObject(input2) {
-  if (!isObjectLike(input2) || Object.prototype.toString.call(input2) !== "[object Object]") {
-    return false;
-  }
-  if (Object.getPrototypeOf(input2) === null) {
-    return true;
-  }
-  let proto = input2;
-  while (Object.getPrototypeOf(proto) !== null) {
-    proto = Object.getPrototypeOf(proto);
-  }
-  return Object.getPrototypeOf(input2) === proto;
-}
-
-// node_modules/jose/dist/browser/runtime/check_key_length.js
-var check_key_length_default = (alg, key) => {
-  if (alg.startsWith("RS") || alg.startsWith("PS")) {
-    const {
-      modulusLength
-    } = key.algorithm;
-    if (typeof modulusLength !== "number" || modulusLength < 2048) {
-      throw new TypeError(`${alg} requires key modulusLength to be 2048 bits or larger`);
-    }
-  }
-};
-
-// node_modules/jose/dist/browser/lib/is_jwk.js
-function isJWK(key) {
-  return isObject(key) && typeof key.kty === "string";
-}
-function isPrivateJWK(key) {
-  return key.kty !== "oct" && typeof key.d === "string";
-}
-function isPublicJWK(key) {
-  return key.kty !== "oct" && typeof key.d === "undefined";
-}
-function isSecretJWK(key) {
-  return isJWK(key) && key.kty === "oct" && typeof key.k === "string";
-}
-
-// node_modules/jose/dist/browser/runtime/jwk_to_key.js
-function subtleMapping(jwk) {
-  let algorithm;
-  let keyUsages;
-  switch (jwk.kty) {
-    case "RSA": {
-      switch (jwk.alg) {
-        case "PS256":
-        case "PS384":
-        case "PS512":
-          algorithm = {
-            name: "RSA-PSS",
-            hash: `SHA-${jwk.alg.slice(-3)}`
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "RS256":
-        case "RS384":
-        case "RS512":
-          algorithm = {
-            name: "RSASSA-PKCS1-v1_5",
-            hash: `SHA-${jwk.alg.slice(-3)}`
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "RSA-OAEP":
-        case "RSA-OAEP-256":
-        case "RSA-OAEP-384":
-        case "RSA-OAEP-512":
-          algorithm = {
-            name: "RSA-OAEP",
-            hash: `SHA-${parseInt(jwk.alg.slice(-3), 10) || 1}`
-          };
-          keyUsages = jwk.d ? ["decrypt", "unwrapKey"] : ["encrypt", "wrapKey"];
-          break;
-        default:
-          throw new JOSENotSupported('Invalid or unsupported JWK "alg" (Algorithm) Parameter value');
-      }
-      break;
-    }
-    case "EC": {
-      switch (jwk.alg) {
-        case "ES256":
-          algorithm = {
-            name: "ECDSA",
-            namedCurve: "P-256"
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "ES384":
-          algorithm = {
-            name: "ECDSA",
-            namedCurve: "P-384"
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "ES512":
-          algorithm = {
-            name: "ECDSA",
-            namedCurve: "P-521"
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "ECDH-ES":
-        case "ECDH-ES+A128KW":
-        case "ECDH-ES+A192KW":
-        case "ECDH-ES+A256KW":
-          algorithm = {
-            name: "ECDH",
-            namedCurve: jwk.crv
-          };
-          keyUsages = jwk.d ? ["deriveBits"] : [];
-          break;
-        default:
-          throw new JOSENotSupported('Invalid or unsupported JWK "alg" (Algorithm) Parameter value');
-      }
-      break;
-    }
-    case "OKP": {
-      switch (jwk.alg) {
-        case "Ed25519":
-          algorithm = {
-            name: "Ed25519"
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "EdDSA":
-          algorithm = {
-            name: jwk.crv
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "ECDH-ES":
-        case "ECDH-ES+A128KW":
-        case "ECDH-ES+A192KW":
-        case "ECDH-ES+A256KW":
-          algorithm = {
-            name: jwk.crv
-          };
-          keyUsages = jwk.d ? ["deriveBits"] : [];
-          break;
-        default:
-          throw new JOSENotSupported('Invalid or unsupported JWK "alg" (Algorithm) Parameter value');
-      }
-      break;
-    }
-    default:
-      throw new JOSENotSupported('Invalid or unsupported JWK "kty" (Key Type) Parameter value');
-  }
-  return {
-    algorithm,
-    keyUsages
-  };
-}
-var parse = (jwk) => __async(void 0, null, function* () {
-  if (!jwk.alg) {
-    throw new TypeError('"alg" argument is required when "jwk.alg" is not present');
-  }
-  const {
-    algorithm,
-    keyUsages
-  } = subtleMapping(jwk);
-  const rest = [algorithm, jwk.ext ?? false, jwk.key_ops ?? keyUsages];
-  const keyData = __spreadValues({}, jwk);
-  delete keyData.alg;
-  delete keyData.use;
-  return webcrypto_default.subtle.importKey("jwk", keyData, ...rest);
-});
-var jwk_to_key_default = parse;
-
-// node_modules/jose/dist/browser/runtime/normalize_key.js
-var exportKeyValue = (k) => decode3(k);
-var privCache;
-var pubCache;
-var isKeyObject = (key) => {
-  return key?.[Symbol.toStringTag] === "KeyObject";
-};
-var importAndCache = (cache, key, jwk, alg, freeze = false) => __async(void 0, null, function* () {
-  let cached = cache.get(key);
-  if (cached?.[alg]) {
-    return cached[alg];
-  }
-  const cryptoKey = yield jwk_to_key_default(__spreadProps(__spreadValues({}, jwk), {
-    alg
-  }));
-  if (freeze) Object.freeze(key);
-  if (!cached) {
-    cache.set(key, {
-      [alg]: cryptoKey
-    });
-  } else {
-    cached[alg] = cryptoKey;
-  }
-  return cryptoKey;
-});
-var normalizePublicKey = (key, alg) => {
-  if (isKeyObject(key)) {
-    let jwk = key.export({
-      format: "jwk"
-    });
-    delete jwk.d;
-    delete jwk.dp;
-    delete jwk.dq;
-    delete jwk.p;
-    delete jwk.q;
-    delete jwk.qi;
-    if (jwk.k) {
-      return exportKeyValue(jwk.k);
-    }
-    pubCache || (pubCache = /* @__PURE__ */ new WeakMap());
-    return importAndCache(pubCache, key, jwk, alg);
-  }
-  if (isJWK(key)) {
-    if (key.k) return decode3(key.k);
-    pubCache || (pubCache = /* @__PURE__ */ new WeakMap());
-    const cryptoKey = importAndCache(pubCache, key, key, alg, true);
-    return cryptoKey;
-  }
-  return key;
-};
-var normalizePrivateKey = (key, alg) => {
-  if (isKeyObject(key)) {
-    let jwk = key.export({
-      format: "jwk"
-    });
-    if (jwk.k) {
-      return exportKeyValue(jwk.k);
-    }
-    privCache || (privCache = /* @__PURE__ */ new WeakMap());
-    return importAndCache(privCache, key, jwk, alg);
-  }
-  if (isJWK(key)) {
-    if (key.k) return decode3(key.k);
-    privCache || (privCache = /* @__PURE__ */ new WeakMap());
-    const cryptoKey = importAndCache(privCache, key, key, alg, true);
-    return cryptoKey;
-  }
-  return key;
-};
-var normalize_key_default = {
-  normalizePublicKey,
-  normalizePrivateKey
-};
-
-// node_modules/jose/dist/browser/key/import.js
-function importJWK(jwk, alg) {
-  return __async(this, null, function* () {
-    if (!isObject(jwk)) {
-      throw new TypeError("JWK must be an object");
-    }
-    alg || (alg = jwk.alg);
-    switch (jwk.kty) {
-      case "oct":
-        if (typeof jwk.k !== "string" || !jwk.k) {
-          throw new TypeError('missing "k" (Key Value) Parameter value');
-        }
-        return decode3(jwk.k);
-      case "RSA":
-        if ("oth" in jwk && jwk.oth !== void 0) {
-          throw new JOSENotSupported('RSA JWK "oth" (Other Primes Info) Parameter value is not supported');
-        }
-      case "EC":
-      case "OKP":
-        return jwk_to_key_default(__spreadProps(__spreadValues({}, jwk), {
-          alg
-        }));
-      default:
-        throw new JOSENotSupported('Unsupported "kty" (Key Type) Parameter value');
-    }
-  });
-}
-
-// node_modules/jose/dist/browser/lib/check_key_type.js
-var tag = (key) => key?.[Symbol.toStringTag];
-var jwkMatchesOp = (alg, key, usage) => {
-  if (key.use !== void 0 && key.use !== "sig") {
-    throw new TypeError("Invalid key for this operation, when present its use must be sig");
-  }
-  if (key.key_ops !== void 0 && key.key_ops.includes?.(usage) !== true) {
-    throw new TypeError(`Invalid key for this operation, when present its key_ops must include ${usage}`);
-  }
-  if (key.alg !== void 0 && key.alg !== alg) {
-    throw new TypeError(`Invalid key for this operation, when present its alg must be ${alg}`);
-  }
-  return true;
-};
-var symmetricTypeCheck = (alg, key, usage, allowJwk) => {
-  if (key instanceof Uint8Array) return;
-  if (allowJwk && isJWK(key)) {
-    if (isSecretJWK(key) && jwkMatchesOp(alg, key, usage)) return;
-    throw new TypeError(`JSON Web Key for symmetric algorithms must have JWK "kty" (Key Type) equal to "oct" and the JWK "k" (Key Value) present`);
-  }
-  if (!is_key_like_default(key)) {
-    throw new TypeError(withAlg(alg, key, ...types, "Uint8Array", allowJwk ? "JSON Web Key" : null));
-  }
-  if (key.type !== "secret") {
-    throw new TypeError(`${tag(key)} instances for symmetric algorithms must be of type "secret"`);
-  }
-};
-var asymmetricTypeCheck = (alg, key, usage, allowJwk) => {
-  if (allowJwk && isJWK(key)) {
-    switch (usage) {
-      case "sign":
-        if (isPrivateJWK(key) && jwkMatchesOp(alg, key, usage)) return;
-        throw new TypeError(`JSON Web Key for this operation be a private JWK`);
-      case "verify":
-        if (isPublicJWK(key) && jwkMatchesOp(alg, key, usage)) return;
-        throw new TypeError(`JSON Web Key for this operation be a public JWK`);
-    }
-  }
-  if (!is_key_like_default(key)) {
-    throw new TypeError(withAlg(alg, key, ...types, allowJwk ? "JSON Web Key" : null));
-  }
-  if (key.type === "secret") {
-    throw new TypeError(`${tag(key)} instances for asymmetric algorithms must not be of type "secret"`);
-  }
-  if (usage === "sign" && key.type === "public") {
-    throw new TypeError(`${tag(key)} instances for asymmetric algorithm signing must be of type "private"`);
-  }
-  if (usage === "decrypt" && key.type === "public") {
-    throw new TypeError(`${tag(key)} instances for asymmetric algorithm decryption must be of type "private"`);
-  }
-  if (key.algorithm && usage === "verify" && key.type === "private") {
-    throw new TypeError(`${tag(key)} instances for asymmetric algorithm verifying must be of type "public"`);
-  }
-  if (key.algorithm && usage === "encrypt" && key.type === "private") {
-    throw new TypeError(`${tag(key)} instances for asymmetric algorithm encryption must be of type "public"`);
-  }
-};
-function checkKeyType(allowJwk, alg, key, usage) {
-  const symmetric = alg.startsWith("HS") || alg === "dir" || alg.startsWith("PBES2") || /^A\d{3}(?:GCM)?KW$/.test(alg);
-  if (symmetric) {
-    symmetricTypeCheck(alg, key, usage, allowJwk);
-  } else {
-    asymmetricTypeCheck(alg, key, usage, allowJwk);
-  }
-}
-var check_key_type_default = checkKeyType.bind(void 0, false);
-var checkKeyTypeWithJwk = checkKeyType.bind(void 0, true);
-
-// node_modules/jose/dist/browser/lib/validate_crit.js
-function validateCrit(Err, recognizedDefault, recognizedOption, protectedHeader, joseHeader) {
-  if (joseHeader.crit !== void 0 && protectedHeader?.crit === void 0) {
-    throw new Err('"crit" (Critical) Header Parameter MUST be integrity protected');
-  }
-  if (!protectedHeader || protectedHeader.crit === void 0) {
-    return /* @__PURE__ */ new Set();
-  }
-  if (!Array.isArray(protectedHeader.crit) || protectedHeader.crit.length === 0 || protectedHeader.crit.some((input2) => typeof input2 !== "string" || input2.length === 0)) {
-    throw new Err('"crit" (Critical) Header Parameter MUST be an array of non-empty strings when present');
-  }
-  let recognized;
-  if (recognizedOption !== void 0) {
-    recognized = new Map([...Object.entries(recognizedOption), ...recognizedDefault.entries()]);
-  } else {
-    recognized = recognizedDefault;
-  }
-  for (const parameter of protectedHeader.crit) {
-    if (!recognized.has(parameter)) {
-      throw new JOSENotSupported(`Extension Header Parameter "${parameter}" is not recognized`);
-    }
-    if (joseHeader[parameter] === void 0) {
-      throw new Err(`Extension Header Parameter "${parameter}" is missing`);
-    }
-    if (recognized.get(parameter) && protectedHeader[parameter] === void 0) {
-      throw new Err(`Extension Header Parameter "${parameter}" MUST be integrity protected`);
-    }
-  }
-  return new Set(protectedHeader.crit);
-}
-var validate_crit_default = validateCrit;
-
-// node_modules/jose/dist/browser/lib/validate_algorithms.js
-var validateAlgorithms = (option, algorithms) => {
-  if (algorithms !== void 0 && (!Array.isArray(algorithms) || algorithms.some((s) => typeof s !== "string"))) {
-    throw new TypeError(`"${option}" option must be an array of strings`);
-  }
-  if (!algorithms) {
-    return void 0;
-  }
-  return new Set(algorithms);
-};
-var validate_algorithms_default = validateAlgorithms;
-
-// node_modules/jose/dist/browser/runtime/subtle_dsa.js
-function subtleDsa(alg, algorithm) {
-  const hash = `SHA-${alg.slice(-3)}`;
-  switch (alg) {
-    case "HS256":
-    case "HS384":
-    case "HS512":
-      return {
-        hash,
-        name: "HMAC"
-      };
-    case "PS256":
-    case "PS384":
-    case "PS512":
-      return {
-        hash,
-        name: "RSA-PSS",
-        saltLength: alg.slice(-3) >> 3
-      };
-    case "RS256":
-    case "RS384":
-    case "RS512":
-      return {
-        hash,
-        name: "RSASSA-PKCS1-v1_5"
-      };
-    case "ES256":
-    case "ES384":
-    case "ES512":
-      return {
-        hash,
-        name: "ECDSA",
-        namedCurve: algorithm.namedCurve
-      };
-    case "Ed25519":
-      return {
-        name: "Ed25519"
-      };
-    case "EdDSA":
-      return {
-        name: algorithm.name
-      };
-    default:
-      throw new JOSENotSupported(`alg ${alg} is not supported either by JOSE or your javascript runtime`);
-  }
-}
-
-// node_modules/jose/dist/browser/runtime/get_sign_verify_key.js
-function getCryptoKey(alg, key, usage) {
-  return __async(this, null, function* () {
-    if (usage === "sign") {
-      key = yield normalize_key_default.normalizePrivateKey(key, alg);
-    }
-    if (usage === "verify") {
-      key = yield normalize_key_default.normalizePublicKey(key, alg);
-    }
-    if (isCryptoKey(key)) {
-      checkSigCryptoKey(key, alg, usage);
-      return key;
-    }
-    if (key instanceof Uint8Array) {
-      if (!alg.startsWith("HS")) {
-        throw new TypeError(invalid_key_input_default(key, ...types));
-      }
-      return webcrypto_default.subtle.importKey("raw", key, {
-        hash: `SHA-${alg.slice(-3)}`,
-        name: "HMAC"
-      }, false, [usage]);
-    }
-    throw new TypeError(invalid_key_input_default(key, ...types, "Uint8Array", "JSON Web Key"));
-  });
-}
-
-// node_modules/jose/dist/browser/runtime/verify.js
-var verify = (alg, key, signature, data) => __async(void 0, null, function* () {
-  const cryptoKey = yield getCryptoKey(alg, key, "verify");
-  check_key_length_default(alg, cryptoKey);
-  const algorithm = subtleDsa(alg, cryptoKey.algorithm);
-  try {
-    return yield webcrypto_default.subtle.verify(algorithm, cryptoKey, signature, data);
-  } catch {
-    return false;
-  }
-});
-var verify_default = verify;
-
-// node_modules/jose/dist/browser/jws/flattened/verify.js
-function flattenedVerify(jws, key, options) {
-  return __async(this, null, function* () {
-    if (!isObject(jws)) {
-      throw new JWSInvalid("Flattened JWS must be an object");
-    }
-    if (jws.protected === void 0 && jws.header === void 0) {
-      throw new JWSInvalid('Flattened JWS must have either of the "protected" or "header" members');
-    }
-    if (jws.protected !== void 0 && typeof jws.protected !== "string") {
-      throw new JWSInvalid("JWS Protected Header incorrect type");
-    }
-    if (jws.payload === void 0) {
-      throw new JWSInvalid("JWS Payload missing");
-    }
-    if (typeof jws.signature !== "string") {
-      throw new JWSInvalid("JWS Signature missing or incorrect type");
-    }
-    if (jws.header !== void 0 && !isObject(jws.header)) {
-      throw new JWSInvalid("JWS Unprotected Header incorrect type");
-    }
-    let parsedProt = {};
-    if (jws.protected) {
-      try {
-        const protectedHeader = decode3(jws.protected);
-        parsedProt = JSON.parse(decoder.decode(protectedHeader));
-      } catch {
-        throw new JWSInvalid("JWS Protected Header is invalid");
-      }
-    }
-    if (!is_disjoint_default(parsedProt, jws.header)) {
-      throw new JWSInvalid("JWS Protected and JWS Unprotected Header Parameter names must be disjoint");
-    }
-    const joseHeader = __spreadValues(__spreadValues({}, parsedProt), jws.header);
-    const extensions = validate_crit_default(JWSInvalid, /* @__PURE__ */ new Map([["b64", true]]), options?.crit, parsedProt, joseHeader);
-    let b64 = true;
-    if (extensions.has("b64")) {
-      b64 = parsedProt.b64;
-      if (typeof b64 !== "boolean") {
-        throw new JWSInvalid('The "b64" (base64url-encode payload) Header Parameter must be a boolean');
-      }
-    }
-    const {
-      alg
-    } = joseHeader;
-    if (typeof alg !== "string" || !alg) {
-      throw new JWSInvalid('JWS "alg" (Algorithm) Header Parameter missing or invalid');
-    }
-    const algorithms = options && validate_algorithms_default("algorithms", options.algorithms);
-    if (algorithms && !algorithms.has(alg)) {
-      throw new JOSEAlgNotAllowed('"alg" (Algorithm) Header Parameter value not allowed');
-    }
-    if (b64) {
-      if (typeof jws.payload !== "string") {
-        throw new JWSInvalid("JWS Payload must be a string");
-      }
-    } else if (typeof jws.payload !== "string" && !(jws.payload instanceof Uint8Array)) {
-      throw new JWSInvalid("JWS Payload must be a string or an Uint8Array instance");
-    }
-    let resolvedKey = false;
-    if (typeof key === "function") {
-      key = yield key(parsedProt, jws);
-      resolvedKey = true;
-      checkKeyTypeWithJwk(alg, key, "verify");
-      if (isJWK(key)) {
-        key = yield importJWK(key, alg);
-      }
-    } else {
-      checkKeyTypeWithJwk(alg, key, "verify");
-    }
-    const data = concat2(encoder.encode(jws.protected ?? ""), encoder.encode("."), typeof jws.payload === "string" ? encoder.encode(jws.payload) : jws.payload);
-    let signature;
-    try {
-      signature = decode3(jws.signature);
-    } catch {
-      throw new JWSInvalid("Failed to base64url decode the signature");
-    }
-    const verified = yield verify_default(alg, key, signature, data);
-    if (!verified) {
-      throw new JWSSignatureVerificationFailed();
-    }
-    let payload;
-    if (b64) {
-      try {
-        payload = decode3(jws.payload);
-      } catch {
-        throw new JWSInvalid("Failed to base64url decode the payload");
-      }
-    } else if (typeof jws.payload === "string") {
-      payload = encoder.encode(jws.payload);
-    } else {
-      payload = jws.payload;
-    }
-    const result = {
-      payload
-    };
-    if (jws.protected !== void 0) {
-      result.protectedHeader = parsedProt;
-    }
-    if (jws.header !== void 0) {
-      result.unprotectedHeader = jws.header;
-    }
-    if (resolvedKey) {
-      return __spreadProps(__spreadValues({}, result), {
-        key
-      });
-    }
-    return result;
-  });
-}
-
-// node_modules/jose/dist/browser/jws/compact/verify.js
-function compactVerify(jws, key, options) {
-  return __async(this, null, function* () {
-    if (jws instanceof Uint8Array) {
-      jws = decoder.decode(jws);
-    }
-    if (typeof jws !== "string") {
-      throw new JWSInvalid("Compact JWS must be a string or Uint8Array");
-    }
-    const {
-      0: protectedHeader,
-      1: payload,
-      2: signature,
-      length
-    } = jws.split(".");
-    if (length !== 3) {
-      throw new JWSInvalid("Invalid Compact JWS");
-    }
-    const verified = yield flattenedVerify({
-      payload,
-      protected: protectedHeader,
-      signature
-    }, key, options);
-    const result = {
-      payload: verified.payload,
-      protectedHeader: verified.protectedHeader
-    };
-    if (typeof key === "function") {
-      return __spreadProps(__spreadValues({}, result), {
-        key: verified.key
-      });
-    }
-    return result;
-  });
-}
-
-// node_modules/jose/dist/browser/lib/epoch.js
-var epoch_default = (date) => Math.floor(date.getTime() / 1e3);
-
-// node_modules/jose/dist/browser/lib/secs.js
-var minute = 60;
-var hour = minute * 60;
-var day = hour * 24;
-var week = day * 7;
-var year = day * 365.25;
-var REGEX = /^(\+|\-)? ?(\d+|\d+\.\d+) ?(seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)(?: (ago|from now))?$/i;
-var secs_default = (str) => {
-  const matched = REGEX.exec(str);
-  if (!matched || matched[4] && matched[1]) {
-    throw new TypeError("Invalid time period format");
-  }
-  const value = parseFloat(matched[2]);
-  const unit = matched[3].toLowerCase();
-  let numericDate;
-  switch (unit) {
-    case "sec":
-    case "secs":
-    case "second":
-    case "seconds":
-    case "s":
-      numericDate = Math.round(value);
-      break;
-    case "minute":
-    case "minutes":
-    case "min":
-    case "mins":
-    case "m":
-      numericDate = Math.round(value * minute);
-      break;
-    case "hour":
-    case "hours":
-    case "hr":
-    case "hrs":
-    case "h":
-      numericDate = Math.round(value * hour);
-      break;
-    case "day":
-    case "days":
-    case "d":
-      numericDate = Math.round(value * day);
-      break;
-    case "week":
-    case "weeks":
-    case "w":
-      numericDate = Math.round(value * week);
-      break;
-    default:
-      numericDate = Math.round(value * year);
-      break;
-  }
-  if (matched[1] === "-" || matched[4] === "ago") {
-    return -numericDate;
-  }
-  return numericDate;
-};
-
-// node_modules/jose/dist/browser/lib/jwt_claims_set.js
-var normalizeTyp = (value) => value.toLowerCase().replace(/^application\//, "");
-var checkAudiencePresence = (audPayload, audOption) => {
-  if (typeof audPayload === "string") {
-    return audOption.includes(audPayload);
-  }
-  if (Array.isArray(audPayload)) {
-    return audOption.some(Set.prototype.has.bind(new Set(audPayload)));
-  }
-  return false;
-};
-var jwt_claims_set_default = (protectedHeader, encodedPayload, options = {}) => {
-  let payload;
-  try {
-    payload = JSON.parse(decoder.decode(encodedPayload));
-  } catch {
-  }
-  if (!isObject(payload)) {
-    throw new JWTInvalid("JWT Claims Set must be a top-level JSON object");
-  }
-  const {
-    typ
-  } = options;
-  if (typ && (typeof protectedHeader.typ !== "string" || normalizeTyp(protectedHeader.typ) !== normalizeTyp(typ))) {
-    throw new JWTClaimValidationFailed('unexpected "typ" JWT header value', payload, "typ", "check_failed");
-  }
-  const {
-    requiredClaims = [],
-    issuer,
-    subject,
-    audience,
-    maxTokenAge
-  } = options;
-  const presenceCheck = [...requiredClaims];
-  if (maxTokenAge !== void 0) presenceCheck.push("iat");
-  if (audience !== void 0) presenceCheck.push("aud");
-  if (subject !== void 0) presenceCheck.push("sub");
-  if (issuer !== void 0) presenceCheck.push("iss");
-  for (const claim of new Set(presenceCheck.reverse())) {
-    if (!(claim in payload)) {
-      throw new JWTClaimValidationFailed(`missing required "${claim}" claim`, payload, claim, "missing");
-    }
-  }
-  if (issuer && !(Array.isArray(issuer) ? issuer : [issuer]).includes(payload.iss)) {
-    throw new JWTClaimValidationFailed('unexpected "iss" claim value', payload, "iss", "check_failed");
-  }
-  if (subject && payload.sub !== subject) {
-    throw new JWTClaimValidationFailed('unexpected "sub" claim value', payload, "sub", "check_failed");
-  }
-  if (audience && !checkAudiencePresence(payload.aud, typeof audience === "string" ? [audience] : audience)) {
-    throw new JWTClaimValidationFailed('unexpected "aud" claim value', payload, "aud", "check_failed");
-  }
-  let tolerance;
-  switch (typeof options.clockTolerance) {
-    case "string":
-      tolerance = secs_default(options.clockTolerance);
-      break;
-    case "number":
-      tolerance = options.clockTolerance;
-      break;
-    case "undefined":
-      tolerance = 0;
-      break;
-    default:
-      throw new TypeError("Invalid clockTolerance option type");
-  }
-  const {
-    currentDate
-  } = options;
-  const now = epoch_default(currentDate || /* @__PURE__ */ new Date());
-  if ((payload.iat !== void 0 || maxTokenAge) && typeof payload.iat !== "number") {
-    throw new JWTClaimValidationFailed('"iat" claim must be a number', payload, "iat", "invalid");
-  }
-  if (payload.nbf !== void 0) {
-    if (typeof payload.nbf !== "number") {
-      throw new JWTClaimValidationFailed('"nbf" claim must be a number', payload, "nbf", "invalid");
-    }
-    if (payload.nbf > now + tolerance) {
-      throw new JWTClaimValidationFailed('"nbf" claim timestamp check failed', payload, "nbf", "check_failed");
-    }
-  }
-  if (payload.exp !== void 0) {
-    if (typeof payload.exp !== "number") {
-      throw new JWTClaimValidationFailed('"exp" claim must be a number', payload, "exp", "invalid");
-    }
-    if (payload.exp <= now - tolerance) {
-      throw new JWTExpired('"exp" claim timestamp check failed', payload, "exp", "check_failed");
-    }
-  }
-  if (maxTokenAge) {
-    const age = now - payload.iat;
-    const max = typeof maxTokenAge === "number" ? maxTokenAge : secs_default(maxTokenAge);
-    if (age - tolerance > max) {
-      throw new JWTExpired('"iat" claim timestamp check failed (too far in the past)', payload, "iat", "check_failed");
-    }
-    if (age < 0 - tolerance) {
-      throw new JWTClaimValidationFailed('"iat" claim timestamp check failed (it should be in the past)', payload, "iat", "check_failed");
-    }
-  }
-  return payload;
-};
-
-// node_modules/jose/dist/browser/jwt/verify.js
-function jwtVerify(jwt, key, options) {
-  return __async(this, null, function* () {
-    const verified = yield compactVerify(jwt, key, options);
-    if (verified.protectedHeader.crit?.includes("b64") && verified.protectedHeader.b64 === false) {
-      throw new JWTInvalid("JWTs MUST NOT use unencoded payload");
-    }
-    const payload = jwt_claims_set_default(verified.protectedHeader, verified.payload, options);
-    const result = {
-      payload,
-      protectedHeader: verified.protectedHeader
-    };
-    if (typeof key === "function") {
-      return __spreadProps(__spreadValues({}, result), {
-        key: verified.key
-      });
-    }
-    return result;
-  });
-}
-
-// node_modules/jose/dist/browser/jwks/local.js
-function getKtyFromAlg(alg) {
-  switch (typeof alg === "string" && alg.slice(0, 2)) {
-    case "RS":
-    case "PS":
-      return "RSA";
-    case "ES":
-      return "EC";
-    case "Ed":
-      return "OKP";
-    default:
-      throw new JOSENotSupported('Unsupported "alg" value for a JSON Web Key Set');
-  }
-}
-function isJWKSLike(jwks) {
-  return jwks && typeof jwks === "object" && Array.isArray(jwks.keys) && jwks.keys.every(isJWKLike);
-}
-function isJWKLike(key) {
-  return isObject(key);
-}
-function clone(obj) {
-  if (typeof structuredClone === "function") {
-    return structuredClone(obj);
-  }
-  return JSON.parse(JSON.stringify(obj));
-}
-var LocalJWKSet = class {
-  constructor(jwks) {
-    this._cached = /* @__PURE__ */ new WeakMap();
-    if (!isJWKSLike(jwks)) {
-      throw new JWKSInvalid("JSON Web Key Set malformed");
-    }
-    this._jwks = clone(jwks);
-  }
-  getKey(protectedHeader, token) {
-    return __async(this, null, function* () {
-      const {
-        alg,
-        kid
-      } = __spreadValues(__spreadValues({}, protectedHeader), token?.header);
-      const kty = getKtyFromAlg(alg);
-      const candidates = this._jwks.keys.filter((jwk2) => {
-        let candidate = kty === jwk2.kty;
-        if (candidate && typeof kid === "string") {
-          candidate = kid === jwk2.kid;
-        }
-        if (candidate && typeof jwk2.alg === "string") {
-          candidate = alg === jwk2.alg;
-        }
-        if (candidate && typeof jwk2.use === "string") {
-          candidate = jwk2.use === "sig";
-        }
-        if (candidate && Array.isArray(jwk2.key_ops)) {
-          candidate = jwk2.key_ops.includes("verify");
-        }
-        if (candidate) {
-          switch (alg) {
-            case "ES256":
-              candidate = jwk2.crv === "P-256";
-              break;
-            case "ES256K":
-              candidate = jwk2.crv === "secp256k1";
-              break;
-            case "ES384":
-              candidate = jwk2.crv === "P-384";
-              break;
-            case "ES512":
-              candidate = jwk2.crv === "P-521";
-              break;
-            case "Ed25519":
-              candidate = jwk2.crv === "Ed25519";
-              break;
-            case "EdDSA":
-              candidate = jwk2.crv === "Ed25519" || jwk2.crv === "Ed448";
-              break;
-          }
-        }
-        return candidate;
-      });
-      const {
-        0: jwk,
-        length
-      } = candidates;
-      if (length === 0) {
-        throw new JWKSNoMatchingKey();
-      }
-      if (length !== 1) {
-        const error = new JWKSMultipleMatchingKeys();
-        const {
-          _cached
-        } = this;
-        error[Symbol.asyncIterator] = function() {
-          return __asyncGenerator(this, null, function* () {
-            for (const jwk2 of candidates) {
-              try {
-                yield yield new __await(importWithAlgCache(_cached, jwk2, alg));
-              } catch {
-              }
-            }
-          });
-        };
-        throw error;
-      }
-      return importWithAlgCache(this._cached, jwk, alg);
-    });
-  }
-};
-function importWithAlgCache(cache, jwk, alg) {
-  return __async(this, null, function* () {
-    const cached = cache.get(jwk) || cache.set(jwk, {}).get(jwk);
-    if (cached[alg] === void 0) {
-      const key = yield importJWK(__spreadProps(__spreadValues({}, jwk), {
-        ext: true
-      }), alg);
-      if (key instanceof Uint8Array || key.type !== "public") {
-        throw new JWKSInvalid("JSON Web Key Set members must be public keys");
-      }
-      cached[alg] = key;
-    }
-    return cached[alg];
-  });
-}
-function createLocalJWKSet(jwks) {
-  const set = new LocalJWKSet(jwks);
-  const localJWKSet = (protectedHeader, token) => __async(this, null, function* () {
-    return set.getKey(protectedHeader, token);
-  });
-  Object.defineProperties(localJWKSet, {
-    jwks: {
-      value: () => clone(set._jwks),
-      enumerable: true,
-      configurable: false,
-      writable: false
-    }
-  });
-  return localJWKSet;
-}
-
-// node_modules/jose/dist/browser/runtime/fetch_jwks.js
-var fetchJwks = (url, timeout2, options) => __async(void 0, null, function* () {
-  let controller;
-  let id;
-  let timedOut = false;
-  if (typeof AbortController === "function") {
-    controller = new AbortController();
-    id = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-    }, timeout2);
-  }
-  const response = yield fetch(url.href, {
-    signal: controller ? controller.signal : void 0,
-    redirect: "manual",
-    headers: options.headers
-  }).catch((err) => {
-    if (timedOut) throw new JWKSTimeout();
-    throw err;
-  });
-  if (id !== void 0) clearTimeout(id);
-  if (response.status !== 200) {
-    throw new JOSEError("Expected 200 OK from the JSON Web Key Set HTTP response");
-  }
-  try {
-    return yield response.json();
-  } catch {
-    throw new JOSEError("Failed to parse the JSON Web Key Set HTTP response as JSON");
-  }
-});
-var fetch_jwks_default = fetchJwks;
-
-// node_modules/jose/dist/browser/jwks/remote.js
-function isCloudflareWorkers() {
-  return typeof WebSocketPair !== "undefined" || typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers" || typeof EdgeRuntime !== "undefined" && EdgeRuntime === "vercel";
-}
-var USER_AGENT;
-if (typeof navigator === "undefined" || !navigator.userAgent?.startsWith?.("Mozilla/5.0 ")) {
-  const NAME = "jose";
-  const VERSION6 = "v5.10.0";
-  USER_AGENT = `${NAME}/${VERSION6}`;
-}
-var jwksCache = Symbol();
-function isFreshJwksCache(input2, cacheMaxAge) {
-  if (typeof input2 !== "object" || input2 === null) {
-    return false;
-  }
-  if (!("uat" in input2) || typeof input2.uat !== "number" || Date.now() - input2.uat >= cacheMaxAge) {
-    return false;
-  }
-  if (!("jwks" in input2) || !isObject(input2.jwks) || !Array.isArray(input2.jwks.keys) || !Array.prototype.every.call(input2.jwks.keys, isObject)) {
-    return false;
-  }
-  return true;
-}
-var RemoteJWKSet = class {
-  constructor(url, options) {
-    if (!(url instanceof URL)) {
-      throw new TypeError("url must be an instance of URL");
-    }
-    this._url = new URL(url.href);
-    this._options = {
-      agent: options?.agent,
-      headers: options?.headers
-    };
-    this._timeoutDuration = typeof options?.timeoutDuration === "number" ? options?.timeoutDuration : 5e3;
-    this._cooldownDuration = typeof options?.cooldownDuration === "number" ? options?.cooldownDuration : 3e4;
-    this._cacheMaxAge = typeof options?.cacheMaxAge === "number" ? options?.cacheMaxAge : 6e5;
-    if (options?.[jwksCache] !== void 0) {
-      this._cache = options?.[jwksCache];
-      if (isFreshJwksCache(options?.[jwksCache], this._cacheMaxAge)) {
-        this._jwksTimestamp = this._cache.uat;
-        this._local = createLocalJWKSet(this._cache.jwks);
-      }
-    }
-  }
-  coolingDown() {
-    return typeof this._jwksTimestamp === "number" ? Date.now() < this._jwksTimestamp + this._cooldownDuration : false;
-  }
-  fresh() {
-    return typeof this._jwksTimestamp === "number" ? Date.now() < this._jwksTimestamp + this._cacheMaxAge : false;
-  }
-  getKey(protectedHeader, token) {
-    return __async(this, null, function* () {
-      if (!this._local || !this.fresh()) {
-        yield this.reload();
-      }
-      try {
-        return yield this._local(protectedHeader, token);
-      } catch (err) {
-        if (err instanceof JWKSNoMatchingKey) {
-          if (this.coolingDown() === false) {
-            yield this.reload();
-            return this._local(protectedHeader, token);
-          }
-        }
-        throw err;
-      }
-    });
-  }
-  reload() {
-    return __async(this, null, function* () {
-      if (this._pendingFetch && isCloudflareWorkers()) {
-        this._pendingFetch = void 0;
-      }
-      const headers = new Headers(this._options.headers);
-      if (USER_AGENT && !headers.has("User-Agent")) {
-        headers.set("User-Agent", USER_AGENT);
-        this._options.headers = Object.fromEntries(headers.entries());
-      }
-      this._pendingFetch || (this._pendingFetch = fetch_jwks_default(this._url, this._timeoutDuration, this._options).then((json) => {
-        this._local = createLocalJWKSet(json);
-        if (this._cache) {
-          this._cache.uat = Date.now();
-          this._cache.jwks = json;
-        }
-        this._jwksTimestamp = Date.now();
-        this._pendingFetch = void 0;
-      }).catch((err) => {
-        this._pendingFetch = void 0;
-        throw err;
-      }));
-      yield this._pendingFetch;
-    });
-  }
-};
-function createRemoteJWKSet(url, options) {
-  const set = new RemoteJWKSet(url, options);
-  const remoteJWKSet = (protectedHeader, token) => __async(this, null, function* () {
-    return set.getKey(protectedHeader, token);
-  });
-  Object.defineProperties(remoteJWKSet, {
-    coolingDown: {
-      get: () => set.coolingDown(),
-      enumerable: true,
-      configurable: false
-    },
-    fresh: {
-      get: () => set.fresh(),
-      enumerable: true,
-      configurable: false
-    },
-    reload: {
-      value: () => set.reload(),
-      enumerable: true,
-      configurable: false,
-      writable: false
-    },
-    reloading: {
-      get: () => !!set._pendingFetch,
-      enumerable: true,
-      configurable: false
-    },
-    jwks: {
-      value: () => set._local?.jwks(),
-      enumerable: true,
-      configurable: false,
-      writable: false
-    }
-  });
-  return remoteJWKSet;
-}
-
-// projects/fasten-connect-stitch-embed/src/app/services/auth.service.ts
-var FASTEN_AUTH_VAULT_COOKIE_NAME = "fasten_connect_auth_vault";
-var AuthService = class _AuthService {
-  constructor(_httpClient, configService) {
-    this._httpClient = _httpClient;
-    this.configService = configService;
-    this.IsAuthenticatedSubject = new BehaviorSubject(false);
-  }
-  VaultAuthBegin(email) {
-    return __async(this, null, function* () {
-      let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_begin`, {
-        "email": email
-      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
-      return resp;
-    });
-  }
-  VaultAuthFinish(email, code) {
-    return __async(this, null, function* () {
-      let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_finish`, {
-        "email": email,
-        "code": code
-      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
-      return resp;
-    });
-  }
-  Signout() {
-    return __async(this, null, function* () {
-      this.publishAuthenticationState(false);
-      return this.deleteCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
-    });
-  }
-  GetJWTPayload() {
-    return __async(this, null, function* () {
-      let authToken = this.getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
-      if (!authToken) {
-        return null;
-      }
-      let jwks = createRemoteJWKSet(new URL(environment.jwks_uri));
-      let issuerHost = environment.connect_api_jwt_issuer_host;
-      try {
-        const { payload, protectedHeader } = yield jwtVerify(authToken, jwks, {
-          issuer: issuerHost,
-          audience: issuerHost
-        });
-        this.configService.systemConfig = { user: payload };
-        return payload;
-      } catch (e) {
-        console.error("failed to verify jwt:", e, issuerHost);
-        return null;
-      }
-    });
-  }
-  IsAuthenticated() {
-    return __async(this, null, function* () {
-      let payload = yield this.GetJWTPayload();
-      let isAuthenticated = payload != null;
-      this.publishAuthenticationState(isAuthenticated);
-      return isAuthenticated;
-    });
-  }
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  //Private Methods
-  /////////////////////////////////////////////////////////////////////////////////////////////////
-  //https://stackoverflow.com/questions/34298133/angular-cookies
-  getCookie(name) {
-    const ca = decodeURIComponent(document.cookie).split(";");
-    const caLen = ca.length;
-    const cookieName = `${name}=`;
-    let c;
-    for (let i = 0; i < caLen; i += 1) {
-      c = ca[i].replace(/^\s+/g, "");
-      if (c.indexOf(cookieName) === 0) {
-        return c.substring(cookieName.length, c.length);
-      }
-    }
-    return "";
-  }
-  deleteCookie(name) {
-    this.setCookie(name, "", -99999);
-  }
-  setCookie(name, value, expireDays, path = "") {
-    const d = /* @__PURE__ */ new Date();
-    d.setTime(d.getTime() + expireDays * 24 * 60 * 60 * 1e3);
-    const expires = `expires=${d.toUTCString()}`;
-    const cpath = path ? `; path=${path}` : "";
-    document.cookie = `${name}=${value}; ${expires}${cpath}; SameSite=Lax`;
-  }
-  publishAuthenticationState(authenticated) {
-    if (this.IsAuthenticatedSubject.value != authenticated) {
-      this.IsAuthenticatedSubject.next(authenticated);
-    }
-  }
-  static {
-    this.\u0275fac = function AuthService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AuthService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(ConfigService));
-    };
-  }
-  static {
-    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _AuthService, factory: _AuthService.\u0275fac, providedIn: "root" });
-  }
-};
-
 // node_modules/ngx-device-detector/fesm2022/ngx-device-detector.mjs
 var GENERAL = {
   UKNOWN: "Unknown"
@@ -48886,6 +47456,425 @@ var FastenService = class _FastenService {
     this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _FastenService, factory: _FastenService.\u0275fac, providedIn: "root" });
   }
 };
+
+// projects/fasten-connect-stitch-embed/src/app/app.component.ts
+function AppComponent_div_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 3);
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(1, "svg", 4);
+    \u0275\u0275element(2, "rect", 5)(3, "path", 6)(4, "path", 7)(5, "path", 8)(6, "path", 9)(7, "path", 10)(8, "path", 11)(9, "path", 12);
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(10, " You are using Fasten in test mode\n");
+    \u0275\u0275elementEnd();
+  }
+}
+function AppComponent_ng_container_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 13)(2, "div", 14)(3, "h1", 15);
+    \u0275\u0275text(4, "fasten");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(5, "div", 16)(6, "div", 17);
+    \u0275\u0275element(7, "div", 18);
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(8, "div", 19);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(9, "div", 20)(10, "div", 21);
+    \u0275\u0275element(11, "div", 22);
+    \u0275\u0275elementStart(12, "div", 23);
+    \u0275\u0275element(13, "div", 24)(14, "div", 25);
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(15, "div", 26);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(16, "div", 21);
+    \u0275\u0275element(17, "div", 22);
+    \u0275\u0275elementStart(18, "div", 23);
+    \u0275\u0275element(19, "div", 24)(20, "div", 25);
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(21, "div", 26);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementContainerEnd();
+  }
+}
+function AppComponent_ng_container_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 27)(2, "div", 28);
+    \u0275\u0275element(3, "div", 29);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "div", 30);
+    \u0275\u0275element(5, "div", 22);
+    \u0275\u0275elementStart(6, "div", 31);
+    \u0275\u0275element(7, "div", 32)(8, "div", 32)(9, "div", 32);
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(10, "div", 22);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(11, "div", 33);
+    \u0275\u0275element(12, "div", 34)(13, "div", 35);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(14, "div", 36)(15, "div", 37);
+    \u0275\u0275element(16, "div", 22);
+    \u0275\u0275elementStart(17, "div", 23);
+    \u0275\u0275element(18, "div", 38)(19, "div", 39);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(20, "div", 37);
+    \u0275\u0275element(21, "div", 22);
+    \u0275\u0275elementStart(22, "div", 23);
+    \u0275\u0275element(23, "div", 38)(24, "div", 39);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(25, "div", 36);
+    \u0275\u0275element(26, "div", 24)(27, "div", 18)(28, "div", 40);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementContainerEnd();
+  }
+}
+function AppComponent_ng_container_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 41);
+    \u0275\u0275element(2, "router-outlet");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementContainerEnd();
+  }
+}
+function AppComponent_ng_container_6_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 42)(2, "div", 43)(3, "div", 44)(4, "div", 45);
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(5, "svg", 46);
+    \u0275\u0275element(6, "path", 47);
+    \u0275\u0275elementEnd();
+    \u0275\u0275namespaceHTML();
+    \u0275\u0275elementStart(7, "span", 48);
+    \u0275\u0275text(8, "Error");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(9, "h3", 49);
+    \u0275\u0275text(10, "Configuration Error");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(11, "div", 50);
+    \u0275\u0275text(12);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(13, "div", 51)(14, "button", 52);
+    \u0275\u0275listener("click", function AppComponent_ng_container_6_Template_button_click_14_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.hideStitchModalExt());
+    });
+    \u0275\u0275text(15, "Close");
+    \u0275\u0275elementEnd()()()()();
+    \u0275\u0275elementContainerEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(12);
+    \u0275\u0275textInterpolate1(" ", ctx_r1.errorMessage, " ");
+  }
+}
+var AppComponent = class _AppComponent {
+  populateInputsFromWindowLocation() {
+    let urlParams = new URLSearchParams(window.location.search);
+    this.publicId = urlParams.get("public-id") || "";
+    this.externalId = urlParams.get("external-id") || "";
+    this.externalState = urlParams.get("external-state") || "";
+    this.reconnectOrgConnectionId = urlParams.get("reconnect-org-connection-id") || "";
+    this.searchOnly = urlParams.get("search-only") == "true";
+    this.tefcaMode = urlParams.get("tefca-mode") == "true";
+    this.eventTypes = urlParams.get("event-types") || "";
+    this.staticBackdrop = urlParams.get("static-backdrop") == "true";
+    this.searchQuery = urlParams.get("search-query") || "";
+    this.brandId = urlParams.get("brand-id") || "";
+    this.portalId = urlParams.get("portal-id") || "";
+    this.endpointId = urlParams.get("endpoint-id") || "";
+    this.sdkMode = urlParams.get("sdk-mode") || SDKMode.None;
+  }
+  constructor(activatedRoute, configService, messageBus, fastenService, router, logger) {
+    this.activatedRoute = activatedRoute;
+    this.configService = configService;
+    this.messageBus = messageBus;
+    this.fastenService = fastenService;
+    this.router = router;
+    this.logger = logger;
+    this.publicId = "";
+    this.externalId = "";
+    this.externalState = "";
+    this.tefcaMode = false;
+    this.staticBackdrop = false;
+    this.eventTypes = "";
+    this.searchOnly = false;
+    this.searchQuery = "";
+    this.brandId = "";
+    this.portalId = "";
+    this.endpointId = "";
+    this.sdkMode = "";
+    this.loading = true;
+  }
+  ngOnInit() {
+    this.logger.info("QUERY STRING MAP", new URLSearchParams(window.location.search));
+    this.populateInputsFromWindowLocation();
+    let apiMode = this.getApiModeFromPublicId(this.publicId);
+    let eventTypes = [];
+    if (this.eventTypes) {
+      eventTypes = this.eventTypes.split(",").map((eventType) => {
+        return eventType;
+      }).filter((eventType) => Object.values(EventTypes).indexOf(eventType) >= 0);
+    }
+    if (!this.sdkMode) {
+      this.sdkMode = SDKMode.None;
+    }
+    this.configService.systemConfig = {
+      apiMode,
+      publicId: this.publicId,
+      externalId: this.externalId,
+      reconnectOrgConnectionId: this.reconnectOrgConnectionId,
+      staticBackdrop: this.staticBackdrop,
+      searchOnly: this.searchOnly,
+      tefcaMode: this.tefcaMode,
+      eventTypes,
+      sdkMode: this.sdkMode
+    };
+    this.messageBus.messageBusSubject.subscribe((eventPayload) => {
+      this.logger.debug("bubbling up event", eventPayload);
+      this.sendPostMessage(eventPayload);
+    });
+    if (this.reconnectOrgConnectionId) {
+      this.fastenService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
+        this.logger.info("state: dashboard/connecting#reconnectOrgConnectionId", orgConnection);
+        this.router.navigate(["dashboard/connecting"], {
+          queryParams: {
+            "brandId": orgConnection.catalog_brand_id,
+            "portalId": orgConnection.catalog_portal_id,
+            "endpointId": orgConnection.catalog_endpoint_id,
+            "orgConnectionId": orgConnection.org_connection_id,
+            "externalId": this.externalId,
+            "externalState": this.externalState,
+            "sdkMode": this.sdkMode
+          }
+        });
+      }, (err) => {
+        this.errorMessage = "Could not find the patient connection using id. Please contact the developer of this app.";
+        this.logger.error("Invalid Fasten Connect Connection ID", err);
+      });
+    } else if (this.brandId && this.portalId && this.endpointId) {
+      this.logger.info("state: dashboard/connecting");
+      this.router.navigate(["dashboard/connecting"], {
+        queryParams: {
+          "brandId": this.brandId,
+          "portalId": this.portalId,
+          "endpointId": this.endpointId,
+          "externalId": this.externalId,
+          "externalState": this.externalState,
+          "sdkMode": this.sdkMode
+        }
+      });
+    } else if (this.brandId) {
+      this.fastenService.searchCatalogBrand(apiMode, this.brandId).subscribe((brandItem) => {
+        this.logger.info("state: brand/details");
+        this.configService.searchConfig$.selectedBrand = brandItem._source;
+        this.router.navigateByUrl("brand/details");
+      });
+    } else {
+      if (this.searchOnly) {
+        this.logger.info("state: search");
+        let queryParams = {};
+        if (this.searchQuery) {
+          queryParams["searchQuery"] = this.searchQuery;
+        }
+        this.router.navigate(["search"], {
+          queryParams
+        });
+      }
+    }
+  }
+  ngOnChanges(changes) {
+    this.logger.debug("embed ngOnChanges", changes);
+  }
+  getApiModeFromPublicId(publicId) {
+    let publicIdParts = publicId.split("_");
+    let apiMode = ApiMode.Test;
+    if (publicIdParts.length == 3 && publicIdParts[1] == ApiMode.Live) {
+      apiMode = ApiMode.Live;
+    }
+    if (publicIdParts.length != 3) {
+      console.error("Could not register Fasten Connect installation: missing or invalid id", this.publicId);
+      this.errorMessage = "Could not register Fasten Connect installation: missing or invalid id. Please contact the developer of this app.";
+      this.messageBus.publishWidgetConfigError();
+      this.configService.systemConfig = {
+        org: void 0
+      };
+      this.loading = false;
+      return apiMode;
+    } else {
+      this.errorMessage = "";
+      this.fastenService.getOrgByPublicId(this.publicId).subscribe((org) => {
+        this.logger.info("Fasten Connect registration", org);
+        this.loading = false;
+        this.configService.systemConfig = {
+          org
+        };
+      }, (err) => {
+        this.loading = false;
+        this.errorMessage = "Could not register Fasten Connect installation using id. Please contact the developer of this app.";
+        this.messageBus.publishWidgetConfigError();
+        this.logger.error("Invalid Fasten Connect registration", err);
+      });
+      return apiMode;
+    }
+  }
+  // these functions can be called externally to hide the widget via javascript
+  hideStitchModalExt() {
+    this.logger.info("hideStitchModalExt pressed");
+  }
+  // postMessage registration, listen to events from the parent window
+  receivePostMessage(event) {
+    this.logger.debug("received postMessage", event);
+  }
+  sendPostMessage(eventPayload) {
+    if (eventPayload == null) {
+      this.logger.warn("No eventPayload to send");
+      return;
+    }
+    if (this.sdkMode == SDKMode.ReactNative && window.ReactNativeWebView) {
+      this.logger.info("sending postMessage to React Native WebView", eventPayload);
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        "from": CommunicationEntity.PrimaryWebView,
+        "to": CommunicationEntity.External,
+        "payload": JSON.stringify(eventPayload)
+      }));
+    } else if (window.opener || window.parent) {
+      this.logger.info("sending postMessage", eventPayload);
+      let parentWindowRef = window.parent || window.opener;
+      parentWindowRef.postMessage(JSON.stringify(eventPayload), "*");
+    } else {
+      this.logger.debug("No parent window to send message to", this.sdkMode);
+      return;
+    }
+  }
+  static {
+    this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _AppComponent, selectors: [["app-root"]], hostBindings: function AppComponent_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("message", function AppComponent_message_HostBindingHandler($event) {
+          return ctx.receivePostMessage($event);
+        }, false, \u0275\u0275resolveWindow);
+      }
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275element(0, "link", 0);
+        \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
+        \u0275\u0275pipe(2, "async");
+        \u0275\u0275template(3, AppComponent_ng_container_3_Template, 22, 0, "ng-container", 2)(4, AppComponent_ng_container_4_Template, 29, 0, "ng-container", 2)(5, AppComponent_ng_container_5_Template, 3, 0, "ng-container", 2)(6, AppComponent_ng_container_6_Template, 16, 1, "ng-container", 2);
+      }
+      if (rf & 2) {
+        let tmp_0_0;
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ((tmp_0_0 = \u0275\u0275pipeBind1(2, 5, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.apiMode) == "test");
+        \u0275\u0275advance(2);
+        \u0275\u0275property("ngIf", ctx.loading && ctx.searchOnly);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.loading && !ctx.searchOnly);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", !ctx.loading && !!!ctx.errorMessage);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", !ctx.loading && ctx.errorMessage);
+      }
+    }, dependencies: [
+      CommonModule,
+      NgIf,
+      AsyncPipe,
+      RouterOutlet,
+      RouterModule
+    ], encapsulation: 2 });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 36 });
+})();
+
+// projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts
+function HeaderComponent_button_1_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 4);
+    \u0275\u0275listener("click", function HeaderComponent_button_1_Template_button_click_0_listener($event) {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.backButtonClick($event));
+    });
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(1, "svg", 5);
+    \u0275\u0275element(2, "path", 6);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("routerLink", ctx_r1.backButtonLink);
+  }
+}
+function HeaderComponent_button_2_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 7);
+    \u0275\u0275listener("click", function HeaderComponent_button_2_Template_button_click_0_listener($event) {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.closeButtonClick($event));
+    });
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(1, "svg", 5);
+    \u0275\u0275element(2, "path", 8);
+    \u0275\u0275elementEnd()();
+  }
+}
+var HeaderComponent = class _HeaderComponent {
+  constructor() {
+    this.backButtonLink = "";
+    this.backButtonEvent = new EventEmitter();
+    this.showClose = false;
+    this.closeButtonEvent = new EventEmitter();
+  }
+  ngOnInit() {
+  }
+  backButtonClick(e) {
+    console.log("header: back button clicked");
+    this.backButtonEvent.emit(e);
+  }
+  closeButtonClick(e) {
+    console.log("header: close button clicked");
+    this.closeButtonEvent.emit(e);
+  }
+  static {
+    this.\u0275fac = function HeaderComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _HeaderComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HeaderComponent, selectors: [["app-header"]], inputs: { backButtonLink: "backButtonLink", showClose: "showClose" }, outputs: { backButtonEvent: "backButtonEvent", closeButtonEvent: "closeButtonEvent" }, decls: 5, vars: 2, consts: [[1, "relative", "flex", "justify-center", "items-center"], ["id", "stitch-back", "type", "button", "class", "absolute left-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "routerLink", "click", 4, "ngIf"], ["id", "stitch-close", "type", "button", "class", "absolute right-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "click", 4, "ngIf"], [1, "az-logo"], ["id", "stitch-back", "type", "button", 1, "absolute", "left-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click", "routerLink"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", 1, "w-5", "h-5"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M15 19l-7-7 7-7"], ["id", "stitch-close", "type", "button", 1, "absolute", "right-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 18L18 6M6 6l12 12"]], template: function HeaderComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0);
+        \u0275\u0275template(1, HeaderComponent_button_1_Template, 3, 1, "button", 1)(2, HeaderComponent_button_2_Template, 3, 0, "button", 2);
+        \u0275\u0275elementStart(3, "h1", 3);
+        \u0275\u0275text(4, "fasten");
+        \u0275\u0275elementEnd()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.backButtonLink);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.showClose);
+      }
+    }, dependencies: [CommonModule, NgIf, RouterModule, RouterLink], encapsulation: 2 });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HeaderComponent, { className: "HeaderComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts", lineNumber: 16 });
+})();
 
 // node_modules/@angular/forms/fesm2022/forms.mjs
 var BaseControlValueAccessor = class _BaseControlValueAccessor {
@@ -55357,102 +54346,1548 @@ var SpinnerComponent = class _SpinnerComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SpinnerComponent, selectors: [["app-spinner"]], standalone: false, decls: 3, vars: 0, consts: [["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", 1, "mr-2", "h-5", "w-5", "animate-spin", "text-white"], ["cx", "12", "cy", "12", "r", "10", "stroke", "currentColor", "stroke-width", "4", 1, "opacity-25"], ["fill", "currentColor", "d", "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z", 1, "opacity-75"]], template: function SpinnerComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SpinnerComponent, selectors: [["app-spinner"]], decls: 3, vars: 0, consts: [["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", 1, "mr-2", "h-5", "w-5", "animate-spin", "text-white"], ["cx", "12", "cy", "12", "r", "10", "stroke", "currentColor", "stroke-width", "4", 1, "opacity-25"], ["fill", "currentColor", "d", "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z", 1, "opacity-75"]], template: function SpinnerComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275namespaceSVG();
         \u0275\u0275elementStart(0, "svg", 0);
         \u0275\u0275element(1, "circle", 1)(2, "path", 2);
         \u0275\u0275elementEnd();
       }
-    }, encapsulation: 2 });
+    }, dependencies: [CommonModule], encapsulation: 2 });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SpinnerComponent, { className: "SpinnerComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/spinner/spinner.component.ts", lineNumber: 9 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SpinnerComponent, { className: "SpinnerComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/spinner/spinner.component.ts", lineNumber: 11 });
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts
-function HeaderComponent_button_1_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 4);
-    \u0275\u0275listener("click", function HeaderComponent_button_1_Template_button_click_0_listener($event) {
-      \u0275\u0275restoreView(_r1);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.backButtonClick($event));
-    });
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 5);
-    \u0275\u0275element(2, "path", 6);
-    \u0275\u0275elementEnd()();
+// node_modules/jose/dist/browser/runtime/webcrypto.js
+var webcrypto_default = crypto;
+var isCryptoKey = (key) => key instanceof CryptoKey;
+
+// node_modules/jose/dist/browser/lib/buffer_utils.js
+var encoder = new TextEncoder();
+var decoder = new TextDecoder();
+var MAX_INT32 = 2 ** 32;
+function concat2(...buffers) {
+  const size = buffers.reduce((acc, {
+    length
+  }) => acc + length, 0);
+  const buf = new Uint8Array(size);
+  let i = 0;
+  for (const buffer of buffers) {
+    buf.set(buffer, i);
+    i += buffer.length;
   }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275property("routerLink", ctx_r1.backButtonLink);
+  return buf;
+}
+
+// node_modules/jose/dist/browser/runtime/base64url.js
+var decodeBase64 = (encoded) => {
+  const binary = atob(encoded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+};
+var decode3 = (input2) => {
+  let encoded = input2;
+  if (encoded instanceof Uint8Array) {
+    encoded = decoder.decode(encoded);
+  }
+  encoded = encoded.replace(/-/g, "+").replace(/_/g, "/").replace(/\s/g, "");
+  try {
+    return decodeBase64(encoded);
+  } catch {
+    throw new TypeError("The input to be decoded is not correctly encoded.");
+  }
+};
+
+// node_modules/jose/dist/browser/util/errors.js
+var JOSEError = class extends Error {
+  constructor(message2, options) {
+    super(message2, options);
+    this.code = "ERR_JOSE_GENERIC";
+    this.name = this.constructor.name;
+    Error.captureStackTrace?.(this, this.constructor);
+  }
+};
+JOSEError.code = "ERR_JOSE_GENERIC";
+var JWTClaimValidationFailed = class extends JOSEError {
+  constructor(message2, payload, claim = "unspecified", reason = "unspecified") {
+    super(message2, {
+      cause: {
+        claim,
+        reason,
+        payload
+      }
+    });
+    this.code = "ERR_JWT_CLAIM_VALIDATION_FAILED";
+    this.claim = claim;
+    this.reason = reason;
+    this.payload = payload;
+  }
+};
+JWTClaimValidationFailed.code = "ERR_JWT_CLAIM_VALIDATION_FAILED";
+var JWTExpired = class extends JOSEError {
+  constructor(message2, payload, claim = "unspecified", reason = "unspecified") {
+    super(message2, {
+      cause: {
+        claim,
+        reason,
+        payload
+      }
+    });
+    this.code = "ERR_JWT_EXPIRED";
+    this.claim = claim;
+    this.reason = reason;
+    this.payload = payload;
+  }
+};
+JWTExpired.code = "ERR_JWT_EXPIRED";
+var JOSEAlgNotAllowed = class extends JOSEError {
+  constructor() {
+    super(...arguments);
+    this.code = "ERR_JOSE_ALG_NOT_ALLOWED";
+  }
+};
+JOSEAlgNotAllowed.code = "ERR_JOSE_ALG_NOT_ALLOWED";
+var JOSENotSupported = class extends JOSEError {
+  constructor() {
+    super(...arguments);
+    this.code = "ERR_JOSE_NOT_SUPPORTED";
+  }
+};
+JOSENotSupported.code = "ERR_JOSE_NOT_SUPPORTED";
+var JWEDecryptionFailed = class extends JOSEError {
+  constructor(message2 = "decryption operation failed", options) {
+    super(message2, options);
+    this.code = "ERR_JWE_DECRYPTION_FAILED";
+  }
+};
+JWEDecryptionFailed.code = "ERR_JWE_DECRYPTION_FAILED";
+var JWEInvalid = class extends JOSEError {
+  constructor() {
+    super(...arguments);
+    this.code = "ERR_JWE_INVALID";
+  }
+};
+JWEInvalid.code = "ERR_JWE_INVALID";
+var JWSInvalid = class extends JOSEError {
+  constructor() {
+    super(...arguments);
+    this.code = "ERR_JWS_INVALID";
+  }
+};
+JWSInvalid.code = "ERR_JWS_INVALID";
+var JWTInvalid = class extends JOSEError {
+  constructor() {
+    super(...arguments);
+    this.code = "ERR_JWT_INVALID";
+  }
+};
+JWTInvalid.code = "ERR_JWT_INVALID";
+var JWKInvalid = class extends JOSEError {
+  constructor() {
+    super(...arguments);
+    this.code = "ERR_JWK_INVALID";
+  }
+};
+JWKInvalid.code = "ERR_JWK_INVALID";
+var JWKSInvalid = class extends JOSEError {
+  constructor() {
+    super(...arguments);
+    this.code = "ERR_JWKS_INVALID";
+  }
+};
+JWKSInvalid.code = "ERR_JWKS_INVALID";
+var JWKSNoMatchingKey = class extends JOSEError {
+  constructor(message2 = "no applicable key found in the JSON Web Key Set", options) {
+    super(message2, options);
+    this.code = "ERR_JWKS_NO_MATCHING_KEY";
+  }
+};
+JWKSNoMatchingKey.code = "ERR_JWKS_NO_MATCHING_KEY";
+var JWKSMultipleMatchingKeys = class extends JOSEError {
+  constructor(message2 = "multiple matching keys found in the JSON Web Key Set", options) {
+    super(message2, options);
+    this.code = "ERR_JWKS_MULTIPLE_MATCHING_KEYS";
+  }
+};
+JWKSMultipleMatchingKeys.code = "ERR_JWKS_MULTIPLE_MATCHING_KEYS";
+var JWKSTimeout = class extends JOSEError {
+  constructor(message2 = "request timed out", options) {
+    super(message2, options);
+    this.code = "ERR_JWKS_TIMEOUT";
+  }
+};
+JWKSTimeout.code = "ERR_JWKS_TIMEOUT";
+var JWSSignatureVerificationFailed = class extends JOSEError {
+  constructor(message2 = "signature verification failed", options) {
+    super(message2, options);
+    this.code = "ERR_JWS_SIGNATURE_VERIFICATION_FAILED";
+  }
+};
+JWSSignatureVerificationFailed.code = "ERR_JWS_SIGNATURE_VERIFICATION_FAILED";
+
+// node_modules/jose/dist/browser/lib/crypto_key.js
+function unusable(name, prop = "algorithm.name") {
+  return new TypeError(`CryptoKey does not support this operation, its ${prop} must be ${name}`);
+}
+function isAlgorithm(algorithm, name) {
+  return algorithm.name === name;
+}
+function getHashLength(hash) {
+  return parseInt(hash.name.slice(4), 10);
+}
+function getNamedCurve(alg) {
+  switch (alg) {
+    case "ES256":
+      return "P-256";
+    case "ES384":
+      return "P-384";
+    case "ES512":
+      return "P-521";
+    default:
+      throw new Error("unreachable");
   }
 }
-function HeaderComponent_button_2_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 7);
-    \u0275\u0275listener("click", function HeaderComponent_button_2_Template_button_click_0_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.closeButtonClick($event));
-    });
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 5);
-    \u0275\u0275element(2, "path", 8);
-    \u0275\u0275elementEnd()();
+function checkUsage(key, usages) {
+  if (usages.length && !usages.some((expected) => key.usages.includes(expected))) {
+    let msg = "CryptoKey does not support this operation, its usages must include ";
+    if (usages.length > 2) {
+      const last4 = usages.pop();
+      msg += `one of ${usages.join(", ")}, or ${last4}.`;
+    } else if (usages.length === 2) {
+      msg += `one of ${usages[0]} or ${usages[1]}.`;
+    } else {
+      msg += `${usages[0]}.`;
+    }
+    throw new TypeError(msg);
   }
 }
-var HeaderComponent = class _HeaderComponent {
-  constructor(authService, connectService, vaultConfigService, router) {
-    this.authService = authService;
-    this.connectService = connectService;
-    this.vaultConfigService = vaultConfigService;
-    this.router = router;
-    this.backButtonLink = "";
-    this.backButtonEvent = new EventEmitter();
-    this.showClose = false;
-    this.closeButtonEvent = new EventEmitter();
+function checkSigCryptoKey(key, alg, ...usages) {
+  switch (alg) {
+    case "HS256":
+    case "HS384":
+    case "HS512": {
+      if (!isAlgorithm(key.algorithm, "HMAC")) throw unusable("HMAC");
+      const expected = parseInt(alg.slice(2), 10);
+      const actual = getHashLength(key.algorithm.hash);
+      if (actual !== expected) throw unusable(`SHA-${expected}`, "algorithm.hash");
+      break;
+    }
+    case "RS256":
+    case "RS384":
+    case "RS512": {
+      if (!isAlgorithm(key.algorithm, "RSASSA-PKCS1-v1_5")) throw unusable("RSASSA-PKCS1-v1_5");
+      const expected = parseInt(alg.slice(2), 10);
+      const actual = getHashLength(key.algorithm.hash);
+      if (actual !== expected) throw unusable(`SHA-${expected}`, "algorithm.hash");
+      break;
+    }
+    case "PS256":
+    case "PS384":
+    case "PS512": {
+      if (!isAlgorithm(key.algorithm, "RSA-PSS")) throw unusable("RSA-PSS");
+      const expected = parseInt(alg.slice(2), 10);
+      const actual = getHashLength(key.algorithm.hash);
+      if (actual !== expected) throw unusable(`SHA-${expected}`, "algorithm.hash");
+      break;
+    }
+    case "EdDSA": {
+      if (key.algorithm.name !== "Ed25519" && key.algorithm.name !== "Ed448") {
+        throw unusable("Ed25519 or Ed448");
+      }
+      break;
+    }
+    case "Ed25519": {
+      if (!isAlgorithm(key.algorithm, "Ed25519")) throw unusable("Ed25519");
+      break;
+    }
+    case "ES256":
+    case "ES384":
+    case "ES512": {
+      if (!isAlgorithm(key.algorithm, "ECDSA")) throw unusable("ECDSA");
+      const expected = getNamedCurve(alg);
+      const actual = key.algorithm.namedCurve;
+      if (actual !== expected) throw unusable(expected, "algorithm.namedCurve");
+      break;
+    }
+    default:
+      throw new TypeError("CryptoKey does not support this operation");
   }
-  ngOnInit() {
+  checkUsage(key, usages);
+}
+
+// node_modules/jose/dist/browser/lib/invalid_key_input.js
+function message(msg, actual, ...types2) {
+  types2 = types2.filter(Boolean);
+  if (types2.length > 2) {
+    const last4 = types2.pop();
+    msg += `one of type ${types2.join(", ")}, or ${last4}.`;
+  } else if (types2.length === 2) {
+    msg += `one of type ${types2[0]} or ${types2[1]}.`;
+  } else {
+    msg += `of type ${types2[0]}.`;
   }
-  backButtonClick(e) {
-    console.log("header: back button clicked");
-    this.backButtonEvent.emit(e);
+  if (actual == null) {
+    msg += ` Received ${actual}`;
+  } else if (typeof actual === "function" && actual.name) {
+    msg += ` Received function ${actual.name}`;
+  } else if (typeof actual === "object" && actual != null) {
+    if (actual.constructor?.name) {
+      msg += ` Received an instance of ${actual.constructor.name}`;
+    }
   }
-  closeButtonClick(e) {
-    console.log("header: close button clicked");
-    this.closeButtonEvent.emit(e);
+  return msg;
+}
+var invalid_key_input_default = (actual, ...types2) => {
+  return message("Key must be ", actual, ...types2);
+};
+function withAlg(alg, actual, ...types2) {
+  return message(`Key for the ${alg} algorithm must be `, actual, ...types2);
+}
+
+// node_modules/jose/dist/browser/runtime/is_key_like.js
+var is_key_like_default = (key) => {
+  if (isCryptoKey(key)) {
+    return true;
+  }
+  return key?.[Symbol.toStringTag] === "KeyObject";
+};
+var types = ["CryptoKey"];
+
+// node_modules/jose/dist/browser/lib/is_disjoint.js
+var isDisjoint = (...headers) => {
+  const sources = headers.filter(Boolean);
+  if (sources.length === 0 || sources.length === 1) {
+    return true;
+  }
+  let acc;
+  for (const header of sources) {
+    const parameters = Object.keys(header);
+    if (!acc || acc.size === 0) {
+      acc = new Set(parameters);
+      continue;
+    }
+    for (const parameter of parameters) {
+      if (acc.has(parameter)) {
+        return false;
+      }
+      acc.add(parameter);
+    }
+  }
+  return true;
+};
+var is_disjoint_default = isDisjoint;
+
+// node_modules/jose/dist/browser/lib/is_object.js
+function isObjectLike(value) {
+  return typeof value === "object" && value !== null;
+}
+function isObject(input2) {
+  if (!isObjectLike(input2) || Object.prototype.toString.call(input2) !== "[object Object]") {
+    return false;
+  }
+  if (Object.getPrototypeOf(input2) === null) {
+    return true;
+  }
+  let proto = input2;
+  while (Object.getPrototypeOf(proto) !== null) {
+    proto = Object.getPrototypeOf(proto);
+  }
+  return Object.getPrototypeOf(input2) === proto;
+}
+
+// node_modules/jose/dist/browser/runtime/check_key_length.js
+var check_key_length_default = (alg, key) => {
+  if (alg.startsWith("RS") || alg.startsWith("PS")) {
+    const {
+      modulusLength
+    } = key.algorithm;
+    if (typeof modulusLength !== "number" || modulusLength < 2048) {
+      throw new TypeError(`${alg} requires key modulusLength to be 2048 bits or larger`);
+    }
+  }
+};
+
+// node_modules/jose/dist/browser/lib/is_jwk.js
+function isJWK(key) {
+  return isObject(key) && typeof key.kty === "string";
+}
+function isPrivateJWK(key) {
+  return key.kty !== "oct" && typeof key.d === "string";
+}
+function isPublicJWK(key) {
+  return key.kty !== "oct" && typeof key.d === "undefined";
+}
+function isSecretJWK(key) {
+  return isJWK(key) && key.kty === "oct" && typeof key.k === "string";
+}
+
+// node_modules/jose/dist/browser/runtime/jwk_to_key.js
+function subtleMapping(jwk) {
+  let algorithm;
+  let keyUsages;
+  switch (jwk.kty) {
+    case "RSA": {
+      switch (jwk.alg) {
+        case "PS256":
+        case "PS384":
+        case "PS512":
+          algorithm = {
+            name: "RSA-PSS",
+            hash: `SHA-${jwk.alg.slice(-3)}`
+          };
+          keyUsages = jwk.d ? ["sign"] : ["verify"];
+          break;
+        case "RS256":
+        case "RS384":
+        case "RS512":
+          algorithm = {
+            name: "RSASSA-PKCS1-v1_5",
+            hash: `SHA-${jwk.alg.slice(-3)}`
+          };
+          keyUsages = jwk.d ? ["sign"] : ["verify"];
+          break;
+        case "RSA-OAEP":
+        case "RSA-OAEP-256":
+        case "RSA-OAEP-384":
+        case "RSA-OAEP-512":
+          algorithm = {
+            name: "RSA-OAEP",
+            hash: `SHA-${parseInt(jwk.alg.slice(-3), 10) || 1}`
+          };
+          keyUsages = jwk.d ? ["decrypt", "unwrapKey"] : ["encrypt", "wrapKey"];
+          break;
+        default:
+          throw new JOSENotSupported('Invalid or unsupported JWK "alg" (Algorithm) Parameter value');
+      }
+      break;
+    }
+    case "EC": {
+      switch (jwk.alg) {
+        case "ES256":
+          algorithm = {
+            name: "ECDSA",
+            namedCurve: "P-256"
+          };
+          keyUsages = jwk.d ? ["sign"] : ["verify"];
+          break;
+        case "ES384":
+          algorithm = {
+            name: "ECDSA",
+            namedCurve: "P-384"
+          };
+          keyUsages = jwk.d ? ["sign"] : ["verify"];
+          break;
+        case "ES512":
+          algorithm = {
+            name: "ECDSA",
+            namedCurve: "P-521"
+          };
+          keyUsages = jwk.d ? ["sign"] : ["verify"];
+          break;
+        case "ECDH-ES":
+        case "ECDH-ES+A128KW":
+        case "ECDH-ES+A192KW":
+        case "ECDH-ES+A256KW":
+          algorithm = {
+            name: "ECDH",
+            namedCurve: jwk.crv
+          };
+          keyUsages = jwk.d ? ["deriveBits"] : [];
+          break;
+        default:
+          throw new JOSENotSupported('Invalid or unsupported JWK "alg" (Algorithm) Parameter value');
+      }
+      break;
+    }
+    case "OKP": {
+      switch (jwk.alg) {
+        case "Ed25519":
+          algorithm = {
+            name: "Ed25519"
+          };
+          keyUsages = jwk.d ? ["sign"] : ["verify"];
+          break;
+        case "EdDSA":
+          algorithm = {
+            name: jwk.crv
+          };
+          keyUsages = jwk.d ? ["sign"] : ["verify"];
+          break;
+        case "ECDH-ES":
+        case "ECDH-ES+A128KW":
+        case "ECDH-ES+A192KW":
+        case "ECDH-ES+A256KW":
+          algorithm = {
+            name: jwk.crv
+          };
+          keyUsages = jwk.d ? ["deriveBits"] : [];
+          break;
+        default:
+          throw new JOSENotSupported('Invalid or unsupported JWK "alg" (Algorithm) Parameter value');
+      }
+      break;
+    }
+    default:
+      throw new JOSENotSupported('Invalid or unsupported JWK "kty" (Key Type) Parameter value');
+  }
+  return {
+    algorithm,
+    keyUsages
+  };
+}
+var parse = (jwk) => __async(void 0, null, function* () {
+  if (!jwk.alg) {
+    throw new TypeError('"alg" argument is required when "jwk.alg" is not present');
+  }
+  const {
+    algorithm,
+    keyUsages
+  } = subtleMapping(jwk);
+  const rest = [algorithm, jwk.ext ?? false, jwk.key_ops ?? keyUsages];
+  const keyData = __spreadValues({}, jwk);
+  delete keyData.alg;
+  delete keyData.use;
+  return webcrypto_default.subtle.importKey("jwk", keyData, ...rest);
+});
+var jwk_to_key_default = parse;
+
+// node_modules/jose/dist/browser/runtime/normalize_key.js
+var exportKeyValue = (k) => decode3(k);
+var privCache;
+var pubCache;
+var isKeyObject = (key) => {
+  return key?.[Symbol.toStringTag] === "KeyObject";
+};
+var importAndCache = (cache, key, jwk, alg, freeze = false) => __async(void 0, null, function* () {
+  let cached = cache.get(key);
+  if (cached?.[alg]) {
+    return cached[alg];
+  }
+  const cryptoKey = yield jwk_to_key_default(__spreadProps(__spreadValues({}, jwk), {
+    alg
+  }));
+  if (freeze) Object.freeze(key);
+  if (!cached) {
+    cache.set(key, {
+      [alg]: cryptoKey
+    });
+  } else {
+    cached[alg] = cryptoKey;
+  }
+  return cryptoKey;
+});
+var normalizePublicKey = (key, alg) => {
+  if (isKeyObject(key)) {
+    let jwk = key.export({
+      format: "jwk"
+    });
+    delete jwk.d;
+    delete jwk.dp;
+    delete jwk.dq;
+    delete jwk.p;
+    delete jwk.q;
+    delete jwk.qi;
+    if (jwk.k) {
+      return exportKeyValue(jwk.k);
+    }
+    pubCache || (pubCache = /* @__PURE__ */ new WeakMap());
+    return importAndCache(pubCache, key, jwk, alg);
+  }
+  if (isJWK(key)) {
+    if (key.k) return decode3(key.k);
+    pubCache || (pubCache = /* @__PURE__ */ new WeakMap());
+    const cryptoKey = importAndCache(pubCache, key, key, alg, true);
+    return cryptoKey;
+  }
+  return key;
+};
+var normalizePrivateKey = (key, alg) => {
+  if (isKeyObject(key)) {
+    let jwk = key.export({
+      format: "jwk"
+    });
+    if (jwk.k) {
+      return exportKeyValue(jwk.k);
+    }
+    privCache || (privCache = /* @__PURE__ */ new WeakMap());
+    return importAndCache(privCache, key, jwk, alg);
+  }
+  if (isJWK(key)) {
+    if (key.k) return decode3(key.k);
+    privCache || (privCache = /* @__PURE__ */ new WeakMap());
+    const cryptoKey = importAndCache(privCache, key, key, alg, true);
+    return cryptoKey;
+  }
+  return key;
+};
+var normalize_key_default = {
+  normalizePublicKey,
+  normalizePrivateKey
+};
+
+// node_modules/jose/dist/browser/key/import.js
+function importJWK(jwk, alg) {
+  return __async(this, null, function* () {
+    if (!isObject(jwk)) {
+      throw new TypeError("JWK must be an object");
+    }
+    alg || (alg = jwk.alg);
+    switch (jwk.kty) {
+      case "oct":
+        if (typeof jwk.k !== "string" || !jwk.k) {
+          throw new TypeError('missing "k" (Key Value) Parameter value');
+        }
+        return decode3(jwk.k);
+      case "RSA":
+        if ("oth" in jwk && jwk.oth !== void 0) {
+          throw new JOSENotSupported('RSA JWK "oth" (Other Primes Info) Parameter value is not supported');
+        }
+      case "EC":
+      case "OKP":
+        return jwk_to_key_default(__spreadProps(__spreadValues({}, jwk), {
+          alg
+        }));
+      default:
+        throw new JOSENotSupported('Unsupported "kty" (Key Type) Parameter value');
+    }
+  });
+}
+
+// node_modules/jose/dist/browser/lib/check_key_type.js
+var tag = (key) => key?.[Symbol.toStringTag];
+var jwkMatchesOp = (alg, key, usage) => {
+  if (key.use !== void 0 && key.use !== "sig") {
+    throw new TypeError("Invalid key for this operation, when present its use must be sig");
+  }
+  if (key.key_ops !== void 0 && key.key_ops.includes?.(usage) !== true) {
+    throw new TypeError(`Invalid key for this operation, when present its key_ops must include ${usage}`);
+  }
+  if (key.alg !== void 0 && key.alg !== alg) {
+    throw new TypeError(`Invalid key for this operation, when present its alg must be ${alg}`);
+  }
+  return true;
+};
+var symmetricTypeCheck = (alg, key, usage, allowJwk) => {
+  if (key instanceof Uint8Array) return;
+  if (allowJwk && isJWK(key)) {
+    if (isSecretJWK(key) && jwkMatchesOp(alg, key, usage)) return;
+    throw new TypeError(`JSON Web Key for symmetric algorithms must have JWK "kty" (Key Type) equal to "oct" and the JWK "k" (Key Value) present`);
+  }
+  if (!is_key_like_default(key)) {
+    throw new TypeError(withAlg(alg, key, ...types, "Uint8Array", allowJwk ? "JSON Web Key" : null));
+  }
+  if (key.type !== "secret") {
+    throw new TypeError(`${tag(key)} instances for symmetric algorithms must be of type "secret"`);
+  }
+};
+var asymmetricTypeCheck = (alg, key, usage, allowJwk) => {
+  if (allowJwk && isJWK(key)) {
+    switch (usage) {
+      case "sign":
+        if (isPrivateJWK(key) && jwkMatchesOp(alg, key, usage)) return;
+        throw new TypeError(`JSON Web Key for this operation be a private JWK`);
+      case "verify":
+        if (isPublicJWK(key) && jwkMatchesOp(alg, key, usage)) return;
+        throw new TypeError(`JSON Web Key for this operation be a public JWK`);
+    }
+  }
+  if (!is_key_like_default(key)) {
+    throw new TypeError(withAlg(alg, key, ...types, allowJwk ? "JSON Web Key" : null));
+  }
+  if (key.type === "secret") {
+    throw new TypeError(`${tag(key)} instances for asymmetric algorithms must not be of type "secret"`);
+  }
+  if (usage === "sign" && key.type === "public") {
+    throw new TypeError(`${tag(key)} instances for asymmetric algorithm signing must be of type "private"`);
+  }
+  if (usage === "decrypt" && key.type === "public") {
+    throw new TypeError(`${tag(key)} instances for asymmetric algorithm decryption must be of type "private"`);
+  }
+  if (key.algorithm && usage === "verify" && key.type === "private") {
+    throw new TypeError(`${tag(key)} instances for asymmetric algorithm verifying must be of type "public"`);
+  }
+  if (key.algorithm && usage === "encrypt" && key.type === "private") {
+    throw new TypeError(`${tag(key)} instances for asymmetric algorithm encryption must be of type "public"`);
+  }
+};
+function checkKeyType(allowJwk, alg, key, usage) {
+  const symmetric = alg.startsWith("HS") || alg === "dir" || alg.startsWith("PBES2") || /^A\d{3}(?:GCM)?KW$/.test(alg);
+  if (symmetric) {
+    symmetricTypeCheck(alg, key, usage, allowJwk);
+  } else {
+    asymmetricTypeCheck(alg, key, usage, allowJwk);
+  }
+}
+var check_key_type_default = checkKeyType.bind(void 0, false);
+var checkKeyTypeWithJwk = checkKeyType.bind(void 0, true);
+
+// node_modules/jose/dist/browser/lib/validate_crit.js
+function validateCrit(Err, recognizedDefault, recognizedOption, protectedHeader, joseHeader) {
+  if (joseHeader.crit !== void 0 && protectedHeader?.crit === void 0) {
+    throw new Err('"crit" (Critical) Header Parameter MUST be integrity protected');
+  }
+  if (!protectedHeader || protectedHeader.crit === void 0) {
+    return /* @__PURE__ */ new Set();
+  }
+  if (!Array.isArray(protectedHeader.crit) || protectedHeader.crit.length === 0 || protectedHeader.crit.some((input2) => typeof input2 !== "string" || input2.length === 0)) {
+    throw new Err('"crit" (Critical) Header Parameter MUST be an array of non-empty strings when present');
+  }
+  let recognized;
+  if (recognizedOption !== void 0) {
+    recognized = new Map([...Object.entries(recognizedOption), ...recognizedDefault.entries()]);
+  } else {
+    recognized = recognizedDefault;
+  }
+  for (const parameter of protectedHeader.crit) {
+    if (!recognized.has(parameter)) {
+      throw new JOSENotSupported(`Extension Header Parameter "${parameter}" is not recognized`);
+    }
+    if (joseHeader[parameter] === void 0) {
+      throw new Err(`Extension Header Parameter "${parameter}" is missing`);
+    }
+    if (recognized.get(parameter) && protectedHeader[parameter] === void 0) {
+      throw new Err(`Extension Header Parameter "${parameter}" MUST be integrity protected`);
+    }
+  }
+  return new Set(protectedHeader.crit);
+}
+var validate_crit_default = validateCrit;
+
+// node_modules/jose/dist/browser/lib/validate_algorithms.js
+var validateAlgorithms = (option, algorithms) => {
+  if (algorithms !== void 0 && (!Array.isArray(algorithms) || algorithms.some((s) => typeof s !== "string"))) {
+    throw new TypeError(`"${option}" option must be an array of strings`);
+  }
+  if (!algorithms) {
+    return void 0;
+  }
+  return new Set(algorithms);
+};
+var validate_algorithms_default = validateAlgorithms;
+
+// node_modules/jose/dist/browser/runtime/subtle_dsa.js
+function subtleDsa(alg, algorithm) {
+  const hash = `SHA-${alg.slice(-3)}`;
+  switch (alg) {
+    case "HS256":
+    case "HS384":
+    case "HS512":
+      return {
+        hash,
+        name: "HMAC"
+      };
+    case "PS256":
+    case "PS384":
+    case "PS512":
+      return {
+        hash,
+        name: "RSA-PSS",
+        saltLength: alg.slice(-3) >> 3
+      };
+    case "RS256":
+    case "RS384":
+    case "RS512":
+      return {
+        hash,
+        name: "RSASSA-PKCS1-v1_5"
+      };
+    case "ES256":
+    case "ES384":
+    case "ES512":
+      return {
+        hash,
+        name: "ECDSA",
+        namedCurve: algorithm.namedCurve
+      };
+    case "Ed25519":
+      return {
+        name: "Ed25519"
+      };
+    case "EdDSA":
+      return {
+        name: algorithm.name
+      };
+    default:
+      throw new JOSENotSupported(`alg ${alg} is not supported either by JOSE or your javascript runtime`);
+  }
+}
+
+// node_modules/jose/dist/browser/runtime/get_sign_verify_key.js
+function getCryptoKey(alg, key, usage) {
+  return __async(this, null, function* () {
+    if (usage === "sign") {
+      key = yield normalize_key_default.normalizePrivateKey(key, alg);
+    }
+    if (usage === "verify") {
+      key = yield normalize_key_default.normalizePublicKey(key, alg);
+    }
+    if (isCryptoKey(key)) {
+      checkSigCryptoKey(key, alg, usage);
+      return key;
+    }
+    if (key instanceof Uint8Array) {
+      if (!alg.startsWith("HS")) {
+        throw new TypeError(invalid_key_input_default(key, ...types));
+      }
+      return webcrypto_default.subtle.importKey("raw", key, {
+        hash: `SHA-${alg.slice(-3)}`,
+        name: "HMAC"
+      }, false, [usage]);
+    }
+    throw new TypeError(invalid_key_input_default(key, ...types, "Uint8Array", "JSON Web Key"));
+  });
+}
+
+// node_modules/jose/dist/browser/runtime/verify.js
+var verify = (alg, key, signature, data) => __async(void 0, null, function* () {
+  const cryptoKey = yield getCryptoKey(alg, key, "verify");
+  check_key_length_default(alg, cryptoKey);
+  const algorithm = subtleDsa(alg, cryptoKey.algorithm);
+  try {
+    return yield webcrypto_default.subtle.verify(algorithm, cryptoKey, signature, data);
+  } catch {
+    return false;
+  }
+});
+var verify_default = verify;
+
+// node_modules/jose/dist/browser/jws/flattened/verify.js
+function flattenedVerify(jws, key, options) {
+  return __async(this, null, function* () {
+    if (!isObject(jws)) {
+      throw new JWSInvalid("Flattened JWS must be an object");
+    }
+    if (jws.protected === void 0 && jws.header === void 0) {
+      throw new JWSInvalid('Flattened JWS must have either of the "protected" or "header" members');
+    }
+    if (jws.protected !== void 0 && typeof jws.protected !== "string") {
+      throw new JWSInvalid("JWS Protected Header incorrect type");
+    }
+    if (jws.payload === void 0) {
+      throw new JWSInvalid("JWS Payload missing");
+    }
+    if (typeof jws.signature !== "string") {
+      throw new JWSInvalid("JWS Signature missing or incorrect type");
+    }
+    if (jws.header !== void 0 && !isObject(jws.header)) {
+      throw new JWSInvalid("JWS Unprotected Header incorrect type");
+    }
+    let parsedProt = {};
+    if (jws.protected) {
+      try {
+        const protectedHeader = decode3(jws.protected);
+        parsedProt = JSON.parse(decoder.decode(protectedHeader));
+      } catch {
+        throw new JWSInvalid("JWS Protected Header is invalid");
+      }
+    }
+    if (!is_disjoint_default(parsedProt, jws.header)) {
+      throw new JWSInvalid("JWS Protected and JWS Unprotected Header Parameter names must be disjoint");
+    }
+    const joseHeader = __spreadValues(__spreadValues({}, parsedProt), jws.header);
+    const extensions = validate_crit_default(JWSInvalid, /* @__PURE__ */ new Map([["b64", true]]), options?.crit, parsedProt, joseHeader);
+    let b64 = true;
+    if (extensions.has("b64")) {
+      b64 = parsedProt.b64;
+      if (typeof b64 !== "boolean") {
+        throw new JWSInvalid('The "b64" (base64url-encode payload) Header Parameter must be a boolean');
+      }
+    }
+    const {
+      alg
+    } = joseHeader;
+    if (typeof alg !== "string" || !alg) {
+      throw new JWSInvalid('JWS "alg" (Algorithm) Header Parameter missing or invalid');
+    }
+    const algorithms = options && validate_algorithms_default("algorithms", options.algorithms);
+    if (algorithms && !algorithms.has(alg)) {
+      throw new JOSEAlgNotAllowed('"alg" (Algorithm) Header Parameter value not allowed');
+    }
+    if (b64) {
+      if (typeof jws.payload !== "string") {
+        throw new JWSInvalid("JWS Payload must be a string");
+      }
+    } else if (typeof jws.payload !== "string" && !(jws.payload instanceof Uint8Array)) {
+      throw new JWSInvalid("JWS Payload must be a string or an Uint8Array instance");
+    }
+    let resolvedKey = false;
+    if (typeof key === "function") {
+      key = yield key(parsedProt, jws);
+      resolvedKey = true;
+      checkKeyTypeWithJwk(alg, key, "verify");
+      if (isJWK(key)) {
+        key = yield importJWK(key, alg);
+      }
+    } else {
+      checkKeyTypeWithJwk(alg, key, "verify");
+    }
+    const data = concat2(encoder.encode(jws.protected ?? ""), encoder.encode("."), typeof jws.payload === "string" ? encoder.encode(jws.payload) : jws.payload);
+    let signature;
+    try {
+      signature = decode3(jws.signature);
+    } catch {
+      throw new JWSInvalid("Failed to base64url decode the signature");
+    }
+    const verified = yield verify_default(alg, key, signature, data);
+    if (!verified) {
+      throw new JWSSignatureVerificationFailed();
+    }
+    let payload;
+    if (b64) {
+      try {
+        payload = decode3(jws.payload);
+      } catch {
+        throw new JWSInvalid("Failed to base64url decode the payload");
+      }
+    } else if (typeof jws.payload === "string") {
+      payload = encoder.encode(jws.payload);
+    } else {
+      payload = jws.payload;
+    }
+    const result = {
+      payload
+    };
+    if (jws.protected !== void 0) {
+      result.protectedHeader = parsedProt;
+    }
+    if (jws.header !== void 0) {
+      result.unprotectedHeader = jws.header;
+    }
+    if (resolvedKey) {
+      return __spreadProps(__spreadValues({}, result), {
+        key
+      });
+    }
+    return result;
+  });
+}
+
+// node_modules/jose/dist/browser/jws/compact/verify.js
+function compactVerify(jws, key, options) {
+  return __async(this, null, function* () {
+    if (jws instanceof Uint8Array) {
+      jws = decoder.decode(jws);
+    }
+    if (typeof jws !== "string") {
+      throw new JWSInvalid("Compact JWS must be a string or Uint8Array");
+    }
+    const {
+      0: protectedHeader,
+      1: payload,
+      2: signature,
+      length
+    } = jws.split(".");
+    if (length !== 3) {
+      throw new JWSInvalid("Invalid Compact JWS");
+    }
+    const verified = yield flattenedVerify({
+      payload,
+      protected: protectedHeader,
+      signature
+    }, key, options);
+    const result = {
+      payload: verified.payload,
+      protectedHeader: verified.protectedHeader
+    };
+    if (typeof key === "function") {
+      return __spreadProps(__spreadValues({}, result), {
+        key: verified.key
+      });
+    }
+    return result;
+  });
+}
+
+// node_modules/jose/dist/browser/lib/epoch.js
+var epoch_default = (date) => Math.floor(date.getTime() / 1e3);
+
+// node_modules/jose/dist/browser/lib/secs.js
+var minute = 60;
+var hour = minute * 60;
+var day = hour * 24;
+var week = day * 7;
+var year = day * 365.25;
+var REGEX = /^(\+|\-)? ?(\d+|\d+\.\d+) ?(seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)(?: (ago|from now))?$/i;
+var secs_default = (str) => {
+  const matched = REGEX.exec(str);
+  if (!matched || matched[4] && matched[1]) {
+    throw new TypeError("Invalid time period format");
+  }
+  const value = parseFloat(matched[2]);
+  const unit = matched[3].toLowerCase();
+  let numericDate;
+  switch (unit) {
+    case "sec":
+    case "secs":
+    case "second":
+    case "seconds":
+    case "s":
+      numericDate = Math.round(value);
+      break;
+    case "minute":
+    case "minutes":
+    case "min":
+    case "mins":
+    case "m":
+      numericDate = Math.round(value * minute);
+      break;
+    case "hour":
+    case "hours":
+    case "hr":
+    case "hrs":
+    case "h":
+      numericDate = Math.round(value * hour);
+      break;
+    case "day":
+    case "days":
+    case "d":
+      numericDate = Math.round(value * day);
+      break;
+    case "week":
+    case "weeks":
+    case "w":
+      numericDate = Math.round(value * week);
+      break;
+    default:
+      numericDate = Math.round(value * year);
+      break;
+  }
+  if (matched[1] === "-" || matched[4] === "ago") {
+    return -numericDate;
+  }
+  return numericDate;
+};
+
+// node_modules/jose/dist/browser/lib/jwt_claims_set.js
+var normalizeTyp = (value) => value.toLowerCase().replace(/^application\//, "");
+var checkAudiencePresence = (audPayload, audOption) => {
+  if (typeof audPayload === "string") {
+    return audOption.includes(audPayload);
+  }
+  if (Array.isArray(audPayload)) {
+    return audOption.some(Set.prototype.has.bind(new Set(audPayload)));
+  }
+  return false;
+};
+var jwt_claims_set_default = (protectedHeader, encodedPayload, options = {}) => {
+  let payload;
+  try {
+    payload = JSON.parse(decoder.decode(encodedPayload));
+  } catch {
+  }
+  if (!isObject(payload)) {
+    throw new JWTInvalid("JWT Claims Set must be a top-level JSON object");
+  }
+  const {
+    typ
+  } = options;
+  if (typ && (typeof protectedHeader.typ !== "string" || normalizeTyp(protectedHeader.typ) !== normalizeTyp(typ))) {
+    throw new JWTClaimValidationFailed('unexpected "typ" JWT header value', payload, "typ", "check_failed");
+  }
+  const {
+    requiredClaims = [],
+    issuer,
+    subject,
+    audience,
+    maxTokenAge
+  } = options;
+  const presenceCheck = [...requiredClaims];
+  if (maxTokenAge !== void 0) presenceCheck.push("iat");
+  if (audience !== void 0) presenceCheck.push("aud");
+  if (subject !== void 0) presenceCheck.push("sub");
+  if (issuer !== void 0) presenceCheck.push("iss");
+  for (const claim of new Set(presenceCheck.reverse())) {
+    if (!(claim in payload)) {
+      throw new JWTClaimValidationFailed(`missing required "${claim}" claim`, payload, claim, "missing");
+    }
+  }
+  if (issuer && !(Array.isArray(issuer) ? issuer : [issuer]).includes(payload.iss)) {
+    throw new JWTClaimValidationFailed('unexpected "iss" claim value', payload, "iss", "check_failed");
+  }
+  if (subject && payload.sub !== subject) {
+    throw new JWTClaimValidationFailed('unexpected "sub" claim value', payload, "sub", "check_failed");
+  }
+  if (audience && !checkAudiencePresence(payload.aud, typeof audience === "string" ? [audience] : audience)) {
+    throw new JWTClaimValidationFailed('unexpected "aud" claim value', payload, "aud", "check_failed");
+  }
+  let tolerance;
+  switch (typeof options.clockTolerance) {
+    case "string":
+      tolerance = secs_default(options.clockTolerance);
+      break;
+    case "number":
+      tolerance = options.clockTolerance;
+      break;
+    case "undefined":
+      tolerance = 0;
+      break;
+    default:
+      throw new TypeError("Invalid clockTolerance option type");
+  }
+  const {
+    currentDate
+  } = options;
+  const now = epoch_default(currentDate || /* @__PURE__ */ new Date());
+  if ((payload.iat !== void 0 || maxTokenAge) && typeof payload.iat !== "number") {
+    throw new JWTClaimValidationFailed('"iat" claim must be a number', payload, "iat", "invalid");
+  }
+  if (payload.nbf !== void 0) {
+    if (typeof payload.nbf !== "number") {
+      throw new JWTClaimValidationFailed('"nbf" claim must be a number', payload, "nbf", "invalid");
+    }
+    if (payload.nbf > now + tolerance) {
+      throw new JWTClaimValidationFailed('"nbf" claim timestamp check failed', payload, "nbf", "check_failed");
+    }
+  }
+  if (payload.exp !== void 0) {
+    if (typeof payload.exp !== "number") {
+      throw new JWTClaimValidationFailed('"exp" claim must be a number', payload, "exp", "invalid");
+    }
+    if (payload.exp <= now - tolerance) {
+      throw new JWTExpired('"exp" claim timestamp check failed', payload, "exp", "check_failed");
+    }
+  }
+  if (maxTokenAge) {
+    const age = now - payload.iat;
+    const max = typeof maxTokenAge === "number" ? maxTokenAge : secs_default(maxTokenAge);
+    if (age - tolerance > max) {
+      throw new JWTExpired('"iat" claim timestamp check failed (too far in the past)', payload, "iat", "check_failed");
+    }
+    if (age < 0 - tolerance) {
+      throw new JWTClaimValidationFailed('"iat" claim timestamp check failed (it should be in the past)', payload, "iat", "check_failed");
+    }
+  }
+  return payload;
+};
+
+// node_modules/jose/dist/browser/jwt/verify.js
+function jwtVerify(jwt, key, options) {
+  return __async(this, null, function* () {
+    const verified = yield compactVerify(jwt, key, options);
+    if (verified.protectedHeader.crit?.includes("b64") && verified.protectedHeader.b64 === false) {
+      throw new JWTInvalid("JWTs MUST NOT use unencoded payload");
+    }
+    const payload = jwt_claims_set_default(verified.protectedHeader, verified.payload, options);
+    const result = {
+      payload,
+      protectedHeader: verified.protectedHeader
+    };
+    if (typeof key === "function") {
+      return __spreadProps(__spreadValues({}, result), {
+        key: verified.key
+      });
+    }
+    return result;
+  });
+}
+
+// node_modules/jose/dist/browser/jwks/local.js
+function getKtyFromAlg(alg) {
+  switch (typeof alg === "string" && alg.slice(0, 2)) {
+    case "RS":
+    case "PS":
+      return "RSA";
+    case "ES":
+      return "EC";
+    case "Ed":
+      return "OKP";
+    default:
+      throw new JOSENotSupported('Unsupported "alg" value for a JSON Web Key Set');
+  }
+}
+function isJWKSLike(jwks) {
+  return jwks && typeof jwks === "object" && Array.isArray(jwks.keys) && jwks.keys.every(isJWKLike);
+}
+function isJWKLike(key) {
+  return isObject(key);
+}
+function clone(obj) {
+  if (typeof structuredClone === "function") {
+    return structuredClone(obj);
+  }
+  return JSON.parse(JSON.stringify(obj));
+}
+var LocalJWKSet = class {
+  constructor(jwks) {
+    this._cached = /* @__PURE__ */ new WeakMap();
+    if (!isJWKSLike(jwks)) {
+      throw new JWKSInvalid("JSON Web Key Set malformed");
+    }
+    this._jwks = clone(jwks);
+  }
+  getKey(protectedHeader, token) {
+    return __async(this, null, function* () {
+      const {
+        alg,
+        kid
+      } = __spreadValues(__spreadValues({}, protectedHeader), token?.header);
+      const kty = getKtyFromAlg(alg);
+      const candidates = this._jwks.keys.filter((jwk2) => {
+        let candidate = kty === jwk2.kty;
+        if (candidate && typeof kid === "string") {
+          candidate = kid === jwk2.kid;
+        }
+        if (candidate && typeof jwk2.alg === "string") {
+          candidate = alg === jwk2.alg;
+        }
+        if (candidate && typeof jwk2.use === "string") {
+          candidate = jwk2.use === "sig";
+        }
+        if (candidate && Array.isArray(jwk2.key_ops)) {
+          candidate = jwk2.key_ops.includes("verify");
+        }
+        if (candidate) {
+          switch (alg) {
+            case "ES256":
+              candidate = jwk2.crv === "P-256";
+              break;
+            case "ES256K":
+              candidate = jwk2.crv === "secp256k1";
+              break;
+            case "ES384":
+              candidate = jwk2.crv === "P-384";
+              break;
+            case "ES512":
+              candidate = jwk2.crv === "P-521";
+              break;
+            case "Ed25519":
+              candidate = jwk2.crv === "Ed25519";
+              break;
+            case "EdDSA":
+              candidate = jwk2.crv === "Ed25519" || jwk2.crv === "Ed448";
+              break;
+          }
+        }
+        return candidate;
+      });
+      const {
+        0: jwk,
+        length
+      } = candidates;
+      if (length === 0) {
+        throw new JWKSNoMatchingKey();
+      }
+      if (length !== 1) {
+        const error = new JWKSMultipleMatchingKeys();
+        const {
+          _cached
+        } = this;
+        error[Symbol.asyncIterator] = function() {
+          return __asyncGenerator(this, null, function* () {
+            for (const jwk2 of candidates) {
+              try {
+                yield yield new __await(importWithAlgCache(_cached, jwk2, alg));
+              } catch {
+              }
+            }
+          });
+        };
+        throw error;
+      }
+      return importWithAlgCache(this._cached, jwk, alg);
+    });
+  }
+};
+function importWithAlgCache(cache, jwk, alg) {
+  return __async(this, null, function* () {
+    const cached = cache.get(jwk) || cache.set(jwk, {}).get(jwk);
+    if (cached[alg] === void 0) {
+      const key = yield importJWK(__spreadProps(__spreadValues({}, jwk), {
+        ext: true
+      }), alg);
+      if (key instanceof Uint8Array || key.type !== "public") {
+        throw new JWKSInvalid("JSON Web Key Set members must be public keys");
+      }
+      cached[alg] = key;
+    }
+    return cached[alg];
+  });
+}
+function createLocalJWKSet(jwks) {
+  const set = new LocalJWKSet(jwks);
+  const localJWKSet = (protectedHeader, token) => __async(this, null, function* () {
+    return set.getKey(protectedHeader, token);
+  });
+  Object.defineProperties(localJWKSet, {
+    jwks: {
+      value: () => clone(set._jwks),
+      enumerable: true,
+      configurable: false,
+      writable: false
+    }
+  });
+  return localJWKSet;
+}
+
+// node_modules/jose/dist/browser/runtime/fetch_jwks.js
+var fetchJwks = (url, timeout2, options) => __async(void 0, null, function* () {
+  let controller;
+  let id;
+  let timedOut = false;
+  if (typeof AbortController === "function") {
+    controller = new AbortController();
+    id = setTimeout(() => {
+      timedOut = true;
+      controller.abort();
+    }, timeout2);
+  }
+  const response = yield fetch(url.href, {
+    signal: controller ? controller.signal : void 0,
+    redirect: "manual",
+    headers: options.headers
+  }).catch((err) => {
+    if (timedOut) throw new JWKSTimeout();
+    throw err;
+  });
+  if (id !== void 0) clearTimeout(id);
+  if (response.status !== 200) {
+    throw new JOSEError("Expected 200 OK from the JSON Web Key Set HTTP response");
+  }
+  try {
+    return yield response.json();
+  } catch {
+    throw new JOSEError("Failed to parse the JSON Web Key Set HTTP response as JSON");
+  }
+});
+var fetch_jwks_default = fetchJwks;
+
+// node_modules/jose/dist/browser/jwks/remote.js
+function isCloudflareWorkers() {
+  return typeof WebSocketPair !== "undefined" || typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers" || typeof EdgeRuntime !== "undefined" && EdgeRuntime === "vercel";
+}
+var USER_AGENT;
+if (typeof navigator === "undefined" || !navigator.userAgent?.startsWith?.("Mozilla/5.0 ")) {
+  const NAME = "jose";
+  const VERSION6 = "v5.10.0";
+  USER_AGENT = `${NAME}/${VERSION6}`;
+}
+var jwksCache = Symbol();
+function isFreshJwksCache(input2, cacheMaxAge) {
+  if (typeof input2 !== "object" || input2 === null) {
+    return false;
+  }
+  if (!("uat" in input2) || typeof input2.uat !== "number" || Date.now() - input2.uat >= cacheMaxAge) {
+    return false;
+  }
+  if (!("jwks" in input2) || !isObject(input2.jwks) || !Array.isArray(input2.jwks.keys) || !Array.prototype.every.call(input2.jwks.keys, isObject)) {
+    return false;
+  }
+  return true;
+}
+var RemoteJWKSet = class {
+  constructor(url, options) {
+    if (!(url instanceof URL)) {
+      throw new TypeError("url must be an instance of URL");
+    }
+    this._url = new URL(url.href);
+    this._options = {
+      agent: options?.agent,
+      headers: options?.headers
+    };
+    this._timeoutDuration = typeof options?.timeoutDuration === "number" ? options?.timeoutDuration : 5e3;
+    this._cooldownDuration = typeof options?.cooldownDuration === "number" ? options?.cooldownDuration : 3e4;
+    this._cacheMaxAge = typeof options?.cacheMaxAge === "number" ? options?.cacheMaxAge : 6e5;
+    if (options?.[jwksCache] !== void 0) {
+      this._cache = options?.[jwksCache];
+      if (isFreshJwksCache(options?.[jwksCache], this._cacheMaxAge)) {
+        this._jwksTimestamp = this._cache.uat;
+        this._local = createLocalJWKSet(this._cache.jwks);
+      }
+    }
+  }
+  coolingDown() {
+    return typeof this._jwksTimestamp === "number" ? Date.now() < this._jwksTimestamp + this._cooldownDuration : false;
+  }
+  fresh() {
+    return typeof this._jwksTimestamp === "number" ? Date.now() < this._jwksTimestamp + this._cacheMaxAge : false;
+  }
+  getKey(protectedHeader, token) {
+    return __async(this, null, function* () {
+      if (!this._local || !this.fresh()) {
+        yield this.reload();
+      }
+      try {
+        return yield this._local(protectedHeader, token);
+      } catch (err) {
+        if (err instanceof JWKSNoMatchingKey) {
+          if (this.coolingDown() === false) {
+            yield this.reload();
+            return this._local(protectedHeader, token);
+          }
+        }
+        throw err;
+      }
+    });
+  }
+  reload() {
+    return __async(this, null, function* () {
+      if (this._pendingFetch && isCloudflareWorkers()) {
+        this._pendingFetch = void 0;
+      }
+      const headers = new Headers(this._options.headers);
+      if (USER_AGENT && !headers.has("User-Agent")) {
+        headers.set("User-Agent", USER_AGENT);
+        this._options.headers = Object.fromEntries(headers.entries());
+      }
+      this._pendingFetch || (this._pendingFetch = fetch_jwks_default(this._url, this._timeoutDuration, this._options).then((json) => {
+        this._local = createLocalJWKSet(json);
+        if (this._cache) {
+          this._cache.uat = Date.now();
+          this._cache.jwks = json;
+        }
+        this._jwksTimestamp = Date.now();
+        this._pendingFetch = void 0;
+      }).catch((err) => {
+        this._pendingFetch = void 0;
+        throw err;
+      }));
+      yield this._pendingFetch;
+    });
+  }
+};
+function createRemoteJWKSet(url, options) {
+  const set = new RemoteJWKSet(url, options);
+  const remoteJWKSet = (protectedHeader, token) => __async(this, null, function* () {
+    return set.getKey(protectedHeader, token);
+  });
+  Object.defineProperties(remoteJWKSet, {
+    coolingDown: {
+      get: () => set.coolingDown(),
+      enumerable: true,
+      configurable: false
+    },
+    fresh: {
+      get: () => set.fresh(),
+      enumerable: true,
+      configurable: false
+    },
+    reload: {
+      value: () => set.reload(),
+      enumerable: true,
+      configurable: false,
+      writable: false
+    },
+    reloading: {
+      get: () => !!set._pendingFetch,
+      enumerable: true,
+      configurable: false
+    },
+    jwks: {
+      value: () => set._local?.jwks(),
+      enumerable: true,
+      configurable: false,
+      writable: false
+    }
+  });
+  return remoteJWKSet;
+}
+
+// projects/fasten-connect-stitch-embed/src/app/services/auth.service.ts
+var FASTEN_AUTH_VAULT_COOKIE_NAME = "fasten_connect_auth_vault";
+var AuthService = class _AuthService {
+  constructor(_httpClient, configService) {
+    this._httpClient = _httpClient;
+    this.configService = configService;
+    this.IsAuthenticatedSubject = new BehaviorSubject(false);
+  }
+  VaultAuthBegin(email) {
+    return __async(this, null, function* () {
+      let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_begin`, {
+        "email": email
+      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+      return resp;
+    });
+  }
+  VaultAuthFinish(email, code) {
+    return __async(this, null, function* () {
+      let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_finish`, {
+        "email": email,
+        "code": code
+      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+      return resp;
+    });
+  }
+  Signout() {
+    return __async(this, null, function* () {
+      this.publishAuthenticationState(false);
+      return this.deleteCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
+    });
+  }
+  GetJWTPayload() {
+    return __async(this, null, function* () {
+      let authToken = this.getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
+      if (!authToken) {
+        return null;
+      }
+      let jwks = createRemoteJWKSet(new URL(environment.jwks_uri));
+      let issuerHost = environment.connect_api_jwt_issuer_host;
+      try {
+        const { payload, protectedHeader } = yield jwtVerify(authToken, jwks, {
+          issuer: issuerHost,
+          audience: issuerHost
+        });
+        this.configService.systemConfig = { user: payload };
+        return payload;
+      } catch (e) {
+        console.error("failed to verify jwt:", e, issuerHost);
+        return null;
+      }
+    });
+  }
+  IsAuthenticated() {
+    return __async(this, null, function* () {
+      let payload = yield this.GetJWTPayload();
+      let isAuthenticated = payload != null;
+      this.publishAuthenticationState(isAuthenticated);
+      return isAuthenticated;
+    });
+  }
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //Private Methods
+  /////////////////////////////////////////////////////////////////////////////////////////////////
+  //https://stackoverflow.com/questions/34298133/angular-cookies
+  getCookie(name) {
+    const ca = decodeURIComponent(document.cookie).split(";");
+    const caLen = ca.length;
+    const cookieName = `${name}=`;
+    let c;
+    for (let i = 0; i < caLen; i += 1) {
+      c = ca[i].replace(/^\s+/g, "");
+      if (c.indexOf(cookieName) === 0) {
+        return c.substring(cookieName.length, c.length);
+      }
+    }
+    return "";
+  }
+  deleteCookie(name) {
+    this.setCookie(name, "", -99999);
+  }
+  setCookie(name, value, expireDays, path = "") {
+    const d = /* @__PURE__ */ new Date();
+    d.setTime(d.getTime() + expireDays * 24 * 60 * 60 * 1e3);
+    const expires = `expires=${d.toUTCString()}`;
+    const cpath = path ? `; path=${path}` : "";
+    document.cookie = `${name}=${value}; ${expires}${cpath}; SameSite=Lax`;
+  }
+  publishAuthenticationState(authenticated) {
+    if (this.IsAuthenticatedSubject.value != authenticated) {
+      this.IsAuthenticatedSubject.next(authenticated);
+    }
   }
   static {
-    this.\u0275fac = function HeaderComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _HeaderComponent)(\u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router));
+    this.\u0275fac = function AuthService_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _AuthService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(ConfigService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HeaderComponent, selectors: [["app-header"]], inputs: { backButtonLink: "backButtonLink", showClose: "showClose" }, outputs: { backButtonEvent: "backButtonEvent", closeButtonEvent: "closeButtonEvent" }, standalone: false, decls: 5, vars: 2, consts: [[1, "relative", "flex", "justify-center", "items-center"], ["id", "stitch-back", "type", "button", "class", "absolute left-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "routerLink", "click", 4, "ngIf"], ["id", "stitch-close", "type", "button", "class", "absolute right-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "click", 4, "ngIf"], [1, "az-logo"], ["id", "stitch-back", "type", "button", 1, "absolute", "left-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click", "routerLink"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", 1, "w-5", "h-5"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M15 19l-7-7 7-7"], ["id", "stitch-close", "type", "button", 1, "absolute", "right-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 18L18 6M6 6l12 12"]], template: function HeaderComponent_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275template(1, HeaderComponent_button_1_Template, 3, 1, "button", 1)(2, HeaderComponent_button_2_Template, 3, 0, "button", 2);
-        \u0275\u0275elementStart(3, "h1", 3);
-        \u0275\u0275text(4, "fasten");
-        \u0275\u0275elementEnd()();
-      }
-      if (rf & 2) {
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ctx.backButtonLink);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ctx.showClose);
-      }
-    }, dependencies: [NgIf, RouterLink], encapsulation: 2 });
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _AuthService, factory: _AuthService.\u0275fac, providedIn: "root" });
   }
 };
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HeaderComponent, { className: "HeaderComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts", lineNumber: 14 });
-})();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts
 var _c0 = (a0, a1) => ({ "space-y-3": a0, "space-y-6": a1 });
@@ -55746,7 +56181,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], standalone: false, decls: 61, vars: 26, consts: [["vaultProfileForm", "ngForm"], ["email", "ngModel"], ["needStorageAccessPermissionTemplate", ""], ["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [3, "ngSubmit", "ngClass"], [1, "block", "text-sm", "font-medium", "text-gray-700"], ["name", "email", "required", "", "email", "", "minlength", "4", "type", "email", "placeholder", "you@example.com", 1, "block", "w-full", "mt-2", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["id", "initialError", "class", "text-sm text-red-500", 4, "ngIf"], ["class", "text-xs text-gray-400 text-center", 4, "ngIf", "ngIfElse"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "disabled"], [4, "ngIf"], ["id", "initialError", 1, "text-sm", "text-red-500"], ["class", "alert alert-danger mt-3", "role", "alert", 4, "ngIf"], ["role", "alert", 1, "alert", "alert-danger", "mt-3"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], [1, "text-gray-500", "hover:text-gray-600", "underline", 3, "click"], [1, "flex", "items-center", "justify-center"], [1, "custom-checkbox", "ml-2", "text-sm", "text-gray-600", 3, "click", "ngClass"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], decls: 61, vars: 26, consts: [["vaultProfileForm", "ngForm"], ["email", "ngModel"], ["needStorageAccessPermissionTemplate", ""], ["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [3, "ngSubmit", "ngClass"], [1, "block", "text-sm", "font-medium", "text-gray-700"], ["name", "email", "required", "", "email", "", "minlength", "4", "type", "email", "placeholder", "you@example.com", 1, "block", "w-full", "mt-2", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["id", "initialError", "class", "text-sm text-red-500", 4, "ngIf"], ["class", "text-xs text-gray-400 text-center", 4, "ngIf", "ngIfElse"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "disabled"], [4, "ngIf"], ["id", "initialError", 1, "text-sm", "text-red-500"], ["class", "alert alert-danger mt-3", "role", "alert", 4, "ngIf"], ["role", "alert", 1, "alert", "alert-danger", "mt-3"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], [1, "text-gray-500", "hover:text-gray-600", "underline", 3, "click"], [1, "flex", "items-center", "justify-center"], [1, "custom-checkbox", "ml-2", "text-sm", "text-gray-600", 3, "click", "ngClass"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
       if (rf & 1) {
         const _r1 = \u0275\u0275getCurrentView();
         \u0275\u0275elementStart(0, "div", 3);
@@ -55844,7 +56279,27 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
         \u0275\u0275advance(3);
         \u0275\u0275property("ngIf", ctx.loading);
       }
-    }, dependencies: [NgClass, NgIf, \u0275NgNoValidate, DefaultValueAccessor, NgControlStatus, NgControlStatusGroup, RequiredValidator, MinLengthValidator, EmailValidator, NgModel, NgForm, ImageFallbackDirective, SpinnerComponent, HeaderComponent, AsyncPipe], styles: [`
+    }, dependencies: [
+      CommonModule,
+      NgClass,
+      NgIf,
+      AsyncPipe,
+      RouterModule,
+      HeaderComponent,
+      ImageFallbackDirective,
+      ReactiveFormsModule,
+      \u0275NgNoValidate,
+      DefaultValueAccessor,
+      NgControlStatus,
+      NgControlStatusGroup,
+      RequiredValidator,
+      MinLengthValidator,
+      EmailValidator,
+      FormsModule,
+      NgModel,
+      NgForm,
+      SpinnerComponent
+    ], styles: [`
 
 .custom-checkbox[_ngcontent-%COMP%] {
   cursor: pointer;
@@ -55881,7 +56336,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 16 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 29 });
 })();
 
 // node_modules/angular-code-input/fesm2022/angular-code-input.mjs
@@ -56439,7 +56894,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail" }, standalone: false, decls: 25, vars: 10, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2"], [3, "codeCompleted", "isCodeHidden", "codeLength"], ["id", "verification-error", "class", "text-sm text-red-500", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["id", "verification-countdown", 1, "font-semibold", "text-gray-900"], ["type", "button", "id", "resend-code", 1, "verification-button"], ["type", "button", "id", "use-other-method", 1, "verification-button", 2, "display", "none"], ["id", "verification-error", 1, "text-sm", "text-red-500"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail" }, decls: 25, vars: 10, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2"], [3, "codeCompleted", "isCodeHidden", "codeLength"], ["id", "verification-error", "class", "text-sm text-red-500", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["id", "verification-countdown", 1, "font-semibold", "text-gray-900"], ["type", "button", "id", "resend-code", 1, "verification-button"], ["type", "button", "id", "use-other-method", 1, "verification-button", 2, "display", "none"], ["id", "verification-error", 1, "text-sm", "text-red-500"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -56483,11 +56938,20 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
         \u0275\u0275advance(4);
         \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 7, \u0275\u0275pipeBind1(18, 5, ctx.timeRemaining$), "mm:ss"));
       }
-    }, dependencies: [NgIf, CodeInputComponent, HeaderComponent, AsyncPipe, DatePipe], styles: ["\n\ncode-input[_ngcontent-%COMP%] {\n  --item-width: 2.5rem;\n  --item-height: 2.5rem;\n  --item-border: 1px solid #d1d5db;\n  --item-border-radius: 0.5rem;\n  --item-font-size: 1.25rem;\n  --item-font-weight: 600;\n  --item-color: #111827;\n  //--item-border-bottom: none;\n  //--item-border-has-value: none;\n  //--item-border-bottom-has-value: 2px solid #888888;\n  //--item-border-focused: none;\n  //--item-border-bottom-focused: 2px solid #809070;\n  //--item-shadow-focused: none;\n}\n/*# sourceMappingURL=vault-profile-signin-code.component.css.map */"] });
+    }, dependencies: [
+      CommonModule,
+      NgIf,
+      AsyncPipe,
+      DatePipe,
+      RouterModule,
+      HeaderComponent,
+      CodeInputModule,
+      CodeInputComponent
+    ], styles: ["\n\ncode-input[_ngcontent-%COMP%] {\n  --item-width: 2.5rem;\n  --item-height: 2.5rem;\n  --item-border: 1px solid #d1d5db;\n  --item-border-radius: 0.5rem;\n  --item-font-size: 1.25rem;\n  --item-font-weight: 600;\n  --item-color: #111827;\n  //--item-border-bottom: none;\n  //--item-border-has-value: none;\n  //--item-border-bottom-has-value: 2px solid #888888;\n  //--item-border-focused: none;\n  //--item-border-bottom-focused: 2px solid #809070;\n  //--item-shadow-focused: none;\n}\n/*# sourceMappingURL=vault-profile-signin-code.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninCodeComponent, { className: "VaultProfileSigninCodeComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts", lineNumber: 13 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninCodeComponent, { className: "VaultProfileSigninCodeComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts", lineNumber: 22 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts
@@ -56539,7 +57003,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationComponent, selectors: [["app-identity-verification"]], standalone: false, decls: 18, vars: 2, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["routerLink", "/auth/identity/verification/error"], [1, "space-y-2", "flex", "flex-col", "items-center"], ["type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "clear-button", 3, "click", "disabled"], ["src", "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Generator: Adobe Illustrator 26.3.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 353.2 337.6' style='enable-background:new 0 0 353.2 337.6;' xml:space='preserve'%3E%3Cstyle type='text/css'%3E .st0%7Bdisplay:none;%7D .st1%7Bdisplay:inline;fill:%23192958;%7D .st2%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Cg id='BKGD' class='st0'%3E%3Crect class='st1' width='353.2' height='337.6'/%3E%3C/g%3E%3Cg id='Layer_2'%3E%3Cg%3E%3Cg%3E%3Ccircle class='st2' cx='14' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='77.1' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='227.8' r='14'/%3E%3Ccircle class='st2' cx='99.4' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='45.5' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='108.7' r='14'/%3E%3Ccircle class='st2' cx='98.4' cy='61.7' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='61.1' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='109.7' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='227.9' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='45.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='301.5' r='14'/%3E%3Ccircle class='st2' cx='226.7' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='126.6' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='276.5' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='339.2' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='35.5' r='14'/%3E%3Ccircle class='st2' cx='126.2' cy='14' r='14'/%3E%3Ccircle class='st2' cx='226.8' cy='14' r='14'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E", 1, "px-[8px]", 2, "height", "24px", "display", "inline", "vertical-align", "bottom"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"]], template: function IdentityVerificationComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationComponent, selectors: [["app-identity-verification"]], decls: 18, vars: 2, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["routerLink", "/auth/identity/verification/error"], [1, "space-y-2", "flex", "flex-col", "items-center"], ["type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "clear-button", 3, "click", "disabled"], ["src", "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Generator: Adobe Illustrator 26.3.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 353.2 337.6' style='enable-background:new 0 0 353.2 337.6;' xml:space='preserve'%3E%3Cstyle type='text/css'%3E .st0%7Bdisplay:none;%7D .st1%7Bdisplay:inline;fill:%23192958;%7D .st2%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Cg id='BKGD' class='st0'%3E%3Crect class='st1' width='353.2' height='337.6'/%3E%3C/g%3E%3Cg id='Layer_2'%3E%3Cg%3E%3Cg%3E%3Ccircle class='st2' cx='14' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='77.1' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='227.8' r='14'/%3E%3Ccircle class='st2' cx='99.4' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='45.5' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='108.7' r='14'/%3E%3Ccircle class='st2' cx='98.4' cy='61.7' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='61.1' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='109.7' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='227.9' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='45.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='301.5' r='14'/%3E%3Ccircle class='st2' cx='226.7' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='126.6' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='276.5' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='339.2' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='35.5' r='14'/%3E%3Ccircle class='st2' cx='126.2' cy='14' r='14'/%3E%3Ccircle class='st2' cx='226.8' cy='14' r='14'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E", 1, "px-[8px]", 2, "height", "24px", "display", "inline", "vertical-align", "bottom"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"]], template: function IdentityVerificationComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -56571,11 +57035,11 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
         \u0275\u0275advance(3);
         \u0275\u0275property("ngIf", ctx.loading);
       }
-    }, dependencies: [NgIf, RouterLink, HeaderComponent], styles: ['\n\n.clear-button[_ngcontent-%COMP%] {\n  border-radius: 32px;\n  background-color: #041A55;\n  font-family: "Inter", serif;\n  font-weight: 600;\n  font-size: 16px;\n  line-height: 26px;\n  height: 56px;\n  width: 328px;\n}\n/*# sourceMappingURL=identity-verification.component.css.map */'] });
+    }, dependencies: [CommonModule, NgIf, RouterModule, RouterLink, HeaderComponent], styles: ['\n\n.clear-button[_ngcontent-%COMP%] {\n  border-radius: 32px;\n  background-color: #041A55;\n  font-family: "Inter", serif;\n  font-weight: 600;\n  font-size: 16px;\n  line-height: 26px;\n  height: 56px;\n  width: 328px;\n}\n/*# sourceMappingURL=identity-verification.component.css.map */'] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 13 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 20 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts
@@ -56777,7 +57241,7 @@ var DashboardComponent = class _DashboardComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], standalone: false, decls: 51, vars: 31, consts: [["id", "step-connecting-systems", 1, "space-y-6"], [3, "closeButtonEvent", "showClose"], [1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], ["class", "p-4 mb-4 text-sm text-blue800 rounded-lg bg-blue-50 border border-blue-300 flex items-center gap-2", "role", "alert", 4, "ngIf"], ["id", "connecting-systems-list", 1, "space-y-3"], ["class", "flex items-center p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all", 4, "ngFor", "ngForOf"], ["id", "search-button", 1, "w-full", "border", "bg-gray-50", "border-gray-200", "rounded-lg", "flex", "justify-between", "items-center", "px-4", "py-3", "text-sm", "font-medium", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "routerLink"], [1, "flex", "items-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", 1, "w-5", "h-5"], ["d", "M21 21l-5.2-5.2m2.2-5.3a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-chevron-right", "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], [1, "flex", "items-center", "justify-between", "pt-4"], [1, "flex", "items-center", "gap-2", "text-sm", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-4", "h-4"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], ["id", "connecting-continue", 1, "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "disabled:opacity-50", 3, "click", "disabled"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-blue800", "rounded-lg", "bg-blue-50", "border", "border-blue-300", "flex", "items-center", "gap-2"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["class", "flex items-center gap-2 mt-2", 4, "ngIf"], [1, "flex", "items-center", "gap-2", "mt-2"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", 1, "animate-spin", "h-5", "w-5", "text-blue-600"], ["cx", "12", "cy", "12", "r", "10", "stroke", "currentColor", "stroke-width", "4", 1, "opacity-25"], ["fill", "currentColor", "d", "M4 12a8 8 0 018-8v8H4z", 1, "opacity-75"], [1, "flex", "items-center", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-[#5B47FB]", "bg-[#5B47FB]", "transition-all", "hover:bg-[#4936E8]", "hover:border-[#4936E8]", "animate-scale"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", 1, "w-4", "h-4", "mx-auto", "text-white", "animate-scale"], ["stroke-linecap", "round", "stroke-linejoin", "round", "stroke-width", "2", "d", "M5 13l4 4L19 7"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-4", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-gray-300", "transition-all", "hover:bg-gray-50", "hover:border-[#5B47FB]/30", 3, "click"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "animate-bounce"], ["xmlns", "http://www.w3.org/2000/svg", "width", "20", "height", "20", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "1.5", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "text-amber-500"], ["d", "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"], ["x1", "12", "y1", "9", "x2", "12", "y2", "13"], ["x1", "12", "y1", "17", "x2", "12.01", "y2", "17"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-3", "rounded", 3, "src", "alt"], [1, "cursor-pointer", "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "px-4", "py-1.5", "rounded-lg", "text-sm", "font-medium", "transition-colors", 3, "click"]], template: function DashboardComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], decls: 51, vars: 31, consts: [["id", "step-connecting-systems", 1, "space-y-6"], [3, "closeButtonEvent", "showClose"], [1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], ["class", "p-4 mb-4 text-sm text-blue800 rounded-lg bg-blue-50 border border-blue-300 flex items-center gap-2", "role", "alert", 4, "ngIf"], ["id", "connecting-systems-list", 1, "space-y-3"], ["class", "flex items-center p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all", 4, "ngFor", "ngForOf"], ["id", "search-button", 1, "w-full", "border", "bg-gray-50", "border-gray-200", "rounded-lg", "flex", "justify-between", "items-center", "px-4", "py-3", "text-sm", "font-medium", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "routerLink"], [1, "flex", "items-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", 1, "w-5", "h-5"], ["d", "M21 21l-5.2-5.2m2.2-5.3a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-chevron-right", "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], [1, "flex", "items-center", "justify-between", "pt-4"], [1, "flex", "items-center", "gap-2", "text-sm", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-4", "h-4"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], ["id", "connecting-continue", 1, "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "disabled:opacity-50", 3, "click", "disabled"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-blue800", "rounded-lg", "bg-blue-50", "border", "border-blue-300", "flex", "items-center", "gap-2"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["class", "flex items-center gap-2 mt-2", 4, "ngIf"], [1, "flex", "items-center", "gap-2", "mt-2"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", 1, "animate-spin", "h-5", "w-5", "text-blue-600"], ["cx", "12", "cy", "12", "r", "10", "stroke", "currentColor", "stroke-width", "4", 1, "opacity-25"], ["fill", "currentColor", "d", "M4 12a8 8 0 018-8v8H4z", 1, "opacity-75"], [1, "flex", "items-center", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-[#5B47FB]", "bg-[#5B47FB]", "transition-all", "hover:bg-[#4936E8]", "hover:border-[#4936E8]", "animate-scale"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", 1, "w-4", "h-4", "mx-auto", "text-white", "animate-scale"], ["stroke-linecap", "round", "stroke-linejoin", "round", "stroke-width", "2", "d", "M5 13l4 4L19 7"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-4", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-gray-300", "transition-all", "hover:bg-gray-50", "hover:border-[#5B47FB]/30", 3, "click"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "animate-bounce"], ["xmlns", "http://www.w3.org/2000/svg", "width", "20", "height", "20", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "1.5", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "text-amber-500"], ["d", "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"], ["x1", "12", "y1", "9", "x2", "12", "y2", "13"], ["x1", "12", "y1", "17", "x2", "12.01", "y2", "17"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-3", "rounded", 3, "src", "alt"], [1, "cursor-pointer", "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "px-4", "py-1.5", "rounded-lg", "text-sm", "font-medium", "transition-colors", 3, "click"]], template: function DashboardComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "app-header", 1);
         \u0275\u0275listener("closeButtonEvent", function DashboardComponent_Template_app_header_closeButtonEvent_1_listener() {
@@ -56878,11 +57342,22 @@ var DashboardComponent = class _DashboardComponent {
         \u0275\u0275advance(2);
         \u0275\u0275propertyInterpolate("href", (tmp_8_0 = \u0275\u0275pipeBind1(49, 25, ctx.configService.systemConfigSubject)) == null ? null : tmp_8_0.org == null ? null : tmp_8_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
       }
-    }, dependencies: [NgForOf, NgIf, RouterLink, ImageFallbackDirective, HeaderComponent, AsyncPipe, KeyValuePipe], styles: ["\n\n.blurred[_ngcontent-%COMP%] {\n  filter: blur(3px);\n  filter: url(/assets/blur.svg#gaussian_blur);\n  -webkit-filter: blur(3px);\n}\n/*# sourceMappingURL=dashboard.component.css.map */"] });
+    }, dependencies: [
+      CommonModule,
+      NgForOf,
+      NgIf,
+      AsyncPipe,
+      KeyValuePipe,
+      // Not needed if you don't use any common directives
+      RouterModule,
+      RouterLink,
+      ImageFallbackDirective,
+      HeaderComponent
+    ], styles: ["\n\n.blurred[_ngcontent-%COMP%] {\n  filter: blur(3px);\n  filter: url(/assets/blur.svg#gaussian_blur);\n  -webkit-filter: blur(3px);\n}\n/*# sourceMappingURL=dashboard.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 19 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 33 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/state-codes.ts
@@ -57821,7 +58296,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], inputs: { searchQuery: "searchQuery" }, standalone: false, decls: 15, vars: 12, consts: [["id", "step-search", 1, "space-y-6"], [3, "backButtonLink"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], [1, "flex", "gap-2"], [1, "flex-1"], ["id", "search-input", "type", "text", "placeholder", "Search for your health system...", 1, "w-full", "block", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "keyup", "ngModel"], ["id", "search-filters", 1, "border", "border-gray-200", "rounded-lg", "w-10", "h-10", "flex", "items-center", "justify-center", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-filter", "w-5", "h-5"], ["points", "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"], ["id", "filters-container", "class", "space-y-4 p-4 border rounded-lg", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "space-y-2", "overflow-scroll", 2, "max-height", "600px", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "scrollWindow"], ["type", "button", "class", "w-full flex items-center gap-3 p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-[#5B47FB] focus:ring-opacity-20", 3, "click", 4, "ngFor", "ngForOf"], [4, "ngIf"], ["class", "space-y-4", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["id", "filters-container", 1, "space-y-4", "p-4", "border", "rounded-lg"], [1, "font-semibold", "text-lg"], [1, "relative"], [1, "block", "text-sm", "font-medium", "mb-1"], [1, "w-full", "flex", "items-center", "justify-between", "px-3", "py-2", "text-sm", "border", "rounded-md", "bg-white", "hover:bg-gray-50", 3, "ngModelChange", "ngModel"], ["value", "ALL", "selected", ""], ["disabled", ""], [3, "value", 4, "ngFor", "ngForOf"], ["id", "state-filter-menu", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], [1, "py-1"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]"], ["points", "20 6 9 17 4 12"], ["id", "state-filter-menu-hidden", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]", "hidden"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between", "bg-gray-50"], [3, "value"], ["type", "button", 1, "w-full", "flex", "items-center", "gap-3", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all", "text-left", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "click"], ["imageFallback", "", 1, "w-8", "max-h-8", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], ["class", "text-sm text-gray-600", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "flex", "items-center"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], ["class", "comma", 3, "innerHTML", 4, "ngFor", "ngForOf"], [1, "comma", 3, "innerHTML"], [1, "comma"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], [1, "space-y-4"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "11", "cy", "11", "r", "8"], ["d", "m21 21-4.3-4.3"], [1, "font-medium"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], inputs: { searchQuery: "searchQuery" }, decls: 15, vars: 12, consts: [["id", "step-search", 1, "space-y-6"], [3, "backButtonLink"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], [1, "flex", "gap-2"], [1, "flex-1"], ["id", "search-input", "type", "text", "placeholder", "Search for your health system...", 1, "w-full", "block", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "keyup", "ngModel"], ["id", "search-filters", 1, "border", "border-gray-200", "rounded-lg", "w-10", "h-10", "flex", "items-center", "justify-center", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-filter", "w-5", "h-5"], ["points", "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"], ["id", "filters-container", "class", "space-y-4 p-4 border rounded-lg", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "space-y-2", "overflow-scroll", 2, "max-height", "600px", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "scrollWindow"], ["type", "button", "class", "w-full flex items-center gap-3 p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-[#5B47FB] focus:ring-opacity-20", 3, "click", 4, "ngFor", "ngForOf"], [4, "ngIf"], ["class", "space-y-4", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["id", "filters-container", 1, "space-y-4", "p-4", "border", "rounded-lg"], [1, "font-semibold", "text-lg"], [1, "relative"], [1, "block", "text-sm", "font-medium", "mb-1"], [1, "w-full", "flex", "items-center", "justify-between", "px-3", "py-2", "text-sm", "border", "rounded-md", "bg-white", "hover:bg-gray-50", 3, "ngModelChange", "ngModel"], ["value", "ALL", "selected", ""], ["disabled", ""], [3, "value", 4, "ngFor", "ngForOf"], ["id", "state-filter-menu", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], [1, "py-1"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]"], ["points", "20 6 9 17 4 12"], ["id", "state-filter-menu-hidden", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]", "hidden"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between", "bg-gray-50"], [3, "value"], ["type", "button", 1, "w-full", "flex", "items-center", "gap-3", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all", "text-left", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "click"], ["imageFallback", "", 1, "w-8", "max-h-8", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], ["class", "text-sm text-gray-600", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "flex", "items-center"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], ["class", "comma", 3, "innerHTML", 4, "ngFor", "ngForOf"], [1, "comma", 3, "innerHTML"], [1, "comma"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], [1, "space-y-4"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "11", "cy", "11", "r", "8"], ["d", "m21 21-4.3-4.3"], [1, "font-medium"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header", 1);
@@ -57874,11 +58349,34 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.loading && ctx.lighthouseBrandList.length == 0);
       }
-    }, dependencies: [NgForOf, NgIf, RouterLink, NgSelectOption, \u0275NgSelectMultipleOption, DefaultValueAccessor, SelectControlValueAccessor, NgControlStatus, NgModel, InfiniteScrollDirective, ImageFallbackDirective, HeaderComponent, AsyncPipe, SlicePipe, KeyValuePipe, SafeHtmlPipe, StateNamePipe], styles: ['\n\n.comma[_ngcontent-%COMP%]:not(:last-child):after {\n  content: ", ";\n}\n/*# sourceMappingURL=health-system-search.component.css.map */'] });
+    }, dependencies: [
+      CommonModule,
+      NgForOf,
+      NgIf,
+      AsyncPipe,
+      SlicePipe,
+      KeyValuePipe,
+      RouterModule,
+      RouterLink,
+      FormsModule,
+      NgSelectOption,
+      \u0275NgSelectMultipleOption,
+      DefaultValueAccessor,
+      SelectControlValueAccessor,
+      NgControlStatus,
+      NgModel,
+      ReactiveFormsModule,
+      HeaderComponent,
+      InfiniteScrollModule,
+      InfiniteScrollDirective,
+      ImageFallbackDirective,
+      StateNamePipe,
+      SafeHtmlPipe
+    ], styles: ['\n\n.comma[_ngcontent-%COMP%]:not(:last-child):after {\n  content: ", ";\n}\n/*# sourceMappingURL=health-system-search.component.css.map */'] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemSearchComponent, { className: "HealthSystemSearchComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts", lineNumber: 22 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemSearchComponent, { className: "HealthSystemSearchComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts", lineNumber: 43 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts
@@ -58035,7 +58533,7 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], standalone: false, decls: 21, vars: 17, consts: [["id", "step-health-system-details", 1, "space-y-6"], [3, "backButtonLink"], [1, "space-y-6"], [1, "border", "rounded-2xl", "p-6"], [1, "flex", "items-start", "space-x-4", "mb-4"], [1, "flex-shrink-0"], ["imageFallback", "", 1, "w-12", "max-h-12", "rounded-lg", "object-contain", 3, "src"], [1, "flex-1", "min-w-0"], ["id", "hsd-name", 1, "text-xl", "font-semibold"], ["id", "hsd-description", 1, "text-gray-600", "text-base", "mb-4"], [1, "space-y-2"], ["class", "flex items-center gap-2 text-gray-600", "id", "hsd-website-container", 4, "ngIf"], ["class", "flex items-center gap-2 text-gray-600", 4, "ngIf"], ["id", "hsd-institutions-list", 1, "space-y-2"], [4, "ngFor", "ngForOf"], ["id", "hsd-website-container", 1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-globe", "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"], ["d", "M2 12h20"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 1, "text-base", "hover:underline", 3, "href"], [1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-map-pin", "w-5", "h-5"], ["d", "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"], ["cx", "12", "cy", "10", "r", "3"], ["id", "hsd-location", 1, "text-base"], [4, "ngIf"], ["class", "p-4 pt-6 pb-6 border rounded-lg hover:border-gray-400 transition-colors relative", 4, "ngFor", "ngForOf"], [1, "p-4", "pt-6", "pb-6", "border", "rounded-lg", "hover:border-gray-400", "transition-colors", "relative"], ["id", "platform-tag", 1, "absolute", "top-0", "left-0", "bg-gray-200", "text-gray-600", "text-xs", "font-medium", "px-2", "py-1", "rounded-tl-lg", "rounded-br-lg"], [1, "text-xs", "text-gray-500"], [1, "flex", "items-center", "justify-between"], [1, "font-medium", "text-base", "tracking-tight"], ["type", "button", 1, "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "w-8", "h-8", "rounded-lg", "text-lg", "font-medium", "transition-colors", "flex", "items-center", "justify-center", 3, "click"], ["class", "text-xs text-gray-500 mt-2", 4, "ngIf"], [1, "text-xs", "text-gray-500", "mt-2"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], decls: 21, vars: 17, consts: [["id", "step-health-system-details", 1, "space-y-6"], [3, "backButtonLink"], [1, "space-y-6"], [1, "border", "rounded-2xl", "p-6"], [1, "flex", "items-start", "space-x-4", "mb-4"], [1, "flex-shrink-0"], ["imageFallback", "", 1, "w-12", "max-h-12", "rounded-lg", "object-contain", 3, "src"], [1, "flex-1", "min-w-0"], ["id", "hsd-name", 1, "text-xl", "font-semibold"], ["id", "hsd-description", 1, "text-gray-600", "text-base", "mb-4"], [1, "space-y-2"], ["class", "flex items-center gap-2 text-gray-600", "id", "hsd-website-container", 4, "ngIf"], ["class", "flex items-center gap-2 text-gray-600", 4, "ngIf"], ["id", "hsd-institutions-list", 1, "space-y-2"], [4, "ngFor", "ngForOf"], ["id", "hsd-website-container", 1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-globe", "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"], ["d", "M2 12h20"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 1, "text-base", "hover:underline", 3, "href"], [1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-map-pin", "w-5", "h-5"], ["d", "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"], ["cx", "12", "cy", "10", "r", "3"], ["id", "hsd-location", 1, "text-base"], [4, "ngIf"], ["class", "p-4 pt-6 pb-6 border rounded-lg hover:border-gray-400 transition-colors relative", 4, "ngFor", "ngForOf"], [1, "p-4", "pt-6", "pb-6", "border", "rounded-lg", "hover:border-gray-400", "transition-colors", "relative"], ["id", "platform-tag", 1, "absolute", "top-0", "left-0", "bg-gray-200", "text-gray-600", "text-xs", "font-medium", "px-2", "py-1", "rounded-tl-lg", "rounded-br-lg"], [1, "text-xs", "text-gray-500"], [1, "flex", "items-center", "justify-between"], [1, "font-medium", "text-base", "tracking-tight"], ["type", "button", 1, "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "w-8", "h-8", "rounded-lg", "text-lg", "font-medium", "transition-colors", "flex", "items-center", "justify-center", 3, "click"], ["class", "text-xs text-gray-500 mt-2", 4, "ngIf"], [1, "text-xs", "text-gray-500", "mt-2"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header", 1);
@@ -58078,11 +58576,20 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
         \u0275\u0275advance(3);
         \u0275\u0275property("ngForOf", (tmp_5_0 = \u0275\u0275pipeBind1(20, 15, ctx.configService.searchConfigSubject)) == null ? null : tmp_5_0.selectedBrand == null ? null : tmp_5_0.selectedBrand.portals);
       }
-    }, dependencies: [NgForOf, NgIf, ImageFallbackDirective, HeaderComponent, AsyncPipe, SlicePipe, StateNamePipe], encapsulation: 2 });
+    }, dependencies: [
+      CommonModule,
+      NgForOf,
+      NgIf,
+      AsyncPipe,
+      SlicePipe,
+      HeaderComponent,
+      ImageFallbackDirective,
+      StateNamePipe
+    ], encapsulation: 2 });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemBrandDetailsComponent, { className: "HealthSystemBrandDetailsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts", lineNumber: 16 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemBrandDetailsComponent, { className: "HealthSystemBrandDetailsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts", lineNumber: 25 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/connect-helper.ts
@@ -58218,7 +58725,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId", sdkMode: "sdkMode" }, standalone: false, decls: 29, vars: 16, consts: [[1, "space-y-6"], [3, "backButtonEvent", "closeButtonEvent", "backButtonLink", "showClose"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["id", "connecting-subtitle", 1, "text-sm", "text-gray-600"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId", sdkMode: "sdkMode" }, decls: 29, vars: 16, consts: [[1, "space-y-6"], [3, "backButtonEvent", "closeButtonEvent", "backButtonLink", "showClose"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["id", "connecting-subtitle", 1, "text-sm", "text-gray-600"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "app-header", 1);
         \u0275\u0275listener("backButtonEvent", function HealthSystemConnectingComponent_Template_app_header_backButtonEvent_1_listener() {
@@ -58269,11 +58776,18 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         \u0275\u0275advance(15);
         \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(9, _c06, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
       }
-    }, dependencies: [RouterLink, ImageFallbackDirective, HeaderComponent, AsyncPipe], encapsulation: 2 });
+    }, dependencies: [
+      CommonModule,
+      AsyncPipe,
+      RouterModule,
+      RouterLink,
+      HeaderComponent,
+      ImageFallbackDirective
+    ], encapsulation: 2 });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemConnectingComponent, { className: "HealthSystemConnectingComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts", lineNumber: 12 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemConnectingComponent, { className: "HealthSystemConnectingComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts", lineNumber: 20 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/complete/complete.component.ts
@@ -58294,7 +58808,7 @@ var CompleteComponent = class _CompleteComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _CompleteComponent, selectors: [["app-complete"]], standalone: false, decls: 13, vars: 3, consts: [["id", "step-completion", 1, "text-center", "space-y-6"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "space-y-2"], [1, "text-2xl", "font-bold"], [1, "text-gray-600"], ["id", "completion-close", 1, "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", 3, "click"]], template: function CompleteComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _CompleteComponent, selectors: [["app-complete"]], decls: 13, vars: 3, consts: [["id", "step-completion", 1, "text-center", "space-y-6"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "space-y-2"], [1, "text-2xl", "font-bold"], [1, "text-gray-600"], ["id", "completion-close", 1, "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", 3, "click"]], template: function CompleteComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -58323,11 +58837,11 @@ var CompleteComponent = class _CompleteComponent {
         \u0275\u0275advance(9);
         \u0275\u0275textInterpolate1(" Your health records have been successfully linked with ", ((tmp_0_0 = \u0275\u0275pipeBind1(10, 1, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.org == null ? null : tmp_0_0.org.name) || "Unknown", ". You can now close this window. ");
       }
-    }, dependencies: [HeaderComponent, AsyncPipe], encapsulation: 2 });
+    }, dependencies: [CommonModule, AsyncPipe, HeaderComponent], encapsulation: 2 });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(CompleteComponent, { className: "CompleteComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/complete/complete.component.ts", lineNumber: 10 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(CompleteComponent, { className: "CompleteComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/complete/complete.component.ts", lineNumber: 17 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/form-health-system-request/form-health-system-request.component.ts
@@ -58606,7 +59120,7 @@ var FormHealthSystemRequestComponent = class _FormHealthSystemRequestComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormHealthSystemRequestComponent, selectors: [["app-form-health-system-request"]], standalone: false, decls: 5, vars: 3, consts: [["requestSuccess", ""], ["healthSystemRequestForm", "ngForm"], ["email", "ngModel"], ["name", "ngModel"], ["website", "ngModel"], ["street_address", "ngModel"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["id", "request-email", "type", "email", "placeholder", "you@example.com", "required", "", "email", "", "name", "email", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["class", "mt-2 text-sm text-red-600 dark:text-red-500", 4, "ngIf"], ["id", "request-healthsystem", "type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "name", "name", "required", "", "minlength", "4", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["id", "request-website", "type", "text", "placeholder", "www.mayoclinic.org", "name", "website", "required", "", "minlength", "4", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["id", "request-address", "type", "text", "placeholder", "123 Broadway, New York, NY", "name", "website", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", 3, "disabled"], [4, "ngIf"], [1, "mt-2", "text-sm", "text-red-600", "dark:text-red-500"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormHealthSystemRequestComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormHealthSystemRequestComponent, selectors: [["app-form-health-system-request"]], decls: 5, vars: 3, consts: [["requestSuccess", ""], ["healthSystemRequestForm", "ngForm"], ["email", "ngModel"], ["name", "ngModel"], ["website", "ngModel"], ["street_address", "ngModel"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["id", "request-email", "type", "email", "placeholder", "you@example.com", "required", "", "email", "", "name", "email", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["class", "mt-2 text-sm text-red-600 dark:text-red-500", 4, "ngIf"], ["id", "request-healthsystem", "type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "name", "name", "required", "", "minlength", "4", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["id", "request-website", "type", "text", "placeholder", "www.mayoclinic.org", "name", "website", "required", "", "minlength", "4", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["id", "request-address", "type", "text", "placeholder", "123 Broadway, New York, NY", "name", "street_address", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", 3, "disabled"], [4, "ngIf"], [1, "mt-2", "text-sm", "text-red-600", "dark:text-red-500"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormHealthSystemRequestComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 6);
         \u0275\u0275element(1, "app-header", 7);
@@ -58621,11 +59135,27 @@ var FormHealthSystemRequestComponent = class _FormHealthSystemRequestComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.submitSuccess)("ngIfElse", requestSuccess_r8);
       }
-    }, dependencies: [NgIf, \u0275NgNoValidate, DefaultValueAccessor, NgControlStatus, NgControlStatusGroup, RequiredValidator, MinLengthValidator, EmailValidator, NgModel, NgForm, SpinnerComponent, HeaderComponent], encapsulation: 2 });
+    }, dependencies: [
+      CommonModule,
+      NgIf,
+      ReactiveFormsModule,
+      \u0275NgNoValidate,
+      DefaultValueAccessor,
+      NgControlStatus,
+      NgControlStatusGroup,
+      RequiredValidator,
+      MinLengthValidator,
+      EmailValidator,
+      FormsModule,
+      NgModel,
+      NgForm,
+      HeaderComponent,
+      SpinnerComponent
+    ], encapsulation: 2 });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormHealthSystemRequestComponent, { className: "FormHealthSystemRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-health-system-request/form-health-system-request.component.ts", lineNumber: 13 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormHealthSystemRequestComponent, { className: "FormHealthSystemRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-health-system-request/form-health-system-request.component.ts", lineNumber: 24 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/form-support-request/form-support-request.component.ts
@@ -58779,7 +59309,7 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormSupportRequestComponent, selectors: [["app-form-support-request"]], inputs: { error: "error", error_description: "error_description", brand_id: "brand_id", portal_id: "portal_id", endpoint_id: "endpoint_id", org_connection_id: "org_connection_id", external_id: "external_id", external_state: "external_state", request_id: "request_id" }, standalone: false, decls: 5, vars: 3, consts: [["requestSuccess", ""], ["supportRequestForm", "ngForm"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["type", "email", "placeholder", "you@example.com", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["placeholder", "please provide as much data as possible, it helps us prioritize your issue", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", 3, "disabled"], [4, "ngIf"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormSupportRequestComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormSupportRequestComponent, selectors: [["app-form-support-request"]], inputs: { error: "error", error_description: "error_description", brand_id: "brand_id", portal_id: "portal_id", endpoint_id: "endpoint_id", org_connection_id: "org_connection_id", external_id: "external_id", external_state: "external_state", request_id: "request_id" }, decls: 5, vars: 3, consts: [["requestSuccess", ""], ["supportRequestForm", "ngForm"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["type", "email", "placeholder", "you@example.com", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["placeholder", "please provide as much data as possible, it helps us prioritize your issue", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", 3, "disabled"], [4, "ngIf"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormSupportRequestComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 2);
         \u0275\u0275element(1, "app-header", 3);
@@ -58794,11 +59324,25 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.submitSuccess)("ngIfElse", requestSuccess_r5);
       }
-    }, dependencies: [NgIf, \u0275NgNoValidate, DefaultValueAccessor, NgControlStatus, NgControlStatusGroup, RequiredValidator, NgModel, NgForm, SpinnerComponent, HeaderComponent], encapsulation: 2 });
+    }, dependencies: [
+      CommonModule,
+      NgIf,
+      ReactiveFormsModule,
+      \u0275NgNoValidate,
+      DefaultValueAccessor,
+      NgControlStatus,
+      NgControlStatusGroup,
+      RequiredValidator,
+      FormsModule,
+      NgModel,
+      NgForm,
+      HeaderComponent,
+      SpinnerComponent
+    ], encapsulation: 2 });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormSupportRequestComponent, { className: "FormSupportRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-support-request/form-support-request.component.ts", lineNumber: 12 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormSupportRequestComponent, { className: "FormSupportRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-support-request/form-support-request.component.ts", lineNumber: 23 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/auth-guards/is-authenticated-auth-guard.ts
@@ -58871,7 +59415,7 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationErrorComponent, selectors: [["app-identity-verification-error"]], inputs: { error: "error", error_description: "error_description" }, standalone: false, decls: 21, vars: 3, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold", "text-red-600"], ["id", "error-message", 1, "text-sm", "text-gray-600"], ["id", "error-details", 1, "bg-gray-100", "p-4", "rounded-md", "text-left"], [1, "text-md", "font-medium"], [1, "text-sm", "text-gray-800"], [1, "font-semibold"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"]], template: function IdentityVerificationErrorComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationErrorComponent, selectors: [["app-identity-verification-error"]], inputs: { error: "error", error_description: "error_description" }, decls: 21, vars: 3, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold", "text-red-600"], ["id", "error-message", 1, "text-sm", "text-gray-600"], ["id", "error-details", 1, "bg-gray-100", "p-4", "rounded-md", "text-left"], [1, "text-md", "font-medium"], [1, "text-sm", "text-gray-800"], [1, "font-semibold"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"]], template: function IdentityVerificationErrorComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -58906,11 +59450,16 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
         \u0275\u0275advance(2);
         \u0275\u0275property("routerLink", "/auth/identity/verification");
       }
-    }, dependencies: [RouterLink, HeaderComponent], encapsulation: 2 });
+    }, dependencies: [
+      CommonModule,
+      HeaderComponent,
+      RouterModule,
+      RouterLink
+    ], encapsulation: 2 });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationErrorComponent, { className: "IdentityVerificationErrorComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification-error/identity-verification-error.component.ts", lineNumber: 12 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationErrorComponent, { className: "IdentityVerificationErrorComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification-error/identity-verification-error.component.ts", lineNumber: 19 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/auth-guards/is-tefca-mode-auth-guard.ts
@@ -58959,7 +59508,7 @@ var IsTefcaModeAuthGuard = class _IsTefcaModeAuthGuard {
   }
 };
 
-// projects/fasten-connect-stitch-embed/src/app/app-routing.module.ts
+// projects/fasten-connect-stitch-embed/src/app/app.routes.ts
 var routes = [
   { path: "auth/signin", component: VaultProfileSigninComponent },
   { path: "auth/signin/code", component: VaultProfileSigninCodeComponent },
@@ -58979,353 +59528,6 @@ var routes = [
   //must be at bottom of list
   { path: "**", redirectTo: "auth/signin" }
 ];
-var AppRoutingModule = class _AppRoutingModule {
-  static {
-    this.\u0275fac = function AppRoutingModule_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AppRoutingModule)();
-    };
-  }
-  static {
-    this.\u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({ type: _AppRoutingModule });
-  }
-  static {
-    this.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({ imports: [RouterModule.forRoot(routes), RouterModule] });
-  }
-};
-
-// projects/fasten-connect-stitch-embed/src/app/app.component.ts
-function AppComponent_div_1_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 3);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 4);
-    \u0275\u0275element(2, "rect", 5)(3, "path", 6)(4, "path", 7)(5, "path", 8)(6, "path", 9)(7, "path", 10)(8, "path", 11)(9, "path", 12);
-    \u0275\u0275elementEnd();
-    \u0275\u0275text(10, " You are using Fasten in test mode\n");
-    \u0275\u0275elementEnd();
-  }
-}
-function AppComponent_ng_container_3_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 13)(2, "div", 14)(3, "h1", 15);
-    \u0275\u0275text(4, "fasten");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(5, "div", 16)(6, "div", 17);
-    \u0275\u0275element(7, "div", 18);
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(8, "div", 19);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "div", 20)(10, "div", 21);
-    \u0275\u0275element(11, "div", 22);
-    \u0275\u0275elementStart(12, "div", 23);
-    \u0275\u0275element(13, "div", 24)(14, "div", 25);
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(15, "div", 26);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "div", 21);
-    \u0275\u0275element(17, "div", 22);
-    \u0275\u0275elementStart(18, "div", 23);
-    \u0275\u0275element(19, "div", 24)(20, "div", 25);
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(21, "div", 26);
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275elementContainerEnd();
-  }
-}
-function AppComponent_ng_container_4_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 27)(2, "div", 28);
-    \u0275\u0275element(3, "div", 29);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "div", 30);
-    \u0275\u0275element(5, "div", 22);
-    \u0275\u0275elementStart(6, "div", 31);
-    \u0275\u0275element(7, "div", 32)(8, "div", 32)(9, "div", 32);
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(10, "div", 22);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(11, "div", 33);
-    \u0275\u0275element(12, "div", 34)(13, "div", 35);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "div", 36)(15, "div", 37);
-    \u0275\u0275element(16, "div", 22);
-    \u0275\u0275elementStart(17, "div", 23);
-    \u0275\u0275element(18, "div", 38)(19, "div", 39);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(20, "div", 37);
-    \u0275\u0275element(21, "div", 22);
-    \u0275\u0275elementStart(22, "div", 23);
-    \u0275\u0275element(23, "div", 38)(24, "div", 39);
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(25, "div", 36);
-    \u0275\u0275element(26, "div", 24)(27, "div", 18)(28, "div", 40);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementContainerEnd();
-  }
-}
-function AppComponent_ng_container_5_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 41);
-    \u0275\u0275element(2, "router-outlet");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementContainerEnd();
-  }
-}
-function AppComponent_ng_container_6_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 42)(2, "div", 43)(3, "div", 44)(4, "div", 45);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(5, "svg", 46);
-    \u0275\u0275element(6, "path", 47);
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(7, "span", 48);
-    \u0275\u0275text(8, "Error");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "h3", 49);
-    \u0275\u0275text(10, "Configuration Error");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(11, "div", 50);
-    \u0275\u0275text(12);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "div", 51)(14, "button", 52);
-    \u0275\u0275listener("click", function AppComponent_ng_container_6_Template_button_click_14_listener() {
-      \u0275\u0275restoreView(_r1);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.hideStitchModalExt());
-    });
-    \u0275\u0275text(15, "Close");
-    \u0275\u0275elementEnd()()()()();
-    \u0275\u0275elementContainerEnd();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(12);
-    \u0275\u0275textInterpolate1(" ", ctx_r1.errorMessage, " ");
-  }
-}
-var AppComponent = class _AppComponent {
-  populateInputsFromWindowLocation() {
-    let urlParams = new URLSearchParams(window.location.search);
-    this.publicId = urlParams.get("public-id") || "";
-    this.externalId = urlParams.get("external-id") || "";
-    this.externalState = urlParams.get("external-state") || "";
-    this.reconnectOrgConnectionId = urlParams.get("reconnect-org-connection-id") || "";
-    this.searchOnly = urlParams.get("search-only") == "true";
-    this.tefcaMode = urlParams.get("tefca-mode") == "true";
-    this.eventTypes = urlParams.get("event-types") || "";
-    this.staticBackdrop = urlParams.get("static-backdrop") == "true";
-    this.searchQuery = urlParams.get("search-query") || "";
-    this.brandId = urlParams.get("brand-id") || "";
-    this.portalId = urlParams.get("portal-id") || "";
-    this.endpointId = urlParams.get("endpoint-id") || "";
-    this.sdkMode = urlParams.get("sdk-mode") || SDKMode.None;
-  }
-  constructor(activatedRoute, configService, messageBus, fastenService, router, logger) {
-    this.activatedRoute = activatedRoute;
-    this.configService = configService;
-    this.messageBus = messageBus;
-    this.fastenService = fastenService;
-    this.router = router;
-    this.logger = logger;
-    this.publicId = "";
-    this.externalId = "";
-    this.externalState = "";
-    this.tefcaMode = false;
-    this.staticBackdrop = false;
-    this.eventTypes = "";
-    this.searchOnly = false;
-    this.searchQuery = "";
-    this.brandId = "";
-    this.portalId = "";
-    this.endpointId = "";
-    this.sdkMode = "";
-    this.loading = true;
-  }
-  ngOnInit() {
-    this.logger.info("QUERY STRING MAP", new URLSearchParams(window.location.search));
-    this.populateInputsFromWindowLocation();
-    let apiMode = this.getApiModeFromPublicId(this.publicId);
-    let eventTypes = [];
-    if (this.eventTypes) {
-      eventTypes = this.eventTypes.split(",").map((eventType) => {
-        return eventType;
-      }).filter((eventType) => Object.values(EventTypes).indexOf(eventType) >= 0);
-    }
-    if (!this.sdkMode) {
-      this.sdkMode = SDKMode.None;
-    }
-    this.configService.systemConfig = {
-      apiMode,
-      publicId: this.publicId,
-      externalId: this.externalId,
-      reconnectOrgConnectionId: this.reconnectOrgConnectionId,
-      staticBackdrop: this.staticBackdrop,
-      searchOnly: this.searchOnly,
-      tefcaMode: this.tefcaMode,
-      eventTypes,
-      sdkMode: this.sdkMode
-    };
-    this.messageBus.messageBusSubject.subscribe((eventPayload) => {
-      this.logger.debug("bubbling up event", eventPayload);
-      this.sendPostMessage(eventPayload);
-    });
-    if (this.reconnectOrgConnectionId) {
-      this.fastenService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
-        this.logger.info("state: dashboard/connecting#reconnectOrgConnectionId", orgConnection);
-        this.router.navigate(["dashboard/connecting"], {
-          queryParams: {
-            "brandId": orgConnection.catalog_brand_id,
-            "portalId": orgConnection.catalog_portal_id,
-            "endpointId": orgConnection.catalog_endpoint_id,
-            "orgConnectionId": orgConnection.org_connection_id,
-            "externalId": this.externalId,
-            "externalState": this.externalState,
-            "sdkMode": this.sdkMode
-          }
-        });
-      }, (err) => {
-        this.errorMessage = "Could not find the patient connection using id. Please contact the developer of this app.";
-        this.logger.error("Invalid Fasten Connect Connection ID", err);
-      });
-    } else if (this.brandId && this.portalId && this.endpointId) {
-      this.logger.info("state: dashboard/connecting");
-      this.router.navigate(["dashboard/connecting"], {
-        queryParams: {
-          "brandId": this.brandId,
-          "portalId": this.portalId,
-          "endpointId": this.endpointId,
-          "externalId": this.externalId,
-          "externalState": this.externalState,
-          "sdkMode": this.sdkMode
-        }
-      });
-    } else if (this.brandId) {
-      this.fastenService.searchCatalogBrand(apiMode, this.brandId).subscribe((brandItem) => {
-        this.logger.info("state: brand/details");
-        this.configService.searchConfig$.selectedBrand = brandItem._source;
-        this.router.navigateByUrl("brand/details");
-      });
-    } else {
-      if (this.searchOnly) {
-        this.logger.info("state: search");
-        let queryParams = {};
-        if (this.searchQuery) {
-          queryParams["searchQuery"] = this.searchQuery;
-        }
-        this.router.navigate(["search"], {
-          queryParams
-        });
-      }
-    }
-  }
-  ngOnChanges(changes) {
-    this.logger.debug("embed ngOnChanges", changes);
-  }
-  getApiModeFromPublicId(publicId) {
-    let publicIdParts = publicId.split("_");
-    let apiMode = ApiMode.Test;
-    if (publicIdParts.length == 3 && publicIdParts[1] == ApiMode.Live) {
-      apiMode = ApiMode.Live;
-    }
-    if (publicIdParts.length != 3) {
-      console.error("Could not register Fasten Connect installation: missing or invalid id", this.publicId);
-      this.errorMessage = "Could not register Fasten Connect installation: missing or invalid id. Please contact the developer of this app.";
-      this.messageBus.publishWidgetConfigError();
-      this.configService.systemConfig = {
-        org: void 0
-      };
-      this.loading = false;
-      return apiMode;
-    } else {
-      this.errorMessage = "";
-      this.fastenService.getOrgByPublicId(this.publicId).subscribe((org) => {
-        this.logger.info("Fasten Connect registration", org);
-        this.loading = false;
-        this.configService.systemConfig = {
-          org
-        };
-      }, (err) => {
-        this.loading = false;
-        this.errorMessage = "Could not register Fasten Connect installation using id. Please contact the developer of this app.";
-        this.messageBus.publishWidgetConfigError();
-        this.logger.error("Invalid Fasten Connect registration", err);
-      });
-      return apiMode;
-    }
-  }
-  // these functions can be called externally to hide the widget via javascript
-  hideStitchModalExt() {
-    this.logger.info("hideStitchModalExt pressed");
-  }
-  // postMessage registration, listen to events from the parent window
-  receivePostMessage(event) {
-    this.logger.debug("received postMessage", event);
-  }
-  sendPostMessage(eventPayload) {
-    if (eventPayload == null) {
-      this.logger.warn("No eventPayload to send");
-      return;
-    }
-    if (this.sdkMode == SDKMode.ReactNative && window.ReactNativeWebView) {
-      this.logger.info("sending postMessage to React Native WebView", eventPayload);
-      window.ReactNativeWebView.postMessage(JSON.stringify({
-        "from": CommunicationEntity.PrimaryWebView,
-        "to": CommunicationEntity.External,
-        "payload": JSON.stringify(eventPayload)
-      }));
-    } else if (window.opener || window.parent) {
-      this.logger.info("sending postMessage", eventPayload);
-      let parentWindowRef = window.parent || window.opener;
-      parentWindowRef.postMessage(JSON.stringify(eventPayload), "*");
-    } else {
-      this.logger.debug("No parent window to send message to", this.sdkMode);
-      return;
-    }
-  }
-  static {
-    this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
-    };
-  }
-  static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _AppComponent, selectors: [["app-root"]], hostBindings: function AppComponent_HostBindings(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275listener("message", function AppComponent_message_HostBindingHandler($event) {
-          return ctx.receivePostMessage($event);
-        }, false, \u0275\u0275resolveWindow);
-      }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"] }, standalone: false, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275element(0, "link", 0);
-        \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
-        \u0275\u0275pipe(2, "async");
-        \u0275\u0275template(3, AppComponent_ng_container_3_Template, 22, 0, "ng-container", 2)(4, AppComponent_ng_container_4_Template, 29, 0, "ng-container", 2)(5, AppComponent_ng_container_5_Template, 3, 0, "ng-container", 2)(6, AppComponent_ng_container_6_Template, 16, 1, "ng-container", 2);
-      }
-      if (rf & 2) {
-        let tmp_0_0;
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ((tmp_0_0 = \u0275\u0275pipeBind1(2, 5, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.apiMode) == "test");
-        \u0275\u0275advance(2);
-        \u0275\u0275property("ngIf", ctx.loading && ctx.searchOnly);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ctx.loading && !ctx.searchOnly);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", !ctx.loading && !!!ctx.errorMessage);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", !ctx.loading && ctx.errorMessage);
-      }
-    }, dependencies: [NgIf, RouterOutlet, AsyncPipe], encapsulation: 2 });
-  }
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 29 });
-})();
 
 // projects/fasten-connect-stitch-embed/src/app/services/auth-interceptor.service.ts
 var AuthInterceptorService = class _AuthInterceptorService {
@@ -59363,82 +59565,4595 @@ var AuthInterceptorService = class _AuthInterceptorService {
   }
 };
 
-// projects/fasten-connect-stitch-embed/src/app/components/footer/footer.component.ts
-var FooterComponent = class _FooterComponent {
-  constructor() {
-  }
-  ngOnInit() {
-  }
-  static {
-    this.\u0275fac = function FooterComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _FooterComponent)();
-    };
-  }
-  static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FooterComponent, selectors: [["app-footer"]], standalone: false, decls: 8, vars: 1, consts: [[1, "az-footer", "ht-40", "page-footer", "fixed-bottom"], [1, "container", "ht-100p", "pd-t-0-f"], [1, "d-sm-flex", "justify-content-center", "justify-content-sm-between", "py-2", "w-100"], [1, "text-muted", "text-center", "text-sm-left", "d-block", "d-sm-inline-block"], [1, "float-none", "float-sm-right", "d-block", "mt-1", "mt-sm-0", "text-center"], ["href", "https://www.fastenhealth.com/connect"]], template: function FooterComponent_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "div", 2)(3, "span", 3);
-        \u0275\u0275text(4);
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(5, "span", 4)(6, "a", 5);
-        \u0275\u0275text(7, "Fasten Connect: Unified API For Medical Records");
-        \u0275\u0275elementEnd()()()()();
-      }
-      if (rf & 2) {
-        \u0275\u0275advance(4);
-        \u0275\u0275textInterpolate1("Copyright \xA9 Fasten Health, Inc. 2022 | ", ctx.appVersion, "");
-      }
-    }, encapsulation: 2 });
-  }
+// node_modules/@angular/animations/fesm2022/animations.mjs
+var AnimationMetadataType;
+(function(AnimationMetadataType2) {
+  AnimationMetadataType2[AnimationMetadataType2["State"] = 0] = "State";
+  AnimationMetadataType2[AnimationMetadataType2["Transition"] = 1] = "Transition";
+  AnimationMetadataType2[AnimationMetadataType2["Sequence"] = 2] = "Sequence";
+  AnimationMetadataType2[AnimationMetadataType2["Group"] = 3] = "Group";
+  AnimationMetadataType2[AnimationMetadataType2["Animate"] = 4] = "Animate";
+  AnimationMetadataType2[AnimationMetadataType2["Keyframes"] = 5] = "Keyframes";
+  AnimationMetadataType2[AnimationMetadataType2["Style"] = 6] = "Style";
+  AnimationMetadataType2[AnimationMetadataType2["Trigger"] = 7] = "Trigger";
+  AnimationMetadataType2[AnimationMetadataType2["Reference"] = 8] = "Reference";
+  AnimationMetadataType2[AnimationMetadataType2["AnimateChild"] = 9] = "AnimateChild";
+  AnimationMetadataType2[AnimationMetadataType2["AnimateRef"] = 10] = "AnimateRef";
+  AnimationMetadataType2[AnimationMetadataType2["Query"] = 11] = "Query";
+  AnimationMetadataType2[AnimationMetadataType2["Stagger"] = 12] = "Stagger";
+})(AnimationMetadataType || (AnimationMetadataType = {}));
+var AUTO_STYLE = "*";
+function sequence(steps, options = null) {
+  return {
+    type: AnimationMetadataType.Sequence,
+    steps,
+    options
+  };
+}
+function style(tokens) {
+  return {
+    type: AnimationMetadataType.Style,
+    styles: tokens,
+    offset: null
+  };
+}
+var AnimationBuilder = class _AnimationBuilder {
+  static \u0275fac = function AnimationBuilder_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _AnimationBuilder)();
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+    token: _AnimationBuilder,
+    factory: () => (() => inject(BrowserAnimationBuilder))(),
+    providedIn: "root"
+  });
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FooterComponent, { className: "FooterComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/footer/footer.component.ts", lineNumber: 10 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(AnimationBuilder, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root",
+      useFactory: () => inject(BrowserAnimationBuilder)
+    }]
+  }], null, null);
 })();
+var AnimationFactory = class {
+};
+var BrowserAnimationBuilder = class _BrowserAnimationBuilder extends AnimationBuilder {
+  animationModuleType = inject(ANIMATION_MODULE_TYPE, {
+    optional: true
+  });
+  _nextAnimationId = 0;
+  _renderer;
+  constructor(rootRenderer, doc) {
+    super();
+    const typeData = {
+      id: "0",
+      encapsulation: ViewEncapsulation.None,
+      styles: [],
+      data: {
+        animation: []
+      }
+    };
+    this._renderer = rootRenderer.createRenderer(doc.body, typeData);
+    if (this.animationModuleType === null && !isAnimationRenderer(this._renderer)) {
+      throw new RuntimeError(3600, (typeof ngDevMode === "undefined" || ngDevMode) && "Angular detected that the `AnimationBuilder` was injected, but animation support was not enabled. Please make sure that you enable animations in your application by calling `provideAnimations()` or `provideAnimationsAsync()` function.");
+    }
+  }
+  build(animation) {
+    const id = this._nextAnimationId;
+    this._nextAnimationId++;
+    const entry = Array.isArray(animation) ? sequence(animation) : animation;
+    issueAnimationCommand(this._renderer, null, id, "register", [entry]);
+    return new BrowserAnimationFactory(id, this._renderer);
+  }
+  static \u0275fac = function BrowserAnimationBuilder_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _BrowserAnimationBuilder)(\u0275\u0275inject(RendererFactory2), \u0275\u0275inject(DOCUMENT2));
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+    token: _BrowserAnimationBuilder,
+    factory: _BrowserAnimationBuilder.\u0275fac,
+    providedIn: "root"
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(BrowserAnimationBuilder, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root"
+    }]
+  }], () => [{
+    type: RendererFactory2
+  }, {
+    type: Document,
+    decorators: [{
+      type: Inject,
+      args: [DOCUMENT2]
+    }]
+  }], null);
+})();
+var BrowserAnimationFactory = class extends AnimationFactory {
+  _id;
+  _renderer;
+  constructor(_id, _renderer) {
+    super();
+    this._id = _id;
+    this._renderer = _renderer;
+  }
+  create(element, options) {
+    return new RendererAnimationPlayer(this._id, element, options || {}, this._renderer);
+  }
+};
+var RendererAnimationPlayer = class {
+  id;
+  element;
+  _renderer;
+  parentPlayer = null;
+  _started = false;
+  constructor(id, element, options, _renderer) {
+    this.id = id;
+    this.element = element;
+    this._renderer = _renderer;
+    this._command("create", options);
+  }
+  _listen(eventName, callback) {
+    return this._renderer.listen(this.element, `@@${this.id}:${eventName}`, callback);
+  }
+  _command(command, ...args) {
+    issueAnimationCommand(this._renderer, this.element, this.id, command, args);
+  }
+  onDone(fn) {
+    this._listen("done", fn);
+  }
+  onStart(fn) {
+    this._listen("start", fn);
+  }
+  onDestroy(fn) {
+    this._listen("destroy", fn);
+  }
+  init() {
+    this._command("init");
+  }
+  hasStarted() {
+    return this._started;
+  }
+  play() {
+    this._command("play");
+    this._started = true;
+  }
+  pause() {
+    this._command("pause");
+  }
+  restart() {
+    this._command("restart");
+  }
+  finish() {
+    this._command("finish");
+  }
+  destroy() {
+    this._command("destroy");
+  }
+  reset() {
+    this._command("reset");
+    this._started = false;
+  }
+  setPosition(p) {
+    this._command("setPosition", p);
+  }
+  getPosition() {
+    return unwrapAnimationRenderer(this._renderer)?.engine?.players[this.id]?.getPosition() ?? 0;
+  }
+  totalTime = 0;
+};
+function issueAnimationCommand(renderer, element, id, command, args) {
+  renderer.setProperty(element, `@@${id}:${command}`, args);
+}
+function unwrapAnimationRenderer(renderer) {
+  const type = renderer.\u0275type;
+  if (type === 0) {
+    return renderer;
+  } else if (type === 1) {
+    return renderer.animationRenderer;
+  }
+  return null;
+}
+function isAnimationRenderer(renderer) {
+  const type = renderer.\u0275type;
+  return type === 0 || type === 1;
+}
+var NoopAnimationPlayer = class {
+  _onDoneFns = [];
+  _onStartFns = [];
+  _onDestroyFns = [];
+  _originalOnDoneFns = [];
+  _originalOnStartFns = [];
+  _started = false;
+  _destroyed = false;
+  _finished = false;
+  _position = 0;
+  parentPlayer = null;
+  totalTime;
+  constructor(duration = 0, delay = 0) {
+    this.totalTime = duration + delay;
+  }
+  _onFinish() {
+    if (!this._finished) {
+      this._finished = true;
+      this._onDoneFns.forEach((fn) => fn());
+      this._onDoneFns = [];
+    }
+  }
+  onStart(fn) {
+    this._originalOnStartFns.push(fn);
+    this._onStartFns.push(fn);
+  }
+  onDone(fn) {
+    this._originalOnDoneFns.push(fn);
+    this._onDoneFns.push(fn);
+  }
+  onDestroy(fn) {
+    this._onDestroyFns.push(fn);
+  }
+  hasStarted() {
+    return this._started;
+  }
+  init() {
+  }
+  play() {
+    if (!this.hasStarted()) {
+      this._onStart();
+      this.triggerMicrotask();
+    }
+    this._started = true;
+  }
+  /** @internal */
+  triggerMicrotask() {
+    queueMicrotask(() => this._onFinish());
+  }
+  _onStart() {
+    this._onStartFns.forEach((fn) => fn());
+    this._onStartFns = [];
+  }
+  pause() {
+  }
+  restart() {
+  }
+  finish() {
+    this._onFinish();
+  }
+  destroy() {
+    if (!this._destroyed) {
+      this._destroyed = true;
+      if (!this.hasStarted()) {
+        this._onStart();
+      }
+      this.finish();
+      this._onDestroyFns.forEach((fn) => fn());
+      this._onDestroyFns = [];
+    }
+  }
+  reset() {
+    this._started = false;
+    this._finished = false;
+    this._onStartFns = this._originalOnStartFns;
+    this._onDoneFns = this._originalOnDoneFns;
+  }
+  setPosition(position) {
+    this._position = this.totalTime ? position * this.totalTime : 1;
+  }
+  getPosition() {
+    return this.totalTime ? this._position / this.totalTime : 1;
+  }
+  /** @internal */
+  triggerCallback(phaseName) {
+    const methods = phaseName == "start" ? this._onStartFns : this._onDoneFns;
+    methods.forEach((fn) => fn());
+    methods.length = 0;
+  }
+};
+var AnimationGroupPlayer = class {
+  _onDoneFns = [];
+  _onStartFns = [];
+  _finished = false;
+  _started = false;
+  _destroyed = false;
+  _onDestroyFns = [];
+  parentPlayer = null;
+  totalTime = 0;
+  players;
+  constructor(_players) {
+    this.players = _players;
+    let doneCount = 0;
+    let destroyCount = 0;
+    let startCount = 0;
+    const total = this.players.length;
+    if (total == 0) {
+      queueMicrotask(() => this._onFinish());
+    } else {
+      this.players.forEach((player) => {
+        player.onDone(() => {
+          if (++doneCount == total) {
+            this._onFinish();
+          }
+        });
+        player.onDestroy(() => {
+          if (++destroyCount == total) {
+            this._onDestroy();
+          }
+        });
+        player.onStart(() => {
+          if (++startCount == total) {
+            this._onStart();
+          }
+        });
+      });
+    }
+    this.totalTime = this.players.reduce((time, player) => Math.max(time, player.totalTime), 0);
+  }
+  _onFinish() {
+    if (!this._finished) {
+      this._finished = true;
+      this._onDoneFns.forEach((fn) => fn());
+      this._onDoneFns = [];
+    }
+  }
+  init() {
+    this.players.forEach((player) => player.init());
+  }
+  onStart(fn) {
+    this._onStartFns.push(fn);
+  }
+  _onStart() {
+    if (!this.hasStarted()) {
+      this._started = true;
+      this._onStartFns.forEach((fn) => fn());
+      this._onStartFns = [];
+    }
+  }
+  onDone(fn) {
+    this._onDoneFns.push(fn);
+  }
+  onDestroy(fn) {
+    this._onDestroyFns.push(fn);
+  }
+  hasStarted() {
+    return this._started;
+  }
+  play() {
+    if (!this.parentPlayer) {
+      this.init();
+    }
+    this._onStart();
+    this.players.forEach((player) => player.play());
+  }
+  pause() {
+    this.players.forEach((player) => player.pause());
+  }
+  restart() {
+    this.players.forEach((player) => player.restart());
+  }
+  finish() {
+    this._onFinish();
+    this.players.forEach((player) => player.finish());
+  }
+  destroy() {
+    this._onDestroy();
+  }
+  _onDestroy() {
+    if (!this._destroyed) {
+      this._destroyed = true;
+      this._onFinish();
+      this.players.forEach((player) => player.destroy());
+      this._onDestroyFns.forEach((fn) => fn());
+      this._onDestroyFns = [];
+    }
+  }
+  reset() {
+    this.players.forEach((player) => player.reset());
+    this._destroyed = false;
+    this._finished = false;
+    this._started = false;
+  }
+  setPosition(p) {
+    const timeAtPosition = p * this.totalTime;
+    this.players.forEach((player) => {
+      const position = player.totalTime ? Math.min(1, timeAtPosition / player.totalTime) : 1;
+      player.setPosition(position);
+    });
+  }
+  getPosition() {
+    const longestPlayer = this.players.reduce((longestSoFar, player) => {
+      const newPlayerIsLongest = longestSoFar === null || player.totalTime > longestSoFar.totalTime;
+      return newPlayerIsLongest ? player : longestSoFar;
+    }, null);
+    return longestPlayer != null ? longestPlayer.getPosition() : 0;
+  }
+  beforeDestroy() {
+    this.players.forEach((player) => {
+      if (player.beforeDestroy) {
+        player.beforeDestroy();
+      }
+    });
+  }
+  /** @internal */
+  triggerCallback(phaseName) {
+    const methods = phaseName == "start" ? this._onStartFns : this._onDoneFns;
+    methods.forEach((fn) => fn());
+    methods.length = 0;
+  }
+};
+var \u0275PRE_STYLE = "!";
 
-// projects/fasten-connect-stitch-embed/src/app/app.module.ts
-var AppModule = class _AppModule {
-  static {
-    this.\u0275fac = function AppModule_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AppModule)();
+// node_modules/@angular/animations/fesm2022/browser.mjs
+var LINE_START = "\n - ";
+function invalidTimingValue(exp) {
+  return new RuntimeError(3e3, ngDevMode && `The provided timing value "${exp}" is invalid.`);
+}
+function negativeStepValue() {
+  return new RuntimeError(3100, ngDevMode && "Duration values below 0 are not allowed for this animation step.");
+}
+function negativeDelayValue() {
+  return new RuntimeError(3101, ngDevMode && "Delay values below 0 are not allowed for this animation step.");
+}
+function invalidStyleParams(varName) {
+  return new RuntimeError(3001, ngDevMode && `Unable to resolve the local animation param ${varName} in the given list of values`);
+}
+function invalidParamValue(varName) {
+  return new RuntimeError(3003, ngDevMode && `Please provide a value for the animation param ${varName}`);
+}
+function invalidNodeType(nodeType) {
+  return new RuntimeError(3004, ngDevMode && `Unable to resolve animation metadata node #${nodeType}`);
+}
+function invalidCssUnitValue(userProvidedProperty, value) {
+  return new RuntimeError(3005, ngDevMode && `Please provide a CSS unit value for ${userProvidedProperty}:${value}`);
+}
+function invalidTrigger() {
+  return new RuntimeError(3006, ngDevMode && "animation triggers cannot be prefixed with an `@` sign (e.g. trigger('@foo', [...]))");
+}
+function invalidDefinition() {
+  return new RuntimeError(3007, ngDevMode && "only state() and transition() definitions can sit inside of a trigger()");
+}
+function invalidState(metadataName, missingSubs) {
+  return new RuntimeError(3008, ngDevMode && `state("${metadataName}", ...) must define default values for all the following style substitutions: ${missingSubs.join(", ")}`);
+}
+function invalidStyleValue(value) {
+  return new RuntimeError(3002, ngDevMode && `The provided style string value ${value} is not allowed.`);
+}
+function invalidParallelAnimation(prop, firstStart, firstEnd, secondStart, secondEnd) {
+  return new RuntimeError(3010, ngDevMode && `The CSS property "${prop}" that exists between the times of "${firstStart}ms" and "${firstEnd}ms" is also being animated in a parallel animation between the times of "${secondStart}ms" and "${secondEnd}ms"`);
+}
+function invalidKeyframes() {
+  return new RuntimeError(3011, ngDevMode && `keyframes() must be placed inside of a call to animate()`);
+}
+function invalidOffset() {
+  return new RuntimeError(3012, ngDevMode && `Please ensure that all keyframe offsets are between 0 and 1`);
+}
+function keyframeOffsetsOutOfOrder() {
+  return new RuntimeError(3200, ngDevMode && `Please ensure that all keyframe offsets are in order`);
+}
+function keyframesMissingOffsets() {
+  return new RuntimeError(3202, ngDevMode && `Not all style() steps within the declared keyframes() contain offsets`);
+}
+function invalidStagger() {
+  return new RuntimeError(3013, ngDevMode && `stagger() can only be used inside of query()`);
+}
+function invalidQuery(selector) {
+  return new RuntimeError(3014, ngDevMode && `\`query("${selector}")\` returned zero elements. (Use \`query("${selector}", { optional: true })\` if you wish to allow this.)`);
+}
+function invalidExpression(expr) {
+  return new RuntimeError(3015, ngDevMode && `The provided transition expression "${expr}" is not supported`);
+}
+function invalidTransitionAlias(alias) {
+  return new RuntimeError(3016, ngDevMode && `The transition alias value "${alias}" is not supported`);
+}
+function triggerBuildFailed(name, errors) {
+  return new RuntimeError(3404, ngDevMode && `The animation trigger "${name}" has failed to build due to the following errors:
+ - ${errors.map((err) => err.message).join("\n - ")}`);
+}
+function animationFailed(errors) {
+  return new RuntimeError(3502, ngDevMode && `Unable to animate due to the following errors:${LINE_START}${errors.map((err) => err.message).join(LINE_START)}`);
+}
+function registerFailed(errors) {
+  return new RuntimeError(3503, ngDevMode && `Unable to build the animation due to the following errors: ${errors.map((err) => err.message).join("\n")}`);
+}
+function missingOrDestroyedAnimation() {
+  return new RuntimeError(3300, ngDevMode && "The requested animation doesn't exist or has already been destroyed");
+}
+function createAnimationFailed(errors) {
+  return new RuntimeError(3504, ngDevMode && `Unable to create the animation due to the following errors:${errors.map((err) => err.message).join("\n")}`);
+}
+function missingPlayer(id) {
+  return new RuntimeError(3301, ngDevMode && `Unable to find the timeline player referenced by ${id}`);
+}
+function missingTrigger(phase, name) {
+  return new RuntimeError(3302, ngDevMode && `Unable to listen on the animation trigger event "${phase}" because the animation trigger "${name}" doesn't exist!`);
+}
+function missingEvent(name) {
+  return new RuntimeError(3303, ngDevMode && `Unable to listen on the animation trigger "${name}" because the provided event is undefined!`);
+}
+function unsupportedTriggerEvent(phase, name) {
+  return new RuntimeError(3400, ngDevMode && `The provided animation trigger event "${phase}" for the animation trigger "${name}" is not supported!`);
+}
+function unregisteredTrigger(name) {
+  return new RuntimeError(3401, ngDevMode && `The provided animation trigger "${name}" has not been registered!`);
+}
+function triggerTransitionsFailed(errors) {
+  return new RuntimeError(3402, ngDevMode && `Unable to process animations due to the following failed trigger transitions
+ ${errors.map((err) => err.message).join("\n")}`);
+}
+function transitionFailed(name, errors) {
+  return new RuntimeError(3505, ngDevMode && `@${name} has failed due to:
+ ${errors.map((err) => err.message).join("\n- ")}`);
+}
+var ANIMATABLE_PROP_SET = /* @__PURE__ */ new Set(["-moz-outline-radius", "-moz-outline-radius-bottomleft", "-moz-outline-radius-bottomright", "-moz-outline-radius-topleft", "-moz-outline-radius-topright", "-ms-grid-columns", "-ms-grid-rows", "-webkit-line-clamp", "-webkit-text-fill-color", "-webkit-text-stroke", "-webkit-text-stroke-color", "accent-color", "all", "backdrop-filter", "background", "background-color", "background-position", "background-size", "block-size", "border", "border-block-end", "border-block-end-color", "border-block-end-width", "border-block-start", "border-block-start-color", "border-block-start-width", "border-bottom", "border-bottom-color", "border-bottom-left-radius", "border-bottom-right-radius", "border-bottom-width", "border-color", "border-end-end-radius", "border-end-start-radius", "border-image-outset", "border-image-slice", "border-image-width", "border-inline-end", "border-inline-end-color", "border-inline-end-width", "border-inline-start", "border-inline-start-color", "border-inline-start-width", "border-left", "border-left-color", "border-left-width", "border-radius", "border-right", "border-right-color", "border-right-width", "border-start-end-radius", "border-start-start-radius", "border-top", "border-top-color", "border-top-left-radius", "border-top-right-radius", "border-top-width", "border-width", "bottom", "box-shadow", "caret-color", "clip", "clip-path", "color", "column-count", "column-gap", "column-rule", "column-rule-color", "column-rule-width", "column-width", "columns", "filter", "flex", "flex-basis", "flex-grow", "flex-shrink", "font", "font-size", "font-size-adjust", "font-stretch", "font-variation-settings", "font-weight", "gap", "grid-column-gap", "grid-gap", "grid-row-gap", "grid-template-columns", "grid-template-rows", "height", "inline-size", "input-security", "inset", "inset-block", "inset-block-end", "inset-block-start", "inset-inline", "inset-inline-end", "inset-inline-start", "left", "letter-spacing", "line-clamp", "line-height", "margin", "margin-block-end", "margin-block-start", "margin-bottom", "margin-inline-end", "margin-inline-start", "margin-left", "margin-right", "margin-top", "mask", "mask-border", "mask-position", "mask-size", "max-block-size", "max-height", "max-inline-size", "max-lines", "max-width", "min-block-size", "min-height", "min-inline-size", "min-width", "object-position", "offset", "offset-anchor", "offset-distance", "offset-path", "offset-position", "offset-rotate", "opacity", "order", "outline", "outline-color", "outline-offset", "outline-width", "padding", "padding-block-end", "padding-block-start", "padding-bottom", "padding-inline-end", "padding-inline-start", "padding-left", "padding-right", "padding-top", "perspective", "perspective-origin", "right", "rotate", "row-gap", "scale", "scroll-margin", "scroll-margin-block", "scroll-margin-block-end", "scroll-margin-block-start", "scroll-margin-bottom", "scroll-margin-inline", "scroll-margin-inline-end", "scroll-margin-inline-start", "scroll-margin-left", "scroll-margin-right", "scroll-margin-top", "scroll-padding", "scroll-padding-block", "scroll-padding-block-end", "scroll-padding-block-start", "scroll-padding-bottom", "scroll-padding-inline", "scroll-padding-inline-end", "scroll-padding-inline-start", "scroll-padding-left", "scroll-padding-right", "scroll-padding-top", "scroll-snap-coordinate", "scroll-snap-destination", "scrollbar-color", "shape-image-threshold", "shape-margin", "shape-outside", "tab-size", "text-decoration", "text-decoration-color", "text-decoration-thickness", "text-emphasis", "text-emphasis-color", "text-indent", "text-shadow", "text-underline-offset", "top", "transform", "transform-origin", "translate", "vertical-align", "visibility", "width", "word-spacing", "z-index", "zoom"]);
+function optimizeGroupPlayer(players) {
+  switch (players.length) {
+    case 0:
+      return new NoopAnimationPlayer();
+    case 1:
+      return players[0];
+    default:
+      return new AnimationGroupPlayer(players);
+  }
+}
+function normalizeKeyframes$1(normalizer, keyframes, preStyles = /* @__PURE__ */ new Map(), postStyles = /* @__PURE__ */ new Map()) {
+  const errors = [];
+  const normalizedKeyframes = [];
+  let previousOffset = -1;
+  let previousKeyframe = null;
+  keyframes.forEach((kf) => {
+    const offset = kf.get("offset");
+    const isSameOffset = offset == previousOffset;
+    const normalizedKeyframe = isSameOffset && previousKeyframe || /* @__PURE__ */ new Map();
+    kf.forEach((val, prop) => {
+      let normalizedProp = prop;
+      let normalizedValue = val;
+      if (prop !== "offset") {
+        normalizedProp = normalizer.normalizePropertyName(normalizedProp, errors);
+        switch (normalizedValue) {
+          case \u0275PRE_STYLE:
+            normalizedValue = preStyles.get(prop);
+            break;
+          case AUTO_STYLE:
+            normalizedValue = postStyles.get(prop);
+            break;
+          default:
+            normalizedValue = normalizer.normalizeStyleValue(prop, normalizedProp, normalizedValue, errors);
+            break;
+        }
+      }
+      normalizedKeyframe.set(normalizedProp, normalizedValue);
+    });
+    if (!isSameOffset) {
+      normalizedKeyframes.push(normalizedKeyframe);
+    }
+    previousKeyframe = normalizedKeyframe;
+    previousOffset = offset;
+  });
+  if (errors.length) {
+    throw animationFailed(errors);
+  }
+  return normalizedKeyframes;
+}
+function listenOnPlayer(player, eventName, event, callback) {
+  switch (eventName) {
+    case "start":
+      player.onStart(() => callback(event && copyAnimationEvent(event, "start", player)));
+      break;
+    case "done":
+      player.onDone(() => callback(event && copyAnimationEvent(event, "done", player)));
+      break;
+    case "destroy":
+      player.onDestroy(() => callback(event && copyAnimationEvent(event, "destroy", player)));
+      break;
+  }
+}
+function copyAnimationEvent(e, phaseName, player) {
+  const totalTime = player.totalTime;
+  const disabled = player.disabled ? true : false;
+  const event = makeAnimationEvent(e.element, e.triggerName, e.fromState, e.toState, phaseName || e.phaseName, totalTime == void 0 ? e.totalTime : totalTime, disabled);
+  const data = e["_data"];
+  if (data != null) {
+    event["_data"] = data;
+  }
+  return event;
+}
+function makeAnimationEvent(element, triggerName, fromState, toState, phaseName = "", totalTime = 0, disabled) {
+  return {
+    element,
+    triggerName,
+    fromState,
+    toState,
+    phaseName,
+    totalTime,
+    disabled: !!disabled
+  };
+}
+function getOrSetDefaultValue(map2, key, defaultValue) {
+  let value = map2.get(key);
+  if (!value) {
+    map2.set(key, value = defaultValue);
+  }
+  return value;
+}
+function parseTimelineCommand(command) {
+  const separatorPos = command.indexOf(":");
+  const id = command.substring(1, separatorPos);
+  const action = command.slice(separatorPos + 1);
+  return [id, action];
+}
+var documentElement = /* @__PURE__ */ (() => typeof document === "undefined" ? null : document.documentElement)();
+function getParentElement(element) {
+  const parent = element.parentNode || element.host || null;
+  if (parent === documentElement) {
+    return null;
+  }
+  return parent;
+}
+function containsVendorPrefix(prop) {
+  return prop.substring(1, 6) == "ebkit";
+}
+var _CACHED_BODY = null;
+var _IS_WEBKIT = false;
+function validateStyleProperty(prop) {
+  if (!_CACHED_BODY) {
+    _CACHED_BODY = getBodyNode() || {};
+    _IS_WEBKIT = _CACHED_BODY.style ? "WebkitAppearance" in _CACHED_BODY.style : false;
+  }
+  let result = true;
+  if (_CACHED_BODY.style && !containsVendorPrefix(prop)) {
+    result = prop in _CACHED_BODY.style;
+    if (!result && _IS_WEBKIT) {
+      const camelProp = "Webkit" + prop.charAt(0).toUpperCase() + prop.slice(1);
+      result = camelProp in _CACHED_BODY.style;
+    }
+  }
+  return result;
+}
+function validateWebAnimatableStyleProperty(prop) {
+  return ANIMATABLE_PROP_SET.has(prop);
+}
+function getBodyNode() {
+  if (typeof document != "undefined") {
+    return document.body;
+  }
+  return null;
+}
+function containsElement(elm1, elm2) {
+  while (elm2) {
+    if (elm2 === elm1) {
+      return true;
+    }
+    elm2 = getParentElement(elm2);
+  }
+  return false;
+}
+function invokeQuery(element, selector, multi) {
+  if (multi) {
+    return Array.from(element.querySelectorAll(selector));
+  }
+  const elem = element.querySelector(selector);
+  return elem ? [elem] : [];
+}
+var NoopAnimationDriver = class _NoopAnimationDriver {
+  /**
+   * @returns Whether `prop` is a valid CSS property
+   */
+  validateStyleProperty(prop) {
+    return validateStyleProperty(prop);
+  }
+  /**
+   *
+   * @returns Whether elm1 contains elm2.
+   */
+  containsElement(elm1, elm2) {
+    return containsElement(elm1, elm2);
+  }
+  /**
+   * @returns Rhe parent of the given element or `null` if the element is the `document`
+   */
+  getParentElement(element) {
+    return getParentElement(element);
+  }
+  /**
+   * @returns The result of the query selector on the element. The array will contain up to 1 item
+   *     if `multi` is  `false`.
+   */
+  query(element, selector, multi) {
+    return invokeQuery(element, selector, multi);
+  }
+  /**
+   * @returns The `defaultValue` or empty string
+   */
+  computeStyle(element, prop, defaultValue) {
+    return defaultValue || "";
+  }
+  /**
+   * @returns An `NoopAnimationPlayer`
+   */
+  animate(element, keyframes, duration, delay, easing, previousPlayers = [], scrubberAccessRequested) {
+    return new NoopAnimationPlayer(duration, delay);
+  }
+  static \u0275fac = function NoopAnimationDriver_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _NoopAnimationDriver)();
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+    token: _NoopAnimationDriver,
+    factory: _NoopAnimationDriver.\u0275fac
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NoopAnimationDriver, [{
+    type: Injectable
+  }], null, null);
+})();
+var AnimationDriver = class {
+  /**
+   * @deprecated Use the NoopAnimationDriver class.
+   */
+  static NOOP = new NoopAnimationDriver();
+};
+var AnimationStyleNormalizer = class {
+};
+var ONE_SECOND = 1e3;
+var SUBSTITUTION_EXPR_START = "{{";
+var SUBSTITUTION_EXPR_END = "}}";
+var ENTER_CLASSNAME = "ng-enter";
+var LEAVE_CLASSNAME = "ng-leave";
+var NG_TRIGGER_CLASSNAME = "ng-trigger";
+var NG_TRIGGER_SELECTOR = ".ng-trigger";
+var NG_ANIMATING_CLASSNAME = "ng-animating";
+var NG_ANIMATING_SELECTOR = ".ng-animating";
+function resolveTimingValue(value) {
+  if (typeof value == "number") return value;
+  const matches = value.match(/^(-?[\.\d]+)(m?s)/);
+  if (!matches || matches.length < 2) return 0;
+  return _convertTimeValueToMS(parseFloat(matches[1]), matches[2]);
+}
+function _convertTimeValueToMS(value, unit) {
+  switch (unit) {
+    case "s":
+      return value * ONE_SECOND;
+    default:
+      return value;
+  }
+}
+function resolveTiming(timings, errors, allowNegativeValues) {
+  return timings.hasOwnProperty("duration") ? timings : parseTimeExpression(timings, errors, allowNegativeValues);
+}
+function parseTimeExpression(exp, errors, allowNegativeValues) {
+  const regex = /^(-?[\.\d]+)(m?s)(?:\s+(-?[\.\d]+)(m?s))?(?:\s+([-a-z]+(?:\(.+?\))?))?$/i;
+  let duration;
+  let delay = 0;
+  let easing = "";
+  if (typeof exp === "string") {
+    const matches = exp.match(regex);
+    if (matches === null) {
+      errors.push(invalidTimingValue(exp));
+      return {
+        duration: 0,
+        delay: 0,
+        easing: ""
+      };
+    }
+    duration = _convertTimeValueToMS(parseFloat(matches[1]), matches[2]);
+    const delayMatch = matches[3];
+    if (delayMatch != null) {
+      delay = _convertTimeValueToMS(parseFloat(delayMatch), matches[4]);
+    }
+    const easingVal = matches[5];
+    if (easingVal) {
+      easing = easingVal;
+    }
+  } else {
+    duration = exp;
+  }
+  if (!allowNegativeValues) {
+    let containsErrors = false;
+    let startIndex = errors.length;
+    if (duration < 0) {
+      errors.push(negativeStepValue());
+      containsErrors = true;
+    }
+    if (delay < 0) {
+      errors.push(negativeDelayValue());
+      containsErrors = true;
+    }
+    if (containsErrors) {
+      errors.splice(startIndex, 0, invalidTimingValue(exp));
+    }
+  }
+  return {
+    duration,
+    delay,
+    easing
+  };
+}
+function normalizeKeyframes(keyframes) {
+  if (!keyframes.length) {
+    return [];
+  }
+  if (keyframes[0] instanceof Map) {
+    return keyframes;
+  }
+  return keyframes.map((kf) => new Map(Object.entries(kf)));
+}
+function setStyles(element, styles, formerStyles) {
+  styles.forEach((val, prop) => {
+    const camelProp = dashCaseToCamelCase(prop);
+    if (formerStyles && !formerStyles.has(prop)) {
+      formerStyles.set(prop, element.style[camelProp]);
+    }
+    element.style[camelProp] = val;
+  });
+}
+function eraseStyles(element, styles) {
+  styles.forEach((_, prop) => {
+    const camelProp = dashCaseToCamelCase(prop);
+    element.style[camelProp] = "";
+  });
+}
+function normalizeAnimationEntry(steps) {
+  if (Array.isArray(steps)) {
+    if (steps.length == 1) return steps[0];
+    return sequence(steps);
+  }
+  return steps;
+}
+function validateStyleParams(value, options, errors) {
+  const params = options.params || {};
+  const matches = extractStyleParams(value);
+  if (matches.length) {
+    matches.forEach((varName) => {
+      if (!params.hasOwnProperty(varName)) {
+        errors.push(invalidStyleParams(varName));
+      }
+    });
+  }
+}
+var PARAM_REGEX = /* @__PURE__ */ new RegExp(`${SUBSTITUTION_EXPR_START}\\s*(.+?)\\s*${SUBSTITUTION_EXPR_END}`, "g");
+function extractStyleParams(value) {
+  let params = [];
+  if (typeof value === "string") {
+    let match2;
+    while (match2 = PARAM_REGEX.exec(value)) {
+      params.push(match2[1]);
+    }
+    PARAM_REGEX.lastIndex = 0;
+  }
+  return params;
+}
+function interpolateParams(value, params, errors) {
+  const original = `${value}`;
+  const str = original.replace(PARAM_REGEX, (_, varName) => {
+    let localVal = params[varName];
+    if (localVal == null) {
+      errors.push(invalidParamValue(varName));
+      localVal = "";
+    }
+    return localVal.toString();
+  });
+  return str == original ? value : str;
+}
+var DASH_CASE_REGEXP = /-+([a-z0-9])/g;
+function dashCaseToCamelCase(input2) {
+  return input2.replace(DASH_CASE_REGEXP, (...m) => m[1].toUpperCase());
+}
+function camelCaseToDashCase2(input2) {
+  return input2.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+}
+function allowPreviousPlayerStylesMerge(duration, delay) {
+  return duration === 0 || delay === 0;
+}
+function balancePreviousStylesIntoKeyframes(element, keyframes, previousStyles) {
+  if (previousStyles.size && keyframes.length) {
+    let startingKeyframe = keyframes[0];
+    let missingStyleProps = [];
+    previousStyles.forEach((val, prop) => {
+      if (!startingKeyframe.has(prop)) {
+        missingStyleProps.push(prop);
+      }
+      startingKeyframe.set(prop, val);
+    });
+    if (missingStyleProps.length) {
+      for (let i = 1; i < keyframes.length; i++) {
+        let kf = keyframes[i];
+        missingStyleProps.forEach((prop) => kf.set(prop, computeStyle(element, prop)));
+      }
+    }
+  }
+  return keyframes;
+}
+function visitDslNode(visitor, node, context2) {
+  switch (node.type) {
+    case AnimationMetadataType.Trigger:
+      return visitor.visitTrigger(node, context2);
+    case AnimationMetadataType.State:
+      return visitor.visitState(node, context2);
+    case AnimationMetadataType.Transition:
+      return visitor.visitTransition(node, context2);
+    case AnimationMetadataType.Sequence:
+      return visitor.visitSequence(node, context2);
+    case AnimationMetadataType.Group:
+      return visitor.visitGroup(node, context2);
+    case AnimationMetadataType.Animate:
+      return visitor.visitAnimate(node, context2);
+    case AnimationMetadataType.Keyframes:
+      return visitor.visitKeyframes(node, context2);
+    case AnimationMetadataType.Style:
+      return visitor.visitStyle(node, context2);
+    case AnimationMetadataType.Reference:
+      return visitor.visitReference(node, context2);
+    case AnimationMetadataType.AnimateChild:
+      return visitor.visitAnimateChild(node, context2);
+    case AnimationMetadataType.AnimateRef:
+      return visitor.visitAnimateRef(node, context2);
+    case AnimationMetadataType.Query:
+      return visitor.visitQuery(node, context2);
+    case AnimationMetadataType.Stagger:
+      return visitor.visitStagger(node, context2);
+    default:
+      throw invalidNodeType(node.type);
+  }
+}
+function computeStyle(element, prop) {
+  return window.getComputedStyle(element)[prop];
+}
+var DIMENSIONAL_PROP_SET = /* @__PURE__ */ new Set(["width", "height", "minWidth", "minHeight", "maxWidth", "maxHeight", "left", "top", "bottom", "right", "fontSize", "outlineWidth", "outlineOffset", "paddingTop", "paddingLeft", "paddingBottom", "paddingRight", "marginTop", "marginLeft", "marginBottom", "marginRight", "borderRadius", "borderWidth", "borderTopWidth", "borderLeftWidth", "borderRightWidth", "borderBottomWidth", "textIndent", "perspective"]);
+var WebAnimationsStyleNormalizer = class extends AnimationStyleNormalizer {
+  normalizePropertyName(propertyName, errors) {
+    return dashCaseToCamelCase(propertyName);
+  }
+  normalizeStyleValue(userProvidedProperty, normalizedProperty, value, errors) {
+    let unit = "";
+    const strVal = value.toString().trim();
+    if (DIMENSIONAL_PROP_SET.has(normalizedProperty) && value !== 0 && value !== "0") {
+      if (typeof value === "number") {
+        unit = "px";
+      } else {
+        const valAndSuffixMatch = value.match(/^[+-]?[\d\.]+([a-z]*)$/);
+        if (valAndSuffixMatch && valAndSuffixMatch[1].length == 0) {
+          errors.push(invalidCssUnitValue(userProvidedProperty, value));
+        }
+      }
+    }
+    return strVal + unit;
+  }
+};
+function createListOfWarnings(warnings) {
+  const LINE_START2 = "\n - ";
+  return `${LINE_START2}${warnings.filter(Boolean).map((warning) => warning).join(LINE_START2)}`;
+}
+function warnTriggerBuild(name, warnings) {
+  console.warn(`The animation trigger "${name}" has built with the following warnings:${createListOfWarnings(warnings)}`);
+}
+function warnRegister(warnings) {
+  console.warn(`Animation built with the following warnings:${createListOfWarnings(warnings)}`);
+}
+function pushUnrecognizedPropertiesWarning(warnings, props) {
+  if (props.length) {
+    warnings.push(`The following provided properties are not recognized: ${props.join(", ")}`);
+  }
+}
+var ANY_STATE = "*";
+function parseTransitionExpr(transitionValue, errors) {
+  const expressions = [];
+  if (typeof transitionValue == "string") {
+    transitionValue.split(/\s*,\s*/).forEach((str) => parseInnerTransitionStr(str, expressions, errors));
+  } else {
+    expressions.push(transitionValue);
+  }
+  return expressions;
+}
+function parseInnerTransitionStr(eventStr, expressions, errors) {
+  if (eventStr[0] == ":") {
+    const result = parseAnimationAlias(eventStr, errors);
+    if (typeof result == "function") {
+      expressions.push(result);
+      return;
+    }
+    eventStr = result;
+  }
+  const match2 = eventStr.match(/^(\*|[-\w]+)\s*(<?[=-]>)\s*(\*|[-\w]+)$/);
+  if (match2 == null || match2.length < 4) {
+    errors.push(invalidExpression(eventStr));
+    return expressions;
+  }
+  const fromState = match2[1];
+  const separator = match2[2];
+  const toState = match2[3];
+  expressions.push(makeLambdaFromStates(fromState, toState));
+  const isFullAnyStateExpr = fromState == ANY_STATE && toState == ANY_STATE;
+  if (separator[0] == "<" && !isFullAnyStateExpr) {
+    expressions.push(makeLambdaFromStates(toState, fromState));
+  }
+  return;
+}
+function parseAnimationAlias(alias, errors) {
+  switch (alias) {
+    case ":enter":
+      return "void => *";
+    case ":leave":
+      return "* => void";
+    case ":increment":
+      return (fromState, toState) => parseFloat(toState) > parseFloat(fromState);
+    case ":decrement":
+      return (fromState, toState) => parseFloat(toState) < parseFloat(fromState);
+    default:
+      errors.push(invalidTransitionAlias(alias));
+      return "* => *";
+  }
+}
+var TRUE_BOOLEAN_VALUES = /* @__PURE__ */ new Set(["true", "1"]);
+var FALSE_BOOLEAN_VALUES = /* @__PURE__ */ new Set(["false", "0"]);
+function makeLambdaFromStates(lhs, rhs) {
+  const LHS_MATCH_BOOLEAN = TRUE_BOOLEAN_VALUES.has(lhs) || FALSE_BOOLEAN_VALUES.has(lhs);
+  const RHS_MATCH_BOOLEAN = TRUE_BOOLEAN_VALUES.has(rhs) || FALSE_BOOLEAN_VALUES.has(rhs);
+  return (fromState, toState) => {
+    let lhsMatch = lhs == ANY_STATE || lhs == fromState;
+    let rhsMatch = rhs == ANY_STATE || rhs == toState;
+    if (!lhsMatch && LHS_MATCH_BOOLEAN && typeof fromState === "boolean") {
+      lhsMatch = fromState ? TRUE_BOOLEAN_VALUES.has(lhs) : FALSE_BOOLEAN_VALUES.has(lhs);
+    }
+    if (!rhsMatch && RHS_MATCH_BOOLEAN && typeof toState === "boolean") {
+      rhsMatch = toState ? TRUE_BOOLEAN_VALUES.has(rhs) : FALSE_BOOLEAN_VALUES.has(rhs);
+    }
+    return lhsMatch && rhsMatch;
+  };
+}
+var SELF_TOKEN = ":self";
+var SELF_TOKEN_REGEX = /* @__PURE__ */ new RegExp(`s*${SELF_TOKEN}s*,?`, "g");
+function buildAnimationAst(driver, metadata, errors, warnings) {
+  return new AnimationAstBuilderVisitor(driver).build(metadata, errors, warnings);
+}
+var ROOT_SELECTOR = "";
+var AnimationAstBuilderVisitor = class {
+  _driver;
+  constructor(_driver) {
+    this._driver = _driver;
+  }
+  build(metadata, errors, warnings) {
+    const context2 = new AnimationAstBuilderContext(errors);
+    this._resetContextStyleTimingState(context2);
+    const ast = visitDslNode(this, normalizeAnimationEntry(metadata), context2);
+    if (typeof ngDevMode === "undefined" || ngDevMode) {
+      if (context2.unsupportedCSSPropertiesFound.size) {
+        pushUnrecognizedPropertiesWarning(warnings, [...context2.unsupportedCSSPropertiesFound.keys()]);
+      }
+    }
+    return ast;
+  }
+  _resetContextStyleTimingState(context2) {
+    context2.currentQuerySelector = ROOT_SELECTOR;
+    context2.collectedStyles = /* @__PURE__ */ new Map();
+    context2.collectedStyles.set(ROOT_SELECTOR, /* @__PURE__ */ new Map());
+    context2.currentTime = 0;
+  }
+  visitTrigger(metadata, context2) {
+    let queryCount = context2.queryCount = 0;
+    let depCount = context2.depCount = 0;
+    const states = [];
+    const transitions = [];
+    if (metadata.name.charAt(0) == "@") {
+      context2.errors.push(invalidTrigger());
+    }
+    metadata.definitions.forEach((def) => {
+      this._resetContextStyleTimingState(context2);
+      if (def.type == AnimationMetadataType.State) {
+        const stateDef = def;
+        const name = stateDef.name;
+        name.toString().split(/\s*,\s*/).forEach((n) => {
+          stateDef.name = n;
+          states.push(this.visitState(stateDef, context2));
+        });
+        stateDef.name = name;
+      } else if (def.type == AnimationMetadataType.Transition) {
+        const transition = this.visitTransition(def, context2);
+        queryCount += transition.queryCount;
+        depCount += transition.depCount;
+        transitions.push(transition);
+      } else {
+        context2.errors.push(invalidDefinition());
+      }
+    });
+    return {
+      type: AnimationMetadataType.Trigger,
+      name: metadata.name,
+      states,
+      transitions,
+      queryCount,
+      depCount,
+      options: null
     };
   }
-  static {
-    this.\u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({ type: _AppModule, bootstrap: [AppComponent] });
+  visitState(metadata, context2) {
+    const styleAst = this.visitStyle(metadata.styles, context2);
+    const astParams = metadata.options && metadata.options.params || null;
+    if (styleAst.containsDynamicStyles) {
+      const missingSubs = /* @__PURE__ */ new Set();
+      const params = astParams || {};
+      styleAst.styles.forEach((style2) => {
+        if (style2 instanceof Map) {
+          style2.forEach((value) => {
+            extractStyleParams(value).forEach((sub) => {
+              if (!params.hasOwnProperty(sub)) {
+                missingSubs.add(sub);
+              }
+            });
+          });
+        }
+      });
+      if (missingSubs.size) {
+        context2.errors.push(invalidState(metadata.name, [...missingSubs.values()]));
+      }
+    }
+    return {
+      type: AnimationMetadataType.State,
+      name: metadata.name,
+      style: styleAst,
+      options: astParams ? {
+        params: astParams
+      } : null
+    };
   }
-  static {
-    this.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({ providers: [
-      {
-        provide: HTTP_INTERCEPTORS,
-        useClass: AuthInterceptorService,
-        multi: true
-        // deps: [AuthService, NavOutletService]
-        // deps: [AuthService, NavOutletService]
-      },
-      IsAuthenticatedAuthGuard,
-      IsTefcaModeAuthGuard,
-      provideHttpClient(withInterceptorsFromDi()),
-      provideRouter(routes, withComponentInputBinding())
-    ], imports: [
-      BrowserModule,
-      AppRoutingModule,
-      FormsModule,
-      CommonModule,
-      InfiniteScrollModule,
-      CodeInputModule,
-      RouterModule,
-      LoggerModule.forRoot({
-        level: NgxLoggerLevel.DEBUG,
-        context: "stitch-embed"
-      })
-    ] });
+  visitTransition(metadata, context2) {
+    context2.queryCount = 0;
+    context2.depCount = 0;
+    const animation = visitDslNode(this, normalizeAnimationEntry(metadata.animation), context2);
+    const matchers = parseTransitionExpr(metadata.expr, context2.errors);
+    return {
+      type: AnimationMetadataType.Transition,
+      matchers,
+      animation,
+      queryCount: context2.queryCount,
+      depCount: context2.depCount,
+      options: normalizeAnimationOptions(metadata.options)
+    };
   }
+  visitSequence(metadata, context2) {
+    return {
+      type: AnimationMetadataType.Sequence,
+      steps: metadata.steps.map((s) => visitDslNode(this, s, context2)),
+      options: normalizeAnimationOptions(metadata.options)
+    };
+  }
+  visitGroup(metadata, context2) {
+    const currentTime = context2.currentTime;
+    let furthestTime = 0;
+    const steps = metadata.steps.map((step) => {
+      context2.currentTime = currentTime;
+      const innerAst = visitDslNode(this, step, context2);
+      furthestTime = Math.max(furthestTime, context2.currentTime);
+      return innerAst;
+    });
+    context2.currentTime = furthestTime;
+    return {
+      type: AnimationMetadataType.Group,
+      steps,
+      options: normalizeAnimationOptions(metadata.options)
+    };
+  }
+  visitAnimate(metadata, context2) {
+    const timingAst = constructTimingAst(metadata.timings, context2.errors);
+    context2.currentAnimateTimings = timingAst;
+    let styleAst;
+    let styleMetadata = metadata.styles ? metadata.styles : style({});
+    if (styleMetadata.type == AnimationMetadataType.Keyframes) {
+      styleAst = this.visitKeyframes(styleMetadata, context2);
+    } else {
+      let styleMetadata2 = metadata.styles;
+      let isEmpty = false;
+      if (!styleMetadata2) {
+        isEmpty = true;
+        const newStyleData = {};
+        if (timingAst.easing) {
+          newStyleData["easing"] = timingAst.easing;
+        }
+        styleMetadata2 = style(newStyleData);
+      }
+      context2.currentTime += timingAst.duration + timingAst.delay;
+      const _styleAst = this.visitStyle(styleMetadata2, context2);
+      _styleAst.isEmptyStep = isEmpty;
+      styleAst = _styleAst;
+    }
+    context2.currentAnimateTimings = null;
+    return {
+      type: AnimationMetadataType.Animate,
+      timings: timingAst,
+      style: styleAst,
+      options: null
+    };
+  }
+  visitStyle(metadata, context2) {
+    const ast = this._makeStyleAst(metadata, context2);
+    this._validateStyleAst(ast, context2);
+    return ast;
+  }
+  _makeStyleAst(metadata, context2) {
+    const styles = [];
+    const metadataStyles = Array.isArray(metadata.styles) ? metadata.styles : [metadata.styles];
+    for (let styleTuple of metadataStyles) {
+      if (typeof styleTuple === "string") {
+        if (styleTuple === AUTO_STYLE) {
+          styles.push(styleTuple);
+        } else {
+          context2.errors.push(invalidStyleValue(styleTuple));
+        }
+      } else {
+        styles.push(new Map(Object.entries(styleTuple)));
+      }
+    }
+    let containsDynamicStyles = false;
+    let collectedEasing = null;
+    styles.forEach((styleData) => {
+      if (styleData instanceof Map) {
+        if (styleData.has("easing")) {
+          collectedEasing = styleData.get("easing");
+          styleData.delete("easing");
+        }
+        if (!containsDynamicStyles) {
+          for (let value of styleData.values()) {
+            if (value.toString().indexOf(SUBSTITUTION_EXPR_START) >= 0) {
+              containsDynamicStyles = true;
+              break;
+            }
+          }
+        }
+      }
+    });
+    return {
+      type: AnimationMetadataType.Style,
+      styles,
+      easing: collectedEasing,
+      offset: metadata.offset,
+      containsDynamicStyles,
+      options: null
+    };
+  }
+  _validateStyleAst(ast, context2) {
+    const timings = context2.currentAnimateTimings;
+    let endTime = context2.currentTime;
+    let startTime = context2.currentTime;
+    if (timings && startTime > 0) {
+      startTime -= timings.duration + timings.delay;
+    }
+    ast.styles.forEach((tuple) => {
+      if (typeof tuple === "string") return;
+      tuple.forEach((value, prop) => {
+        if (typeof ngDevMode === "undefined" || ngDevMode) {
+          if (!this._driver.validateStyleProperty(prop)) {
+            tuple.delete(prop);
+            context2.unsupportedCSSPropertiesFound.add(prop);
+            return;
+          }
+        }
+        const collectedStyles = context2.collectedStyles.get(context2.currentQuerySelector);
+        const collectedEntry = collectedStyles.get(prop);
+        let updateCollectedStyle = true;
+        if (collectedEntry) {
+          if (startTime != endTime && startTime >= collectedEntry.startTime && endTime <= collectedEntry.endTime) {
+            context2.errors.push(invalidParallelAnimation(prop, collectedEntry.startTime, collectedEntry.endTime, startTime, endTime));
+            updateCollectedStyle = false;
+          }
+          startTime = collectedEntry.startTime;
+        }
+        if (updateCollectedStyle) {
+          collectedStyles.set(prop, {
+            startTime,
+            endTime
+          });
+        }
+        if (context2.options) {
+          validateStyleParams(value, context2.options, context2.errors);
+        }
+      });
+    });
+  }
+  visitKeyframes(metadata, context2) {
+    const ast = {
+      type: AnimationMetadataType.Keyframes,
+      styles: [],
+      options: null
+    };
+    if (!context2.currentAnimateTimings) {
+      context2.errors.push(invalidKeyframes());
+      return ast;
+    }
+    const MAX_KEYFRAME_OFFSET = 1;
+    let totalKeyframesWithOffsets = 0;
+    const offsets = [];
+    let offsetsOutOfOrder = false;
+    let keyframesOutOfRange = false;
+    let previousOffset = 0;
+    const keyframes = metadata.steps.map((styles) => {
+      const style2 = this._makeStyleAst(styles, context2);
+      let offsetVal = style2.offset != null ? style2.offset : consumeOffset(style2.styles);
+      let offset = 0;
+      if (offsetVal != null) {
+        totalKeyframesWithOffsets++;
+        offset = style2.offset = offsetVal;
+      }
+      keyframesOutOfRange = keyframesOutOfRange || offset < 0 || offset > 1;
+      offsetsOutOfOrder = offsetsOutOfOrder || offset < previousOffset;
+      previousOffset = offset;
+      offsets.push(offset);
+      return style2;
+    });
+    if (keyframesOutOfRange) {
+      context2.errors.push(invalidOffset());
+    }
+    if (offsetsOutOfOrder) {
+      context2.errors.push(keyframeOffsetsOutOfOrder());
+    }
+    const length = metadata.steps.length;
+    let generatedOffset = 0;
+    if (totalKeyframesWithOffsets > 0 && totalKeyframesWithOffsets < length) {
+      context2.errors.push(keyframesMissingOffsets());
+    } else if (totalKeyframesWithOffsets == 0) {
+      generatedOffset = MAX_KEYFRAME_OFFSET / (length - 1);
+    }
+    const limit = length - 1;
+    const currentTime = context2.currentTime;
+    const currentAnimateTimings = context2.currentAnimateTimings;
+    const animateDuration = currentAnimateTimings.duration;
+    keyframes.forEach((kf, i) => {
+      const offset = generatedOffset > 0 ? i == limit ? 1 : generatedOffset * i : offsets[i];
+      const durationUpToThisFrame = offset * animateDuration;
+      context2.currentTime = currentTime + currentAnimateTimings.delay + durationUpToThisFrame;
+      currentAnimateTimings.duration = durationUpToThisFrame;
+      this._validateStyleAst(kf, context2);
+      kf.offset = offset;
+      ast.styles.push(kf);
+    });
+    return ast;
+  }
+  visitReference(metadata, context2) {
+    return {
+      type: AnimationMetadataType.Reference,
+      animation: visitDslNode(this, normalizeAnimationEntry(metadata.animation), context2),
+      options: normalizeAnimationOptions(metadata.options)
+    };
+  }
+  visitAnimateChild(metadata, context2) {
+    context2.depCount++;
+    return {
+      type: AnimationMetadataType.AnimateChild,
+      options: normalizeAnimationOptions(metadata.options)
+    };
+  }
+  visitAnimateRef(metadata, context2) {
+    return {
+      type: AnimationMetadataType.AnimateRef,
+      animation: this.visitReference(metadata.animation, context2),
+      options: normalizeAnimationOptions(metadata.options)
+    };
+  }
+  visitQuery(metadata, context2) {
+    const parentSelector = context2.currentQuerySelector;
+    const options = metadata.options || {};
+    context2.queryCount++;
+    context2.currentQuery = metadata;
+    const [selector, includeSelf] = normalizeSelector(metadata.selector);
+    context2.currentQuerySelector = parentSelector.length ? parentSelector + " " + selector : selector;
+    getOrSetDefaultValue(context2.collectedStyles, context2.currentQuerySelector, /* @__PURE__ */ new Map());
+    const animation = visitDslNode(this, normalizeAnimationEntry(metadata.animation), context2);
+    context2.currentQuery = null;
+    context2.currentQuerySelector = parentSelector;
+    return {
+      type: AnimationMetadataType.Query,
+      selector,
+      limit: options.limit || 0,
+      optional: !!options.optional,
+      includeSelf,
+      animation,
+      originalSelector: metadata.selector,
+      options: normalizeAnimationOptions(metadata.options)
+    };
+  }
+  visitStagger(metadata, context2) {
+    if (!context2.currentQuery) {
+      context2.errors.push(invalidStagger());
+    }
+    const timings = metadata.timings === "full" ? {
+      duration: 0,
+      delay: 0,
+      easing: "full"
+    } : resolveTiming(metadata.timings, context2.errors, true);
+    return {
+      type: AnimationMetadataType.Stagger,
+      animation: visitDslNode(this, normalizeAnimationEntry(metadata.animation), context2),
+      timings,
+      options: null
+    };
+  }
+};
+function normalizeSelector(selector) {
+  const hasAmpersand = selector.split(/\s*,\s*/).find((token) => token == SELF_TOKEN) ? true : false;
+  if (hasAmpersand) {
+    selector = selector.replace(SELF_TOKEN_REGEX, "");
+  }
+  selector = selector.replace(/@\*/g, NG_TRIGGER_SELECTOR).replace(/@\w+/g, (match2) => NG_TRIGGER_SELECTOR + "-" + match2.slice(1)).replace(/:animating/g, NG_ANIMATING_SELECTOR);
+  return [selector, hasAmpersand];
+}
+function normalizeParams(obj) {
+  return obj ? __spreadValues({}, obj) : null;
+}
+var AnimationAstBuilderContext = class {
+  errors;
+  queryCount = 0;
+  depCount = 0;
+  currentTransition = null;
+  currentQuery = null;
+  currentQuerySelector = null;
+  currentAnimateTimings = null;
+  currentTime = 0;
+  collectedStyles = /* @__PURE__ */ new Map();
+  options = null;
+  unsupportedCSSPropertiesFound = /* @__PURE__ */ new Set();
+  constructor(errors) {
+    this.errors = errors;
+  }
+};
+function consumeOffset(styles) {
+  if (typeof styles == "string") return null;
+  let offset = null;
+  if (Array.isArray(styles)) {
+    styles.forEach((styleTuple) => {
+      if (styleTuple instanceof Map && styleTuple.has("offset")) {
+        const obj = styleTuple;
+        offset = parseFloat(obj.get("offset"));
+        obj.delete("offset");
+      }
+    });
+  } else if (styles instanceof Map && styles.has("offset")) {
+    const obj = styles;
+    offset = parseFloat(obj.get("offset"));
+    obj.delete("offset");
+  }
+  return offset;
+}
+function constructTimingAst(value, errors) {
+  if (value.hasOwnProperty("duration")) {
+    return value;
+  }
+  if (typeof value == "number") {
+    const duration = resolveTiming(value, errors).duration;
+    return makeTimingAst(duration, 0, "");
+  }
+  const strValue = value;
+  const isDynamic = strValue.split(/\s+/).some((v) => v.charAt(0) == "{" && v.charAt(1) == "{");
+  if (isDynamic) {
+    const ast = makeTimingAst(0, 0, "");
+    ast.dynamic = true;
+    ast.strValue = strValue;
+    return ast;
+  }
+  const timings = resolveTiming(strValue, errors);
+  return makeTimingAst(timings.duration, timings.delay, timings.easing);
+}
+function normalizeAnimationOptions(options) {
+  if (options) {
+    options = __spreadValues({}, options);
+    if (options["params"]) {
+      options["params"] = normalizeParams(options["params"]);
+    }
+  } else {
+    options = {};
+  }
+  return options;
+}
+function makeTimingAst(duration, delay, easing) {
+  return {
+    duration,
+    delay,
+    easing
+  };
+}
+function createTimelineInstruction(element, keyframes, preStyleProps, postStyleProps, duration, delay, easing = null, subTimeline = false) {
+  return {
+    type: 1,
+    element,
+    keyframes,
+    preStyleProps,
+    postStyleProps,
+    duration,
+    delay,
+    totalTime: duration + delay,
+    easing,
+    subTimeline
+  };
+}
+var ElementInstructionMap = class {
+  _map = /* @__PURE__ */ new Map();
+  get(element) {
+    return this._map.get(element) || [];
+  }
+  append(element, instructions) {
+    let existingInstructions = this._map.get(element);
+    if (!existingInstructions) {
+      this._map.set(element, existingInstructions = []);
+    }
+    existingInstructions.push(...instructions);
+  }
+  has(element) {
+    return this._map.has(element);
+  }
+  clear() {
+    this._map.clear();
+  }
+};
+var ONE_FRAME_IN_MILLISECONDS = 1;
+var ENTER_TOKEN = ":enter";
+var ENTER_TOKEN_REGEX = /* @__PURE__ */ new RegExp(ENTER_TOKEN, "g");
+var LEAVE_TOKEN = ":leave";
+var LEAVE_TOKEN_REGEX = /* @__PURE__ */ new RegExp(LEAVE_TOKEN, "g");
+function buildAnimationTimelines(driver, rootElement, ast, enterClassName, leaveClassName, startingStyles = /* @__PURE__ */ new Map(), finalStyles = /* @__PURE__ */ new Map(), options, subInstructions, errors = []) {
+  return new AnimationTimelineBuilderVisitor().buildKeyframes(driver, rootElement, ast, enterClassName, leaveClassName, startingStyles, finalStyles, options, subInstructions, errors);
+}
+var AnimationTimelineBuilderVisitor = class {
+  buildKeyframes(driver, rootElement, ast, enterClassName, leaveClassName, startingStyles, finalStyles, options, subInstructions, errors = []) {
+    subInstructions = subInstructions || new ElementInstructionMap();
+    const context2 = new AnimationTimelineContext(driver, rootElement, subInstructions, enterClassName, leaveClassName, errors, []);
+    context2.options = options;
+    const delay = options.delay ? resolveTimingValue(options.delay) : 0;
+    context2.currentTimeline.delayNextStep(delay);
+    context2.currentTimeline.setStyles([startingStyles], null, context2.errors, options);
+    visitDslNode(this, ast, context2);
+    const timelines = context2.timelines.filter((timeline) => timeline.containsAnimation());
+    if (timelines.length && finalStyles.size) {
+      let lastRootTimeline;
+      for (let i = timelines.length - 1; i >= 0; i--) {
+        const timeline = timelines[i];
+        if (timeline.element === rootElement) {
+          lastRootTimeline = timeline;
+          break;
+        }
+      }
+      if (lastRootTimeline && !lastRootTimeline.allowOnlyTimelineStyles()) {
+        lastRootTimeline.setStyles([finalStyles], null, context2.errors, options);
+      }
+    }
+    return timelines.length ? timelines.map((timeline) => timeline.buildKeyframes()) : [createTimelineInstruction(rootElement, [], [], [], 0, delay, "", false)];
+  }
+  visitTrigger(ast, context2) {
+  }
+  visitState(ast, context2) {
+  }
+  visitTransition(ast, context2) {
+  }
+  visitAnimateChild(ast, context2) {
+    const elementInstructions = context2.subInstructions.get(context2.element);
+    if (elementInstructions) {
+      const innerContext = context2.createSubContext(ast.options);
+      const startTime = context2.currentTimeline.currentTime;
+      const endTime = this._visitSubInstructions(elementInstructions, innerContext, innerContext.options);
+      if (startTime != endTime) {
+        context2.transformIntoNewTimeline(endTime);
+      }
+    }
+    context2.previousNode = ast;
+  }
+  visitAnimateRef(ast, context2) {
+    const innerContext = context2.createSubContext(ast.options);
+    innerContext.transformIntoNewTimeline();
+    this._applyAnimationRefDelays([ast.options, ast.animation.options], context2, innerContext);
+    this.visitReference(ast.animation, innerContext);
+    context2.transformIntoNewTimeline(innerContext.currentTimeline.currentTime);
+    context2.previousNode = ast;
+  }
+  _applyAnimationRefDelays(animationsRefsOptions, context2, innerContext) {
+    for (const animationRefOptions of animationsRefsOptions) {
+      const animationDelay = animationRefOptions?.delay;
+      if (animationDelay) {
+        const animationDelayValue = typeof animationDelay === "number" ? animationDelay : resolveTimingValue(interpolateParams(animationDelay, animationRefOptions?.params ?? {}, context2.errors));
+        innerContext.delayNextStep(animationDelayValue);
+      }
+    }
+  }
+  _visitSubInstructions(instructions, context2, options) {
+    const startTime = context2.currentTimeline.currentTime;
+    let furthestTime = startTime;
+    const duration = options.duration != null ? resolveTimingValue(options.duration) : null;
+    const delay = options.delay != null ? resolveTimingValue(options.delay) : null;
+    if (duration !== 0) {
+      instructions.forEach((instruction) => {
+        const instructionTimings = context2.appendInstructionToTimeline(instruction, duration, delay);
+        furthestTime = Math.max(furthestTime, instructionTimings.duration + instructionTimings.delay);
+      });
+    }
+    return furthestTime;
+  }
+  visitReference(ast, context2) {
+    context2.updateOptions(ast.options, true);
+    visitDslNode(this, ast.animation, context2);
+    context2.previousNode = ast;
+  }
+  visitSequence(ast, context2) {
+    const subContextCount = context2.subContextCount;
+    let ctx = context2;
+    const options = ast.options;
+    if (options && (options.params || options.delay)) {
+      ctx = context2.createSubContext(options);
+      ctx.transformIntoNewTimeline();
+      if (options.delay != null) {
+        if (ctx.previousNode.type == AnimationMetadataType.Style) {
+          ctx.currentTimeline.snapshotCurrentStyles();
+          ctx.previousNode = DEFAULT_NOOP_PREVIOUS_NODE;
+        }
+        const delay = resolveTimingValue(options.delay);
+        ctx.delayNextStep(delay);
+      }
+    }
+    if (ast.steps.length) {
+      ast.steps.forEach((s) => visitDslNode(this, s, ctx));
+      ctx.currentTimeline.applyStylesToKeyframe();
+      if (ctx.subContextCount > subContextCount) {
+        ctx.transformIntoNewTimeline();
+      }
+    }
+    context2.previousNode = ast;
+  }
+  visitGroup(ast, context2) {
+    const innerTimelines = [];
+    let furthestTime = context2.currentTimeline.currentTime;
+    const delay = ast.options && ast.options.delay ? resolveTimingValue(ast.options.delay) : 0;
+    ast.steps.forEach((s) => {
+      const innerContext = context2.createSubContext(ast.options);
+      if (delay) {
+        innerContext.delayNextStep(delay);
+      }
+      visitDslNode(this, s, innerContext);
+      furthestTime = Math.max(furthestTime, innerContext.currentTimeline.currentTime);
+      innerTimelines.push(innerContext.currentTimeline);
+    });
+    innerTimelines.forEach((timeline) => context2.currentTimeline.mergeTimelineCollectedStyles(timeline));
+    context2.transformIntoNewTimeline(furthestTime);
+    context2.previousNode = ast;
+  }
+  _visitTiming(ast, context2) {
+    if (ast.dynamic) {
+      const strValue = ast.strValue;
+      const timingValue = context2.params ? interpolateParams(strValue, context2.params, context2.errors) : strValue;
+      return resolveTiming(timingValue, context2.errors);
+    } else {
+      return {
+        duration: ast.duration,
+        delay: ast.delay,
+        easing: ast.easing
+      };
+    }
+  }
+  visitAnimate(ast, context2) {
+    const timings = context2.currentAnimateTimings = this._visitTiming(ast.timings, context2);
+    const timeline = context2.currentTimeline;
+    if (timings.delay) {
+      context2.incrementTime(timings.delay);
+      timeline.snapshotCurrentStyles();
+    }
+    const style2 = ast.style;
+    if (style2.type == AnimationMetadataType.Keyframes) {
+      this.visitKeyframes(style2, context2);
+    } else {
+      context2.incrementTime(timings.duration);
+      this.visitStyle(style2, context2);
+      timeline.applyStylesToKeyframe();
+    }
+    context2.currentAnimateTimings = null;
+    context2.previousNode = ast;
+  }
+  visitStyle(ast, context2) {
+    const timeline = context2.currentTimeline;
+    const timings = context2.currentAnimateTimings;
+    if (!timings && timeline.hasCurrentStyleProperties()) {
+      timeline.forwardFrame();
+    }
+    const easing = timings && timings.easing || ast.easing;
+    if (ast.isEmptyStep) {
+      timeline.applyEmptyStep(easing);
+    } else {
+      timeline.setStyles(ast.styles, easing, context2.errors, context2.options);
+    }
+    context2.previousNode = ast;
+  }
+  visitKeyframes(ast, context2) {
+    const currentAnimateTimings = context2.currentAnimateTimings;
+    const startTime = context2.currentTimeline.duration;
+    const duration = currentAnimateTimings.duration;
+    const innerContext = context2.createSubContext();
+    const innerTimeline = innerContext.currentTimeline;
+    innerTimeline.easing = currentAnimateTimings.easing;
+    ast.styles.forEach((step) => {
+      const offset = step.offset || 0;
+      innerTimeline.forwardTime(offset * duration);
+      innerTimeline.setStyles(step.styles, step.easing, context2.errors, context2.options);
+      innerTimeline.applyStylesToKeyframe();
+    });
+    context2.currentTimeline.mergeTimelineCollectedStyles(innerTimeline);
+    context2.transformIntoNewTimeline(startTime + duration);
+    context2.previousNode = ast;
+  }
+  visitQuery(ast, context2) {
+    const startTime = context2.currentTimeline.currentTime;
+    const options = ast.options || {};
+    const delay = options.delay ? resolveTimingValue(options.delay) : 0;
+    if (delay && (context2.previousNode.type === AnimationMetadataType.Style || startTime == 0 && context2.currentTimeline.hasCurrentStyleProperties())) {
+      context2.currentTimeline.snapshotCurrentStyles();
+      context2.previousNode = DEFAULT_NOOP_PREVIOUS_NODE;
+    }
+    let furthestTime = startTime;
+    const elms = context2.invokeQuery(ast.selector, ast.originalSelector, ast.limit, ast.includeSelf, options.optional ? true : false, context2.errors);
+    context2.currentQueryTotal = elms.length;
+    let sameElementTimeline = null;
+    elms.forEach((element, i) => {
+      context2.currentQueryIndex = i;
+      const innerContext = context2.createSubContext(ast.options, element);
+      if (delay) {
+        innerContext.delayNextStep(delay);
+      }
+      if (element === context2.element) {
+        sameElementTimeline = innerContext.currentTimeline;
+      }
+      visitDslNode(this, ast.animation, innerContext);
+      innerContext.currentTimeline.applyStylesToKeyframe();
+      const endTime = innerContext.currentTimeline.currentTime;
+      furthestTime = Math.max(furthestTime, endTime);
+    });
+    context2.currentQueryIndex = 0;
+    context2.currentQueryTotal = 0;
+    context2.transformIntoNewTimeline(furthestTime);
+    if (sameElementTimeline) {
+      context2.currentTimeline.mergeTimelineCollectedStyles(sameElementTimeline);
+      context2.currentTimeline.snapshotCurrentStyles();
+    }
+    context2.previousNode = ast;
+  }
+  visitStagger(ast, context2) {
+    const parentContext = context2.parentContext;
+    const tl = context2.currentTimeline;
+    const timings = ast.timings;
+    const duration = Math.abs(timings.duration);
+    const maxTime = duration * (context2.currentQueryTotal - 1);
+    let delay = duration * context2.currentQueryIndex;
+    let staggerTransformer = timings.duration < 0 ? "reverse" : timings.easing;
+    switch (staggerTransformer) {
+      case "reverse":
+        delay = maxTime - delay;
+        break;
+      case "full":
+        delay = parentContext.currentStaggerTime;
+        break;
+    }
+    const timeline = context2.currentTimeline;
+    if (delay) {
+      timeline.delayNextStep(delay);
+    }
+    const startingTime = timeline.currentTime;
+    visitDslNode(this, ast.animation, context2);
+    context2.previousNode = ast;
+    parentContext.currentStaggerTime = tl.currentTime - startingTime + (tl.startTime - parentContext.currentTimeline.startTime);
+  }
+};
+var DEFAULT_NOOP_PREVIOUS_NODE = {};
+var AnimationTimelineContext = class _AnimationTimelineContext {
+  _driver;
+  element;
+  subInstructions;
+  _enterClassName;
+  _leaveClassName;
+  errors;
+  timelines;
+  parentContext = null;
+  currentTimeline;
+  currentAnimateTimings = null;
+  previousNode = DEFAULT_NOOP_PREVIOUS_NODE;
+  subContextCount = 0;
+  options = {};
+  currentQueryIndex = 0;
+  currentQueryTotal = 0;
+  currentStaggerTime = 0;
+  constructor(_driver, element, subInstructions, _enterClassName, _leaveClassName, errors, timelines, initialTimeline) {
+    this._driver = _driver;
+    this.element = element;
+    this.subInstructions = subInstructions;
+    this._enterClassName = _enterClassName;
+    this._leaveClassName = _leaveClassName;
+    this.errors = errors;
+    this.timelines = timelines;
+    this.currentTimeline = initialTimeline || new TimelineBuilder(this._driver, element, 0);
+    timelines.push(this.currentTimeline);
+  }
+  get params() {
+    return this.options.params;
+  }
+  updateOptions(options, skipIfExists) {
+    if (!options) return;
+    const newOptions = options;
+    let optionsToUpdate = this.options;
+    if (newOptions.duration != null) {
+      optionsToUpdate.duration = resolveTimingValue(newOptions.duration);
+    }
+    if (newOptions.delay != null) {
+      optionsToUpdate.delay = resolveTimingValue(newOptions.delay);
+    }
+    const newParams = newOptions.params;
+    if (newParams) {
+      let paramsToUpdate = optionsToUpdate.params;
+      if (!paramsToUpdate) {
+        paramsToUpdate = this.options.params = {};
+      }
+      Object.keys(newParams).forEach((name) => {
+        if (!skipIfExists || !paramsToUpdate.hasOwnProperty(name)) {
+          paramsToUpdate[name] = interpolateParams(newParams[name], paramsToUpdate, this.errors);
+        }
+      });
+    }
+  }
+  _copyOptions() {
+    const options = {};
+    if (this.options) {
+      const oldParams = this.options.params;
+      if (oldParams) {
+        const params = options["params"] = {};
+        Object.keys(oldParams).forEach((name) => {
+          params[name] = oldParams[name];
+        });
+      }
+    }
+    return options;
+  }
+  createSubContext(options = null, element, newTime) {
+    const target = element || this.element;
+    const context2 = new _AnimationTimelineContext(this._driver, target, this.subInstructions, this._enterClassName, this._leaveClassName, this.errors, this.timelines, this.currentTimeline.fork(target, newTime || 0));
+    context2.previousNode = this.previousNode;
+    context2.currentAnimateTimings = this.currentAnimateTimings;
+    context2.options = this._copyOptions();
+    context2.updateOptions(options);
+    context2.currentQueryIndex = this.currentQueryIndex;
+    context2.currentQueryTotal = this.currentQueryTotal;
+    context2.parentContext = this;
+    this.subContextCount++;
+    return context2;
+  }
+  transformIntoNewTimeline(newTime) {
+    this.previousNode = DEFAULT_NOOP_PREVIOUS_NODE;
+    this.currentTimeline = this.currentTimeline.fork(this.element, newTime);
+    this.timelines.push(this.currentTimeline);
+    return this.currentTimeline;
+  }
+  appendInstructionToTimeline(instruction, duration, delay) {
+    const updatedTimings = {
+      duration: duration != null ? duration : instruction.duration,
+      delay: this.currentTimeline.currentTime + (delay != null ? delay : 0) + instruction.delay,
+      easing: ""
+    };
+    const builder = new SubTimelineBuilder(this._driver, instruction.element, instruction.keyframes, instruction.preStyleProps, instruction.postStyleProps, updatedTimings, instruction.stretchStartingKeyframe);
+    this.timelines.push(builder);
+    return updatedTimings;
+  }
+  incrementTime(time) {
+    this.currentTimeline.forwardTime(this.currentTimeline.duration + time);
+  }
+  delayNextStep(delay) {
+    if (delay > 0) {
+      this.currentTimeline.delayNextStep(delay);
+    }
+  }
+  invokeQuery(selector, originalSelector, limit, includeSelf, optional, errors) {
+    let results = [];
+    if (includeSelf) {
+      results.push(this.element);
+    }
+    if (selector.length > 0) {
+      selector = selector.replace(ENTER_TOKEN_REGEX, "." + this._enterClassName);
+      selector = selector.replace(LEAVE_TOKEN_REGEX, "." + this._leaveClassName);
+      const multi = limit != 1;
+      let elements = this._driver.query(this.element, selector, multi);
+      if (limit !== 0) {
+        elements = limit < 0 ? elements.slice(elements.length + limit, elements.length) : elements.slice(0, limit);
+      }
+      results.push(...elements);
+    }
+    if (!optional && results.length == 0) {
+      errors.push(invalidQuery(originalSelector));
+    }
+    return results;
+  }
+};
+var TimelineBuilder = class _TimelineBuilder {
+  _driver;
+  element;
+  startTime;
+  _elementTimelineStylesLookup;
+  duration = 0;
+  easing = null;
+  _previousKeyframe = /* @__PURE__ */ new Map();
+  _currentKeyframe = /* @__PURE__ */ new Map();
+  _keyframes = /* @__PURE__ */ new Map();
+  _styleSummary = /* @__PURE__ */ new Map();
+  _localTimelineStyles = /* @__PURE__ */ new Map();
+  _globalTimelineStyles;
+  _pendingStyles = /* @__PURE__ */ new Map();
+  _backFill = /* @__PURE__ */ new Map();
+  _currentEmptyStepKeyframe = null;
+  constructor(_driver, element, startTime, _elementTimelineStylesLookup) {
+    this._driver = _driver;
+    this.element = element;
+    this.startTime = startTime;
+    this._elementTimelineStylesLookup = _elementTimelineStylesLookup;
+    if (!this._elementTimelineStylesLookup) {
+      this._elementTimelineStylesLookup = /* @__PURE__ */ new Map();
+    }
+    this._globalTimelineStyles = this._elementTimelineStylesLookup.get(element);
+    if (!this._globalTimelineStyles) {
+      this._globalTimelineStyles = this._localTimelineStyles;
+      this._elementTimelineStylesLookup.set(element, this._localTimelineStyles);
+    }
+    this._loadKeyframe();
+  }
+  containsAnimation() {
+    switch (this._keyframes.size) {
+      case 0:
+        return false;
+      case 1:
+        return this.hasCurrentStyleProperties();
+      default:
+        return true;
+    }
+  }
+  hasCurrentStyleProperties() {
+    return this._currentKeyframe.size > 0;
+  }
+  get currentTime() {
+    return this.startTime + this.duration;
+  }
+  delayNextStep(delay) {
+    const hasPreStyleStep = this._keyframes.size === 1 && this._pendingStyles.size;
+    if (this.duration || hasPreStyleStep) {
+      this.forwardTime(this.currentTime + delay);
+      if (hasPreStyleStep) {
+        this.snapshotCurrentStyles();
+      }
+    } else {
+      this.startTime += delay;
+    }
+  }
+  fork(element, currentTime) {
+    this.applyStylesToKeyframe();
+    return new _TimelineBuilder(this._driver, element, currentTime || this.currentTime, this._elementTimelineStylesLookup);
+  }
+  _loadKeyframe() {
+    if (this._currentKeyframe) {
+      this._previousKeyframe = this._currentKeyframe;
+    }
+    this._currentKeyframe = this._keyframes.get(this.duration);
+    if (!this._currentKeyframe) {
+      this._currentKeyframe = /* @__PURE__ */ new Map();
+      this._keyframes.set(this.duration, this._currentKeyframe);
+    }
+  }
+  forwardFrame() {
+    this.duration += ONE_FRAME_IN_MILLISECONDS;
+    this._loadKeyframe();
+  }
+  forwardTime(time) {
+    this.applyStylesToKeyframe();
+    this.duration = time;
+    this._loadKeyframe();
+  }
+  _updateStyle(prop, value) {
+    this._localTimelineStyles.set(prop, value);
+    this._globalTimelineStyles.set(prop, value);
+    this._styleSummary.set(prop, {
+      time: this.currentTime,
+      value
+    });
+  }
+  allowOnlyTimelineStyles() {
+    return this._currentEmptyStepKeyframe !== this._currentKeyframe;
+  }
+  applyEmptyStep(easing) {
+    if (easing) {
+      this._previousKeyframe.set("easing", easing);
+    }
+    for (let [prop, value] of this._globalTimelineStyles) {
+      this._backFill.set(prop, value || AUTO_STYLE);
+      this._currentKeyframe.set(prop, AUTO_STYLE);
+    }
+    this._currentEmptyStepKeyframe = this._currentKeyframe;
+  }
+  setStyles(input2, easing, errors, options) {
+    if (easing) {
+      this._previousKeyframe.set("easing", easing);
+    }
+    const params = options && options.params || {};
+    const styles = flattenStyles(input2, this._globalTimelineStyles);
+    for (let [prop, value] of styles) {
+      const val = interpolateParams(value, params, errors);
+      this._pendingStyles.set(prop, val);
+      if (!this._localTimelineStyles.has(prop)) {
+        this._backFill.set(prop, this._globalTimelineStyles.get(prop) ?? AUTO_STYLE);
+      }
+      this._updateStyle(prop, val);
+    }
+  }
+  applyStylesToKeyframe() {
+    if (this._pendingStyles.size == 0) return;
+    this._pendingStyles.forEach((val, prop) => {
+      this._currentKeyframe.set(prop, val);
+    });
+    this._pendingStyles.clear();
+    this._localTimelineStyles.forEach((val, prop) => {
+      if (!this._currentKeyframe.has(prop)) {
+        this._currentKeyframe.set(prop, val);
+      }
+    });
+  }
+  snapshotCurrentStyles() {
+    for (let [prop, val] of this._localTimelineStyles) {
+      this._pendingStyles.set(prop, val);
+      this._updateStyle(prop, val);
+    }
+  }
+  getFinalKeyframe() {
+    return this._keyframes.get(this.duration);
+  }
+  get properties() {
+    const properties = [];
+    for (let prop in this._currentKeyframe) {
+      properties.push(prop);
+    }
+    return properties;
+  }
+  mergeTimelineCollectedStyles(timeline) {
+    timeline._styleSummary.forEach((details1, prop) => {
+      const details0 = this._styleSummary.get(prop);
+      if (!details0 || details1.time > details0.time) {
+        this._updateStyle(prop, details1.value);
+      }
+    });
+  }
+  buildKeyframes() {
+    this.applyStylesToKeyframe();
+    const preStyleProps = /* @__PURE__ */ new Set();
+    const postStyleProps = /* @__PURE__ */ new Set();
+    const isEmpty = this._keyframes.size === 1 && this.duration === 0;
+    let finalKeyframes = [];
+    this._keyframes.forEach((keyframe, time) => {
+      const finalKeyframe = new Map([...this._backFill, ...keyframe]);
+      finalKeyframe.forEach((value, prop) => {
+        if (value === \u0275PRE_STYLE) {
+          preStyleProps.add(prop);
+        } else if (value === AUTO_STYLE) {
+          postStyleProps.add(prop);
+        }
+      });
+      if (!isEmpty) {
+        finalKeyframe.set("offset", time / this.duration);
+      }
+      finalKeyframes.push(finalKeyframe);
+    });
+    const preProps = [...preStyleProps.values()];
+    const postProps = [...postStyleProps.values()];
+    if (isEmpty) {
+      const kf0 = finalKeyframes[0];
+      const kf1 = new Map(kf0);
+      kf0.set("offset", 0);
+      kf1.set("offset", 1);
+      finalKeyframes = [kf0, kf1];
+    }
+    return createTimelineInstruction(this.element, finalKeyframes, preProps, postProps, this.duration, this.startTime, this.easing, false);
+  }
+};
+var SubTimelineBuilder = class extends TimelineBuilder {
+  keyframes;
+  preStyleProps;
+  postStyleProps;
+  _stretchStartingKeyframe;
+  timings;
+  constructor(driver, element, keyframes, preStyleProps, postStyleProps, timings, _stretchStartingKeyframe = false) {
+    super(driver, element, timings.delay);
+    this.keyframes = keyframes;
+    this.preStyleProps = preStyleProps;
+    this.postStyleProps = postStyleProps;
+    this._stretchStartingKeyframe = _stretchStartingKeyframe;
+    this.timings = {
+      duration: timings.duration,
+      delay: timings.delay,
+      easing: timings.easing
+    };
+  }
+  containsAnimation() {
+    return this.keyframes.length > 1;
+  }
+  buildKeyframes() {
+    let keyframes = this.keyframes;
+    let {
+      delay,
+      duration,
+      easing
+    } = this.timings;
+    if (this._stretchStartingKeyframe && delay) {
+      const newKeyframes = [];
+      const totalTime = duration + delay;
+      const startingGap = delay / totalTime;
+      const newFirstKeyframe = new Map(keyframes[0]);
+      newFirstKeyframe.set("offset", 0);
+      newKeyframes.push(newFirstKeyframe);
+      const oldFirstKeyframe = new Map(keyframes[0]);
+      oldFirstKeyframe.set("offset", roundOffset(startingGap));
+      newKeyframes.push(oldFirstKeyframe);
+      const limit = keyframes.length - 1;
+      for (let i = 1; i <= limit; i++) {
+        let kf = new Map(keyframes[i]);
+        const oldOffset = kf.get("offset");
+        const timeAtKeyframe = delay + oldOffset * duration;
+        kf.set("offset", roundOffset(timeAtKeyframe / totalTime));
+        newKeyframes.push(kf);
+      }
+      duration = totalTime;
+      delay = 0;
+      easing = "";
+      keyframes = newKeyframes;
+    }
+    return createTimelineInstruction(this.element, keyframes, this.preStyleProps, this.postStyleProps, duration, delay, easing, true);
+  }
+};
+function roundOffset(offset, decimalPoints = 3) {
+  const mult = Math.pow(10, decimalPoints - 1);
+  return Math.round(offset * mult) / mult;
+}
+function flattenStyles(input2, allStyles) {
+  const styles = /* @__PURE__ */ new Map();
+  let allProperties;
+  input2.forEach((token) => {
+    if (token === "*") {
+      allProperties ??= allStyles.keys();
+      for (let prop of allProperties) {
+        styles.set(prop, AUTO_STYLE);
+      }
+    } else {
+      for (let [prop, val] of token) {
+        styles.set(prop, val);
+      }
+    }
+  });
+  return styles;
+}
+function createTransitionInstruction(element, triggerName, fromState, toState, isRemovalTransition, fromStyles, toStyles, timelines, queriedElements, preStyleProps, postStyleProps, totalTime, errors) {
+  return {
+    type: 0,
+    element,
+    triggerName,
+    isRemovalTransition,
+    fromState,
+    fromStyles,
+    toState,
+    toStyles,
+    timelines,
+    queriedElements,
+    preStyleProps,
+    postStyleProps,
+    totalTime,
+    errors
+  };
+}
+var EMPTY_OBJECT = {};
+var AnimationTransitionFactory = class {
+  _triggerName;
+  ast;
+  _stateStyles;
+  constructor(_triggerName, ast, _stateStyles) {
+    this._triggerName = _triggerName;
+    this.ast = ast;
+    this._stateStyles = _stateStyles;
+  }
+  match(currentState, nextState, element, params) {
+    return oneOrMoreTransitionsMatch(this.ast.matchers, currentState, nextState, element, params);
+  }
+  buildStyles(stateName, params, errors) {
+    let styler = this._stateStyles.get("*");
+    if (stateName !== void 0) {
+      styler = this._stateStyles.get(stateName?.toString()) || styler;
+    }
+    return styler ? styler.buildStyles(params, errors) : /* @__PURE__ */ new Map();
+  }
+  build(driver, element, currentState, nextState, enterClassName, leaveClassName, currentOptions, nextOptions, subInstructions, skipAstBuild) {
+    const errors = [];
+    const transitionAnimationParams = this.ast.options && this.ast.options.params || EMPTY_OBJECT;
+    const currentAnimationParams = currentOptions && currentOptions.params || EMPTY_OBJECT;
+    const currentStateStyles = this.buildStyles(currentState, currentAnimationParams, errors);
+    const nextAnimationParams = nextOptions && nextOptions.params || EMPTY_OBJECT;
+    const nextStateStyles = this.buildStyles(nextState, nextAnimationParams, errors);
+    const queriedElements = /* @__PURE__ */ new Set();
+    const preStyleMap = /* @__PURE__ */ new Map();
+    const postStyleMap = /* @__PURE__ */ new Map();
+    const isRemoval = nextState === "void";
+    const animationOptions = {
+      params: applyParamDefaults(nextAnimationParams, transitionAnimationParams),
+      delay: this.ast.options?.delay
+    };
+    const timelines = skipAstBuild ? [] : buildAnimationTimelines(driver, element, this.ast.animation, enterClassName, leaveClassName, currentStateStyles, nextStateStyles, animationOptions, subInstructions, errors);
+    let totalTime = 0;
+    timelines.forEach((tl) => {
+      totalTime = Math.max(tl.duration + tl.delay, totalTime);
+    });
+    if (errors.length) {
+      return createTransitionInstruction(element, this._triggerName, currentState, nextState, isRemoval, currentStateStyles, nextStateStyles, [], [], preStyleMap, postStyleMap, totalTime, errors);
+    }
+    timelines.forEach((tl) => {
+      const elm = tl.element;
+      const preProps = getOrSetDefaultValue(preStyleMap, elm, /* @__PURE__ */ new Set());
+      tl.preStyleProps.forEach((prop) => preProps.add(prop));
+      const postProps = getOrSetDefaultValue(postStyleMap, elm, /* @__PURE__ */ new Set());
+      tl.postStyleProps.forEach((prop) => postProps.add(prop));
+      if (elm !== element) {
+        queriedElements.add(elm);
+      }
+    });
+    if (typeof ngDevMode === "undefined" || ngDevMode) {
+      checkNonAnimatableInTimelines(timelines, this._triggerName, driver);
+    }
+    return createTransitionInstruction(element, this._triggerName, currentState, nextState, isRemoval, currentStateStyles, nextStateStyles, timelines, [...queriedElements.values()], preStyleMap, postStyleMap, totalTime);
+  }
+};
+function checkNonAnimatableInTimelines(timelines, triggerName, driver) {
+  if (!driver.validateAnimatableStyleProperty) {
+    return;
+  }
+  const allowedNonAnimatableProps = /* @__PURE__ */ new Set([
+    // 'easing' is a utility/synthetic prop we use to represent
+    // easing functions, it represents a property of the animation
+    // which is not animatable but different values can be used
+    // in different steps
+    "easing"
+  ]);
+  const invalidNonAnimatableProps = /* @__PURE__ */ new Set();
+  timelines.forEach(({
+    keyframes
+  }) => {
+    const nonAnimatablePropsInitialValues = /* @__PURE__ */ new Map();
+    keyframes.forEach((keyframe) => {
+      const entriesToCheck = Array.from(keyframe.entries()).filter(([prop]) => !allowedNonAnimatableProps.has(prop));
+      for (const [prop, value] of entriesToCheck) {
+        if (!driver.validateAnimatableStyleProperty(prop)) {
+          if (nonAnimatablePropsInitialValues.has(prop) && !invalidNonAnimatableProps.has(prop)) {
+            const propInitialValue = nonAnimatablePropsInitialValues.get(prop);
+            if (propInitialValue !== value) {
+              invalidNonAnimatableProps.add(prop);
+            }
+          } else {
+            nonAnimatablePropsInitialValues.set(prop, value);
+          }
+        }
+      }
+    });
+  });
+  if (invalidNonAnimatableProps.size > 0) {
+    console.warn(`Warning: The animation trigger "${triggerName}" is attempting to animate the following not animatable properties: ` + Array.from(invalidNonAnimatableProps).join(", ") + "\n(to check the list of all animatable properties visit https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_animated_properties)");
+  }
+}
+function oneOrMoreTransitionsMatch(matchFns, currentState, nextState, element, params) {
+  return matchFns.some((fn) => fn(currentState, nextState, element, params));
+}
+function applyParamDefaults(userParams, defaults) {
+  const result = __spreadValues({}, defaults);
+  Object.entries(userParams).forEach(([key, value]) => {
+    if (value != null) {
+      result[key] = value;
+    }
+  });
+  return result;
+}
+var AnimationStateStyles = class {
+  styles;
+  defaultParams;
+  normalizer;
+  constructor(styles, defaultParams, normalizer) {
+    this.styles = styles;
+    this.defaultParams = defaultParams;
+    this.normalizer = normalizer;
+  }
+  buildStyles(params, errors) {
+    const finalStyles = /* @__PURE__ */ new Map();
+    const combinedParams = applyParamDefaults(params, this.defaultParams);
+    this.styles.styles.forEach((value) => {
+      if (typeof value !== "string") {
+        value.forEach((val, prop) => {
+          if (val) {
+            val = interpolateParams(val, combinedParams, errors);
+          }
+          const normalizedProp = this.normalizer.normalizePropertyName(prop, errors);
+          val = this.normalizer.normalizeStyleValue(prop, normalizedProp, val, errors);
+          finalStyles.set(prop, val);
+        });
+      }
+    });
+    return finalStyles;
+  }
+};
+function buildTrigger(name, ast, normalizer) {
+  return new AnimationTrigger(name, ast, normalizer);
+}
+var AnimationTrigger = class {
+  name;
+  ast;
+  _normalizer;
+  transitionFactories = [];
+  fallbackTransition;
+  states = /* @__PURE__ */ new Map();
+  constructor(name, ast, _normalizer) {
+    this.name = name;
+    this.ast = ast;
+    this._normalizer = _normalizer;
+    ast.states.forEach((ast2) => {
+      const defaultParams = ast2.options && ast2.options.params || {};
+      this.states.set(ast2.name, new AnimationStateStyles(ast2.style, defaultParams, _normalizer));
+    });
+    balanceProperties(this.states, "true", "1");
+    balanceProperties(this.states, "false", "0");
+    ast.transitions.forEach((ast2) => {
+      this.transitionFactories.push(new AnimationTransitionFactory(name, ast2, this.states));
+    });
+    this.fallbackTransition = createFallbackTransition(name, this.states, this._normalizer);
+  }
+  get containsQueries() {
+    return this.ast.queryCount > 0;
+  }
+  matchTransition(currentState, nextState, element, params) {
+    const entry = this.transitionFactories.find((f) => f.match(currentState, nextState, element, params));
+    return entry || null;
+  }
+  matchStyles(currentState, params, errors) {
+    return this.fallbackTransition.buildStyles(currentState, params, errors);
+  }
+};
+function createFallbackTransition(triggerName, states, normalizer) {
+  const matchers = [(fromState, toState) => true];
+  const animation = {
+    type: AnimationMetadataType.Sequence,
+    steps: [],
+    options: null
+  };
+  const transition = {
+    type: AnimationMetadataType.Transition,
+    animation,
+    matchers,
+    options: null,
+    queryCount: 0,
+    depCount: 0
+  };
+  return new AnimationTransitionFactory(triggerName, transition, states);
+}
+function balanceProperties(stateMap, key1, key2) {
+  if (stateMap.has(key1)) {
+    if (!stateMap.has(key2)) {
+      stateMap.set(key2, stateMap.get(key1));
+    }
+  } else if (stateMap.has(key2)) {
+    stateMap.set(key1, stateMap.get(key2));
+  }
+}
+var EMPTY_INSTRUCTION_MAP = new ElementInstructionMap();
+var TimelineAnimationEngine = class {
+  bodyNode;
+  _driver;
+  _normalizer;
+  _animations = /* @__PURE__ */ new Map();
+  _playersById = /* @__PURE__ */ new Map();
+  players = [];
+  constructor(bodyNode, _driver, _normalizer) {
+    this.bodyNode = bodyNode;
+    this._driver = _driver;
+    this._normalizer = _normalizer;
+  }
+  register(id, metadata) {
+    const errors = [];
+    const warnings = [];
+    const ast = buildAnimationAst(this._driver, metadata, errors, warnings);
+    if (errors.length) {
+      throw registerFailed(errors);
+    } else {
+      if (typeof ngDevMode === "undefined" || ngDevMode) {
+        if (warnings.length) {
+          warnRegister(warnings);
+        }
+      }
+      this._animations.set(id, ast);
+    }
+  }
+  _buildPlayer(i, preStyles, postStyles) {
+    const element = i.element;
+    const keyframes = normalizeKeyframes$1(this._normalizer, i.keyframes, preStyles, postStyles);
+    return this._driver.animate(element, keyframes, i.duration, i.delay, i.easing, [], true);
+  }
+  create(id, element, options = {}) {
+    const errors = [];
+    const ast = this._animations.get(id);
+    let instructions;
+    const autoStylesMap = /* @__PURE__ */ new Map();
+    if (ast) {
+      instructions = buildAnimationTimelines(this._driver, element, ast, ENTER_CLASSNAME, LEAVE_CLASSNAME, /* @__PURE__ */ new Map(), /* @__PURE__ */ new Map(), options, EMPTY_INSTRUCTION_MAP, errors);
+      instructions.forEach((inst) => {
+        const styles = getOrSetDefaultValue(autoStylesMap, inst.element, /* @__PURE__ */ new Map());
+        inst.postStyleProps.forEach((prop) => styles.set(prop, null));
+      });
+    } else {
+      errors.push(missingOrDestroyedAnimation());
+      instructions = [];
+    }
+    if (errors.length) {
+      throw createAnimationFailed(errors);
+    }
+    autoStylesMap.forEach((styles, element2) => {
+      styles.forEach((_, prop) => {
+        styles.set(prop, this._driver.computeStyle(element2, prop, AUTO_STYLE));
+      });
+    });
+    const players = instructions.map((i) => {
+      const styles = autoStylesMap.get(i.element);
+      return this._buildPlayer(i, /* @__PURE__ */ new Map(), styles);
+    });
+    const player = optimizeGroupPlayer(players);
+    this._playersById.set(id, player);
+    player.onDestroy(() => this.destroy(id));
+    this.players.push(player);
+    return player;
+  }
+  destroy(id) {
+    const player = this._getPlayer(id);
+    player.destroy();
+    this._playersById.delete(id);
+    const index = this.players.indexOf(player);
+    if (index >= 0) {
+      this.players.splice(index, 1);
+    }
+  }
+  _getPlayer(id) {
+    const player = this._playersById.get(id);
+    if (!player) {
+      throw missingPlayer(id);
+    }
+    return player;
+  }
+  listen(id, element, eventName, callback) {
+    const baseEvent = makeAnimationEvent(element, "", "", "");
+    listenOnPlayer(this._getPlayer(id), eventName, baseEvent, callback);
+    return () => {
+    };
+  }
+  command(id, element, command, args) {
+    if (command == "register") {
+      this.register(id, args[0]);
+      return;
+    }
+    if (command == "create") {
+      const options = args[0] || {};
+      this.create(id, element, options);
+      return;
+    }
+    const player = this._getPlayer(id);
+    switch (command) {
+      case "play":
+        player.play();
+        break;
+      case "pause":
+        player.pause();
+        break;
+      case "reset":
+        player.reset();
+        break;
+      case "restart":
+        player.restart();
+        break;
+      case "finish":
+        player.finish();
+        break;
+      case "init":
+        player.init();
+        break;
+      case "setPosition":
+        player.setPosition(parseFloat(args[0]));
+        break;
+      case "destroy":
+        this.destroy(id);
+        break;
+    }
+  }
+};
+var QUEUED_CLASSNAME = "ng-animate-queued";
+var QUEUED_SELECTOR = ".ng-animate-queued";
+var DISABLED_CLASSNAME = "ng-animate-disabled";
+var DISABLED_SELECTOR = ".ng-animate-disabled";
+var STAR_CLASSNAME = "ng-star-inserted";
+var STAR_SELECTOR = ".ng-star-inserted";
+var EMPTY_PLAYER_ARRAY = [];
+var NULL_REMOVAL_STATE = {
+  namespaceId: "",
+  setForRemoval: false,
+  setForMove: false,
+  hasAnimation: false,
+  removedBeforeQueried: false
+};
+var NULL_REMOVED_QUERIED_STATE = {
+  namespaceId: "",
+  setForMove: false,
+  setForRemoval: false,
+  hasAnimation: false,
+  removedBeforeQueried: true
+};
+var REMOVAL_FLAG = "__ng_removed";
+var StateValue = class {
+  namespaceId;
+  value;
+  options;
+  get params() {
+    return this.options.params;
+  }
+  constructor(input2, namespaceId = "") {
+    this.namespaceId = namespaceId;
+    const isObj = input2 && input2.hasOwnProperty("value");
+    const value = isObj ? input2["value"] : input2;
+    this.value = normalizeTriggerValue(value);
+    if (isObj) {
+      const _a = input2, {
+        value: value2
+      } = _a, options = __objRest(_a, [
+        "value"
+      ]);
+      this.options = options;
+    } else {
+      this.options = {};
+    }
+    if (!this.options.params) {
+      this.options.params = {};
+    }
+  }
+  absorbOptions(options) {
+    const newParams = options.params;
+    if (newParams) {
+      const oldParams = this.options.params;
+      Object.keys(newParams).forEach((prop) => {
+        if (oldParams[prop] == null) {
+          oldParams[prop] = newParams[prop];
+        }
+      });
+    }
+  }
+};
+var VOID_VALUE = "void";
+var DEFAULT_STATE_VALUE = new StateValue(VOID_VALUE);
+var AnimationTransitionNamespace = class {
+  id;
+  hostElement;
+  _engine;
+  players = [];
+  _triggers = /* @__PURE__ */ new Map();
+  _queue = [];
+  _elementListeners = /* @__PURE__ */ new Map();
+  _hostClassName;
+  constructor(id, hostElement, _engine) {
+    this.id = id;
+    this.hostElement = hostElement;
+    this._engine = _engine;
+    this._hostClassName = "ng-tns-" + id;
+    addClass(hostElement, this._hostClassName);
+  }
+  listen(element, name, phase, callback) {
+    if (!this._triggers.has(name)) {
+      throw missingTrigger(phase, name);
+    }
+    if (phase == null || phase.length == 0) {
+      throw missingEvent(name);
+    }
+    if (!isTriggerEventValid(phase)) {
+      throw unsupportedTriggerEvent(phase, name);
+    }
+    const listeners = getOrSetDefaultValue(this._elementListeners, element, []);
+    const data = {
+      name,
+      phase,
+      callback
+    };
+    listeners.push(data);
+    const triggersWithStates = getOrSetDefaultValue(this._engine.statesByElement, element, /* @__PURE__ */ new Map());
+    if (!triggersWithStates.has(name)) {
+      addClass(element, NG_TRIGGER_CLASSNAME);
+      addClass(element, NG_TRIGGER_CLASSNAME + "-" + name);
+      triggersWithStates.set(name, DEFAULT_STATE_VALUE);
+    }
+    return () => {
+      this._engine.afterFlush(() => {
+        const index = listeners.indexOf(data);
+        if (index >= 0) {
+          listeners.splice(index, 1);
+        }
+        if (!this._triggers.has(name)) {
+          triggersWithStates.delete(name);
+        }
+      });
+    };
+  }
+  register(name, ast) {
+    if (this._triggers.has(name)) {
+      return false;
+    } else {
+      this._triggers.set(name, ast);
+      return true;
+    }
+  }
+  _getTrigger(name) {
+    const trigger = this._triggers.get(name);
+    if (!trigger) {
+      throw unregisteredTrigger(name);
+    }
+    return trigger;
+  }
+  trigger(element, triggerName, value, defaultToFallback = true) {
+    const trigger = this._getTrigger(triggerName);
+    const player = new TransitionAnimationPlayer(this.id, triggerName, element);
+    let triggersWithStates = this._engine.statesByElement.get(element);
+    if (!triggersWithStates) {
+      addClass(element, NG_TRIGGER_CLASSNAME);
+      addClass(element, NG_TRIGGER_CLASSNAME + "-" + triggerName);
+      this._engine.statesByElement.set(element, triggersWithStates = /* @__PURE__ */ new Map());
+    }
+    let fromState = triggersWithStates.get(triggerName);
+    const toState = new StateValue(value, this.id);
+    const isObj = value && value.hasOwnProperty("value");
+    if (!isObj && fromState) {
+      toState.absorbOptions(fromState.options);
+    }
+    triggersWithStates.set(triggerName, toState);
+    if (!fromState) {
+      fromState = DEFAULT_STATE_VALUE;
+    }
+    const isRemoval = toState.value === VOID_VALUE;
+    if (!isRemoval && fromState.value === toState.value) {
+      if (!objEquals(fromState.params, toState.params)) {
+        const errors = [];
+        const fromStyles = trigger.matchStyles(fromState.value, fromState.params, errors);
+        const toStyles = trigger.matchStyles(toState.value, toState.params, errors);
+        if (errors.length) {
+          this._engine.reportError(errors);
+        } else {
+          this._engine.afterFlush(() => {
+            eraseStyles(element, fromStyles);
+            setStyles(element, toStyles);
+          });
+        }
+      }
+      return;
+    }
+    const playersOnElement = getOrSetDefaultValue(this._engine.playersByElement, element, []);
+    playersOnElement.forEach((player2) => {
+      if (player2.namespaceId == this.id && player2.triggerName == triggerName && player2.queued) {
+        player2.destroy();
+      }
+    });
+    let transition = trigger.matchTransition(fromState.value, toState.value, element, toState.params);
+    let isFallbackTransition = false;
+    if (!transition) {
+      if (!defaultToFallback) return;
+      transition = trigger.fallbackTransition;
+      isFallbackTransition = true;
+    }
+    this._engine.totalQueuedPlayers++;
+    this._queue.push({
+      element,
+      triggerName,
+      transition,
+      fromState,
+      toState,
+      player,
+      isFallbackTransition
+    });
+    if (!isFallbackTransition) {
+      addClass(element, QUEUED_CLASSNAME);
+      player.onStart(() => {
+        removeClass(element, QUEUED_CLASSNAME);
+      });
+    }
+    player.onDone(() => {
+      let index = this.players.indexOf(player);
+      if (index >= 0) {
+        this.players.splice(index, 1);
+      }
+      const players = this._engine.playersByElement.get(element);
+      if (players) {
+        let index2 = players.indexOf(player);
+        if (index2 >= 0) {
+          players.splice(index2, 1);
+        }
+      }
+    });
+    this.players.push(player);
+    playersOnElement.push(player);
+    return player;
+  }
+  deregister(name) {
+    this._triggers.delete(name);
+    this._engine.statesByElement.forEach((stateMap) => stateMap.delete(name));
+    this._elementListeners.forEach((listeners, element) => {
+      this._elementListeners.set(element, listeners.filter((entry) => {
+        return entry.name != name;
+      }));
+    });
+  }
+  clearElementCache(element) {
+    this._engine.statesByElement.delete(element);
+    this._elementListeners.delete(element);
+    const elementPlayers = this._engine.playersByElement.get(element);
+    if (elementPlayers) {
+      elementPlayers.forEach((player) => player.destroy());
+      this._engine.playersByElement.delete(element);
+    }
+  }
+  _signalRemovalForInnerTriggers(rootElement, context2) {
+    const elements = this._engine.driver.query(rootElement, NG_TRIGGER_SELECTOR, true);
+    elements.forEach((elm) => {
+      if (elm[REMOVAL_FLAG]) return;
+      const namespaces = this._engine.fetchNamespacesByElement(elm);
+      if (namespaces.size) {
+        namespaces.forEach((ns) => ns.triggerLeaveAnimation(elm, context2, false, true));
+      } else {
+        this.clearElementCache(elm);
+      }
+    });
+    this._engine.afterFlushAnimationsDone(() => elements.forEach((elm) => this.clearElementCache(elm)));
+  }
+  triggerLeaveAnimation(element, context2, destroyAfterComplete, defaultToFallback) {
+    const triggerStates = this._engine.statesByElement.get(element);
+    const previousTriggersValues = /* @__PURE__ */ new Map();
+    if (triggerStates) {
+      const players = [];
+      triggerStates.forEach((state, triggerName) => {
+        previousTriggersValues.set(triggerName, state.value);
+        if (this._triggers.has(triggerName)) {
+          const player = this.trigger(element, triggerName, VOID_VALUE, defaultToFallback);
+          if (player) {
+            players.push(player);
+          }
+        }
+      });
+      if (players.length) {
+        this._engine.markElementAsRemoved(this.id, element, true, context2, previousTriggersValues);
+        if (destroyAfterComplete) {
+          optimizeGroupPlayer(players).onDone(() => this._engine.processLeaveNode(element));
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+  prepareLeaveAnimationListeners(element) {
+    const listeners = this._elementListeners.get(element);
+    const elementStates = this._engine.statesByElement.get(element);
+    if (listeners && elementStates) {
+      const visitedTriggers = /* @__PURE__ */ new Set();
+      listeners.forEach((listener) => {
+        const triggerName = listener.name;
+        if (visitedTriggers.has(triggerName)) return;
+        visitedTriggers.add(triggerName);
+        const trigger = this._triggers.get(triggerName);
+        const transition = trigger.fallbackTransition;
+        const fromState = elementStates.get(triggerName) || DEFAULT_STATE_VALUE;
+        const toState = new StateValue(VOID_VALUE);
+        const player = new TransitionAnimationPlayer(this.id, triggerName, element);
+        this._engine.totalQueuedPlayers++;
+        this._queue.push({
+          element,
+          triggerName,
+          transition,
+          fromState,
+          toState,
+          player,
+          isFallbackTransition: true
+        });
+      });
+    }
+  }
+  removeNode(element, context2) {
+    const engine = this._engine;
+    if (element.childElementCount) {
+      this._signalRemovalForInnerTriggers(element, context2);
+    }
+    if (this.triggerLeaveAnimation(element, context2, true)) return;
+    let containsPotentialParentTransition = false;
+    if (engine.totalAnimations) {
+      const currentPlayers = engine.players.length ? engine.playersByQueriedElement.get(element) : [];
+      if (currentPlayers && currentPlayers.length) {
+        containsPotentialParentTransition = true;
+      } else {
+        let parent = element;
+        while (parent = parent.parentNode) {
+          const triggers = engine.statesByElement.get(parent);
+          if (triggers) {
+            containsPotentialParentTransition = true;
+            break;
+          }
+        }
+      }
+    }
+    this.prepareLeaveAnimationListeners(element);
+    if (containsPotentialParentTransition) {
+      engine.markElementAsRemoved(this.id, element, false, context2);
+    } else {
+      const removalFlag = element[REMOVAL_FLAG];
+      if (!removalFlag || removalFlag === NULL_REMOVAL_STATE) {
+        engine.afterFlush(() => this.clearElementCache(element));
+        engine.destroyInnerAnimations(element);
+        engine._onRemovalComplete(element, context2);
+      }
+    }
+  }
+  insertNode(element, parent) {
+    addClass(element, this._hostClassName);
+  }
+  drainQueuedTransitions(microtaskId) {
+    const instructions = [];
+    this._queue.forEach((entry) => {
+      const player = entry.player;
+      if (player.destroyed) return;
+      const element = entry.element;
+      const listeners = this._elementListeners.get(element);
+      if (listeners) {
+        listeners.forEach((listener) => {
+          if (listener.name == entry.triggerName) {
+            const baseEvent = makeAnimationEvent(element, entry.triggerName, entry.fromState.value, entry.toState.value);
+            baseEvent["_data"] = microtaskId;
+            listenOnPlayer(entry.player, listener.phase, baseEvent, listener.callback);
+          }
+        });
+      }
+      if (player.markedForDestroy) {
+        this._engine.afterFlush(() => {
+          player.destroy();
+        });
+      } else {
+        instructions.push(entry);
+      }
+    });
+    this._queue = [];
+    return instructions.sort((a, b) => {
+      const d0 = a.transition.ast.depCount;
+      const d1 = b.transition.ast.depCount;
+      if (d0 == 0 || d1 == 0) {
+        return d0 - d1;
+      }
+      return this._engine.driver.containsElement(a.element, b.element) ? 1 : -1;
+    });
+  }
+  destroy(context2) {
+    this.players.forEach((p) => p.destroy());
+    this._signalRemovalForInnerTriggers(this.hostElement, context2);
+  }
+};
+var TransitionAnimationEngine = class {
+  bodyNode;
+  driver;
+  _normalizer;
+  players = [];
+  newHostElements = /* @__PURE__ */ new Map();
+  playersByElement = /* @__PURE__ */ new Map();
+  playersByQueriedElement = /* @__PURE__ */ new Map();
+  statesByElement = /* @__PURE__ */ new Map();
+  disabledNodes = /* @__PURE__ */ new Set();
+  totalAnimations = 0;
+  totalQueuedPlayers = 0;
+  _namespaceLookup = {};
+  _namespaceList = [];
+  _flushFns = [];
+  _whenQuietFns = [];
+  namespacesByHostElement = /* @__PURE__ */ new Map();
+  collectedEnterElements = [];
+  collectedLeaveElements = [];
+  // this method is designed to be overridden by the code that uses this engine
+  onRemovalComplete = (element, context2) => {
+  };
+  /** @internal */
+  _onRemovalComplete(element, context2) {
+    this.onRemovalComplete(element, context2);
+  }
+  constructor(bodyNode, driver, _normalizer) {
+    this.bodyNode = bodyNode;
+    this.driver = driver;
+    this._normalizer = _normalizer;
+  }
+  get queuedPlayers() {
+    const players = [];
+    this._namespaceList.forEach((ns) => {
+      ns.players.forEach((player) => {
+        if (player.queued) {
+          players.push(player);
+        }
+      });
+    });
+    return players;
+  }
+  createNamespace(namespaceId, hostElement) {
+    const ns = new AnimationTransitionNamespace(namespaceId, hostElement, this);
+    if (this.bodyNode && this.driver.containsElement(this.bodyNode, hostElement)) {
+      this._balanceNamespaceList(ns, hostElement);
+    } else {
+      this.newHostElements.set(hostElement, ns);
+      this.collectEnterElement(hostElement);
+    }
+    return this._namespaceLookup[namespaceId] = ns;
+  }
+  _balanceNamespaceList(ns, hostElement) {
+    const namespaceList = this._namespaceList;
+    const namespacesByHostElement = this.namespacesByHostElement;
+    const limit = namespaceList.length - 1;
+    if (limit >= 0) {
+      let found = false;
+      let ancestor = this.driver.getParentElement(hostElement);
+      while (ancestor) {
+        const ancestorNs = namespacesByHostElement.get(ancestor);
+        if (ancestorNs) {
+          const index = namespaceList.indexOf(ancestorNs);
+          namespaceList.splice(index + 1, 0, ns);
+          found = true;
+          break;
+        }
+        ancestor = this.driver.getParentElement(ancestor);
+      }
+      if (!found) {
+        namespaceList.unshift(ns);
+      }
+    } else {
+      namespaceList.push(ns);
+    }
+    namespacesByHostElement.set(hostElement, ns);
+    return ns;
+  }
+  register(namespaceId, hostElement) {
+    let ns = this._namespaceLookup[namespaceId];
+    if (!ns) {
+      ns = this.createNamespace(namespaceId, hostElement);
+    }
+    return ns;
+  }
+  registerTrigger(namespaceId, name, trigger) {
+    let ns = this._namespaceLookup[namespaceId];
+    if (ns && ns.register(name, trigger)) {
+      this.totalAnimations++;
+    }
+  }
+  destroy(namespaceId, context2) {
+    if (!namespaceId) return;
+    this.afterFlush(() => {
+    });
+    this.afterFlushAnimationsDone(() => {
+      const ns = this._fetchNamespace(namespaceId);
+      this.namespacesByHostElement.delete(ns.hostElement);
+      const index = this._namespaceList.indexOf(ns);
+      if (index >= 0) {
+        this._namespaceList.splice(index, 1);
+      }
+      ns.destroy(context2);
+      delete this._namespaceLookup[namespaceId];
+    });
+  }
+  _fetchNamespace(id) {
+    return this._namespaceLookup[id];
+  }
+  fetchNamespacesByElement(element) {
+    const namespaces = /* @__PURE__ */ new Set();
+    const elementStates = this.statesByElement.get(element);
+    if (elementStates) {
+      for (let stateValue of elementStates.values()) {
+        if (stateValue.namespaceId) {
+          const ns = this._fetchNamespace(stateValue.namespaceId);
+          if (ns) {
+            namespaces.add(ns);
+          }
+        }
+      }
+    }
+    return namespaces;
+  }
+  trigger(namespaceId, element, name, value) {
+    if (isElementNode(element)) {
+      const ns = this._fetchNamespace(namespaceId);
+      if (ns) {
+        ns.trigger(element, name, value);
+        return true;
+      }
+    }
+    return false;
+  }
+  insertNode(namespaceId, element, parent, insertBefore) {
+    if (!isElementNode(element)) return;
+    const details = element[REMOVAL_FLAG];
+    if (details && details.setForRemoval) {
+      details.setForRemoval = false;
+      details.setForMove = true;
+      const index = this.collectedLeaveElements.indexOf(element);
+      if (index >= 0) {
+        this.collectedLeaveElements.splice(index, 1);
+      }
+    }
+    if (namespaceId) {
+      const ns = this._fetchNamespace(namespaceId);
+      if (ns) {
+        ns.insertNode(element, parent);
+      }
+    }
+    if (insertBefore) {
+      this.collectEnterElement(element);
+    }
+  }
+  collectEnterElement(element) {
+    this.collectedEnterElements.push(element);
+  }
+  markElementAsDisabled(element, value) {
+    if (value) {
+      if (!this.disabledNodes.has(element)) {
+        this.disabledNodes.add(element);
+        addClass(element, DISABLED_CLASSNAME);
+      }
+    } else if (this.disabledNodes.has(element)) {
+      this.disabledNodes.delete(element);
+      removeClass(element, DISABLED_CLASSNAME);
+    }
+  }
+  removeNode(namespaceId, element, context2) {
+    if (isElementNode(element)) {
+      const ns = namespaceId ? this._fetchNamespace(namespaceId) : null;
+      if (ns) {
+        ns.removeNode(element, context2);
+      } else {
+        this.markElementAsRemoved(namespaceId, element, false, context2);
+      }
+      const hostNS = this.namespacesByHostElement.get(element);
+      if (hostNS && hostNS.id !== namespaceId) {
+        hostNS.removeNode(element, context2);
+      }
+    } else {
+      this._onRemovalComplete(element, context2);
+    }
+  }
+  markElementAsRemoved(namespaceId, element, hasAnimation, context2, previousTriggersValues) {
+    this.collectedLeaveElements.push(element);
+    element[REMOVAL_FLAG] = {
+      namespaceId,
+      setForRemoval: context2,
+      hasAnimation,
+      removedBeforeQueried: false,
+      previousTriggersValues
+    };
+  }
+  listen(namespaceId, element, name, phase, callback) {
+    if (isElementNode(element)) {
+      return this._fetchNamespace(namespaceId).listen(element, name, phase, callback);
+    }
+    return () => {
+    };
+  }
+  _buildInstruction(entry, subTimelines, enterClassName, leaveClassName, skipBuildAst) {
+    return entry.transition.build(this.driver, entry.element, entry.fromState.value, entry.toState.value, enterClassName, leaveClassName, entry.fromState.options, entry.toState.options, subTimelines, skipBuildAst);
+  }
+  destroyInnerAnimations(containerElement) {
+    let elements = this.driver.query(containerElement, NG_TRIGGER_SELECTOR, true);
+    elements.forEach((element) => this.destroyActiveAnimationsForElement(element));
+    if (this.playersByQueriedElement.size == 0) return;
+    elements = this.driver.query(containerElement, NG_ANIMATING_SELECTOR, true);
+    elements.forEach((element) => this.finishActiveQueriedAnimationOnElement(element));
+  }
+  destroyActiveAnimationsForElement(element) {
+    const players = this.playersByElement.get(element);
+    if (players) {
+      players.forEach((player) => {
+        if (player.queued) {
+          player.markedForDestroy = true;
+        } else {
+          player.destroy();
+        }
+      });
+    }
+  }
+  finishActiveQueriedAnimationOnElement(element) {
+    const players = this.playersByQueriedElement.get(element);
+    if (players) {
+      players.forEach((player) => player.finish());
+    }
+  }
+  whenRenderingDone() {
+    return new Promise((resolve) => {
+      if (this.players.length) {
+        return optimizeGroupPlayer(this.players).onDone(() => resolve());
+      } else {
+        resolve();
+      }
+    });
+  }
+  processLeaveNode(element) {
+    const details = element[REMOVAL_FLAG];
+    if (details && details.setForRemoval) {
+      element[REMOVAL_FLAG] = NULL_REMOVAL_STATE;
+      if (details.namespaceId) {
+        this.destroyInnerAnimations(element);
+        const ns = this._fetchNamespace(details.namespaceId);
+        if (ns) {
+          ns.clearElementCache(element);
+        }
+      }
+      this._onRemovalComplete(element, details.setForRemoval);
+    }
+    if (element.classList?.contains(DISABLED_CLASSNAME)) {
+      this.markElementAsDisabled(element, false);
+    }
+    this.driver.query(element, DISABLED_SELECTOR, true).forEach((node) => {
+      this.markElementAsDisabled(node, false);
+    });
+  }
+  flush(microtaskId = -1) {
+    let players = [];
+    if (this.newHostElements.size) {
+      this.newHostElements.forEach((ns, element) => this._balanceNamespaceList(ns, element));
+      this.newHostElements.clear();
+    }
+    if (this.totalAnimations && this.collectedEnterElements.length) {
+      for (let i = 0; i < this.collectedEnterElements.length; i++) {
+        const elm = this.collectedEnterElements[i];
+        addClass(elm, STAR_CLASSNAME);
+      }
+    }
+    if (this._namespaceList.length && (this.totalQueuedPlayers || this.collectedLeaveElements.length)) {
+      const cleanupFns = [];
+      try {
+        players = this._flushAnimations(cleanupFns, microtaskId);
+      } finally {
+        for (let i = 0; i < cleanupFns.length; i++) {
+          cleanupFns[i]();
+        }
+      }
+    } else {
+      for (let i = 0; i < this.collectedLeaveElements.length; i++) {
+        const element = this.collectedLeaveElements[i];
+        this.processLeaveNode(element);
+      }
+    }
+    this.totalQueuedPlayers = 0;
+    this.collectedEnterElements.length = 0;
+    this.collectedLeaveElements.length = 0;
+    this._flushFns.forEach((fn) => fn());
+    this._flushFns = [];
+    if (this._whenQuietFns.length) {
+      const quietFns = this._whenQuietFns;
+      this._whenQuietFns = [];
+      if (players.length) {
+        optimizeGroupPlayer(players).onDone(() => {
+          quietFns.forEach((fn) => fn());
+        });
+      } else {
+        quietFns.forEach((fn) => fn());
+      }
+    }
+  }
+  reportError(errors) {
+    throw triggerTransitionsFailed(errors);
+  }
+  _flushAnimations(cleanupFns, microtaskId) {
+    const subTimelines = new ElementInstructionMap();
+    const skippedPlayers = [];
+    const skippedPlayersMap = /* @__PURE__ */ new Map();
+    const queuedInstructions = [];
+    const queriedElements = /* @__PURE__ */ new Map();
+    const allPreStyleElements = /* @__PURE__ */ new Map();
+    const allPostStyleElements = /* @__PURE__ */ new Map();
+    const disabledElementsSet = /* @__PURE__ */ new Set();
+    this.disabledNodes.forEach((node) => {
+      disabledElementsSet.add(node);
+      const nodesThatAreDisabled = this.driver.query(node, QUEUED_SELECTOR, true);
+      for (let i2 = 0; i2 < nodesThatAreDisabled.length; i2++) {
+        disabledElementsSet.add(nodesThatAreDisabled[i2]);
+      }
+    });
+    const bodyNode = this.bodyNode;
+    const allTriggerElements = Array.from(this.statesByElement.keys());
+    const enterNodeMap = buildRootMap(allTriggerElements, this.collectedEnterElements);
+    const enterNodeMapIds = /* @__PURE__ */ new Map();
+    let i = 0;
+    enterNodeMap.forEach((nodes, root) => {
+      const className = ENTER_CLASSNAME + i++;
+      enterNodeMapIds.set(root, className);
+      nodes.forEach((node) => addClass(node, className));
+    });
+    const allLeaveNodes = [];
+    const mergedLeaveNodes = /* @__PURE__ */ new Set();
+    const leaveNodesWithoutAnimations = /* @__PURE__ */ new Set();
+    for (let i2 = 0; i2 < this.collectedLeaveElements.length; i2++) {
+      const element = this.collectedLeaveElements[i2];
+      const details = element[REMOVAL_FLAG];
+      if (details && details.setForRemoval) {
+        allLeaveNodes.push(element);
+        mergedLeaveNodes.add(element);
+        if (details.hasAnimation) {
+          this.driver.query(element, STAR_SELECTOR, true).forEach((elm) => mergedLeaveNodes.add(elm));
+        } else {
+          leaveNodesWithoutAnimations.add(element);
+        }
+      }
+    }
+    const leaveNodeMapIds = /* @__PURE__ */ new Map();
+    const leaveNodeMap = buildRootMap(allTriggerElements, Array.from(mergedLeaveNodes));
+    leaveNodeMap.forEach((nodes, root) => {
+      const className = LEAVE_CLASSNAME + i++;
+      leaveNodeMapIds.set(root, className);
+      nodes.forEach((node) => addClass(node, className));
+    });
+    cleanupFns.push(() => {
+      enterNodeMap.forEach((nodes, root) => {
+        const className = enterNodeMapIds.get(root);
+        nodes.forEach((node) => removeClass(node, className));
+      });
+      leaveNodeMap.forEach((nodes, root) => {
+        const className = leaveNodeMapIds.get(root);
+        nodes.forEach((node) => removeClass(node, className));
+      });
+      allLeaveNodes.forEach((element) => {
+        this.processLeaveNode(element);
+      });
+    });
+    const allPlayers = [];
+    const erroneousTransitions = [];
+    for (let i2 = this._namespaceList.length - 1; i2 >= 0; i2--) {
+      const ns = this._namespaceList[i2];
+      ns.drainQueuedTransitions(microtaskId).forEach((entry) => {
+        const player = entry.player;
+        const element = entry.element;
+        allPlayers.push(player);
+        if (this.collectedEnterElements.length) {
+          const details = element[REMOVAL_FLAG];
+          if (details && details.setForMove) {
+            if (details.previousTriggersValues && details.previousTriggersValues.has(entry.triggerName)) {
+              const previousValue = details.previousTriggersValues.get(entry.triggerName);
+              const triggersWithStates = this.statesByElement.get(entry.element);
+              if (triggersWithStates && triggersWithStates.has(entry.triggerName)) {
+                const state = triggersWithStates.get(entry.triggerName);
+                state.value = previousValue;
+                triggersWithStates.set(entry.triggerName, state);
+              }
+            }
+            player.destroy();
+            return;
+          }
+        }
+        const nodeIsOrphaned = !bodyNode || !this.driver.containsElement(bodyNode, element);
+        const leaveClassName = leaveNodeMapIds.get(element);
+        const enterClassName = enterNodeMapIds.get(element);
+        const instruction = this._buildInstruction(entry, subTimelines, enterClassName, leaveClassName, nodeIsOrphaned);
+        if (instruction.errors && instruction.errors.length) {
+          erroneousTransitions.push(instruction);
+          return;
+        }
+        if (nodeIsOrphaned) {
+          player.onStart(() => eraseStyles(element, instruction.fromStyles));
+          player.onDestroy(() => setStyles(element, instruction.toStyles));
+          skippedPlayers.push(player);
+          return;
+        }
+        if (entry.isFallbackTransition) {
+          player.onStart(() => eraseStyles(element, instruction.fromStyles));
+          player.onDestroy(() => setStyles(element, instruction.toStyles));
+          skippedPlayers.push(player);
+          return;
+        }
+        const timelines = [];
+        instruction.timelines.forEach((tl) => {
+          tl.stretchStartingKeyframe = true;
+          if (!this.disabledNodes.has(tl.element)) {
+            timelines.push(tl);
+          }
+        });
+        instruction.timelines = timelines;
+        subTimelines.append(element, instruction.timelines);
+        const tuple = {
+          instruction,
+          player,
+          element
+        };
+        queuedInstructions.push(tuple);
+        instruction.queriedElements.forEach((element2) => getOrSetDefaultValue(queriedElements, element2, []).push(player));
+        instruction.preStyleProps.forEach((stringMap, element2) => {
+          if (stringMap.size) {
+            let setVal = allPreStyleElements.get(element2);
+            if (!setVal) {
+              allPreStyleElements.set(element2, setVal = /* @__PURE__ */ new Set());
+            }
+            stringMap.forEach((_, prop) => setVal.add(prop));
+          }
+        });
+        instruction.postStyleProps.forEach((stringMap, element2) => {
+          let setVal = allPostStyleElements.get(element2);
+          if (!setVal) {
+            allPostStyleElements.set(element2, setVal = /* @__PURE__ */ new Set());
+          }
+          stringMap.forEach((_, prop) => setVal.add(prop));
+        });
+      });
+    }
+    if (erroneousTransitions.length) {
+      const errors = [];
+      erroneousTransitions.forEach((instruction) => {
+        errors.push(transitionFailed(instruction.triggerName, instruction.errors));
+      });
+      allPlayers.forEach((player) => player.destroy());
+      this.reportError(errors);
+    }
+    const allPreviousPlayersMap = /* @__PURE__ */ new Map();
+    const animationElementMap = /* @__PURE__ */ new Map();
+    queuedInstructions.forEach((entry) => {
+      const element = entry.element;
+      if (subTimelines.has(element)) {
+        animationElementMap.set(element, element);
+        this._beforeAnimationBuild(entry.player.namespaceId, entry.instruction, allPreviousPlayersMap);
+      }
+    });
+    skippedPlayers.forEach((player) => {
+      const element = player.element;
+      const previousPlayers = this._getPreviousPlayers(element, false, player.namespaceId, player.triggerName, null);
+      previousPlayers.forEach((prevPlayer) => {
+        getOrSetDefaultValue(allPreviousPlayersMap, element, []).push(prevPlayer);
+        prevPlayer.destroy();
+      });
+    });
+    const replaceNodes = allLeaveNodes.filter((node) => {
+      return replacePostStylesAsPre(node, allPreStyleElements, allPostStyleElements);
+    });
+    const postStylesMap = /* @__PURE__ */ new Map();
+    const allLeaveQueriedNodes = cloakAndComputeStyles(postStylesMap, this.driver, leaveNodesWithoutAnimations, allPostStyleElements, AUTO_STYLE);
+    allLeaveQueriedNodes.forEach((node) => {
+      if (replacePostStylesAsPre(node, allPreStyleElements, allPostStyleElements)) {
+        replaceNodes.push(node);
+      }
+    });
+    const preStylesMap = /* @__PURE__ */ new Map();
+    enterNodeMap.forEach((nodes, root) => {
+      cloakAndComputeStyles(preStylesMap, this.driver, new Set(nodes), allPreStyleElements, \u0275PRE_STYLE);
+    });
+    replaceNodes.forEach((node) => {
+      const post = postStylesMap.get(node);
+      const pre = preStylesMap.get(node);
+      postStylesMap.set(node, new Map([...post?.entries() ?? [], ...pre?.entries() ?? []]));
+    });
+    const rootPlayers = [];
+    const subPlayers = [];
+    const NO_PARENT_ANIMATION_ELEMENT_DETECTED = {};
+    queuedInstructions.forEach((entry) => {
+      const {
+        element,
+        player,
+        instruction
+      } = entry;
+      if (subTimelines.has(element)) {
+        if (disabledElementsSet.has(element)) {
+          player.onDestroy(() => setStyles(element, instruction.toStyles));
+          player.disabled = true;
+          player.overrideTotalTime(instruction.totalTime);
+          skippedPlayers.push(player);
+          return;
+        }
+        let parentWithAnimation = NO_PARENT_ANIMATION_ELEMENT_DETECTED;
+        if (animationElementMap.size > 1) {
+          let elm = element;
+          const parentsToAdd = [];
+          while (elm = elm.parentNode) {
+            const detectedParent = animationElementMap.get(elm);
+            if (detectedParent) {
+              parentWithAnimation = detectedParent;
+              break;
+            }
+            parentsToAdd.push(elm);
+          }
+          parentsToAdd.forEach((parent) => animationElementMap.set(parent, parentWithAnimation));
+        }
+        const innerPlayer = this._buildAnimation(player.namespaceId, instruction, allPreviousPlayersMap, skippedPlayersMap, preStylesMap, postStylesMap);
+        player.setRealPlayer(innerPlayer);
+        if (parentWithAnimation === NO_PARENT_ANIMATION_ELEMENT_DETECTED) {
+          rootPlayers.push(player);
+        } else {
+          const parentPlayers = this.playersByElement.get(parentWithAnimation);
+          if (parentPlayers && parentPlayers.length) {
+            player.parentPlayer = optimizeGroupPlayer(parentPlayers);
+          }
+          skippedPlayers.push(player);
+        }
+      } else {
+        eraseStyles(element, instruction.fromStyles);
+        player.onDestroy(() => setStyles(element, instruction.toStyles));
+        subPlayers.push(player);
+        if (disabledElementsSet.has(element)) {
+          skippedPlayers.push(player);
+        }
+      }
+    });
+    subPlayers.forEach((player) => {
+      const playersForElement = skippedPlayersMap.get(player.element);
+      if (playersForElement && playersForElement.length) {
+        const innerPlayer = optimizeGroupPlayer(playersForElement);
+        player.setRealPlayer(innerPlayer);
+      }
+    });
+    skippedPlayers.forEach((player) => {
+      if (player.parentPlayer) {
+        player.syncPlayerEvents(player.parentPlayer);
+      } else {
+        player.destroy();
+      }
+    });
+    for (let i2 = 0; i2 < allLeaveNodes.length; i2++) {
+      const element = allLeaveNodes[i2];
+      const details = element[REMOVAL_FLAG];
+      removeClass(element, LEAVE_CLASSNAME);
+      if (details && details.hasAnimation) continue;
+      let players = [];
+      if (queriedElements.size) {
+        let queriedPlayerResults = queriedElements.get(element);
+        if (queriedPlayerResults && queriedPlayerResults.length) {
+          players.push(...queriedPlayerResults);
+        }
+        let queriedInnerElements = this.driver.query(element, NG_ANIMATING_SELECTOR, true);
+        for (let j = 0; j < queriedInnerElements.length; j++) {
+          let queriedPlayers = queriedElements.get(queriedInnerElements[j]);
+          if (queriedPlayers && queriedPlayers.length) {
+            players.push(...queriedPlayers);
+          }
+        }
+      }
+      const activePlayers = players.filter((p) => !p.destroyed);
+      if (activePlayers.length) {
+        removeNodesAfterAnimationDone(this, element, activePlayers);
+      } else {
+        this.processLeaveNode(element);
+      }
+    }
+    allLeaveNodes.length = 0;
+    rootPlayers.forEach((player) => {
+      this.players.push(player);
+      player.onDone(() => {
+        player.destroy();
+        const index = this.players.indexOf(player);
+        this.players.splice(index, 1);
+      });
+      player.play();
+    });
+    return rootPlayers;
+  }
+  afterFlush(callback) {
+    this._flushFns.push(callback);
+  }
+  afterFlushAnimationsDone(callback) {
+    this._whenQuietFns.push(callback);
+  }
+  _getPreviousPlayers(element, isQueriedElement, namespaceId, triggerName, toStateValue) {
+    let players = [];
+    if (isQueriedElement) {
+      const queriedElementPlayers = this.playersByQueriedElement.get(element);
+      if (queriedElementPlayers) {
+        players = queriedElementPlayers;
+      }
+    } else {
+      const elementPlayers = this.playersByElement.get(element);
+      if (elementPlayers) {
+        const isRemovalAnimation = !toStateValue || toStateValue == VOID_VALUE;
+        elementPlayers.forEach((player) => {
+          if (player.queued) return;
+          if (!isRemovalAnimation && player.triggerName != triggerName) return;
+          players.push(player);
+        });
+      }
+    }
+    if (namespaceId || triggerName) {
+      players = players.filter((player) => {
+        if (namespaceId && namespaceId != player.namespaceId) return false;
+        if (triggerName && triggerName != player.triggerName) return false;
+        return true;
+      });
+    }
+    return players;
+  }
+  _beforeAnimationBuild(namespaceId, instruction, allPreviousPlayersMap) {
+    const triggerName = instruction.triggerName;
+    const rootElement = instruction.element;
+    const targetNameSpaceId = instruction.isRemovalTransition ? void 0 : namespaceId;
+    const targetTriggerName = instruction.isRemovalTransition ? void 0 : triggerName;
+    for (const timelineInstruction of instruction.timelines) {
+      const element = timelineInstruction.element;
+      const isQueriedElement = element !== rootElement;
+      const players = getOrSetDefaultValue(allPreviousPlayersMap, element, []);
+      const previousPlayers = this._getPreviousPlayers(element, isQueriedElement, targetNameSpaceId, targetTriggerName, instruction.toState);
+      previousPlayers.forEach((player) => {
+        const realPlayer = player.getRealPlayer();
+        if (realPlayer.beforeDestroy) {
+          realPlayer.beforeDestroy();
+        }
+        player.destroy();
+        players.push(player);
+      });
+    }
+    eraseStyles(rootElement, instruction.fromStyles);
+  }
+  _buildAnimation(namespaceId, instruction, allPreviousPlayersMap, skippedPlayersMap, preStylesMap, postStylesMap) {
+    const triggerName = instruction.triggerName;
+    const rootElement = instruction.element;
+    const allQueriedPlayers = [];
+    const allConsumedElements = /* @__PURE__ */ new Set();
+    const allSubElements = /* @__PURE__ */ new Set();
+    const allNewPlayers = instruction.timelines.map((timelineInstruction) => {
+      const element = timelineInstruction.element;
+      allConsumedElements.add(element);
+      const details = element[REMOVAL_FLAG];
+      if (details && details.removedBeforeQueried) return new NoopAnimationPlayer(timelineInstruction.duration, timelineInstruction.delay);
+      const isQueriedElement = element !== rootElement;
+      const previousPlayers = flattenGroupPlayers((allPreviousPlayersMap.get(element) || EMPTY_PLAYER_ARRAY).map((p) => p.getRealPlayer())).filter((p) => {
+        const pp = p;
+        return pp.element ? pp.element === element : false;
+      });
+      const preStyles = preStylesMap.get(element);
+      const postStyles = postStylesMap.get(element);
+      const keyframes = normalizeKeyframes$1(this._normalizer, timelineInstruction.keyframes, preStyles, postStyles);
+      const player2 = this._buildPlayer(timelineInstruction, keyframes, previousPlayers);
+      if (timelineInstruction.subTimeline && skippedPlayersMap) {
+        allSubElements.add(element);
+      }
+      if (isQueriedElement) {
+        const wrappedPlayer = new TransitionAnimationPlayer(namespaceId, triggerName, element);
+        wrappedPlayer.setRealPlayer(player2);
+        allQueriedPlayers.push(wrappedPlayer);
+      }
+      return player2;
+    });
+    allQueriedPlayers.forEach((player2) => {
+      getOrSetDefaultValue(this.playersByQueriedElement, player2.element, []).push(player2);
+      player2.onDone(() => deleteOrUnsetInMap(this.playersByQueriedElement, player2.element, player2));
+    });
+    allConsumedElements.forEach((element) => addClass(element, NG_ANIMATING_CLASSNAME));
+    const player = optimizeGroupPlayer(allNewPlayers);
+    player.onDestroy(() => {
+      allConsumedElements.forEach((element) => removeClass(element, NG_ANIMATING_CLASSNAME));
+      setStyles(rootElement, instruction.toStyles);
+    });
+    allSubElements.forEach((element) => {
+      getOrSetDefaultValue(skippedPlayersMap, element, []).push(player);
+    });
+    return player;
+  }
+  _buildPlayer(instruction, keyframes, previousPlayers) {
+    if (keyframes.length > 0) {
+      return this.driver.animate(instruction.element, keyframes, instruction.duration, instruction.delay, instruction.easing, previousPlayers);
+    }
+    return new NoopAnimationPlayer(instruction.duration, instruction.delay);
+  }
+};
+var TransitionAnimationPlayer = class {
+  namespaceId;
+  triggerName;
+  element;
+  _player = new NoopAnimationPlayer();
+  _containsRealPlayer = false;
+  _queuedCallbacks = /* @__PURE__ */ new Map();
+  destroyed = false;
+  parentPlayer = null;
+  markedForDestroy = false;
+  disabled = false;
+  queued = true;
+  totalTime = 0;
+  constructor(namespaceId, triggerName, element) {
+    this.namespaceId = namespaceId;
+    this.triggerName = triggerName;
+    this.element = element;
+  }
+  setRealPlayer(player) {
+    if (this._containsRealPlayer) return;
+    this._player = player;
+    this._queuedCallbacks.forEach((callbacks, phase) => {
+      callbacks.forEach((callback) => listenOnPlayer(player, phase, void 0, callback));
+    });
+    this._queuedCallbacks.clear();
+    this._containsRealPlayer = true;
+    this.overrideTotalTime(player.totalTime);
+    this.queued = false;
+  }
+  getRealPlayer() {
+    return this._player;
+  }
+  overrideTotalTime(totalTime) {
+    this.totalTime = totalTime;
+  }
+  syncPlayerEvents(player) {
+    const p = this._player;
+    if (p.triggerCallback) {
+      player.onStart(() => p.triggerCallback("start"));
+    }
+    player.onDone(() => this.finish());
+    player.onDestroy(() => this.destroy());
+  }
+  _queueEvent(name, callback) {
+    getOrSetDefaultValue(this._queuedCallbacks, name, []).push(callback);
+  }
+  onDone(fn) {
+    if (this.queued) {
+      this._queueEvent("done", fn);
+    }
+    this._player.onDone(fn);
+  }
+  onStart(fn) {
+    if (this.queued) {
+      this._queueEvent("start", fn);
+    }
+    this._player.onStart(fn);
+  }
+  onDestroy(fn) {
+    if (this.queued) {
+      this._queueEvent("destroy", fn);
+    }
+    this._player.onDestroy(fn);
+  }
+  init() {
+    this._player.init();
+  }
+  hasStarted() {
+    return this.queued ? false : this._player.hasStarted();
+  }
+  play() {
+    !this.queued && this._player.play();
+  }
+  pause() {
+    !this.queued && this._player.pause();
+  }
+  restart() {
+    !this.queued && this._player.restart();
+  }
+  finish() {
+    this._player.finish();
+  }
+  destroy() {
+    this.destroyed = true;
+    this._player.destroy();
+  }
+  reset() {
+    !this.queued && this._player.reset();
+  }
+  setPosition(p) {
+    if (!this.queued) {
+      this._player.setPosition(p);
+    }
+  }
+  getPosition() {
+    return this.queued ? 0 : this._player.getPosition();
+  }
+  /** @internal */
+  triggerCallback(phaseName) {
+    const p = this._player;
+    if (p.triggerCallback) {
+      p.triggerCallback(phaseName);
+    }
+  }
+};
+function deleteOrUnsetInMap(map2, key, value) {
+  let currentValues = map2.get(key);
+  if (currentValues) {
+    if (currentValues.length) {
+      const index = currentValues.indexOf(value);
+      currentValues.splice(index, 1);
+    }
+    if (currentValues.length == 0) {
+      map2.delete(key);
+    }
+  }
+  return currentValues;
+}
+function normalizeTriggerValue(value) {
+  return value != null ? value : null;
+}
+function isElementNode(node) {
+  return node && node["nodeType"] === 1;
+}
+function isTriggerEventValid(eventName) {
+  return eventName == "start" || eventName == "done";
+}
+function cloakElement(element, value) {
+  const oldValue = element.style.display;
+  element.style.display = value != null ? value : "none";
+  return oldValue;
+}
+function cloakAndComputeStyles(valuesMap, driver, elements, elementPropsMap, defaultStyle) {
+  const cloakVals = [];
+  elements.forEach((element) => cloakVals.push(cloakElement(element)));
+  const failedElements = [];
+  elementPropsMap.forEach((props, element) => {
+    const styles = /* @__PURE__ */ new Map();
+    props.forEach((prop) => {
+      const value = driver.computeStyle(element, prop, defaultStyle);
+      styles.set(prop, value);
+      if (!value || value.length == 0) {
+        element[REMOVAL_FLAG] = NULL_REMOVED_QUERIED_STATE;
+        failedElements.push(element);
+      }
+    });
+    valuesMap.set(element, styles);
+  });
+  let i = 0;
+  elements.forEach((element) => cloakElement(element, cloakVals[i++]));
+  return failedElements;
+}
+function buildRootMap(roots, nodes) {
+  const rootMap = /* @__PURE__ */ new Map();
+  roots.forEach((root) => rootMap.set(root, []));
+  if (nodes.length == 0) return rootMap;
+  const NULL_NODE = 1;
+  const nodeSet = new Set(nodes);
+  const localRootMap = /* @__PURE__ */ new Map();
+  function getRoot(node) {
+    if (!node) return NULL_NODE;
+    let root = localRootMap.get(node);
+    if (root) return root;
+    const parent = node.parentNode;
+    if (rootMap.has(parent)) {
+      root = parent;
+    } else if (nodeSet.has(parent)) {
+      root = NULL_NODE;
+    } else {
+      root = getRoot(parent);
+    }
+    localRootMap.set(node, root);
+    return root;
+  }
+  nodes.forEach((node) => {
+    const root = getRoot(node);
+    if (root !== NULL_NODE) {
+      rootMap.get(root).push(node);
+    }
+  });
+  return rootMap;
+}
+function addClass(element, className) {
+  element.classList?.add(className);
+}
+function removeClass(element, className) {
+  element.classList?.remove(className);
+}
+function removeNodesAfterAnimationDone(engine, element, players) {
+  optimizeGroupPlayer(players).onDone(() => engine.processLeaveNode(element));
+}
+function flattenGroupPlayers(players) {
+  const finalPlayers = [];
+  _flattenGroupPlayersRecur(players, finalPlayers);
+  return finalPlayers;
+}
+function _flattenGroupPlayersRecur(players, finalPlayers) {
+  for (let i = 0; i < players.length; i++) {
+    const player = players[i];
+    if (player instanceof AnimationGroupPlayer) {
+      _flattenGroupPlayersRecur(player.players, finalPlayers);
+    } else {
+      finalPlayers.push(player);
+    }
+  }
+}
+function objEquals(a, b) {
+  const k1 = Object.keys(a);
+  const k2 = Object.keys(b);
+  if (k1.length != k2.length) return false;
+  for (let i = 0; i < k1.length; i++) {
+    const prop = k1[i];
+    if (!b.hasOwnProperty(prop) || a[prop] !== b[prop]) return false;
+  }
+  return true;
+}
+function replacePostStylesAsPre(element, allPreStyleElements, allPostStyleElements) {
+  const postEntry = allPostStyleElements.get(element);
+  if (!postEntry) return false;
+  let preEntry = allPreStyleElements.get(element);
+  if (preEntry) {
+    postEntry.forEach((data) => preEntry.add(data));
+  } else {
+    allPreStyleElements.set(element, postEntry);
+  }
+  allPostStyleElements.delete(element);
+  return true;
+}
+var AnimationEngine = class {
+  _driver;
+  _normalizer;
+  _transitionEngine;
+  _timelineEngine;
+  _triggerCache = {};
+  // this method is designed to be overridden by the code that uses this engine
+  onRemovalComplete = (element, context2) => {
+  };
+  constructor(doc, _driver, _normalizer) {
+    this._driver = _driver;
+    this._normalizer = _normalizer;
+    this._transitionEngine = new TransitionAnimationEngine(doc.body, _driver, _normalizer);
+    this._timelineEngine = new TimelineAnimationEngine(doc.body, _driver, _normalizer);
+    this._transitionEngine.onRemovalComplete = (element, context2) => this.onRemovalComplete(element, context2);
+  }
+  registerTrigger(componentId, namespaceId, hostElement, name, metadata) {
+    const cacheKey = componentId + "-" + name;
+    let trigger = this._triggerCache[cacheKey];
+    if (!trigger) {
+      const errors = [];
+      const warnings = [];
+      const ast = buildAnimationAst(this._driver, metadata, errors, warnings);
+      if (errors.length) {
+        throw triggerBuildFailed(name, errors);
+      }
+      if (typeof ngDevMode === "undefined" || ngDevMode) {
+        if (warnings.length) {
+          warnTriggerBuild(name, warnings);
+        }
+      }
+      trigger = buildTrigger(name, ast, this._normalizer);
+      this._triggerCache[cacheKey] = trigger;
+    }
+    this._transitionEngine.registerTrigger(namespaceId, name, trigger);
+  }
+  register(namespaceId, hostElement) {
+    this._transitionEngine.register(namespaceId, hostElement);
+  }
+  destroy(namespaceId, context2) {
+    this._transitionEngine.destroy(namespaceId, context2);
+  }
+  onInsert(namespaceId, element, parent, insertBefore) {
+    this._transitionEngine.insertNode(namespaceId, element, parent, insertBefore);
+  }
+  onRemove(namespaceId, element, context2) {
+    this._transitionEngine.removeNode(namespaceId, element, context2);
+  }
+  disableAnimations(element, disable) {
+    this._transitionEngine.markElementAsDisabled(element, disable);
+  }
+  process(namespaceId, element, property, value) {
+    if (property.charAt(0) == "@") {
+      const [id, action] = parseTimelineCommand(property);
+      const args = value;
+      this._timelineEngine.command(id, element, action, args);
+    } else {
+      this._transitionEngine.trigger(namespaceId, element, property, value);
+    }
+  }
+  listen(namespaceId, element, eventName, eventPhase, callback) {
+    if (eventName.charAt(0) == "@") {
+      const [id, action] = parseTimelineCommand(eventName);
+      return this._timelineEngine.listen(id, element, action, callback);
+    }
+    return this._transitionEngine.listen(namespaceId, element, eventName, eventPhase, callback);
+  }
+  flush(microtaskId = -1) {
+    this._transitionEngine.flush(microtaskId);
+  }
+  get players() {
+    return [...this._transitionEngine.players, ...this._timelineEngine.players];
+  }
+  whenRenderingDone() {
+    return this._transitionEngine.whenRenderingDone();
+  }
+  afterFlushAnimationsDone(cb) {
+    this._transitionEngine.afterFlushAnimationsDone(cb);
+  }
+};
+function packageNonAnimatableStyles(element, styles) {
+  let startStyles = null;
+  let endStyles = null;
+  if (Array.isArray(styles) && styles.length) {
+    startStyles = filterNonAnimatableStyles(styles[0]);
+    if (styles.length > 1) {
+      endStyles = filterNonAnimatableStyles(styles[styles.length - 1]);
+    }
+  } else if (styles instanceof Map) {
+    startStyles = filterNonAnimatableStyles(styles);
+  }
+  return startStyles || endStyles ? new SpecialCasedStyles(element, startStyles, endStyles) : null;
+}
+var SpecialCasedStyles = class _SpecialCasedStyles {
+  _element;
+  _startStyles;
+  _endStyles;
+  static initialStylesByElement = /* @__PURE__ */ new WeakMap();
+  _state = 0;
+  _initialStyles;
+  constructor(_element, _startStyles, _endStyles) {
+    this._element = _element;
+    this._startStyles = _startStyles;
+    this._endStyles = _endStyles;
+    let initialStyles = _SpecialCasedStyles.initialStylesByElement.get(_element);
+    if (!initialStyles) {
+      _SpecialCasedStyles.initialStylesByElement.set(_element, initialStyles = /* @__PURE__ */ new Map());
+    }
+    this._initialStyles = initialStyles;
+  }
+  start() {
+    if (this._state < 1) {
+      if (this._startStyles) {
+        setStyles(this._element, this._startStyles, this._initialStyles);
+      }
+      this._state = 1;
+    }
+  }
+  finish() {
+    this.start();
+    if (this._state < 2) {
+      setStyles(this._element, this._initialStyles);
+      if (this._endStyles) {
+        setStyles(this._element, this._endStyles);
+        this._endStyles = null;
+      }
+      this._state = 1;
+    }
+  }
+  destroy() {
+    this.finish();
+    if (this._state < 3) {
+      _SpecialCasedStyles.initialStylesByElement.delete(this._element);
+      if (this._startStyles) {
+        eraseStyles(this._element, this._startStyles);
+        this._endStyles = null;
+      }
+      if (this._endStyles) {
+        eraseStyles(this._element, this._endStyles);
+        this._endStyles = null;
+      }
+      setStyles(this._element, this._initialStyles);
+      this._state = 3;
+    }
+  }
+};
+function filterNonAnimatableStyles(styles) {
+  let result = null;
+  styles.forEach((val, prop) => {
+    if (isNonAnimatableStyle(prop)) {
+      result = result || /* @__PURE__ */ new Map();
+      result.set(prop, val);
+    }
+  });
+  return result;
+}
+function isNonAnimatableStyle(prop) {
+  return prop === "display" || prop === "position";
+}
+var WebAnimationsPlayer = class {
+  element;
+  keyframes;
+  options;
+  _specialStyles;
+  _onDoneFns = [];
+  _onStartFns = [];
+  _onDestroyFns = [];
+  _duration;
+  _delay;
+  _initialized = false;
+  _finished = false;
+  _started = false;
+  _destroyed = false;
+  _finalKeyframe;
+  // the following original fns are persistent copies of the _onStartFns and _onDoneFns
+  // and are used to reset the fns to their original values upon reset()
+  // (since the _onStartFns and _onDoneFns get deleted after they are called)
+  _originalOnDoneFns = [];
+  _originalOnStartFns = [];
+  // using non-null assertion because it's re(set) by init();
+  domPlayer;
+  time = 0;
+  parentPlayer = null;
+  currentSnapshot = /* @__PURE__ */ new Map();
+  constructor(element, keyframes, options, _specialStyles) {
+    this.element = element;
+    this.keyframes = keyframes;
+    this.options = options;
+    this._specialStyles = _specialStyles;
+    this._duration = options["duration"];
+    this._delay = options["delay"] || 0;
+    this.time = this._duration + this._delay;
+  }
+  _onFinish() {
+    if (!this._finished) {
+      this._finished = true;
+      this._onDoneFns.forEach((fn) => fn());
+      this._onDoneFns = [];
+    }
+  }
+  init() {
+    this._buildPlayer();
+    this._preparePlayerBeforeStart();
+  }
+  _buildPlayer() {
+    if (this._initialized) return;
+    this._initialized = true;
+    const keyframes = this.keyframes;
+    this.domPlayer = this._triggerWebAnimation(this.element, keyframes, this.options);
+    this._finalKeyframe = keyframes.length ? keyframes[keyframes.length - 1] : /* @__PURE__ */ new Map();
+    const onFinish = () => this._onFinish();
+    this.domPlayer.addEventListener("finish", onFinish);
+    this.onDestroy(() => {
+      this.domPlayer.removeEventListener("finish", onFinish);
+    });
+  }
+  _preparePlayerBeforeStart() {
+    if (this._delay) {
+      this._resetDomPlayerState();
+    } else {
+      this.domPlayer.pause();
+    }
+  }
+  _convertKeyframesToObject(keyframes) {
+    const kfs = [];
+    keyframes.forEach((frame) => {
+      kfs.push(Object.fromEntries(frame));
+    });
+    return kfs;
+  }
+  /** @internal */
+  _triggerWebAnimation(element, keyframes, options) {
+    return element.animate(this._convertKeyframesToObject(keyframes), options);
+  }
+  onStart(fn) {
+    this._originalOnStartFns.push(fn);
+    this._onStartFns.push(fn);
+  }
+  onDone(fn) {
+    this._originalOnDoneFns.push(fn);
+    this._onDoneFns.push(fn);
+  }
+  onDestroy(fn) {
+    this._onDestroyFns.push(fn);
+  }
+  play() {
+    this._buildPlayer();
+    if (!this.hasStarted()) {
+      this._onStartFns.forEach((fn) => fn());
+      this._onStartFns = [];
+      this._started = true;
+      if (this._specialStyles) {
+        this._specialStyles.start();
+      }
+    }
+    this.domPlayer.play();
+  }
+  pause() {
+    this.init();
+    this.domPlayer.pause();
+  }
+  finish() {
+    this.init();
+    if (this._specialStyles) {
+      this._specialStyles.finish();
+    }
+    this._onFinish();
+    this.domPlayer.finish();
+  }
+  reset() {
+    this._resetDomPlayerState();
+    this._destroyed = false;
+    this._finished = false;
+    this._started = false;
+    this._onStartFns = this._originalOnStartFns;
+    this._onDoneFns = this._originalOnDoneFns;
+  }
+  _resetDomPlayerState() {
+    if (this.domPlayer) {
+      this.domPlayer.cancel();
+    }
+  }
+  restart() {
+    this.reset();
+    this.play();
+  }
+  hasStarted() {
+    return this._started;
+  }
+  destroy() {
+    if (!this._destroyed) {
+      this._destroyed = true;
+      this._resetDomPlayerState();
+      this._onFinish();
+      if (this._specialStyles) {
+        this._specialStyles.destroy();
+      }
+      this._onDestroyFns.forEach((fn) => fn());
+      this._onDestroyFns = [];
+    }
+  }
+  setPosition(p) {
+    if (this.domPlayer === void 0) {
+      this.init();
+    }
+    this.domPlayer.currentTime = p * this.time;
+  }
+  getPosition() {
+    return +(this.domPlayer.currentTime ?? 0) / this.time;
+  }
+  get totalTime() {
+    return this._delay + this._duration;
+  }
+  beforeDestroy() {
+    const styles = /* @__PURE__ */ new Map();
+    if (this.hasStarted()) {
+      const finalKeyframe = this._finalKeyframe;
+      finalKeyframe.forEach((val, prop) => {
+        if (prop !== "offset") {
+          styles.set(prop, this._finished ? val : computeStyle(this.element, prop));
+        }
+      });
+    }
+    this.currentSnapshot = styles;
+  }
+  /** @internal */
+  triggerCallback(phaseName) {
+    const methods = phaseName === "start" ? this._onStartFns : this._onDoneFns;
+    methods.forEach((fn) => fn());
+    methods.length = 0;
+  }
+};
+var WebAnimationsDriver = class {
+  validateStyleProperty(prop) {
+    if (typeof ngDevMode === "undefined" || ngDevMode) {
+      return validateStyleProperty(prop);
+    }
+    return true;
+  }
+  validateAnimatableStyleProperty(prop) {
+    if (typeof ngDevMode === "undefined" || ngDevMode) {
+      const cssProp = camelCaseToDashCase2(prop);
+      return validateWebAnimatableStyleProperty(cssProp);
+    }
+    return true;
+  }
+  containsElement(elm1, elm2) {
+    return containsElement(elm1, elm2);
+  }
+  getParentElement(element) {
+    return getParentElement(element);
+  }
+  query(element, selector, multi) {
+    return invokeQuery(element, selector, multi);
+  }
+  computeStyle(element, prop, defaultValue) {
+    return computeStyle(element, prop);
+  }
+  animate(element, keyframes, duration, delay, easing, previousPlayers = []) {
+    const fill = delay == 0 ? "both" : "forwards";
+    const playerOptions = {
+      duration,
+      delay,
+      fill
+    };
+    if (easing) {
+      playerOptions["easing"] = easing;
+    }
+    const previousStyles = /* @__PURE__ */ new Map();
+    const previousWebAnimationPlayers = previousPlayers.filter((player) => player instanceof WebAnimationsPlayer);
+    if (allowPreviousPlayerStylesMerge(duration, delay)) {
+      previousWebAnimationPlayers.forEach((player) => {
+        player.currentSnapshot.forEach((val, prop) => previousStyles.set(prop, val));
+      });
+    }
+    let _keyframes = normalizeKeyframes(keyframes).map((styles) => new Map(styles));
+    _keyframes = balancePreviousStylesIntoKeyframes(element, _keyframes, previousStyles);
+    const specialStyles = packageNonAnimatableStyles(element, _keyframes);
+    return new WebAnimationsPlayer(element, _keyframes, playerOptions, specialStyles);
+  }
+};
+var ANIMATION_PREFIX = "@";
+var DISABLE_ANIMATIONS_FLAG = "@.disabled";
+var BaseAnimationRenderer = class {
+  namespaceId;
+  delegate;
+  engine;
+  _onDestroy;
+  // We need to explicitly type this property because of an api-extractor bug
+  // See https://github.com/microsoft/rushstack/issues/4390
+  \u0275type = 0;
+  constructor(namespaceId, delegate, engine, _onDestroy) {
+    this.namespaceId = namespaceId;
+    this.delegate = delegate;
+    this.engine = engine;
+    this._onDestroy = _onDestroy;
+  }
+  get data() {
+    return this.delegate.data;
+  }
+  destroyNode(node) {
+    this.delegate.destroyNode?.(node);
+  }
+  destroy() {
+    this.engine.destroy(this.namespaceId, this.delegate);
+    this.engine.afterFlushAnimationsDone(() => {
+      queueMicrotask(() => {
+        this.delegate.destroy();
+      });
+    });
+    this._onDestroy?.();
+  }
+  createElement(name, namespace) {
+    return this.delegate.createElement(name, namespace);
+  }
+  createComment(value) {
+    return this.delegate.createComment(value);
+  }
+  createText(value) {
+    return this.delegate.createText(value);
+  }
+  appendChild(parent, newChild) {
+    this.delegate.appendChild(parent, newChild);
+    this.engine.onInsert(this.namespaceId, newChild, parent, false);
+  }
+  insertBefore(parent, newChild, refChild, isMove = true) {
+    this.delegate.insertBefore(parent, newChild, refChild);
+    this.engine.onInsert(this.namespaceId, newChild, parent, isMove);
+  }
+  removeChild(parent, oldChild, isHostElement) {
+    if (this.parentNode(oldChild)) {
+      this.engine.onRemove(this.namespaceId, oldChild, this.delegate);
+    }
+  }
+  selectRootElement(selectorOrNode, preserveContent) {
+    return this.delegate.selectRootElement(selectorOrNode, preserveContent);
+  }
+  parentNode(node) {
+    return this.delegate.parentNode(node);
+  }
+  nextSibling(node) {
+    return this.delegate.nextSibling(node);
+  }
+  setAttribute(el, name, value, namespace) {
+    this.delegate.setAttribute(el, name, value, namespace);
+  }
+  removeAttribute(el, name, namespace) {
+    this.delegate.removeAttribute(el, name, namespace);
+  }
+  addClass(el, name) {
+    this.delegate.addClass(el, name);
+  }
+  removeClass(el, name) {
+    this.delegate.removeClass(el, name);
+  }
+  setStyle(el, style2, value, flags) {
+    this.delegate.setStyle(el, style2, value, flags);
+  }
+  removeStyle(el, style2, flags) {
+    this.delegate.removeStyle(el, style2, flags);
+  }
+  setProperty(el, name, value) {
+    if (name.charAt(0) == ANIMATION_PREFIX && name == DISABLE_ANIMATIONS_FLAG) {
+      this.disableAnimations(el, !!value);
+    } else {
+      this.delegate.setProperty(el, name, value);
+    }
+  }
+  setValue(node, value) {
+    this.delegate.setValue(node, value);
+  }
+  listen(target, eventName, callback, options) {
+    return this.delegate.listen(target, eventName, callback, options);
+  }
+  disableAnimations(element, value) {
+    this.engine.disableAnimations(element, value);
+  }
+};
+var AnimationRenderer = class extends BaseAnimationRenderer {
+  factory;
+  constructor(factory, namespaceId, delegate, engine, onDestroy) {
+    super(namespaceId, delegate, engine, onDestroy);
+    this.factory = factory;
+    this.namespaceId = namespaceId;
+  }
+  setProperty(el, name, value) {
+    if (name.charAt(0) == ANIMATION_PREFIX) {
+      if (name.charAt(1) == "." && name == DISABLE_ANIMATIONS_FLAG) {
+        value = value === void 0 ? true : !!value;
+        this.disableAnimations(el, value);
+      } else {
+        this.engine.process(this.namespaceId, el, name.slice(1), value);
+      }
+    } else {
+      this.delegate.setProperty(el, name, value);
+    }
+  }
+  listen(target, eventName, callback, options) {
+    if (eventName.charAt(0) == ANIMATION_PREFIX) {
+      const element = resolveElementFromTarget(target);
+      let name = eventName.slice(1);
+      let phase = "";
+      if (name.charAt(0) != ANIMATION_PREFIX) {
+        [name, phase] = parseTriggerCallbackName(name);
+      }
+      return this.engine.listen(this.namespaceId, element, name, phase, (event) => {
+        const countId = event["_data"] || -1;
+        this.factory.scheduleListenerCallback(countId, callback, event);
+      });
+    }
+    return this.delegate.listen(target, eventName, callback, options);
+  }
+};
+function resolveElementFromTarget(target) {
+  switch (target) {
+    case "body":
+      return document.body;
+    case "document":
+      return document;
+    case "window":
+      return window;
+    default:
+      return target;
+  }
+}
+function parseTriggerCallbackName(triggerName) {
+  const dotIndex = triggerName.indexOf(".");
+  const trigger = triggerName.substring(0, dotIndex);
+  const phase = triggerName.slice(dotIndex + 1);
+  return [trigger, phase];
+}
+var AnimationRendererFactory = class {
+  delegate;
+  engine;
+  _zone;
+  _currentId = 0;
+  _microtaskId = 1;
+  _animationCallbacksBuffer = [];
+  _rendererCache = /* @__PURE__ */ new Map();
+  _cdRecurDepth = 0;
+  constructor(delegate, engine, _zone) {
+    this.delegate = delegate;
+    this.engine = engine;
+    this._zone = _zone;
+    engine.onRemovalComplete = (element, delegate2) => {
+      delegate2?.removeChild(null, element);
+    };
+  }
+  createRenderer(hostElement, type) {
+    const EMPTY_NAMESPACE_ID = "";
+    const delegate = this.delegate.createRenderer(hostElement, type);
+    if (!hostElement || !type?.data?.["animation"]) {
+      const cache = this._rendererCache;
+      let renderer = cache.get(delegate);
+      if (!renderer) {
+        const onRendererDestroy = () => cache.delete(delegate);
+        renderer = new BaseAnimationRenderer(EMPTY_NAMESPACE_ID, delegate, this.engine, onRendererDestroy);
+        cache.set(delegate, renderer);
+      }
+      return renderer;
+    }
+    const componentId = type.id;
+    const namespaceId = type.id + "-" + this._currentId;
+    this._currentId++;
+    this.engine.register(namespaceId, hostElement);
+    const registerTrigger = (trigger) => {
+      if (Array.isArray(trigger)) {
+        trigger.forEach(registerTrigger);
+      } else {
+        this.engine.registerTrigger(componentId, namespaceId, hostElement, trigger.name, trigger);
+      }
+    };
+    const animationTriggers = type.data["animation"];
+    animationTriggers.forEach(registerTrigger);
+    return new AnimationRenderer(this, namespaceId, delegate, this.engine);
+  }
+  begin() {
+    this._cdRecurDepth++;
+    if (this.delegate.begin) {
+      this.delegate.begin();
+    }
+  }
+  _scheduleCountTask() {
+    queueMicrotask(() => {
+      this._microtaskId++;
+    });
+  }
+  /** @internal */
+  scheduleListenerCallback(count, fn, data) {
+    if (count >= 0 && count < this._microtaskId) {
+      this._zone.run(() => fn(data));
+      return;
+    }
+    const animationCallbacksBuffer = this._animationCallbacksBuffer;
+    if (animationCallbacksBuffer.length == 0) {
+      queueMicrotask(() => {
+        this._zone.run(() => {
+          animationCallbacksBuffer.forEach((tuple) => {
+            const [fn2, data2] = tuple;
+            fn2(data2);
+          });
+          this._animationCallbacksBuffer = [];
+        });
+      });
+    }
+    animationCallbacksBuffer.push([fn, data]);
+  }
+  end() {
+    this._cdRecurDepth--;
+    if (this._cdRecurDepth == 0) {
+      this._zone.runOutsideAngular(() => {
+        this._scheduleCountTask();
+        this.engine.flush(this._microtaskId);
+      });
+    }
+    if (this.delegate.end) {
+      this.delegate.end();
+    }
+  }
+  whenRenderingDone() {
+    return this.engine.whenRenderingDone();
+  }
+  /**
+   * Used during HMR to clear any cached data about a component.
+   * @param componentId ID of the component that is being replaced.
+   */
+  componentReplaced(componentId) {
+    this.engine.flush();
+    this.delegate.componentReplaced?.(componentId);
+  }
+};
+
+// node_modules/@angular/platform-browser/fesm2022/animations.mjs
+var InjectableAnimationEngine = class _InjectableAnimationEngine extends AnimationEngine {
+  // The `ApplicationRef` is injected here explicitly to force the dependency ordering.
+  // Since the `ApplicationRef` should be created earlier before the `AnimationEngine`, they
+  // both have `ngOnDestroy` hooks and `flush()` must be called after all views are destroyed.
+  constructor(doc, driver, normalizer) {
+    super(doc, driver, normalizer);
+  }
+  ngOnDestroy() {
+    this.flush();
+  }
+  static \u0275fac = function InjectableAnimationEngine_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _InjectableAnimationEngine)(\u0275\u0275inject(DOCUMENT2), \u0275\u0275inject(AnimationDriver), \u0275\u0275inject(AnimationStyleNormalizer));
+  };
+  static \u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+    token: _InjectableAnimationEngine,
+    factory: _InjectableAnimationEngine.\u0275fac
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(InjectableAnimationEngine, [{
+    type: Injectable
+  }], () => [{
+    type: Document,
+    decorators: [{
+      type: Inject,
+      args: [DOCUMENT2]
+    }]
+  }, {
+    type: AnimationDriver
+  }, {
+    type: AnimationStyleNormalizer
+  }], null);
+})();
+function instantiateDefaultStyleNormalizer() {
+  return new WebAnimationsStyleNormalizer();
+}
+function instantiateRendererFactory(renderer, engine, zone) {
+  return new AnimationRendererFactory(renderer, engine, zone);
+}
+var SHARED_ANIMATION_PROVIDERS = [{
+  provide: AnimationStyleNormalizer,
+  useFactory: instantiateDefaultStyleNormalizer
+}, {
+  provide: AnimationEngine,
+  useClass: InjectableAnimationEngine
+}, {
+  provide: RendererFactory2,
+  useFactory: instantiateRendererFactory,
+  deps: [DomRendererFactory2, AnimationEngine, NgZone]
+}];
+var BROWSER_NOOP_ANIMATIONS_PROVIDERS = [{
+  provide: AnimationDriver,
+  useClass: NoopAnimationDriver
+}, {
+  provide: ANIMATION_MODULE_TYPE,
+  useValue: "NoopAnimations"
+}, ...SHARED_ANIMATION_PROVIDERS];
+var BROWSER_ANIMATIONS_PROVIDERS = [
+  // Note: the `ngServerMode` happen inside factories to give the variable time to initialize.
+  {
+    provide: AnimationDriver,
+    useFactory: () => false ? new NoopAnimationDriver() : new WebAnimationsDriver()
+  },
+  {
+    provide: ANIMATION_MODULE_TYPE,
+    useFactory: () => false ? "NoopAnimations" : "BrowserAnimations"
+  },
+  ...SHARED_ANIMATION_PROVIDERS
+];
+var BrowserAnimationsModule = class _BrowserAnimationsModule {
+  /**
+   * Configures the module based on the specified object.
+   *
+   * @param config Object used to configure the behavior of the `BrowserAnimationsModule`.
+   * @see {@link BrowserAnimationsModuleConfig}
+   *
+   * @usageNotes
+   * When registering the `BrowserAnimationsModule`, you can use the `withConfig`
+   * function as follows:
+   * ```ts
+   * @NgModule({
+   *   imports: [BrowserAnimationsModule.withConfig(config)]
+   * })
+   * class MyNgModule {}
+   * ```
+   */
+  static withConfig(config2) {
+    return {
+      ngModule: _BrowserAnimationsModule,
+      providers: config2.disableAnimations ? BROWSER_NOOP_ANIMATIONS_PROVIDERS : BROWSER_ANIMATIONS_PROVIDERS
+    };
+  }
+  static \u0275fac = function BrowserAnimationsModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _BrowserAnimationsModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _BrowserAnimationsModule
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+    providers: BROWSER_ANIMATIONS_PROVIDERS,
+    imports: [BrowserModule]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(BrowserAnimationsModule, [{
+    type: NgModule,
+    args: [{
+      exports: [BrowserModule],
+      providers: BROWSER_ANIMATIONS_PROVIDERS
+    }]
+  }], null, null);
+})();
+function provideAnimations() {
+  performanceMarkFeature("NgEagerAnimations");
+  return [...BROWSER_ANIMATIONS_PROVIDERS];
+}
+var NoopAnimationsModule = class _NoopAnimationsModule {
+  static \u0275fac = function NoopAnimationsModule_Factory(__ngFactoryType__) {
+    return new (__ngFactoryType__ || _NoopAnimationsModule)();
+  };
+  static \u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+    type: _NoopAnimationsModule
+  });
+  static \u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+    providers: BROWSER_NOOP_ANIMATIONS_PROVIDERS,
+    imports: [BrowserModule]
+  });
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(NoopAnimationsModule, [{
+    type: NgModule,
+    args: [{
+      exports: [BrowserModule],
+      providers: BROWSER_NOOP_ANIMATIONS_PROVIDERS
+    }]
+  }], null, null);
+})();
+
+// projects/fasten-connect-stitch-embed/src/app/app.config.ts
+var appConfig = {
+  providers: [
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptorService,
+      multi: true
+      // deps: [AuthService, NavOutletService]
+      // deps: [AuthService, NavOutletService]
+    },
+    IsAuthenticatedAuthGuard,
+    IsTefcaModeAuthGuard,
+    provideHttpClient(withInterceptorsFromDi()),
+    provideAnimations(),
+    // <- required for animations to work
+    provideRouter(routes, withComponentInputBinding()),
+    importProvidersFrom(LoggerModule.forRoot({
+      level: NgxLoggerLevel.DEBUG,
+      context: "stitch-embed"
+    }))
+  ]
 };
 
 // projects/fasten-connect-stitch-embed/src/main.ts
 if (environment.name != "local") {
   enableProdMode();
 }
-platformBrowser().bootstrapModule(AppModule).catch((err) => console.error(err));
+bootstrapApplication(AppComponent, appConfig).catch((err) => console.error(err));
 /*! Bundled license information:
 
 lodash/lodash.js:
@@ -59564,6 +64279,27 @@ lodash/lodash.js:
    *)
 
 @angular/forms/fesm2022/forms.mjs:
+  (**
+   * @license Angular v19.2.1
+   * (c) 2010-2025 Google LLC. https://angular.io/
+   * License: MIT
+   *)
+
+@angular/animations/fesm2022/animations.mjs:
+  (**
+   * @license Angular v19.2.1
+   * (c) 2010-2025 Google LLC. https://angular.io/
+   * License: MIT
+   *)
+
+@angular/animations/fesm2022/browser.mjs:
+  (**
+   * @license Angular v19.2.1
+   * (c) 2010-2025 Google LLC. https://angular.io/
+   * License: MIT
+   *)
+
+@angular/platform-browser/fesm2022/animations.mjs:
   (**
    * @license Angular v19.2.1
    * (c) 2010-2025 Google LLC. https://angular.io/
