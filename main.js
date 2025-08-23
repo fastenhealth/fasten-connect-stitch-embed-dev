@@ -56091,8 +56091,19 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email);
     }).then(() => {
-      this.loading = false;
-      this.router.navigate(["auth/signin/code"], { queryParams: { currentEmail: this.existingVaultProfile.email } });
+      if (this.configService.systemConfig$.apiMode === ApiMode.Test) {
+        return this.authService.GetJWTPayload().then((payload) => {
+          this.loading = false;
+          if (payload) {
+            return this.router.navigateByUrl("dashboard");
+          } else {
+            return this.router.navigate(["auth/signin/code"], { queryParams: { currentEmail: this.existingVaultProfile.email } });
+          }
+        });
+      } else {
+        this.loading = false;
+        return this.router.navigate(["auth/signin/code"], { queryParams: { currentEmail: this.existingVaultProfile.email } });
+      }
     }).catch((err) => {
       this.loading = false;
       if (err?.name) {
