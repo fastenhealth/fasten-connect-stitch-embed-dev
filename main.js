@@ -39055,6 +39055,12 @@ var ConnectMode;
   ConnectMode2["Redirect"] = "redirect";
   ConnectMode2["Popup"] = "popup";
 })(ConnectMode || (ConnectMode = {}));
+var SourceCredentialType;
+(function(SourceCredentialType2) {
+  SourceCredentialType2["SourceCredentialTypeSmartOnFhir"] = "smart_on_fhir";
+  SourceCredentialType2["SourceCredentialTypeTefcaDirect"] = "tefca_direct";
+  SourceCredentialType2["SourceCredentialTypeTefcaFacilitated"] = "tefca_facilitated";
+})(SourceCredentialType || (SourceCredentialType = {}));
 var EventTypes;
 (function(EventTypes2) {
   EventTypes2["EventTypeWidgetConfigError"] = "widget.config_error";
@@ -40417,7 +40423,7 @@ var ConfigService = class _ConfigService {
       return;
     }
     let updatedVaultProfile = this.vaultProfileConfig$;
-    updatedVaultProfile.addConnectedAccount(connectedAccount.external_state || "", connectedAccount.org_connection_id, connectedAccount.connection_status, connectedAccount.platform_type, connectedAccount.brand_id, connectedAccount.portal_id, connectedAccount.endpoint_id);
+    updatedVaultProfile.addConnectedAccount(connectedAccount.external_state || "", connectedAccount.org_connection_id, connectedAccount.connection_status, connectedAccount.platform_type, connectedAccount.brand_id, connectedAccount.portal_id, connectedAccount.endpoint_id, connectedAccount.vault_profile_connection_id, connectedAccount.patient_auth_type);
     this.vaultProfileConfig = updatedVaultProfile;
   }
   vaultProfileAddPendingRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId) {
@@ -40560,7 +40566,7 @@ var VaultProfileConfig = class {
     }
     this.discoveredPatientAccounts[externalState] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId };
   }
-  addConnectedAccount(external_state, org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id) {
+  addConnectedAccount(external_state, org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id, vault_profile_connection_id, patient_auth_type) {
     if (!this.connectedPatientAccounts) {
       this.connectedPatientAccounts = [];
     }
@@ -40568,10 +40574,10 @@ var VaultProfileConfig = class {
     let foundDiscoveredPatientAccount = this.discoveredPatientAccounts?.[external_state];
     if (foundPendingPatientAccount) {
       delete this.pendingPatientAccounts[external_state];
-      this.connectedPatientAccounts?.push({ org_connection_id, connection_status, platform_type, brand: foundPendingPatientAccount.brand, portal: foundPendingPatientAccount.portal, endpoint: foundPendingPatientAccount.endpoint });
+      this.connectedPatientAccounts?.push({ org_connection_id, connection_status, platform_type, brand: foundPendingPatientAccount.brand, portal: foundPendingPatientAccount.portal, endpoint: foundPendingPatientAccount.endpoint, vault_profile_connection_id, patient_auth_type });
     } else if (foundDiscoveredPatientAccount) {
       delete this.discoveredPatientAccounts[external_state];
-      this.connectedPatientAccounts?.push({ org_connection_id, connection_status, platform_type, brand: foundDiscoveredPatientAccount.brand, portal: foundDiscoveredPatientAccount.portal, endpoint: foundDiscoveredPatientAccount.endpoint });
+      this.connectedPatientAccounts?.push({ org_connection_id, connection_status, platform_type, brand: foundDiscoveredPatientAccount.brand, portal: foundDiscoveredPatientAccount.portal, endpoint: foundDiscoveredPatientAccount.endpoint, vault_profile_connection_id, patient_auth_type });
     } else {
       console.warn("we may not know the brand, portal, endpoint information, so generating it with placeholders. Most likely this is a reconnect operation.");
       console.warn("pendingAccounts", this.pendingPatientAccounts, "connectionParams", org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id);
@@ -40579,6 +40585,8 @@ var VaultProfileConfig = class {
         org_connection_id,
         connection_status,
         platform_type,
+        vault_profile_connection_id,
+        patient_auth_type,
         brand: { id: brand_id, name: "unknown", portals: [], hidden: false, last_updated: "", portal_ids: [portal_id] },
         portal: { id: portal_id, last_updated: "", endpoint_ids: [endpoint_id], name: "unknown" },
         endpoint: { id: endpoint_id, platform_type }
@@ -47446,6 +47454,13 @@ var FastenService = class _FastenService {
     }
     let openedWindow = window.open(redirectUrlParts.toString(), "_blank", features);
     return waitForOrgConnectionOrTimeout(this.logger, openedWindow, this.configService.systemConfig$.sdkMode);
+  }
+  authorizeTefcaDirect(vaultConnectionIds, external_id) {
+    const url = `${environment.connect_api_endpoint_base}/bridge/vault_connection/authorize`;
+    return this._httpClient.post(url, {
+      vault_connection_ids: vaultConnectionIds,
+      external_id
+    }, { params: { public_id: this.configService.systemConfig$.publicId } }).pipe(map((resp) => resp.data));
   }
   static {
     this.\u0275fac = function FastenService_Factory(__ngFactoryType__) {
@@ -57042,6 +57057,164 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 20 });
 })();
 
+// projects/fasten-connect-stitch-embed/src/app/utils/connect-helper.ts
+function ConnectHelper(connectData) {
+  const vaultApi = inject(FastenService);
+  const configService = inject(ConfigService);
+  const router = inject(Router);
+  const messageBusService = inject(MessageBusService);
+  if (!connectData.external_state) {
+    connectData.external_state = v4_default();
+  }
+  messageBusService.publishOrgConnectionPending(connectData);
+  let onSuccessNavigateByUrl = "dashboard";
+  if (connectData.org_connection_id) {
+    onSuccessNavigateByUrl = "dashboard/complete";
+  }
+  vaultApi.accountConnectWithPopup(connectData.brand_id, connectData.portal_id, connectData.endpoint_id, connectData.org_connection_id, connectData.external_id, connectData.external_state, connectData.vault_profile_connection_id).subscribe((orgConnectionCallbackData) => {
+    if (!orgConnectionCallbackData) {
+      return;
+    }
+    messageBusService.publishOrgConnectionComplete(orgConnectionCallbackData);
+    configService.vaultProfileAddConnectedAccount(orgConnectionCallbackData);
+    router.navigateByUrl(onSuccessNavigateByUrl);
+  }, (err) => {
+    console.error("popup error data", err);
+    try {
+      let errData;
+      if (typeof err === "string") {
+        errData = JSON.parse(err);
+      } else if (typeof err.message === "string") {
+        errData = JSON.parse(err.message);
+      } else {
+        errData = err;
+      }
+      if (errData.error == "timeout") {
+        return router.navigateByUrl(onSuccessNavigateByUrl);
+      } else {
+        console.error("an error occurred while attempting to connect health system", err);
+        messageBusService.publishOrgConnectionComplete({
+          org_connection_id: connectData.org_connection_id,
+          endpoint_id: connectData.endpoint_id,
+          brand_id: connectData.brand_id,
+          portal_id: connectData.portal_id,
+          request_id: errData.request_id,
+          error: errData.error || "unknown_error_during_connect",
+          error_description: errData.error_description || "an unknown error occurred during the connection process"
+        });
+        router.navigate(["form/support"], {
+          queryParams: {
+            "error": errData.error || "unknown_error_during_connect",
+            "error_description": errData.error_description || "an unknown error occurred during the connection process",
+            "brand_id": connectData.brand_id,
+            "portal_id": connectData.portal_id,
+            "endpoint_id": connectData.endpoint_id,
+            "org_connection_id": connectData.org_connection_id,
+            "vault_profile_connection_id": connectData.vault_profile_connection_id,
+            "external_id": connectData.external_id,
+            "external_state": connectData.external_state || errData.external_state,
+            "request_id": errData.request_id
+          }
+        });
+      }
+    } catch (e) {
+      console.error("caught error parsing error data", e);
+      messageBusService.publishOrgConnectionComplete({
+        org_connection_id: connectData.org_connection_id,
+        endpoint_id: connectData.endpoint_id,
+        brand_id: connectData.brand_id,
+        portal_id: connectData.portal_id,
+        error: "unknown_error_during_connect",
+        error_description: "an unknown error occurred during the connection process"
+      });
+      router.navigate(["form/support"], {
+        queryParams: {
+          "error": "unknown_error_during_connect",
+          "error_description": `an unknown error occurred during the connection process: ${err}`,
+          "brand_id": connectData.brand_id,
+          "portal_id": connectData.portal_id,
+          "endpoint_id": connectData.endpoint_id,
+          "org_connection_id": connectData.org_connection_id,
+          "vault_profile_connection_id": connectData.vault_profile_connection_id,
+          "external_id": connectData.external_id,
+          "external_state": connectData.external_state || err["external_state"]
+        }
+      });
+    }
+    return null;
+  });
+}
+function ProcessTefcaDirectAuthorizationResultsHelper(vaultConnectionIds, resp) {
+  const configService = inject(ConfigService);
+  const messageBusService = inject(MessageBusService);
+  const successes = resp?.successes || {};
+  const failures = resp?.failures || {};
+  const vaultProfile = configService.vaultProfileConfig$;
+  const idToExternalState = {};
+  const pending = vaultProfile?.pendingPatientAccounts || {};
+  const discovered = vaultProfile?.discoveredPatientAccounts || {};
+  Object.entries(pending).forEach(([extState, acct]) => {
+    if (acct?.vault_profile_connection_id) {
+      idToExternalState[acct.vault_profile_connection_id] = extState;
+    }
+  });
+  Object.entries(discovered).forEach(([extState, acct]) => {
+    if (acct?.vault_profile_connection_id) {
+      idToExternalState[acct.vault_profile_connection_id] = extState;
+    }
+  });
+  vaultConnectionIds.forEach((id) => {
+    const successData = successes[id];
+    const failureData = failures[id];
+    const external_state = idToExternalState[id];
+    if (successData) {
+      const orgConnectionId = successData.org_connection_id ?? "";
+      const connectionStatus = successData.connection_status ?? "authorized";
+      const platformType = successData.platform_type ?? "tefca";
+      const payload = {
+        external_state,
+        external_id: configService.systemConfig$.externalId,
+        request_id: resp?.request_id,
+        org_connection_id: orgConnectionId,
+        connection_status: connectionStatus,
+        platform_type: platformType,
+        vault_profile_connection_id: id,
+        patient_auth_type: "tefca_direct"
+      };
+      messageBusService.publishOrgConnectionComplete(payload);
+      if (external_state) {
+        configService.vaultProfileAddConnectedAccount(payload);
+      }
+    } else if (failureData) {
+      let error = failureData.error;
+      let errorDescription = failureData.error_description;
+      if (!error) {
+        error = "fasten_server_error";
+        errorDescription = "An unknown server error occurred: missing error type";
+      }
+      const payload = {
+        external_state,
+        vault_profile_connection_id: id,
+        external_id: configService.systemConfig$.externalId,
+        request_id: resp?.request_id,
+        error,
+        error_description: errorDescription
+      };
+      messageBusService.publishOrgConnectionComplete(payload);
+    } else {
+      const payload = {
+        external_state,
+        vault_profile_connection_id: id,
+        external_id: configService.systemConfig$.externalId,
+        request_id: resp?.request_id,
+        error: "fasten_server_error",
+        error_description: "An unknown server error occurred: missing error type"
+      };
+      messageBusService.publishOrgConnectionComplete(payload);
+    }
+  });
+}
+
 // projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts
 var _c03 = () => [];
 var _c12 = () => ({});
@@ -57218,6 +57391,7 @@ var DashboardComponent = class _DashboardComponent {
       }
     });
   }
+  // Add patientAuthorizationType and this will basically be in the backend SourceCredentialType
   connectTefcaDirectAccount(externalState, pendingAccount) {
     this.configService.vaultProfileAddConnectedAccount({
       external_state: externalState,
@@ -57226,12 +57400,35 @@ var DashboardComponent = class _DashboardComponent {
       platform_type: "tefca",
       brand_id: pendingAccount.brand?.id,
       portal_id: pendingAccount.portal?.id,
-      endpoint_id: pendingAccount.endpoint?.id
+      endpoint_id: pendingAccount.endpoint?.id,
+      vault_profile_connection_id: pendingAccount.vault_profile_connection_id,
+      patient_auth_type: SourceCredentialType.SourceCredentialTypeTefcaDirect
     });
   }
   completeAccounts() {
-    this.router.navigateByUrl("dashboard/complete");
+    const connectedAccounts = this.configService.vaultProfileConfig$.connectedPatientAccounts || [];
+    const tefcaDirectAccounts = connectedAccounts.filter((acc) => acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect);
+    const vaultConnectionIds = tefcaDirectAccounts.map((a) => a.vault_profile_connection_id).filter((id) => !!id);
+    const uniqueVaultConnectionIds = Array.from(new Set(vaultConnectionIds));
+    if (uniqueVaultConnectionIds.length === 0) {
+      this.router.navigateByUrl("dashboard/complete");
+      return;
+    }
+    this.loadingTefcaRLS = true;
+    this.fastenService.authorizeTefcaDirect(uniqueVaultConnectionIds, this.configService.systemConfig$.externalId).subscribe((resp) => {
+      this.logger.info("TEFCA Direct authorization response", resp);
+      ProcessTefcaDirectAuthorizationResultsHelper(uniqueVaultConnectionIds, resp);
+      this.loadingTefcaRLS = false;
+      this.router.navigateByUrl("dashboard/complete");
+    }, (err) => {
+      this.logger.error("Failed to authorize TEFCA Direct accounts", err);
+      ProcessTefcaDirectAuthorizationResultsHelper(uniqueVaultConnectionIds, null);
+      this.loadingTefcaRLS = false;
+      this.router.navigateByUrl("dashboard/complete");
+    });
   }
+  //TODO1: add helper to process individual success, failure and catastrophic failures from aturhoizeTefcaDirect, and send messageBus events
+  //TODO2: promote pending connections to connected list, so they will be sent to the customer via the Completed event.
   closeModal() {
     this.messageBus.publishRequestClose();
   }
@@ -57357,7 +57554,7 @@ var DashboardComponent = class _DashboardComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 33 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 34 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/state-codes.ts
@@ -58591,94 +58788,6 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemBrandDetailsComponent, { className: "HealthSystemBrandDetailsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts", lineNumber: 25 });
 })();
-
-// projects/fasten-connect-stitch-embed/src/app/utils/connect-helper.ts
-function ConnectHelper(connectData) {
-  const vaultApi = inject(FastenService);
-  const configService = inject(ConfigService);
-  const router = inject(Router);
-  const messageBusService = inject(MessageBusService);
-  if (!connectData.external_state) {
-    connectData.external_state = v4_default();
-  }
-  messageBusService.publishOrgConnectionPending(connectData);
-  let onSuccessNavigateByUrl = "dashboard";
-  if (connectData.org_connection_id) {
-    onSuccessNavigateByUrl = "dashboard/complete";
-  }
-  vaultApi.accountConnectWithPopup(connectData.brand_id, connectData.portal_id, connectData.endpoint_id, connectData.org_connection_id, connectData.external_id, connectData.external_state, connectData.vault_profile_connection_id).subscribe((orgConnectionCallbackData) => {
-    if (!orgConnectionCallbackData) {
-      return;
-    }
-    messageBusService.publishOrgConnectionComplete(orgConnectionCallbackData);
-    configService.vaultProfileAddConnectedAccount(orgConnectionCallbackData);
-    router.navigateByUrl(onSuccessNavigateByUrl);
-  }, (err) => {
-    console.error("popup error data", err);
-    try {
-      let errData;
-      if (typeof err === "string") {
-        errData = JSON.parse(err);
-      } else if (typeof err.message === "string") {
-        errData = JSON.parse(err.message);
-      } else {
-        errData = err;
-      }
-      if (errData.error == "timeout") {
-        return router.navigateByUrl(onSuccessNavigateByUrl);
-      } else {
-        console.error("an error occurred while attempting to connect health system", err);
-        messageBusService.publishOrgConnectionComplete({
-          org_connection_id: connectData.org_connection_id,
-          endpoint_id: connectData.endpoint_id,
-          brand_id: connectData.brand_id,
-          portal_id: connectData.portal_id,
-          request_id: errData.request_id,
-          error: errData.error || "unknown_error_during_connect",
-          error_description: errData.error_description || "an unknown error occurred during the connection process"
-        });
-        router.navigate(["form/support"], {
-          queryParams: {
-            "error": errData.error || "unknown_error_during_connect",
-            "error_description": errData.error_description || "an unknown error occurred during the connection process",
-            "brand_id": connectData.brand_id,
-            "portal_id": connectData.portal_id,
-            "endpoint_id": connectData.endpoint_id,
-            "org_connection_id": connectData.org_connection_id,
-            "vault_profile_connection_id": connectData.vault_profile_connection_id,
-            "external_id": connectData.external_id,
-            "external_state": connectData.external_state || errData.external_state,
-            "request_id": errData.request_id
-          }
-        });
-      }
-    } catch (e) {
-      console.error("caught error parsing error data", e);
-      messageBusService.publishOrgConnectionComplete({
-        org_connection_id: connectData.org_connection_id,
-        endpoint_id: connectData.endpoint_id,
-        brand_id: connectData.brand_id,
-        portal_id: connectData.portal_id,
-        error: "unknown_error_during_connect",
-        error_description: "an unknown error occurred during the connection process"
-      });
-      router.navigate(["form/support"], {
-        queryParams: {
-          "error": "unknown_error_during_connect",
-          "error_description": `an unknown error occurred during the connection process: ${err}`,
-          "brand_id": connectData.brand_id,
-          "portal_id": connectData.portal_id,
-          "endpoint_id": connectData.endpoint_id,
-          "org_connection_id": connectData.org_connection_id,
-          "vault_profile_connection_id": connectData.vault_profile_connection_id,
-          "external_id": connectData.external_id,
-          "external_state": connectData.external_state || err["external_state"]
-        }
-      });
-    }
-    return null;
-  });
-}
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts
 var _c06 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
