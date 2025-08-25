@@ -57231,10 +57231,10 @@ var _c03 = () => [];
 var _c12 = () => ({});
 function DashboardComponent_div_7_div_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 27);
+    \u0275\u0275elementStart(0, "div", 28);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 28);
-    \u0275\u0275element(2, "circle", 29)(3, "path", 30);
+    \u0275\u0275elementStart(1, "svg", 29);
+    \u0275\u0275element(2, "circle", 30)(3, "path", 31);
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceHTML();
     \u0275\u0275elementStart(4, "span");
@@ -57244,11 +57244,11 @@ function DashboardComponent_div_7_div_5_Template(rf, ctx) {
 }
 function DashboardComponent_div_7_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 24)(1, "div")(2, "p");
+    \u0275\u0275elementStart(0, "div", 25)(1, "div")(2, "p");
     \u0275\u0275text(3, "Thank you for verifying your identity using ");
-    \u0275\u0275element(4, "img", 25);
+    \u0275\u0275element(4, "img", 26);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(5, DashboardComponent_div_7_div_5_Template, 6, 0, "div", 26);
+    \u0275\u0275template(5, DashboardComponent_div_7_div_5_Template, 6, 0, "div", 27);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -57259,14 +57259,14 @@ function DashboardComponent_div_7_Template(rf, ctx) {
 }
 function DashboardComponent_div_10_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 31)(1, "button", 32);
+    \u0275\u0275elementStart(0, "div", 32)(1, "button", 33);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 33);
-    \u0275\u0275element(3, "path", 34);
+    \u0275\u0275elementStart(2, "svg", 34);
+    \u0275\u0275element(3, "path", 35);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275element(4, "img", 35);
-    \u0275\u0275elementStart(5, "div", 36)(6, "p", 37);
+    \u0275\u0275element(4, "img", 36);
+    \u0275\u0275elementStart(5, "div", 37)(6, "p", 38);
     \u0275\u0275text(7);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(8, "p", 4);
@@ -57285,19 +57285,19 @@ function DashboardComponent_div_10_Template(rf, ctx) {
 function DashboardComponent_div_12_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 31)(1, "button", 38);
+    \u0275\u0275elementStart(0, "div", 32)(1, "button", 39);
     \u0275\u0275listener("click", function DashboardComponent_div_12_Template_button_click_1_listener() {
       const discoveredAccount_r4 = \u0275\u0275restoreView(_r3).$implicit;
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.connectTefcaDirectAccount(discoveredAccount_r4.key, discoveredAccount_r4.value));
     });
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 33);
-    \u0275\u0275element(3, "path", 34);
+    \u0275\u0275elementStart(2, "svg", 34);
+    \u0275\u0275element(3, "path", 35);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275element(4, "img", 35);
-    \u0275\u0275elementStart(5, "div", 36)(6, "p", 37);
+    \u0275\u0275element(4, "img", 36);
+    \u0275\u0275elementStart(5, "div", 37)(6, "p", 38);
     \u0275\u0275text(7);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(8, "p", 4);
@@ -57316,20 +57316,20 @@ function DashboardComponent_div_12_Template(rf, ctx) {
 function DashboardComponent_div_15_Template(rf, ctx) {
   if (rf & 1) {
     const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 31)(1, "div", 39);
+    \u0275\u0275elementStart(0, "div", 32)(1, "div", 40);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 40);
-    \u0275\u0275element(3, "path", 41)(4, "line", 42)(5, "line", 43);
+    \u0275\u0275elementStart(2, "svg", 41);
+    \u0275\u0275element(3, "path", 42)(4, "line", 43)(5, "line", 44);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275element(6, "img", 44);
-    \u0275\u0275elementStart(7, "div", 36)(8, "p", 37);
+    \u0275\u0275element(6, "img", 45);
+    \u0275\u0275elementStart(7, "div", 37)(8, "p", 38);
     \u0275\u0275text(9);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(10, "p", 4);
     \u0275\u0275text(11, "Sign in required");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(12, "a", 45);
+    \u0275\u0275elementStart(12, "a", 46);
     \u0275\u0275listener("click", function DashboardComponent_div_15_Template_a_click_12_listener() {
       const pendingAccount_r6 = \u0275\u0275restoreView(_r5).$implicit;
       const ctx_r0 = \u0275\u0275nextContext();
@@ -57347,14 +57347,21 @@ function DashboardComponent_div_15_Template(rf, ctx) {
     \u0275\u0275textInterpolate(pendingAccount_r6.value.portal.name);
   }
 }
+function DashboardComponent_app_spinner_35_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "app-spinner");
+  }
+}
 var DashboardComponent = class _DashboardComponent {
-  constructor(configService, router, fastenService, messageBus, logger) {
+  constructor(configService, router, fastenService, messageBus, logger, injector) {
     this.configService = configService;
     this.router = router;
     this.fastenService = fastenService;
     this.messageBus = messageBus;
     this.logger = logger;
+    this.injector = injector;
     this.loadingTefcaRLS = false;
+    this.isCompleting = false;
   }
   ngOnInit() {
     if (this.configService.systemConfig$.tefcaMode && !this.configService.vaultProfileConfig$.rlsQueryComplete) {
@@ -57425,16 +57432,20 @@ var DashboardComponent = class _DashboardComponent {
       this.router.navigateByUrl("dashboard/complete");
       return;
     }
-    this.loadingTefcaRLS = true;
+    this.isCompleting = true;
     this.fastenService.authorizeTefcaDirect(uniqueVaultConnectionIds, this.configService.systemConfig$.externalId).subscribe((resp) => {
       this.logger.info("TEFCA Direct authorization response", resp);
-      ProcessTefcaDirectAuthorizationResultsHelper(uniqueVaultConnectionIds, resp);
-      this.loadingTefcaRLS = false;
+      this.injector.runInContext(() => {
+        ProcessTefcaDirectAuthorizationResultsHelper(uniqueVaultConnectionIds, resp);
+      });
+      this.isCompleting = false;
       this.router.navigateByUrl("dashboard/complete");
     }, (err) => {
       this.logger.error("Failed to authorize TEFCA Direct accounts", err);
-      ProcessTefcaDirectAuthorizationResultsHelper(uniqueVaultConnectionIds, null);
-      this.loadingTefcaRLS = false;
+      this.injector.runInContext(() => {
+        ProcessTefcaDirectAuthorizationResultsHelper(uniqueVaultConnectionIds, null);
+      });
+      this.isCompleting = false;
       this.router.navigateByUrl("dashboard/complete");
     });
   }
@@ -57445,11 +57456,11 @@ var DashboardComponent = class _DashboardComponent {
   }
   static {
     this.\u0275fac = function DashboardComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(EnvironmentInjector));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], decls: 51, vars: 31, consts: [["id", "step-connecting-systems", 1, "space-y-6"], [3, "closeButtonEvent", "showClose"], [1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], ["class", "p-4 mb-4 text-sm text-blue800 rounded-lg bg-blue-50 border border-blue-300 flex items-center gap-2", "role", "alert", 4, "ngIf"], ["id", "connecting-systems-list", 1, "space-y-3"], ["class", "flex items-center p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all", 4, "ngFor", "ngForOf"], ["id", "search-button", 1, "w-full", "border", "bg-gray-50", "border-gray-200", "rounded-lg", "flex", "justify-between", "items-center", "px-4", "py-3", "text-sm", "font-medium", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "routerLink"], [1, "flex", "items-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", 1, "w-5", "h-5"], ["d", "M21 21l-5.2-5.2m2.2-5.3a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-chevron-right", "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], [1, "flex", "items-center", "justify-between", "pt-4"], [1, "flex", "items-center", "gap-2", "text-sm", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-4", "h-4"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], ["id", "connecting-continue", 1, "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "disabled:opacity-50", 3, "click", "disabled"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-blue800", "rounded-lg", "bg-blue-50", "border", "border-blue-300", "flex", "items-center", "gap-2"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["class", "flex items-center gap-2 mt-2", 4, "ngIf"], [1, "flex", "items-center", "gap-2", "mt-2"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", 1, "animate-spin", "h-5", "w-5", "text-blue-600"], ["cx", "12", "cy", "12", "r", "10", "stroke", "currentColor", "stroke-width", "4", 1, "opacity-25"], ["fill", "currentColor", "d", "M4 12a8 8 0 018-8v8H4z", 1, "opacity-75"], [1, "flex", "items-center", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-[#5B47FB]", "bg-[#5B47FB]", "transition-all", "hover:bg-[#4936E8]", "hover:border-[#4936E8]", "animate-scale"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", 1, "w-4", "h-4", "mx-auto", "text-white", "animate-scale"], ["stroke-linecap", "round", "stroke-linejoin", "round", "stroke-width", "2", "d", "M5 13l4 4L19 7"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-4", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-gray-300", "transition-all", "hover:bg-gray-50", "hover:border-[#5B47FB]/30", 3, "click"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "animate-bounce"], ["xmlns", "http://www.w3.org/2000/svg", "width", "20", "height", "20", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "1.5", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "text-amber-500"], ["d", "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"], ["x1", "12", "y1", "9", "x2", "12", "y2", "13"], ["x1", "12", "y1", "17", "x2", "12.01", "y2", "17"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-3", "rounded", 3, "src", "alt"], [1, "cursor-pointer", "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "px-4", "py-1.5", "rounded-lg", "text-sm", "font-medium", "transition-colors", 3, "click"]], template: function DashboardComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], decls: 53, vars: 32, consts: [["id", "step-connecting-systems", 1, "space-y-6"], [3, "closeButtonEvent", "showClose"], [1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], ["class", "p-4 mb-4 text-sm text-blue800 rounded-lg bg-blue-50 border border-blue-300 flex items-center gap-2", "role", "alert", 4, "ngIf"], ["id", "connecting-systems-list", 1, "space-y-3"], ["class", "flex items-center p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all", 4, "ngFor", "ngForOf"], ["id", "search-button", 1, "w-full", "border", "bg-gray-50", "border-gray-200", "rounded-lg", "flex", "justify-between", "items-center", "px-4", "py-3", "text-sm", "font-medium", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "routerLink"], [1, "flex", "items-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", 1, "w-5", "h-5"], ["d", "M21 21l-5.2-5.2m2.2-5.3a7.5 7.5 0 11-15 0 7.5 7.5 0 0115 0z", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-chevron-right", "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], [1, "flex", "items-center", "justify-between", "pt-4"], [1, "flex", "items-center", "gap-2", "text-sm", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-4", "h-4"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], ["id", "connecting-continue", 1, "w-[120px]", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "disabled:opacity-50", "flex", "justify-center", "items-center", "gap-2", 3, "click", "disabled"], [4, "ngIf"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-blue800", "rounded-lg", "bg-blue-50", "border", "border-blue-300", "flex", "items-center", "gap-2"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["class", "flex items-center gap-2 mt-2", 4, "ngIf"], [1, "flex", "items-center", "gap-2", "mt-2"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", 1, "animate-spin", "h-5", "w-5", "text-blue-600"], ["cx", "12", "cy", "12", "r", "10", "stroke", "currentColor", "stroke-width", "4", 1, "opacity-25"], ["fill", "currentColor", "d", "M4 12a8 8 0 018-8v8H4z", 1, "opacity-75"], [1, "flex", "items-center", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-[#5B47FB]", "bg-[#5B47FB]", "transition-all", "hover:bg-[#4936E8]", "hover:border-[#4936E8]", "animate-scale"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", 1, "w-4", "h-4", "mx-auto", "text-white", "animate-scale"], ["stroke-linecap", "round", "stroke-linejoin", "round", "stroke-width", "2", "d", "M5 13l4 4L19 7"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-4", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-gray-300", "transition-all", "hover:bg-gray-50", "hover:border-[#5B47FB]/30", 3, "click"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "animate-bounce"], ["xmlns", "http://www.w3.org/2000/svg", "width", "20", "height", "20", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "1.5", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "text-amber-500"], ["d", "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"], ["x1", "12", "y1", "9", "x2", "12", "y2", "13"], ["x1", "12", "y1", "17", "x2", "12.01", "y2", "17"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-3", "rounded", 3, "src", "alt"], [1, "cursor-pointer", "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "px-4", "py-1.5", "rounded-lg", "text-sm", "font-medium", "transition-colors", 3, "click"]], template: function DashboardComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "app-header", 1);
         \u0275\u0275listener("closeButtonEvent", function DashboardComponent_Template_app_header_closeButtonEvent_1_listener() {
@@ -57502,25 +57513,27 @@ var DashboardComponent = class _DashboardComponent {
         \u0275\u0275listener("click", function DashboardComponent_Template_button_click_33_listener() {
           return ctx.completeAccounts();
         });
-        \u0275\u0275text(35, " Continue ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(36, "p", 20);
-        \u0275\u0275text(37, " By clicking continue you agree to: ");
-        \u0275\u0275element(38, "br");
-        \u0275\u0275text(39, "Fasten's ");
-        \u0275\u0275elementStart(40, "a", 21);
-        \u0275\u0275text(41, "Privacy Policy");
+        \u0275\u0275template(35, DashboardComponent_app_spinner_35_Template, 1, 0, "app-spinner", 20);
+        \u0275\u0275elementStart(36, "span");
+        \u0275\u0275text(37, "Continue");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(38, "p", 21);
+        \u0275\u0275text(39, " By clicking continue you agree to: ");
+        \u0275\u0275element(40, "br");
+        \u0275\u0275text(41, "Fasten's ");
+        \u0275\u0275elementStart(42, "a", 22);
+        \u0275\u0275text(43, "Privacy Policy");
         \u0275\u0275elementEnd();
-        \u0275\u0275text(42, " and ");
-        \u0275\u0275elementStart(43, "a", 22);
-        \u0275\u0275text(44, "Terms & Conditions");
+        \u0275\u0275text(44, " and ");
+        \u0275\u0275elementStart(45, "a", 23);
+        \u0275\u0275text(46, "Terms & Conditions");
         \u0275\u0275elementEnd();
-        \u0275\u0275element(45, "br");
-        \u0275\u0275text(46);
-        \u0275\u0275pipe(47, "async");
-        \u0275\u0275elementStart(48, "a", 23);
+        \u0275\u0275element(47, "br");
+        \u0275\u0275text(48);
         \u0275\u0275pipe(49, "async");
-        \u0275\u0275text(50, "Privacy Policy");
+        \u0275\u0275elementStart(50, "a", 24);
+        \u0275\u0275pipe(51, "async");
+        \u0275\u0275text(52, "Privacy Policy");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
@@ -57529,26 +57542,28 @@ var DashboardComponent = class _DashboardComponent {
         let tmp_3_0;
         let tmp_4_0;
         let tmp_6_0;
-        let tmp_7_0;
         let tmp_8_0;
+        let tmp_9_0;
         \u0275\u0275advance();
         \u0275\u0275property("showClose", true);
         \u0275\u0275advance(6);
-        \u0275\u0275property("ngIf", (tmp_1_0 = \u0275\u0275pipeBind1(8, 9, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.tefcaMode);
+        \u0275\u0275property("ngIf", (tmp_1_0 = \u0275\u0275pipeBind1(8, 10, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.tefcaMode);
         \u0275\u0275advance(3);
-        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(11, 11, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(27, _c03));
+        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(11, 12, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(28, _c03));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(14, 15, ((tmp_3_0 = \u0275\u0275pipeBind1(13, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(28, _c12)));
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(14, 16, ((tmp_3_0 = \u0275\u0275pipeBind1(13, 14, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(29, _c12)));
         \u0275\u0275advance(3);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(17, 19, ((tmp_4_0 = \u0275\u0275pipeBind1(16, 17, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(29, _c12)));
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(17, 20, ((tmp_4_0 = \u0275\u0275pipeBind1(16, 18, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(30, _c12)));
         \u0275\u0275advance(3);
         \u0275\u0275property("routerLink", "/search");
         \u0275\u0275advance(15);
-        \u0275\u0275property("disabled", !(((tmp_6_0 = \u0275\u0275pipeBind1(34, 21, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_6_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(30, _c03)).length);
-        \u0275\u0275advance(13);
-        \u0275\u0275textInterpolate1("", ((tmp_7_0 = \u0275\u0275pipeBind1(47, 23, ctx.configService.systemConfigSubject)) == null ? null : tmp_7_0.org == null ? null : tmp_7_0.org.name) || "Unknown", "'s ");
+        \u0275\u0275property("disabled", !(((tmp_6_0 = \u0275\u0275pipeBind1(34, 22, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_6_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(31, _c03)).length || ctx.isCompleting);
         \u0275\u0275advance(2);
-        \u0275\u0275propertyInterpolate("href", (tmp_8_0 = \u0275\u0275pipeBind1(49, 25, ctx.configService.systemConfigSubject)) == null ? null : tmp_8_0.org == null ? null : tmp_8_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
+        \u0275\u0275property("ngIf", ctx.isCompleting);
+        \u0275\u0275advance(13);
+        \u0275\u0275textInterpolate1("", ((tmp_8_0 = \u0275\u0275pipeBind1(49, 24, ctx.configService.systemConfigSubject)) == null ? null : tmp_8_0.org == null ? null : tmp_8_0.org.name) || "Unknown", "'s ");
+        \u0275\u0275advance(2);
+        \u0275\u0275propertyInterpolate("href", (tmp_9_0 = \u0275\u0275pipeBind1(51, 26, ctx.configService.systemConfigSubject)) == null ? null : tmp_9_0.org == null ? null : tmp_9_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
       }
     }, dependencies: [
       CommonModule,
@@ -57560,12 +57575,14 @@ var DashboardComponent = class _DashboardComponent {
       RouterModule,
       RouterLink,
       ImageFallbackDirective,
-      HeaderComponent
+      HeaderComponent,
+      // If you have a header component
+      SpinnerComponent
     ], styles: ["\n\n.blurred[_ngcontent-%COMP%] {\n  filter: blur(3px);\n  filter: url(/assets/blur.svg#gaussian_blur);\n  -webkit-filter: blur(3px);\n}\n/*# sourceMappingURL=dashboard.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 34 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 36 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/state-codes.ts
@@ -59279,7 +59296,79 @@ var FormHealthSystemRequestComponent = class _FormHealthSystemRequestComponent {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/form-support-request/form-support-request.component.ts
-function FormSupportRequestComponent_form_2_app_spinner_27_Template(rf, ctx) {
+function FormSupportRequestComponent_form_2_div_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 20)(1, "div", 21);
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(2, "svg", 22);
+    \u0275\u0275element(3, "path", 23);
+    \u0275\u0275elementEnd();
+    \u0275\u0275namespaceHTML();
+    \u0275\u0275elementStart(4, "div", 24)(5, "p", 25);
+    \u0275\u0275text(6, "We couldn't submit your request.");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "p", 26);
+    \u0275\u0275text(8);
+    \u0275\u0275elementEnd()()()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(8);
+    \u0275\u0275textInterpolate(ctx_r1.errorMsg);
+  }
+}
+function FormSupportRequestComponent_form_2_div_8_p_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "p")(1, "span", 32);
+    \u0275\u0275text(2, "Type:");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate1(" ", ctx_r1.error, "");
+  }
+}
+function FormSupportRequestComponent_form_2_div_8_p_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "p", 33)(1, "span", 32);
+    \u0275\u0275text(2, "Description:");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate1(" ", ctx_r1.error_description, "");
+  }
+}
+function FormSupportRequestComponent_form_2_div_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 27)(1, "div", 21);
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(2, "svg", 28);
+    \u0275\u0275element(3, "path", 23);
+    \u0275\u0275elementEnd();
+    \u0275\u0275namespaceHTML();
+    \u0275\u0275elementStart(4, "div", 24)(5, "p", 29);
+    \u0275\u0275text(6, "We detected an issue during sign-in. These details will be included with your support request.");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "div", 30);
+    \u0275\u0275template(8, FormSupportRequestComponent_form_2_div_8_p_8_Template, 4, 1, "p", 19)(9, FormSupportRequestComponent_form_2_div_8_p_9_Template, 4, 1, "p", 31);
+    \u0275\u0275elementEnd()()()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(8);
+    \u0275\u0275property("ngIf", ctx_r1.error);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.error_description);
+  }
+}
+function FormSupportRequestComponent_form_2_app_spinner_29_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275element(0, "app-spinner");
   }
@@ -59299,54 +59388,59 @@ function FormSupportRequestComponent_form_2_Template(rf, ctx) {
     \u0275\u0275elementStart(5, "p", 8);
     \u0275\u0275text(6, " Sharing your email address and related information helps us prioritize your issue. ");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(7, "div", 9)(8, "div", 10)(9, "label", 11);
-    \u0275\u0275text(10, "Your email address ");
-    \u0275\u0275elementStart(11, "span", 12);
-    \u0275\u0275text(12, "*");
+    \u0275\u0275template(7, FormSupportRequestComponent_form_2_div_7_Template, 9, 1, "div", 9)(8, FormSupportRequestComponent_form_2_div_8_Template, 10, 2, "div", 10);
+    \u0275\u0275elementStart(9, "div", 11)(10, "div", 12)(11, "label", 13);
+    \u0275\u0275text(12, "Your email address ");
+    \u0275\u0275elementStart(13, "span", 14);
+    \u0275\u0275text(14, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(13, "input", 13);
-    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_2_Template_input_ngModelChange_13_listener($event) {
+    \u0275\u0275elementStart(15, "input", 15);
+    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_2_Template_input_ngModelChange_15_listener($event) {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.formSupportRequest.email, $event) || (ctx_r1.formSupportRequest.email = $event);
       return \u0275\u0275resetView($event);
     });
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(14, "div", 10)(15, "label", 11);
-    \u0275\u0275text(16, "Health system name ");
-    \u0275\u0275elementStart(17, "span", 12);
-    \u0275\u0275text(18, "*");
+    \u0275\u0275elementStart(16, "div", 12)(17, "label", 13);
+    \u0275\u0275text(18, "Health system name ");
+    \u0275\u0275elementStart(19, "span", 14);
+    \u0275\u0275text(20, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(19, "input", 14);
-    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_2_Template_input_ngModelChange_19_listener($event) {
+    \u0275\u0275elementStart(21, "input", 16);
+    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_2_Template_input_ngModelChange_21_listener($event) {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.formSupportRequest.healthsystem_name, $event) || (ctx_r1.formSupportRequest.healthsystem_name = $event);
       return \u0275\u0275resetView($event);
     });
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(20, "div", 10)(21, "label", 11);
-    \u0275\u0275text(22, "Describe your issue");
-    \u0275\u0275elementStart(23, "span", 12);
-    \u0275\u0275text(24, "*");
+    \u0275\u0275elementStart(22, "div", 12)(23, "label", 13);
+    \u0275\u0275text(24, "Describe your issue");
+    \u0275\u0275elementStart(25, "span", 14);
+    \u0275\u0275text(26, "*");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(25, "textarea", 15);
-    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_2_Template_textarea_ngModelChange_25_listener($event) {
+    \u0275\u0275elementStart(27, "textarea", 17);
+    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_2_Template_textarea_ngModelChange_27_listener($event) {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.formSupportRequest.request_content, $event) || (ctx_r1.formSupportRequest.request_content = $event);
       return \u0275\u0275resetView($event);
     });
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(26, "button", 16);
-    \u0275\u0275template(27, FormSupportRequestComponent_form_2_app_spinner_27_Template, 1, 0, "app-spinner", 17);
-    \u0275\u0275text(28, " Submit ");
+    \u0275\u0275elementStart(28, "button", 18);
+    \u0275\u0275template(29, FormSupportRequestComponent_form_2_app_spinner_29_Template, 1, 0, "app-spinner", 19);
+    \u0275\u0275text(30, " Submit ");
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const supportRequestForm_r3 = \u0275\u0275reference(1);
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(13);
+    \u0275\u0275advance(7);
+    \u0275\u0275property("ngIf", ctx_r1.errorMsg);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.error || ctx_r1.error_description);
+    \u0275\u0275advance(7);
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.formSupportRequest.email);
     \u0275\u0275advance(6);
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.formSupportRequest.healthsystem_name);
@@ -59361,16 +59455,16 @@ function FormSupportRequestComponent_form_2_Template(rf, ctx) {
 function FormSupportRequestComponent_ng_template_3_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 18)(1, "div", 19);
+    \u0275\u0275elementStart(0, "div", 34)(1, "div", 35);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 20);
-    \u0275\u0275element(3, "path", 21);
+    \u0275\u0275elementStart(2, "svg", 36);
+    \u0275\u0275element(3, "path", 37);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(4, "div", 22)(5, "div")(6, "div", 23);
+    \u0275\u0275elementStart(4, "div", 38)(5, "div")(6, "div", 39);
     \u0275\u0275text(7, " Thanks for providing information about your issue. Your request has been recorded and we will notify you once we have an update. ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "button", 24);
+    \u0275\u0275elementStart(8, "button", 40);
     \u0275\u0275listener("click", function FormSupportRequestComponent_ng_template_3_Template_button_click_8_listener() {
       \u0275\u0275restoreView(_r4);
       const ctx_r1 = \u0275\u0275nextContext();
@@ -59417,7 +59511,22 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
     }, (err) => {
       this.loading = false;
       console.error("an error occurred during issue submission", err);
-      this.errorMsg = err || "An error occurred while submitting your issue. Please try again later.";
+      let message2 = "An error occurred while submitting your issue. Please try again later.";
+      try {
+        if (err?.error) {
+          if (typeof err.error === "string") {
+            message2 = err.error;
+          } else if (typeof err.error?.message === "string") {
+            message2 = err.error.message;
+          } else if (typeof err.message === "string") {
+            message2 = err.message;
+          }
+        } else if (typeof err?.message === "string") {
+          message2 = err.message;
+        }
+      } catch {
+      }
+      this.errorMsg = message2;
     });
   }
   dismiss() {
@@ -59429,11 +59538,11 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormSupportRequestComponent, selectors: [["app-form-support-request"]], inputs: { error: "error", error_description: "error_description", brand_id: "brand_id", portal_id: "portal_id", endpoint_id: "endpoint_id", org_connection_id: "org_connection_id", external_id: "external_id", external_state: "external_state", request_id: "request_id" }, decls: 5, vars: 3, consts: [["requestSuccess", ""], ["supportRequestForm", "ngForm"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["type", "email", "placeholder", "you@example.com", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["placeholder", "please provide as much data as possible, it helps us prioritize your issue", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", 3, "disabled"], [4, "ngIf"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormSupportRequestComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormSupportRequestComponent, selectors: [["app-form-support-request"]], inputs: { error: "error", error_description: "error_description", brand_id: "brand_id", portal_id: "portal_id", endpoint_id: "endpoint_id", org_connection_id: "org_connection_id", external_id: "external_id", external_state: "external_state", request_id: "request_id" }, decls: 5, vars: 3, consts: [["requestSuccess", ""], ["supportRequestForm", "ngForm"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], ["class", "rounded-md border border-yellow-200 bg-yellow-50 p-4", 4, "ngIf"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["type", "email", "placeholder", "you@example.com", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["placeholder", "please provide as much data as possible, it helps us prioritize your issue", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", 3, "disabled"], [4, "ngIf"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "rounded-md", "border", "border-yellow-200", "bg-yellow-50", "p-4"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-yellow-400"], [1, "font-medium", "text-yellow-800"], [1, "mt-1", "text-yellow-700"], ["class", "mt-1", 4, "ngIf"], [1, "font-medium"], [1, "mt-1"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormSupportRequestComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 2);
         \u0275\u0275element(1, "app-header", 3);
-        \u0275\u0275template(2, FormSupportRequestComponent_form_2_Template, 29, 5, "form", 4);
+        \u0275\u0275template(2, FormSupportRequestComponent_form_2_Template, 31, 7, "form", 4);
         \u0275\u0275elementEnd();
         \u0275\u0275template(3, FormSupportRequestComponent_ng_template_3_Template, 10, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
       }
