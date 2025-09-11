@@ -47600,6 +47600,7 @@ var AppComponent = class _AppComponent {
     this.eventTypes = urlParams.get("event-types") || "";
     this.staticBackdrop = urlParams.get("static-backdrop") == "true";
     this.searchQuery = urlParams.get("search-query") || "";
+    this.showSplash = urlParams.get("show-splash") == "true";
     this.brandId = urlParams.get("brand-id") || "";
     this.portalId = urlParams.get("portal-id") || "";
     this.endpointId = urlParams.get("endpoint-id") || "";
@@ -47618,6 +47619,7 @@ var AppComponent = class _AppComponent {
     this.tefcaMode = false;
     this.staticBackdrop = false;
     this.eventTypes = "";
+    this.showSplash = false;
     this.searchOnly = false;
     this.searchQuery = "";
     this.brandId = "";
@@ -47692,14 +47694,19 @@ var AppComponent = class _AppComponent {
       });
     } else {
       if (this.searchOnly) {
-        this.logger.info("state: search");
-        let queryParams = {};
-        if (this.searchQuery) {
-          queryParams["searchQuery"] = this.searchQuery;
+        if (this.showSplash) {
+          this.logger.info("state: splash");
+          this.router.navigateByUrl("splash");
+        } else {
+          this.logger.info("state: search");
+          let queryParams = {};
+          if (this.searchQuery) {
+            queryParams["searchQuery"] = this.searchQuery;
+          }
+          this.router.navigate(["search"], {
+            queryParams
+          });
         }
-        this.router.navigate(["search"], {
-          queryParams
-        });
       }
     }
   }
@@ -47779,7 +47786,7 @@ var AppComponent = class _AppComponent {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275element(0, "link", 0);
         \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
@@ -59767,6 +59774,151 @@ var IsTefcaModeAuthGuard = class _IsTefcaModeAuthGuard {
   }
 };
 
+// projects/fasten-connect-stitch-embed/src/app/pages/splash/splash.component.ts
+var SplashComponent = class _SplashComponent {
+  constructor(configService, authService, fastenService, router, logger) {
+    this.configService = configService;
+    this.authService = authService;
+    this.fastenService = fastenService;
+    this.router = router;
+    this.logger = logger;
+  }
+  static {
+    this.\u0275fac = function SplashComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _SplashComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SplashComponent, selectors: [["app-splash"]], decls: 61, vars: 12, consts: [["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [1, "space-y-6"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", "disabled:bg-gray-400", "disabled:text-gray-600", "disabled:hover:bg-gray-400"]], template: function SplashComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0);
+        \u0275\u0275element(1, "app-header");
+        \u0275\u0275elementStart(2, "div", 1)(3, "div", 2);
+        \u0275\u0275element(4, "img", 3);
+        \u0275\u0275pipe(5, "async");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(6, "div", 4);
+        \u0275\u0275element(7, "div", 5)(8, "div", 6)(9, "div", 7);
+        \u0275\u0275elementEnd();
+        \u0275\u0275namespaceSVG();
+        \u0275\u0275elementStart(10, "svg", 8);
+        \u0275\u0275element(11, "path", 9)(12, "path", 10)(13, "path", 11)(14, "path", 12)(15, "path", 13)(16, "path", 14);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275namespaceHTML();
+        \u0275\u0275elementStart(17, "div", 15)(18, "h2", 16);
+        \u0275\u0275text(19, "Connect Your Health Records");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(20, "p", 17);
+        \u0275\u0275text(21);
+        \u0275\u0275pipe(22, "async");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(23, "div", 18)(24, "div", 19)(25, "div", 20);
+        \u0275\u0275namespaceSVG();
+        \u0275\u0275elementStart(26, "svg", 21);
+        \u0275\u0275element(27, "path", 22);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275namespaceHTML();
+        \u0275\u0275elementStart(28, "div")(29, "h3", 23);
+        \u0275\u0275text(30, "Safe");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(31, "p", 17);
+        \u0275\u0275text(32, " Securely connect your medical records with bank-level encryption ");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(33, "div", 19)(34, "div", 20);
+        \u0275\u0275namespaceSVG();
+        \u0275\u0275elementStart(35, "svg", 24);
+        \u0275\u0275element(36, "rect", 25)(37, "path", 26);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275namespaceHTML();
+        \u0275\u0275elementStart(38, "div")(39, "h3", 23);
+        \u0275\u0275text(40, "Private");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(41, "p", 17);
+        \u0275\u0275text(42, " We never sell your personal info and only use it with your permission ");
+        \u0275\u0275elementEnd()()()();
+        \u0275\u0275elementStart(43, "div", 27)(44, "p", 28);
+        \u0275\u0275text(45, " By clicking continue you agree to: ");
+        \u0275\u0275element(46, "br");
+        \u0275\u0275text(47, "Fasten's ");
+        \u0275\u0275elementStart(48, "a", 29);
+        \u0275\u0275text(49, "Privacy Policy");
+        \u0275\u0275elementEnd();
+        \u0275\u0275text(50, " and ");
+        \u0275\u0275elementStart(51, "a", 30);
+        \u0275\u0275text(52, "Terms & Conditions");
+        \u0275\u0275elementEnd();
+        \u0275\u0275element(53, "br");
+        \u0275\u0275text(54);
+        \u0275\u0275pipe(55, "async");
+        \u0275\u0275elementStart(56, "a", 31);
+        \u0275\u0275pipe(57, "async");
+        \u0275\u0275text(58, "Privacy Policy");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(59, "button", 32);
+        \u0275\u0275text(60, ` Continue [routerLink]="'/search'" `);
+        \u0275\u0275elementEnd()()();
+      }
+      if (rf & 2) {
+        let tmp_0_0;
+        let tmp_1_0;
+        let tmp_2_0;
+        let tmp_3_0;
+        \u0275\u0275advance(4);
+        \u0275\u0275property("src", (tmp_0_0 = \u0275\u0275pipeBind1(5, 4, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.org == null ? null : tmp_0_0.org.logo_uri, \u0275\u0275sanitizeUrl);
+        \u0275\u0275advance(17);
+        \u0275\u0275textInterpolate1(" ", ((tmp_1_0 = \u0275\u0275pipeBind1(22, 6, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.org == null ? null : tmp_1_0.org.name) || "Unknown", " uses Fasten to securely link your health systems ");
+        \u0275\u0275advance(33);
+        \u0275\u0275textInterpolate1("", ((tmp_2_0 = \u0275\u0275pipeBind1(55, 8, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.name) || "Unknown", "'s ");
+        \u0275\u0275advance(2);
+        \u0275\u0275propertyInterpolate("href", (tmp_3_0 = \u0275\u0275pipeBind1(57, 10, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
+      }
+    }, dependencies: [
+      CommonModule,
+      AsyncPipe,
+      RouterModule,
+      HeaderComponent,
+      ImageFallbackDirective,
+      FormsModule
+    ], styles: [`
+
+.custom-checkbox[_ngcontent-%COMP%] {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+.custom-checkbox[_ngcontent-%COMP%]::before {
+  content: "";
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  flex-grow: 0;
+  border: 1px solid #c3c3c3;
+  border-radius: 0.25em;
+  margin-right: 0.5em;
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: 50% 50%;
+}
+.custom-checkbox-checked[_ngcontent-%COMP%]::before {
+  border-color: blue;
+  background-color: blue;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e");
+}
+.custom-checkbox[_ngcontent-%COMP%]:hover::before {
+  border-color: rgba(0, 0, 255, 0.33);
+}
+/*# sourceMappingURL=splash.component.css.map */`] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SplashComponent, { className: "SplashComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/splash/splash.component.ts", lineNumber: 30 });
+})();
+
 // projects/fasten-connect-stitch-embed/src/app/app.routes.ts
 var routes = [
   { path: "auth/signin", component: VaultProfileSigninComponent },
@@ -59775,6 +59927,7 @@ var routes = [
   //canActivate: [IsAuthenticatedAuthGuard] },
   { path: "auth/identity/verification/error", component: IdentityVerificationErrorComponent },
   //canActivate: [IsAuthenticatedAuthGuard] },
+  { path: "splash", component: SplashComponent, canActivate: [IsAuthenticatedAuthGuard] },
   { path: "dashboard", component: DashboardComponent, canActivate: [IsAuthenticatedAuthGuard, IsTefcaModeAuthGuard] },
   { path: "search", component: HealthSystemSearchComponent, canActivate: [IsAuthenticatedAuthGuard] },
   { path: "brand/details", component: HealthSystemBrandDetailsComponent, canActivate: [IsAuthenticatedAuthGuard] },
