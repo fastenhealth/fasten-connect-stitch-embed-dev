@@ -58971,9 +58971,9 @@ var CompleteComponent = class _CompleteComponent {
     this.messageBus = messageBus;
   }
   ngOnInit() {
-    this.messageBus.publishComplete();
   }
   closeModal() {
+    this.messageBus.publishComplete();
     this.messageBus.publishRequestClose();
   }
   static {
