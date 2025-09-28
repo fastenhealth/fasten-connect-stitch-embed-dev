@@ -40426,6 +40426,26 @@ var ConfigService = class _ConfigService {
     updatedVaultProfile.addConnectedAccount(connectedAccount.vault_profile_connection_id || connectedAccount.external_state || "", connectedAccount.org_connection_id, connectedAccount.connection_status, connectedAccount.platform_type, connectedAccount.brand_id, connectedAccount.portal_id, connectedAccount.endpoint_id, connectedAccount.vault_profile_connection_id, connectedAccount.patient_auth_type);
     this.vaultProfileConfig = updatedVaultProfile;
   }
+  // this is used when we successfully generated an org_connection_id for a TEFCA Direct account.
+  vaultProfileAuthorizeTefcaDirectConnectedAccount(vaultProfileConnectionId, orgConnectionId, connectionStatus) {
+    let updatedVaultProfile = this.vaultProfileConfig$;
+    let isUpdated = updatedVaultProfile.authorizeTefcaDirectConnectedAccount(vaultProfileConnectionId, orgConnectionId, connectionStatus);
+    if (!isUpdated) {
+      this.logger.warn("Could not find TEFCA Direct account by connection id:", vaultProfileConnectionId);
+      return;
+    }
+    this.vaultProfileConfig = updatedVaultProfile;
+  }
+  //this is used when we were unable to generate an org_connection_id for a TEFCA Direct account.
+  vaultProfileRevokeTefcaDirectConnectedAccount(vaultProfileConnectionId) {
+    let updatedVaultProfile = this.vaultProfileConfig$;
+    let isUpdated = updatedVaultProfile.revokeTefcaDirectConnectedAccount(vaultProfileConnectionId);
+    if (!isUpdated) {
+      this.logger.warn("Could not find TEFCA Direct account by connection id:", vaultProfileConnectionId);
+      return;
+    }
+    this.vaultProfileConfig = updatedVaultProfile;
+  }
   vaultProfileAddPendingRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId) {
     let updatedVaultProfile = this.vaultProfileConfig$;
     let externalState = vaultProfileConnectionId;
@@ -40434,8 +40454,7 @@ var ConfigService = class _ConfigService {
   }
   vaultProfileAddDiscoveredRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId) {
     let updatedVaultProfile = this.vaultProfileConfig$;
-    let externalState = vaultProfileConnectionId;
-    updatedVaultProfile.addDiscoveredAccount(externalState, recordLocatorFacility.brand, recordLocatorFacility.portal, recordLocatorFacility.endpoint, vaultProfileConnectionId);
+    updatedVaultProfile.addDiscoveredAccount(recordLocatorFacility.brand, recordLocatorFacility.portal, recordLocatorFacility.endpoint, vaultProfileConnectionId);
     this.vaultProfileConfig = updatedVaultProfile;
   }
   //Setter
@@ -40560,11 +40579,12 @@ var VaultProfileConfig = class {
     }
     this.pendingPatientAccounts[externalState] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId };
   }
-  addDiscoveredAccount(externalState, brand, portal, endpoint, vaultProfileConnectionId) {
+  //discovered accounts do not require a unique external state for matching, because they already have a unique identifier (vaultProfileConnectionId)
+  addDiscoveredAccount(brand, portal, endpoint, vaultProfileConnectionId) {
     if (!this.discoveredPatientAccounts) {
       this.discoveredPatientAccounts = {};
     }
-    this.discoveredPatientAccounts[externalState] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId };
+    this.discoveredPatientAccounts[vaultProfileConnectionId] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId };
   }
   addConnectedAccount(external_state, org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id, vault_profile_connection_id, patient_auth_type) {
     if (!this.connectedPatientAccounts) {
@@ -40592,6 +40612,27 @@ var VaultProfileConfig = class {
         endpoint: { id: endpoint_id, platform_type }
       });
     }
+  }
+  // this is used when we successfully generated an org_connection_id for a TEFCA Direct account.
+  authorizeTefcaDirectConnectedAccount(vaultProfileConnectionId, orgConnectionId, connectionStatus) {
+    let ndx = this.connectedPatientAccounts?.findIndex((acc) => acc.vault_profile_connection_id === vaultProfileConnectionId);
+    if (ndx === void 0 || ndx < 0) {
+      return false;
+    }
+    let existingAccount = this.connectedPatientAccounts[ndx];
+    existingAccount.connection_status = connectionStatus;
+    existingAccount.org_connection_id = orgConnectionId;
+    this.connectedPatientAccounts[ndx] = existingAccount;
+    return true;
+  }
+  //this is used when we were unable to generate an org_connection_id for a TEFCA Direct account.
+  revokeTefcaDirectConnectedAccount(vaultProfileConnectionId) {
+    let ndx = this.connectedPatientAccounts?.findIndex((acc) => acc.vault_profile_connection_id === vaultProfileConnectionId);
+    if (ndx === void 0 || ndx < 0) {
+      return false;
+    }
+    this.connectedPatientAccounts.splice(ndx, 1);
+    return true;
   }
 };
 
@@ -57198,29 +57239,15 @@ function ProcessTefcaDirectAuthorizationResultsHelper(vaultConnectionIds, resp) 
   const successes = resp?.successes || {};
   const failures = resp?.failures || {};
   const vaultProfile = configService.vaultProfileConfig$;
-  const idToExternalState = {};
-  const pending = vaultProfile?.pendingPatientAccounts || {};
-  const discovered = vaultProfile?.discoveredPatientAccounts || {};
-  Object.entries(pending).forEach(([extState, acct]) => {
-    if (acct?.vault_profile_connection_id) {
-      idToExternalState[acct.vault_profile_connection_id] = extState;
-    }
-  });
-  Object.entries(discovered).forEach(([extState, acct]) => {
-    if (acct?.vault_profile_connection_id) {
-      idToExternalState[acct.vault_profile_connection_id] = extState;
-    }
-  });
   vaultConnectionIds.forEach((id) => {
     const successData = successes[id];
     const failureData = failures[id];
-    const external_state = idToExternalState[id];
     if (successData) {
       const orgConnectionId = successData.org_connection_id ?? "";
       const connectionStatus = successData.connection_status ?? "authorized";
       const platformType = successData.platform_type ?? "tefca";
       const payload = {
-        external_state,
+        external_state: id,
         external_id: configService.systemConfig$.externalId,
         request_id: resp?.request_id,
         org_connection_id: orgConnectionId,
@@ -57230,9 +57257,7 @@ function ProcessTefcaDirectAuthorizationResultsHelper(vaultConnectionIds, resp) 
         patient_auth_type: "tefca_direct"
       };
       messageBusService.publishOrgConnectionComplete(payload);
-      if (external_state) {
-        configService.vaultProfileAddConnectedAccount(payload);
-      }
+      configService.vaultProfileAuthorizeTefcaDirectConnectedAccount(id, orgConnectionId, connectionStatus);
     } else if (failureData) {
       let error = failureData.error;
       let errorDescription = failureData.error_description;
@@ -57241,7 +57266,7 @@ function ProcessTefcaDirectAuthorizationResultsHelper(vaultConnectionIds, resp) 
         errorDescription = "An unknown server error occurred: missing error type";
       }
       const payload = {
-        external_state,
+        external_state: id,
         vault_profile_connection_id: id,
         external_id: configService.systemConfig$.externalId,
         request_id: resp?.request_id,
@@ -57249,9 +57274,10 @@ function ProcessTefcaDirectAuthorizationResultsHelper(vaultConnectionIds, resp) 
         error_description: errorDescription
       };
       messageBusService.publishOrgConnectionComplete(payload);
+      configService.vaultProfileRevokeTefcaDirectConnectedAccount(id);
     } else {
       const payload = {
-        external_state,
+        external_state: id,
         vault_profile_connection_id: id,
         external_id: configService.systemConfig$.externalId,
         request_id: resp?.request_id,
@@ -57259,6 +57285,7 @@ function ProcessTefcaDirectAuthorizationResultsHelper(vaultConnectionIds, resp) 
         error_description: "An unknown server error occurred: missing error type"
       };
       messageBusService.publishOrgConnectionComplete(payload);
+      configService.vaultProfileRevokeTefcaDirectConnectedAccount(id);
     }
   });
 }
@@ -59575,7 +59602,7 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormSupportRequestComponent, selectors: [["app-form-support-request"]], inputs: { error: "error", error_description: "error_description", brand_id: "brand_id", portal_id: "portal_id", endpoint_id: "endpoint_id", org_connection_id: "org_connection_id", external_id: "external_id", external_state: "external_state", request_id: "request_id" }, decls: 5, vars: 3, consts: [["requestSuccess", ""], ["supportRequestForm", "ngForm"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], ["class", "rounded-md border border-yellow-200 bg-yellow-50 p-4", 4, "ngIf"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["type", "email", "placeholder", "you@example.com", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["placeholder", "please provide as much data as possible, it helps us prioritize your issue", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [4, "ngIf"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "rounded-md", "border", "border-yellow-200", "bg-yellow-50", "p-4"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-yellow-400"], [1, "font-medium", "text-yellow-800"], [1, "mt-1", "text-yellow-700"], ["class", "mt-1", 4, "ngIf"], [1, "font-medium"], [1, "mt-1"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormSupportRequestComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormSupportRequestComponent, selectors: [["app-form-support-request"]], inputs: { error: "error", error_description: "error_description", brand_id: "brand_id", portal_id: "portal_id", endpoint_id: "endpoint_id", org_connection_id: "org_connection_id", external_id: "external_id", external_state: "external_state", request_id: "request_id" }, decls: 5, vars: 3, consts: [["requestSuccess", ""], ["supportRequestForm", "ngForm"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], ["class", "rounded-md border border-yellow-200 bg-yellow-50 p-4", 4, "ngIf"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["name", "email", "type", "email", "placeholder", "you@example.com", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["name", "healthsystem_name", "type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["name", "request_content", "placeholder", "please provide as much data as possible, it helps us prioritize your issue", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [4, "ngIf"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "rounded-md", "border", "border-yellow-200", "bg-yellow-50", "p-4"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-yellow-400"], [1, "font-medium", "text-yellow-800"], [1, "mt-1", "text-yellow-700"], ["class", "mt-1", 4, "ngIf"], [1, "font-medium"], [1, "mt-1"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormSupportRequestComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 2);
         \u0275\u0275element(1, "app-header", 3);
