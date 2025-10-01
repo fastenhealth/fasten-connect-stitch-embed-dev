@@ -40651,6 +40651,9 @@ var FormHealthSystemRequest = class {
     this.email = "";
     this.website = "";
     this.street_address = "";
+    this.organization_id = "";
+    this.organization_name = "";
+    this.api_mode = "test";
   }
 };
 
@@ -47407,7 +47410,10 @@ var FastenService = class _FastenService {
   }
   requestHealthSystem(requestHealth) {
     const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/support/healthsystem`);
-    return this._httpClient.post(endpointUrl.toString(), requestHealth).pipe(map((response) => {
+    requestHealth.organization_id = this.configService.systemConfig$.org?.id || "";
+    requestHealth.organization_name = this.configService.systemConfig$.org?.name || "";
+    requestHealth.api_mode = this.configService.systemConfig$.apiMode || "test";
+    return this._httpClient.post(endpointUrl.toString(), requestHealth, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
       return {};
     }));
   }
@@ -47438,7 +47444,7 @@ var FastenService = class _FastenService {
       organization_name: this.configService.systemConfig$.org?.name || "",
       api_mode: this.configService.systemConfig$.apiMode || "test"
     };
-    return this._httpClient.post(endpointUrl.toString(), zendeskTicket).pipe(map((response) => {
+    return this._httpClient.post(endpointUrl.toString(), zendeskTicket, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
       return {};
     }));
   }
