@@ -1,7 +1,7 @@
 {
   "version": 3,
   "sources": ["projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.css"],
-  "sourcesContent": [".blurred {\n\n  /* Any browser which supports CSS3 */\n  filter: blur(3px);\n\n  /* Firefox version 34 and earlier */\n  filter: url(\"/assets/blur.svg#gaussian_blur\");\n\n  /* Webkit in Chrome 52, Safari 9, Opera 39, and earlier */\n  -webkit-filter: blur(3px);\n}\n"],
-  "mappings": ";AAAA,CAAC;AAGC,UAAQ,KAAK;AAGb,UAAQ;AAGR,kBAAgB,KAAK;AACvB;",
+  "sourcesContent": [".blurred {\n\n  /* Any browser which supports CSS3 */\n  filter: blur(3px);\n\n  /* Firefox version 34 and earlier */\n  filter: url(\"/assets/blur.svg#gaussian_blur\");\n\n  /* Webkit in Chrome 52, Safari 9, Opera 39, and earlier */\n  -webkit-filter: blur(3px);\n}\n\n:host {\n  display: block;\n  height: 100%;\n}\n\n.no-scrollbar {\n  scrollbar-width: none;\n  -ms-overflow-style: none;\n}\n\n.no-scrollbar::-webkit-scrollbar {\n  display: none;\n}\n"],
+  "mappings": ";AAAA,CAAC;AAGC,UAAQ,KAAK;AAGb,UAAQ;AAGR,kBAAgB,KAAK;AACvB;AAEA;AACE,WAAS;AACT,UAAQ;AACV;AAEA,CAAC;AACC,mBAAiB;AACjB,sBAAoB;AACtB;AAEA,CALC,YAKY;AACX,WAAS;AACX;",
   "names": []
 }
