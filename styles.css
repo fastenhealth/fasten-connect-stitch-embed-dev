@@ -544,6 +544,9 @@ video {
 .w-8 {
   width: 2rem;
 }
+.w-\[120px\] {
+  width: 120px;
+}
 .w-full {
   width: 100%;
 }
@@ -844,6 +847,9 @@ video {
 }
 .pr-1 {
   padding-right: 0.25rem;
+}
+.pt-4 {
+  padding-top: 1rem;
 }
 .pt-6 {
   padding-top: 1.5rem;
@@ -1380,20 +1386,6 @@ video {
 }
 .disabled\:opacity-50:disabled {
   opacity: 0.5;
-}
-@media (min-width: 640px) {
-  .sm\:w-\[120px\] {
-    width: 120px;
-  }
-  .sm\:flex-row {
-    flex-direction: row;
-  }
-  .sm\:items-center {
-    align-items: center;
-  }
-  .sm\:justify-between {
-    justify-content: space-between;
-  }
 }
 @media (min-width: 768px) {
   .md\:h-auto {
