@@ -47356,7 +47356,14 @@ var FastenService = class _FastenService {
   }
   recordLocatorResults(taskId) {
     return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator/${taskId}/result`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
-      return response.data;
+      let rlsResponse = response.data;
+      if (!rlsResponse.discovered_patient_accounts) {
+        rlsResponse.discovered_patient_accounts = {};
+      }
+      if (!rlsResponse.pending_patient_accounts) {
+        rlsResponse.pending_patient_accounts = {};
+      }
+      return rlsResponse;
     }));
   }
   searchCatalog(apiMode, filter2) {
