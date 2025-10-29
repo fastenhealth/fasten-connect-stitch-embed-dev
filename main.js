@@ -47630,7 +47630,7 @@ function AppComponent_ng_container_6_Template(rf, ctx) {
     \u0275\u0275listener("click", function AppComponent_ng_container_6_Template_button_click_14_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.hideStitchModalExt());
+      return \u0275\u0275resetView(ctx_r1.modalClose());
     });
     \u0275\u0275text(15, "Close");
     \u0275\u0275elementEnd()()()()();
@@ -47800,8 +47800,9 @@ var AppComponent = class _AppComponent {
     }
   }
   // these functions can be called externally to hide the widget via javascript
-  hideStitchModalExt() {
-    this.logger.info("hideStitchModalExt pressed");
+  modalClose() {
+    this.logger.info("modalClose pressed");
+    this.messageBus.publishRequestClose();
   }
   // postMessage registration, listen to events from the parent window
   receivePostMessage(event) {
