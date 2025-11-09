@@ -40641,6 +40641,14 @@ var VaultProfileConfig = class {
   }
 };
 
+// projects/shared-library/src/lib/models/fasten/record-locator-response.ts
+var RecordLocatorResponse = class {
+  constructor() {
+    this.pending_patient_accounts = {};
+    this.discovered_patient_accounts = {};
+  }
+};
+
 // projects/shared-library/src/lib/models/fasten/vault-profile.ts
 var VaultProfile = class {
   constructor() {
@@ -57511,8 +57519,8 @@ var DashboardComponent = class _DashboardComponent {
           console.log("RLS status response", rlsStatusResponse);
           return this.fastenService.recordLocatorResults(rlsStatusResponse.data.task_id);
         } else {
-          console.log("RLS status response was not successful", rlsStatusResponse);
-          throw new Error("RLS status response was not successful");
+          console.error("RLS status response was not successful", rlsStatusResponse);
+          return of(new RecordLocatorResponse());
         }
       })).subscribe((rlsResponse) => {
         console.log("record locator response", rlsResponse);
