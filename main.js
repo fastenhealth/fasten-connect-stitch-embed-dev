@@ -59021,7 +59021,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId", sdkMode: "sdkMode" }, decls: 29, vars: 16, consts: [[1, "space-y-6"], [3, "backButtonEvent", "closeButtonEvent", "backButtonLink", "showClose"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["id", "connecting-subtitle", 1, "text-sm", "text-gray-600"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId", sdkMode: "sdkMode" }, decls: 32, vars: 16, consts: [[1, "space-y-6"], [3, "backButtonEvent", "closeButtonEvent", "backButtonLink", "showClose"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "app-header", 1);
         \u0275\u0275listener("backButtonEvent", function HealthSystemConnectingComponent_Template_app_header_backButtonEvent_1_listener() {
@@ -59042,23 +59042,25 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         \u0275\u0275elementEnd()()();
         \u0275\u0275elementStart(13, "div", 12);
         \u0275\u0275element(14, "h2", 13);
-        \u0275\u0275elementStart(15, "p", 14);
-        \u0275\u0275text(16, "Redirecting to sign in...");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(17, "div", 15)(18, "div", 16);
+        \u0275\u0275elementStart(15, "div", 14)(16, "p");
+        \u0275\u0275text(17, "Please complete the consent process");
+        \u0275\u0275element(18, "br");
+        \u0275\u0275text(19, " in the new window.");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(20, "div", 15)(21, "div", 16);
         \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(19, "svg", 17);
-        \u0275\u0275element(20, "circle", 18)(21, "path", 19)(22, "path", 20);
+        \u0275\u0275elementStart(22, "svg", 17);
+        \u0275\u0275element(23, "circle", 18)(24, "path", 19)(25, "path", 20);
         \u0275\u0275elementEnd();
         \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(23, "span", 21);
-        \u0275\u0275text(24, "Having trouble?");
+        \u0275\u0275elementStart(26, "span", 21);
+        \u0275\u0275text(27, "Having trouble?");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(25, "p", 22);
-        \u0275\u0275text(26, " If you're experiencing issues connecting to your health system, our support team is here to help. ");
+        \u0275\u0275elementStart(28, "p", 22);
+        \u0275\u0275text(29, " If you're experiencing issues connecting to your health system, our support team is here to help. ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(27, "button", 23);
-        \u0275\u0275text(28, " Contact Support ");
+        \u0275\u0275elementStart(30, "button", 23);
+        \u0275\u0275text(31, " Contact Support ");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
@@ -59069,7 +59071,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         \u0275\u0275property("src", (tmp_2_0 = \u0275\u0275pipeBind1(5, 7, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.logo_uri, \u0275\u0275sanitizeUrl);
         \u0275\u0275advance(8);
         \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", ctx.brandId, ".png", \u0275\u0275sanitizeUrl);
-        \u0275\u0275advance(15);
+        \u0275\u0275advance(18);
         \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(9, _c06, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
       }
     }, dependencies: [
