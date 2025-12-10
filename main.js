@@ -40688,7 +40688,11 @@ var SearchFilter = class {
     this.locations = ["ALL"];
     this.searchAfter = "";
     this.fields = [];
+    this.sortBy = "";
+    this.sortByOpts = new SearchFilterSortByOpts();
   }
+};
+var SearchFilterSortByOpts = class {
 };
 
 // projects/shared-library/src/lib/utils/post-message.ts
@@ -47530,6 +47534,13 @@ var FastenService = class _FastenService {
       external_id
     }, { params: { public_id: this.configService.systemConfig$.publicId } }).pipe(map((resp) => resp.data));
   }
+  reverseGeocodePostalCode(latitude, longitude) {
+    let queryParams = {};
+    queryParams["public_id"] = this.configService.systemConfig$.publicId;
+    queryParams["latlng"] = `${latitude},${longitude}`;
+    const url = `${environment.connect_api_endpoint_base}/bridge/catalog/geocode`;
+    return this._httpClient.get(url, { params: queryParams }).pipe(map((resp) => resp.data));
+  }
   static {
     this.\u0275fac = function FastenService_Factory(__ngFactoryType__) {
       return new (__ngFactoryType__ || _FastenService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
@@ -47668,6 +47679,7 @@ var AppComponent = class _AppComponent {
     this.eventTypes = urlParams.get("event-types") || "";
     this.staticBackdrop = urlParams.get("static-backdrop") == "true";
     this.searchQuery = urlParams.get("search-query") || "";
+    this.searchSortBy = urlParams.get("search-sort-by") || "";
     this.showSplash = urlParams.get("show-splash") == "true";
     this.brandId = urlParams.get("brand-id") || "";
     this.portalId = urlParams.get("portal-id") || "";
@@ -47690,6 +47702,7 @@ var AppComponent = class _AppComponent {
     this.showSplash = false;
     this.searchOnly = false;
     this.searchQuery = "";
+    this.searchSortBy = "";
     this.brandId = "";
     this.portalId = "";
     this.endpointId = "";
@@ -47777,6 +47790,12 @@ var AppComponent = class _AppComponent {
         }
       }
     }
+    if (this.searchSortBy) {
+      if (this.searchSortBy.startsWith("location:")) {
+      } else if (this.searchSortBy == "location") {
+        this.configService.searchConfig$.showSearchByLocation = true;
+      }
+    }
   }
   ngOnChanges(changes) {
     this.logger.debug("embed ngOnChanges", changes);
@@ -47855,7 +47874,7 @@ var AppComponent = class _AppComponent {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in", "flex", "h-screen", "flex-col", "overflow-hidden"], [1, "flex-1", "min-h-0", "flex", "flex-col"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in", "flex", "h-screen", "flex-col", "overflow-hidden"], [1, "flex-1", "min-h-0", "flex", "flex-col"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275element(0, "link", 0);
         \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
@@ -58340,11 +58359,11 @@ var InfiniteScrollModule = class _InfiniteScrollModule {
 var _c04 = () => [];
 function HealthSystemSearchComponent_div_2_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 14);
+    \u0275\u0275elementStart(0, "div", 16);
     \u0275\u0275text(1, " We were unable to verify your identity. Please search for your healthcare system below. ");
     \u0275\u0275element(2, "br");
     \u0275\u0275text(3, " You can also ");
-    \u0275\u0275elementStart(4, "a", 15);
+    \u0275\u0275elementStart(4, "a", 17);
     \u0275\u0275text(5, "file a ticket");
     \u0275\u0275elementEnd();
     \u0275\u0275text(6, " if you need help. ");
@@ -58355,226 +58374,327 @@ function HealthSystemSearchComponent_div_2_Template(rf, ctx) {
     \u0275\u0275property("routerLink", "/form/support");
   }
 }
-function HealthSystemSearchComponent_div_10_option_11_Template(rf, ctx) {
+function HealthSystemSearchComponent_button_8_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "option", 32);
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 18);
+    \u0275\u0275listener("click", function HealthSystemSearchComponent_button_8_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.requestUserLocation());
+    });
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(1, "svg", 19);
+    \u0275\u0275element(2, "path", 20)(3, "circle", 21);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("disabled", ctx_r1.requestingLocation);
+  }
+}
+function HealthSystemSearchComponent_div_13_option_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "option", 40);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const item_r3 = ctx.$implicit;
-    \u0275\u0275property("value", item_r3.value);
+    const item_r4 = ctx.$implicit;
+    \u0275\u0275property("value", item_r4.value);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(item_r3.key);
+    \u0275\u0275textInterpolate(item_r4.key);
   }
 }
-function HealthSystemSearchComponent_div_10_Template(rf, ctx) {
+function HealthSystemSearchComponent_div_13_div_59_button_2_Template(rf, ctx) {
   if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 16)(1, "h3", 17);
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 43);
+    \u0275\u0275listener("click", function HealthSystemSearchComponent_div_13_div_59_button_2_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r6);
+      const ctx_r1 = \u0275\u0275nextContext(3);
+      return \u0275\u0275resetView(ctx_r1.requestUserLocation());
+    });
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(1, "svg", 19);
+    \u0275\u0275element(2, "path", 20)(3, "circle", 21);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(3);
+    \u0275\u0275property("disabled", ctx_r1.requestingLocation);
+  }
+}
+function HealthSystemSearchComponent_div_13_div_59_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 5)(1, "input", 41);
+    \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_13_div_59_Template_input_ngModelChange_1_listener($event) {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      \u0275\u0275twoWayBindingSet(ctx_r1.sortByLocationZipcode, $event) || (ctx_r1.sortByLocationZipcode = $event);
+      return \u0275\u0275resetView($event);
+    });
+    \u0275\u0275listener("ngModelChange", function HealthSystemSearchComponent_div_13_div_59_Template_input_ngModelChange_1_listener() {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r1 = \u0275\u0275nextContext(2);
+      return \u0275\u0275resetView(ctx_r1.sortByLocationZipcodeChanged());
+    });
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(2, HealthSystemSearchComponent_div_13_div_59_button_2_Template, 4, 1, "button", 42);
+    \u0275\u0275pipe(3, "async");
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    let tmp_3_0;
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.sortByLocationZipcode);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ((tmp_3_0 = \u0275\u0275pipeBind1(3, 2, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.showSearchByLocation) && (ctx_r1.navigator == null ? null : ctx_r1.navigator.geolocation));
+  }
+}
+function HealthSystemSearchComponent_div_13_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 22)(1, "h3", 23);
     \u0275\u0275text(2, "Filters");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 18)(4, "label", 19);
+    \u0275\u0275elementStart(3, "div", 5)(4, "label", 24);
     \u0275\u0275text(5, "State");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "select", 20);
-    \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_10_Template_select_ngModelChange_6_listener($event) {
-      \u0275\u0275restoreView(_r1);
+    \u0275\u0275elementStart(6, "select", 25);
+    \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_13_Template_select_ngModelChange_6_listener($event) {
+      \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.filter.locations[0], $event) || (ctx_r1.filter.locations[0] = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275listener("ngModelChange", function HealthSystemSearchComponent_div_10_Template_select_ngModelChange_6_listener() {
-      \u0275\u0275restoreView(_r1);
+    \u0275\u0275listener("ngModelChange", function HealthSystemSearchComponent_div_13_Template_select_ngModelChange_6_listener() {
+      \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.querySources(true));
     });
-    \u0275\u0275elementStart(7, "option", 21);
+    \u0275\u0275elementStart(7, "option", 26);
     \u0275\u0275text(8, "All States");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "option", 22);
+    \u0275\u0275elementStart(9, "option", 27);
     \u0275\u0275text(10, "-------");
     \u0275\u0275elementEnd();
-    \u0275\u0275template(11, HealthSystemSearchComponent_div_10_option_11_Template, 2, 2, "option", 23);
+    \u0275\u0275template(11, HealthSystemSearchComponent_div_13_option_11_Template, 2, 2, "option", 28);
     \u0275\u0275pipe(12, "keyvalue");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "div", 24)(14, "div", 25)(15, "button", 26)(16, "span");
+    \u0275\u0275elementStart(13, "div", 29)(14, "div", 30)(15, "button", 31)(16, "span");
     \u0275\u0275text(17, "All States");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(18, "svg", 27);
-    \u0275\u0275element(19, "polyline", 28);
+    \u0275\u0275elementStart(18, "svg", 32);
+    \u0275\u0275element(19, "polyline", 33);
     \u0275\u0275elementEnd()()()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(20, "div", 29)(21, "div", 25)(22, "button", 26)(23, "span");
+    \u0275\u0275elementStart(20, "div", 34)(21, "div", 30)(22, "button", 31)(23, "span");
     \u0275\u0275text(24, "All States");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(25, "svg", 30);
-    \u0275\u0275element(26, "polyline", 28);
+    \u0275\u0275elementStart(25, "svg", 35);
+    \u0275\u0275element(26, "polyline", 33);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(27, "button", 26)(28, "span");
+    \u0275\u0275elementStart(27, "button", 31)(28, "span");
     \u0275\u0275text(29, "California");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(30, "svg", 30);
-    \u0275\u0275element(31, "polyline", 28);
+    \u0275\u0275elementStart(30, "svg", 35);
+    \u0275\u0275element(31, "polyline", 33);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(32, "button", 26)(33, "span");
+    \u0275\u0275elementStart(32, "button", 31)(33, "span");
     \u0275\u0275text(34, "New Jersey");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(35, "svg", 30);
-    \u0275\u0275element(36, "polyline", 28);
+    \u0275\u0275elementStart(35, "svg", 35);
+    \u0275\u0275element(36, "polyline", 33);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(37, "button", 31)(38, "span");
+    \u0275\u0275elementStart(37, "button", 36)(38, "span");
     \u0275\u0275text(39, "New York");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(40, "svg", 27);
-    \u0275\u0275element(41, "polyline", 28);
+    \u0275\u0275elementStart(40, "svg", 32);
+    \u0275\u0275element(41, "polyline", 33);
     \u0275\u0275elementEnd()();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(42, "button", 26)(43, "span");
+    \u0275\u0275elementStart(42, "button", 31)(43, "span");
     \u0275\u0275text(44, "Washington");
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(45, "svg", 30);
-    \u0275\u0275element(46, "polyline", 28);
-    \u0275\u0275elementEnd()()()()()();
+    \u0275\u0275elementStart(45, "svg", 35);
+    \u0275\u0275element(46, "polyline", 33);
+    \u0275\u0275elementEnd()()()()();
+    \u0275\u0275namespaceHTML();
+    \u0275\u0275elementStart(47, "h3", 23);
+    \u0275\u0275text(48, "Sort By");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(49, "div", 5)(50, "label", 24);
+    \u0275\u0275text(51, "Sort");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(52, "select", 25);
+    \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_13_Template_select_ngModelChange_52_listener($event) {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r1.filter.sortBy, $event) || (ctx_r1.filter.sortBy = $event);
+      return \u0275\u0275resetView($event);
+    });
+    \u0275\u0275listener("ngModelChange", function HealthSystemSearchComponent_div_13_Template_select_ngModelChange_52_listener() {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.sortByChanged());
+    });
+    \u0275\u0275elementStart(53, "option", 37);
+    \u0275\u0275text(54, "Default");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(55, "option", 27);
+    \u0275\u0275text(56, "-------");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(57, "option", 38);
+    \u0275\u0275text(58, "Current Location");
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275template(59, HealthSystemSearchComponent_div_13_div_59_Template, 4, 4, "div", 39);
+    \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance(6);
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.filter.locations[0]);
     \u0275\u0275advance(5);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(12, 2, ctx_r1.stateCodes));
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(12, 4, ctx_r1.stateCodes));
+    \u0275\u0275advance(41);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.filter.sortBy);
+    \u0275\u0275advance(7);
+    \u0275\u0275property("ngIf", ctx_r1.filter.sortBy == "location");
   }
 }
-function HealthSystemSearchComponent_button_12_p_5_span_2_Template(rf, ctx) {
+function HealthSystemSearchComponent_button_15_p_5_span_2_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "span", 45);
+    \u0275\u0275element(0, "span", 56);
     \u0275\u0275pipe(1, "safeHtml");
   }
   if (rf & 2) {
-    const highlight_r6 = ctx.$implicit;
-    \u0275\u0275property("innerHTML", \u0275\u0275pipeBind1(1, 1, highlight_r6), \u0275\u0275sanitizeHtml);
+    const highlight_r9 = ctx.$implicit;
+    \u0275\u0275property("innerHTML", \u0275\u0275pipeBind1(1, 1, highlight_r9), \u0275\u0275sanitizeHtml);
   }
 }
-function HealthSystemSearchComponent_button_12_p_5_Template(rf, ctx) {
+function HealthSystemSearchComponent_button_15_p_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 38);
+    \u0275\u0275elementStart(0, "p", 49);
     \u0275\u0275text(1, "Found match(es): ");
-    \u0275\u0275template(2, HealthSystemSearchComponent_button_12_p_5_span_2_Template, 2, 3, "span", 44);
+    \u0275\u0275template(2, HealthSystemSearchComponent_button_15_p_5_span_2_Template, 2, 3, "span", 55);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const brand_r5 = \u0275\u0275nextContext().$implicit;
+    const brand_r8 = \u0275\u0275nextContext().$implicit;
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", brand_r5 == null ? null : brand_r5.searchHighlights);
+    \u0275\u0275property("ngForOf", brand_r8 == null ? null : brand_r8.searchHighlights);
   }
 }
-function HealthSystemSearchComponent_button_12_span_7_Template(rf, ctx) {
+function HealthSystemSearchComponent_button_15_span_7_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 46);
+    \u0275\u0275elementStart(0, "span", 57);
     \u0275\u0275text(1);
     \u0275\u0275pipe(2, "stateName");
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const stateCode_r7 = ctx.$implicit;
+    const stateCode_r10 = ctx.$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind1(2, 1, stateCode_r7));
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind1(2, 1, stateCode_r10));
   }
 }
-function HealthSystemSearchComponent_button_12_span_9_Template(rf, ctx) {
+function HealthSystemSearchComponent_button_15_span_9_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 46);
+    \u0275\u0275elementStart(0, "span", 57);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const brand_r5 = \u0275\u0275nextContext().$implicit;
+    const brand_r8 = \u0275\u0275nextContext().$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", ((brand_r5 == null ? null : brand_r5.brand == null ? null : brand_r5.brand.locations) || \u0275\u0275pureFunction0(1, _c04)).length, "");
+    \u0275\u0275textInterpolate1("+ ", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(1, _c04)).length, "");
   }
 }
-function HealthSystemSearchComponent_button_12_Template(rf, ctx) {
+function HealthSystemSearchComponent_button_15_Template(rf, ctx) {
   if (rf & 1) {
-    const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 33);
-    \u0275\u0275listener("click", function HealthSystemSearchComponent_button_12_Template_button_click_0_listener() {
-      const brand_r5 = \u0275\u0275restoreView(_r4).$implicit;
+    const _r7 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 44);
+    \u0275\u0275listener("click", function HealthSystemSearchComponent_button_15_Template_button_click_0_listener() {
+      const brand_r8 = \u0275\u0275restoreView(_r7).$implicit;
       const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.selectBrand(brand_r5.brand));
+      return \u0275\u0275resetView(ctx_r1.selectBrand(brand_r8.brand));
     });
-    \u0275\u0275element(1, "img", 34);
-    \u0275\u0275elementStart(2, "div", 35)(3, "p", 36);
+    \u0275\u0275element(1, "img", 45);
+    \u0275\u0275elementStart(2, "div", 46)(3, "p", 47);
     \u0275\u0275text(4);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(5, HealthSystemSearchComponent_button_12_p_5_Template, 3, 1, "p", 37);
-    \u0275\u0275elementStart(6, "p", 38);
-    \u0275\u0275template(7, HealthSystemSearchComponent_button_12_span_7_Template, 3, 3, "span", 39);
+    \u0275\u0275template(5, HealthSystemSearchComponent_button_15_p_5_Template, 3, 1, "p", 48);
+    \u0275\u0275elementStart(6, "p", 49);
+    \u0275\u0275template(7, HealthSystemSearchComponent_button_15_span_7_Template, 3, 3, "span", 50);
     \u0275\u0275pipe(8, "slice");
-    \u0275\u0275template(9, HealthSystemSearchComponent_button_12_span_9_Template, 2, 2, "span", 40);
+    \u0275\u0275template(9, HealthSystemSearchComponent_button_15_span_9_Template, 2, 2, "span", 51);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(10, "div", 41);
+    \u0275\u0275elementStart(10, "div", 52);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(11, "svg", 42);
-    \u0275\u0275element(12, "polyline", 43);
+    \u0275\u0275elementStart(11, "svg", 53);
+    \u0275\u0275element(12, "polyline", 54);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    const brand_r5 = ctx.$implicit;
+    const brand_r8 = ctx.$implicit;
     \u0275\u0275advance();
-    \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", brand_r5 == null ? null : brand_r5.brand == null ? null : brand_r5.brand.id, ".png", \u0275\u0275sanitizeUrl);
-    \u0275\u0275propertyInterpolate("alt", brand_r5 == null ? null : brand_r5.brand == null ? null : brand_r5.brand.name);
+    \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.id, ".png", \u0275\u0275sanitizeUrl);
+    \u0275\u0275propertyInterpolate("alt", brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.name);
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(brand_r5 == null ? null : brand_r5.brand == null ? null : brand_r5.brand.name);
+    \u0275\u0275textInterpolate(brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.name);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((brand_r5 == null ? null : brand_r5.searchHighlights) || \u0275\u0275pureFunction0(11, _c04)).length > 0);
+    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.searchHighlights) || \u0275\u0275pureFunction0(11, _c04)).length > 0);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(8, 7, (brand_r5 == null ? null : brand_r5.brand == null ? null : brand_r5.brand.locations) || \u0275\u0275pureFunction0(12, _c04), 0, 3));
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(8, 7, (brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(12, _c04), 0, 3));
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ((brand_r5 == null ? null : brand_r5.brand == null ? null : brand_r5.brand.locations) || \u0275\u0275pureFunction0(13, _c04)).length > 4);
+    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(13, _c04)).length > 4);
   }
 }
-function HealthSystemSearchComponent_div_13_Template(rf, ctx) {
+function HealthSystemSearchComponent_div_16_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div")(1, "div", 47)(2, "div", 48);
-    \u0275\u0275element(3, "div", 49);
-    \u0275\u0275elementStart(4, "div", 50);
-    \u0275\u0275element(5, "div", 51)(6, "div", 52);
+    \u0275\u0275elementStart(0, "div")(1, "div", 58)(2, "div", 59);
+    \u0275\u0275element(3, "div", 60);
+    \u0275\u0275elementStart(4, "div", 61);
+    \u0275\u0275element(5, "div", 62)(6, "div", 63);
     \u0275\u0275elementEnd();
-    \u0275\u0275element(7, "div", 53);
+    \u0275\u0275element(7, "div", 64);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "div", 48);
-    \u0275\u0275element(9, "div", 49);
-    \u0275\u0275elementStart(10, "div", 50);
-    \u0275\u0275element(11, "div", 51)(12, "div", 52);
+    \u0275\u0275elementStart(8, "div", 59);
+    \u0275\u0275element(9, "div", 60);
+    \u0275\u0275elementStart(10, "div", 61);
+    \u0275\u0275element(11, "div", 62)(12, "div", 63);
     \u0275\u0275elementEnd();
-    \u0275\u0275element(13, "div", 53);
+    \u0275\u0275element(13, "div", 64);
     \u0275\u0275elementEnd()()();
   }
 }
-function HealthSystemSearchComponent_div_14_Template(rf, ctx) {
+function HealthSystemSearchComponent_div_17_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 54)(1, "div", 55)(2, "div", 56);
+    \u0275\u0275elementStart(0, "div", 65)(1, "div", 66)(2, "div", 67);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(3, "svg", 57);
-    \u0275\u0275element(4, "circle", 58)(5, "path", 59);
+    \u0275\u0275elementStart(3, "svg", 19);
+    \u0275\u0275element(4, "circle", 68)(5, "path", 69);
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(6, "span", 60);
+    \u0275\u0275elementStart(6, "span", 70);
     \u0275\u0275text(7, "No results found");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(8, "p", 38);
+    \u0275\u0275elementStart(8, "p", 49);
     \u0275\u0275text(9, " We couldn't find any health systems matching your search ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "button", 61);
+    \u0275\u0275elementStart(10, "button", 71);
     \u0275\u0275text(11, " Request this health system ");
     \u0275\u0275elementEnd()()();
   }
@@ -58598,6 +58718,8 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     this.stateCodes = StateCodes;
     this.showFilters = false;
     this.filter = new SearchFilter();
+    this.requestingLocation = false;
+    this.sortByLocationZipcode = "";
     this.resultLimits = {
       totalItems: 0,
       scrollComplete: false,
@@ -58605,6 +58727,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
       categoryBuckets: void 0
     };
     this.searchTermChanged = new Subject();
+    this.navigator = navigator;
   }
   ngOnInit() {
     this.querySources(true);
@@ -58676,6 +58799,42 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
       this.querySources(false);
     }
   }
+  requestUserLocation() {
+    if (this.requestingLocation) {
+      return;
+    }
+    if (typeof navigator === "undefined" || !navigator?.geolocation) {
+      this.logger.warn("Geolocation is not supported in this environment.");
+      return;
+    }
+    this.requestingLocation = true;
+    this.logger.info("Requesting user geo location...");
+    navigator.geolocation.getCurrentPosition((position) => {
+      this.logger.info("User geo location provided.", position.coords);
+      this.fastenService.reverseGeocodePostalCode(position.coords.latitude, position.coords.longitude).subscribe({
+        next: (response) => {
+          this.logger.info("reverse geocode response:", response);
+          if (response?.zip_code) {
+            this.logger.info("Reverse geocoding resolved postal code", response.zip_code);
+            this.filter.sortBy = "location";
+            this.sortByLocationZipcode = response.zip_code;
+            this.filter.sortByOpts.locationZipcodes = [response.zip_code];
+            this.querySources(true);
+          } else {
+            this.logger.warn("No zipcode found for provided coordinates.", response);
+          }
+          this.requestingLocation = false;
+        },
+        error: (err) => {
+          this.logger.error("Reverse geocoding failed", err);
+          this.requestingLocation = false;
+        }
+      });
+    }, (error) => {
+      this.logger.warn("Unable to retrieve geolocation.", error);
+      this.requestingLocation = false;
+    });
+  }
   resetSearch() {
     this.logger.info("reset search...");
     this.lighthouseBrandList = [];
@@ -58691,55 +58850,79 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     this.configService.searchConfig$.selectedBrand = brandItem;
     this.router.navigateByUrl("brand/details");
   }
+  sortByChanged() {
+    this.sortByLocationZipcode = "";
+    this.filter.sortByOpts = new SearchFilterSortByOpts();
+  }
+  sortByLocationZipcodeChanged() {
+    if (this.sortByLocationZipcode.length > 0 && this.sortByLocationZipcode.length < 5) {
+      return;
+    }
+    if (this.sortByLocationZipcode && this.sortByLocationZipcode.trim() != "") {
+      this.filter.sortByOpts.locationZipcodes = [this.sortByLocationZipcode.trim()];
+    } else {
+      this.filter.sortByOpts = new SearchFilterSortByOpts();
+    }
+    this.querySources(true);
+  }
+  get isSortByLocationZipcodeActive() {
+    return !!this.filter?.sortByOpts?.locationZipcodes?.length;
+  }
   static {
     this.\u0275fac = function HealthSystemSearchComponent_Factory(__ngFactoryType__) {
       return new (__ngFactoryType__ || _HealthSystemSearchComponent)(\u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(MessageBusService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], inputs: { searchQuery: "searchQuery" }, decls: 15, vars: 12, consts: [["id", "step-search", 1, "space-y-6"], [3, "backButtonLink"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], [1, "flex", "gap-2"], [1, "flex-1"], ["id", "search-input", "type", "text", "placeholder", "Search for your health system...", 1, "w-full", "block", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "keyup", "ngModel"], ["id", "search-filters", 1, "border", "border-gray-200", "rounded-lg", "w-10", "h-10", "flex", "items-center", "justify-center", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-filter", "w-5", "h-5"], ["points", "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"], ["id", "filters-container", "class", "space-y-4 p-4 border rounded-lg", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "space-y-2", "overflow-scroll", 2, "max-height", "600px", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "scrollWindow"], ["type", "button", "class", "w-full flex items-center gap-3 p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-[#5B47FB] focus:ring-opacity-20", 3, "click", 4, "ngFor", "ngForOf"], [4, "ngIf"], ["class", "space-y-4", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["id", "filters-container", 1, "space-y-4", "p-4", "border", "rounded-lg"], [1, "font-semibold", "text-lg"], [1, "relative"], [1, "block", "text-sm", "font-medium", "mb-1"], [1, "w-full", "flex", "items-center", "justify-between", "px-3", "py-2", "text-sm", "border", "rounded-md", "bg-white", "hover:bg-gray-50", 3, "ngModelChange", "ngModel"], ["value", "ALL", "selected", ""], ["disabled", ""], [3, "value", 4, "ngFor", "ngForOf"], ["id", "state-filter-menu", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], [1, "py-1"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]"], ["points", "20 6 9 17 4 12"], ["id", "state-filter-menu-hidden", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]", "hidden"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between", "bg-gray-50"], [3, "value"], ["type", "button", 1, "w-full", "flex", "items-center", "gap-3", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all", "text-left", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "click"], ["imageFallback", "", 1, "w-8", "max-h-8", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], ["class", "text-sm text-gray-600", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "flex", "items-center"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], ["class", "comma", 3, "innerHTML", 4, "ngFor", "ngForOf"], [1, "comma", 3, "innerHTML"], [1, "comma"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], [1, "space-y-4"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "11", "cy", "11", "r", "8"], ["d", "m21 21-4.3-4.3"], [1, "font-medium"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], inputs: { searchQuery: "searchQuery" }, decls: 18, vars: 15, consts: [["id", "step-search", 1, "space-y-6"], [3, "backButtonLink"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], [1, "flex", "gap-2"], [1, "flex-1"], [1, "relative"], ["id", "search-input", "type", "text", "placeholder", "Search for your health system...", 1, "w-full", "block", "px-3", "pr-12", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "keyup", "ngModel"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", "class", "absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["id", "search-filters", 1, "border", "border-gray-200", "rounded-lg", "w-10", "h-10", "flex", "items-center", "justify-center", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-filter", "w-5", "h-5"], ["points", "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"], ["id", "filters-container", "class", "space-y-4 p-4 border rounded-lg", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "space-y-2", "overflow-scroll", 2, "max-height", "600px", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "scrollWindow"], ["type", "button", "class", "w-full flex items-center gap-3 p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-[#5B47FB] focus:ring-opacity-20", 3, "click", 4, "ngFor", "ngForOf"], [4, "ngIf"], ["class", "space-y-4", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", 1, "absolute", "inset-y-0", "right-0", "flex", "items-center", "px-3", "text-gray-500", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["d", "M12 21c-3.6-4-6-7-6-9a6 6 0 1 1 12 0c0 2-2.4 5-6 9z"], ["cx", "12", "cy", "12", "r", "1"], ["id", "filters-container", 1, "space-y-4", "p-4", "border", "rounded-lg"], [1, "font-semibold", "text-lg"], [1, "block", "text-sm", "font-medium", "mb-1"], [1, "w-full", "flex", "items-center", "justify-between", "px-3", "py-2", "text-sm", "border", "rounded-md", "bg-white", "hover:bg-gray-50", 3, "ngModelChange", "ngModel"], ["value", "ALL", "selected", ""], ["disabled", ""], [3, "value", 4, "ngFor", "ngForOf"], ["id", "state-filter-menu", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], [1, "py-1"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]"], ["points", "20 6 9 17 4 12"], ["id", "state-filter-menu-hidden", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]", "hidden"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between", "bg-gray-50"], ["value", "", "selected", ""], ["value", "location"], ["class", "relative", 4, "ngIf"], [3, "value"], ["id", "zipcode-input", "type", "text", "placeholder", "Enter your zipcode", 1, "w-full", "block", "px-3", "pr-12", "py-2", "text-sm", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", "class", "absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", 1, "absolute", "inset-y-0", "right-0", "flex", "items-center", "px-3", "text-gray-500", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["type", "button", 1, "w-full", "flex", "items-center", "gap-3", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all", "text-left", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "click"], ["imageFallback", "", 1, "w-8", "max-h-8", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], ["class", "text-sm text-gray-600", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "flex", "items-center"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], ["class", "comma", 3, "innerHTML", 4, "ngFor", "ngForOf"], [1, "comma", 3, "innerHTML"], [1, "comma"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], [1, "space-y-4"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["cx", "11", "cy", "11", "r", "8"], ["d", "m21 21-4.3-4.3"], [1, "font-medium"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header", 1);
         \u0275\u0275template(2, HealthSystemSearchComponent_div_2_Template, 7, 1, "div", 2);
         \u0275\u0275pipe(3, "async");
-        \u0275\u0275elementStart(4, "div", 3)(5, "div", 4)(6, "input", 5);
-        \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_Template_input_ngModelChange_6_listener($event) {
+        \u0275\u0275elementStart(4, "div", 3)(5, "div", 4)(6, "div", 5)(7, "input", 6);
+        \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_Template_input_ngModelChange_7_listener($event) {
           \u0275\u0275twoWayBindingSet(ctx.filter.query, $event) || (ctx.filter.query = $event);
           return $event;
         });
-        \u0275\u0275listener("keyup", function HealthSystemSearchComponent_Template_input_keyup_6_listener($event) {
+        \u0275\u0275listener("keyup", function HealthSystemSearchComponent_Template_input_keyup_7_listener($event) {
           return ctx.onKeyup($event);
         });
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(8, HealthSystemSearchComponent_button_8_Template, 4, 1, "button", 7);
+        \u0275\u0275pipe(9, "async");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(7, "button", 6);
-        \u0275\u0275listener("click", function HealthSystemSearchComponent_Template_button_click_7_listener() {
+        \u0275\u0275elementStart(10, "button", 8);
+        \u0275\u0275listener("click", function HealthSystemSearchComponent_Template_button_click_10_listener() {
           return ctx.showFilters = !ctx.showFilters;
         });
         \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(8, "svg", 7);
-        \u0275\u0275element(9, "polygon", 8);
+        \u0275\u0275elementStart(11, "svg", 9);
+        \u0275\u0275element(12, "polygon", 10);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275template(10, HealthSystemSearchComponent_div_10_Template, 47, 4, "div", 9);
+        \u0275\u0275template(13, HealthSystemSearchComponent_div_13_Template, 60, 6, "div", 11);
         \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(11, "div", 10);
-        \u0275\u0275listener("scrolled", function HealthSystemSearchComponent_Template_div_scrolled_11_listener() {
+        \u0275\u0275elementStart(14, "div", 12);
+        \u0275\u0275listener("scrolled", function HealthSystemSearchComponent_Template_div_scrolled_14_listener() {
           return ctx.onScroll();
         });
-        \u0275\u0275template(12, HealthSystemSearchComponent_button_12_Template, 13, 14, "button", 11);
+        \u0275\u0275template(15, HealthSystemSearchComponent_button_15_Template, 13, 14, "button", 13);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(13, HealthSystemSearchComponent_div_13_Template, 14, 0, "div", 12)(14, HealthSystemSearchComponent_div_14_Template, 12, 1, "div", 13);
+        \u0275\u0275template(16, HealthSystemSearchComponent_div_16_Template, 14, 0, "div", 14)(17, HealthSystemSearchComponent_div_17_Template, 12, 1, "div", 15);
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
         let tmp_1_0;
+        let tmp_3_0;
         \u0275\u0275advance();
         \u0275\u0275property("backButtonLink", "/dashboard");
         \u0275\u0275advance();
-        \u0275\u0275property("ngIf", (((tmp_1_0 = \u0275\u0275pipeBind1(3, 10, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_1_0.identityVerificationFailureCount) || 0) >= 2);
-        \u0275\u0275advance(4);
+        \u0275\u0275property("ngIf", (((tmp_1_0 = \u0275\u0275pipeBind1(3, 11, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_1_0.identityVerificationFailureCount) || 0) >= 2);
+        \u0275\u0275advance(5);
         \u0275\u0275twoWayProperty("ngModel", ctx.filter.query);
-        \u0275\u0275advance(4);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ((tmp_3_0 = \u0275\u0275pipeBind1(9, 13, ctx.configService.searchConfigSubject)) == null ? null : tmp_3_0.showSearchByLocation) && (ctx.navigator == null ? null : ctx.navigator.geolocation));
+        \u0275\u0275advance(5);
         \u0275\u0275property("ngIf", ctx.showFilters);
         \u0275\u0275advance();
         \u0275\u0275property("infiniteScrollDistance", 2)("infiniteScrollThrottle", 50)("scrollWindow", false);
@@ -58777,7 +58960,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemSearchComponent, { className: "HealthSystemSearchComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts", lineNumber: 43 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemSearchComponent, { className: "HealthSystemSearchComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts", lineNumber: 44 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts
