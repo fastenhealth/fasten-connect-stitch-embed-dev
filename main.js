@@ -58753,6 +58753,9 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
   }
   ngOnInit() {
     this.filter = import_lodash2.default.merge(this.filter, this.configService.searchConfig$.searchFilter || {});
+    if (this.filter?.sortByOpts?.locationZipcodes?.length) {
+      this.sortByLocationZipcode = this.filter.sortByOpts.locationZipcodes[0];
+    }
     this.querySources(true);
     this.searchTermSubscription = this.searchTermChanged.pipe(
       // filter out empty strings
