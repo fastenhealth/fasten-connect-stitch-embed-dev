@@ -40747,6 +40747,15 @@ function waitForOrgConnectionOrTimeout(logger, openedWindow, sdkMode) {
   );
 }
 
+// projects/shared-library/src/lib/utils/base64.ts
+function Base64UrlDecode(str) {
+  str = str.replace(/-/g, "+").replace(/_/g, "/");
+  while (str.length % 4) {
+    str += "=";
+  }
+  return atob(str);
+}
+
 // projects/shared-library/src/lib/shared-library.service.ts
 var SharedLibraryService = class _SharedLibraryService {
   constructor() {
@@ -47680,7 +47689,7 @@ var AppComponent = class _AppComponent {
     this.staticBackdrop = urlParams.get("static-backdrop") == "true";
     this.searchQuery = urlParams.get("search-query") || "";
     this.searchSortBy = urlParams.get("search-sort-by") || "";
-    this.searchSortByOpts = urlParams.get("search-sort-by-opts") || "{}";
+    this.searchSortByOpts = urlParams.get("search-sort-by-opts") || "";
     this.showSplash = urlParams.get("show-splash") == "true";
     this.brandId = urlParams.get("brand-id") || "";
     this.portalId = urlParams.get("portal-id") || "";
@@ -47782,10 +47791,6 @@ var AppComponent = class _AppComponent {
           this.router.navigateByUrl("splash");
         } else {
           this.logger.info("state: search");
-          let queryParams = {};
-          if (this.searchQuery) {
-            queryParams["searchQuery"] = this.searchQuery;
-          }
           let searchFilter = new SearchFilter();
           if (this.searchQuery) {
             searchFilter.query = this.searchQuery;
@@ -47794,7 +47799,8 @@ var AppComponent = class _AppComponent {
             searchFilter.sortBy = this.searchSortBy;
             if (this.searchSortByOpts) {
               try {
-                let sortByOptsObj = JSON.parse(this.searchSortByOpts);
+                let base64DecodedSearchSortByOpts = Base64UrlDecode(this.searchSortByOpts);
+                let sortByOptsObj = JSON.parse(base64DecodedSearchSortByOpts);
                 if (searchFilter.sortBy == "location" && sortByOptsObj.location && sortByOptsObj.location.zipcodes) {
                   searchFilter.sortByOpts.locationZipcodes = sortByOptsObj.location.zipcodes;
                 }
