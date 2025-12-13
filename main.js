@@ -47351,7 +47351,7 @@ var FastenService = class _FastenService {
       this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
         this.logger.info("attempt to download org information, and store in config");
-        this.getOrg(systemConfig.org_id).subscribe((org) => {
+        this.getOrgByPublicId(systemConfig.publicId).subscribe((org) => {
           this.logger.debug("org:", org);
           this.configService.systemConfig = { org };
         });
@@ -47414,14 +47414,6 @@ var FastenService = class _FastenService {
       "api_mode": apiMode
     } }).pipe(map((response) => {
       this.logger.info("Metadata RESPONSE", response);
-      return response.data;
-    }));
-  }
-  getOrg(orgId) {
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/org/${orgId}`, { params: {
-      "public_id": this.configService.systemConfig$.publicId
-    } }).pipe(map((response) => {
-      this.logger.info("Organization", response);
       return response.data;
     }));
   }
