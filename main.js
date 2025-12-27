@@ -57147,6 +57147,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     this.errorMessage = "";
     this.CspType = CspType;
     this.ApiMode = ApiMode;
+    this.environment = environment;
   }
   ngOnInit() {
   }
@@ -57224,7 +57225,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
         \u0275\u0275advance(14);
         \u0275\u0275property("disabled", ctx.loading);
         \u0275\u0275advance(3);
-        \u0275\u0275property("disabled", ctx.loading)("ngClass", \u0275\u0275pureFunction1(6, _c03, ((tmp_2_0 = \u0275\u0275pipeBind1(18, 4, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.apiMode) == ctx.ApiMode.Live));
+        \u0275\u0275property("disabled", ctx.loading)("ngClass", \u0275\u0275pureFunction1(6, _c03, ((tmp_2_0 = \u0275\u0275pipeBind1(18, 4, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.apiMode) == ctx.ApiMode.Live && ctx.environment.name == "production"));
         \u0275\u0275advance(5);
         \u0275\u0275property("ngIf", ctx.loading);
       }
@@ -57239,7 +57240,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 20 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 21 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/connect-helper.ts
