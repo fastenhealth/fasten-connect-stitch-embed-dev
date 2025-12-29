@@ -47767,7 +47767,9 @@ var AppComponent = class _AppComponent {
             "externalId": this.externalId,
             "externalState": this.externalState,
             "sdkMode": this.sdkMode
-          }
+          },
+          skipLocationChange: true
+          // navigate without changing URL to preserve security context
         });
       }, (err) => {
         this.errorMessage = "Could not find the patient connection using id. Please contact the developer of this app.";
