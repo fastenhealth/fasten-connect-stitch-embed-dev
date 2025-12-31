@@ -47702,6 +47702,9 @@ var AppComponent = class _AppComponent {
     this.portalId = urlParams.get("portal-id") || "";
     this.endpointId = urlParams.get("endpoint-id") || "";
     this.sdkMode = urlParams.get("sdk-mode") || SDKMode.None;
+    if (!this.searchOnly && !this.tefcaMode) {
+      this.searchOnly = true;
+    }
   }
   constructor(activatedRoute, configService, messageBus, fastenService, router, logger) {
     this.activatedRoute = activatedRoute;
@@ -47755,7 +47758,13 @@ var AppComponent = class _AppComponent {
       this.logger.debug("bubbling up event", eventPayload);
       this.sendPostMessage(eventPayload);
     });
-    if (this.reconnectOrgConnectionId) {
+    if (this.configService.systemConfig$.tefcaMode && !this.isFeatureFlagOrgTefcaModeEnabled(this.configService.systemConfig$.org)) {
+      this.logger.warn("TEFCA mode requested but organization is not enabled for TEFCA", this.configService.systemConfig$.org?.feature_flags);
+      this.loading = false;
+      this.errorMessage = "TEFCA mode not enabled for this organization and/or api mode. Please contact your account representative or the developer of this app.";
+      this.messageBus.publishWidgetConfigError();
+      return;
+    } else if (this.reconnectOrgConnectionId) {
       this.fastenService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
         this.logger.info("state: dashboard/connecting#reconnectOrgConnectionId", orgConnection);
         this.router.navigate(["dashboard/connecting"], {
@@ -47894,6 +47903,10 @@ var AppComponent = class _AppComponent {
       this.logger.debug("No parent window to send message to", this.sdkMode);
       return;
     }
+  }
+  isFeatureFlagOrgTefcaModeEnabled(org) {
+    const orgFlags = org?.feature_flags || [];
+    return orgFlags.includes(`${this.configService.systemConfig$.apiMode}.tefca.enable`);
   }
   static {
     this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
