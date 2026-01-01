@@ -56440,6 +56440,10 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
           \u0275\u0275twoWayBindingSet(ctx.existingVaultProfile.email, $event) || (ctx.existingVaultProfile.email = $event);
           return \u0275\u0275resetView($event);
         });
+        \u0275\u0275listener("ngModelChange", function VaultProfileSigninComponent_Template_input_ngModelChange_50_listener($event) {
+          \u0275\u0275restoreView(_r1);
+          return \u0275\u0275resetView(ctx.existingVaultProfile.email = $event.toLowerCase());
+        });
         \u0275\u0275elementEnd();
         \u0275\u0275template(52, VaultProfileSigninComponent_p_52_Template, 4, 3, "p", 34)(53, VaultProfileSigninComponent_p_53_Template, 15, 6, "p", 35);
         \u0275\u0275pipe(54, "async");
