@@ -57826,11 +57826,7 @@ var DashboardComponent = class _DashboardComponent {
   }
   getVerifiedBirthdate(demographics) {
     if (demographics?.birthDate) {
-      const dateStr = String(demographics.birthDate).trim();
-      const date = new Date(dateStr);
-      if (!isNaN(date.getTime())) {
-        return date.toLocaleDateString();
-      }
+      return String(demographics.birthDate).trim().split("T")[0];
     }
     return "Not available";
   }
