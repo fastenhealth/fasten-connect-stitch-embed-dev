@@ -57087,7 +57087,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     this.authService.VaultAuthFinish(this.currentEmail, code).then((resp) => {
       console.log("VaultAuthFinish result", resp);
       this.loading = false;
-      if (resp?.data?.has_identity_verification && resp?.data?.verified_identity_csp_type) {
+      if (resp?.has_identity_verification && resp?.verified_identity_csp_type) {
         this.logger.info("setting verified identity csp_type csp type to", resp.data.verified_identity_csp_type);
         this.configService.vaultProfileConfig = {
           verifiedIdentityCspType: resp.data.verified_identity_csp_type,
