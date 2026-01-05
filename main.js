@@ -57197,10 +57197,17 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     this.loading = true;
     this.fastenService.verificationWithPopup(cspType).subscribe((result) => {
       this.loading = false;
-      this.logger.info("setting identity verification csp type to", cspType);
-      this.configService.vaultProfileConfig = {
-        verifiedIdentityCspType: cspType
-      };
+      if (result?.vault_auth_finish_response?.has_verified_identity && result?.vault_auth_finish_response?.verified_identity_csp_type) {
+        this.logger.info("setting verified identity csp_type csp type to", result.vault_auth_finish_response.verified_identity_csp_type);
+        this.configService.vaultProfileConfig = {
+          verifiedIdentityCspType: result.vault_auth_finish_response.verified_identity_csp_type,
+          verifiedIdentityPatientDemographics: result.vault_auth_finish_response.verified_identity_patient_demographics
+        };
+      } else {
+        this.configService.vaultProfileConfig = {
+          verifiedIdentityCspType: cspType
+        };
+      }
       this.logger.info("verification result", result);
       this.router.navigateByUrl("dashboard");
     }, (err) => {
