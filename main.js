@@ -56242,7 +56242,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
         return this.authService.GetJWTPayload().then((payload) => {
           this.loading = false;
           if (payload) {
-            if (resp?.has_identity_verification && resp?.verified_identity_csp_type) {
+            if (resp?.has_verified_identity && resp?.verified_identity_csp_type) {
               this.logger.info("setting verified identity csp_type csp type to", resp.verified_identity_csp_type);
               this.configService.vaultProfileConfig = {
                 verifiedIdentityCspType: resp.verified_identity_csp_type,
@@ -57087,7 +57087,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     this.authService.VaultAuthFinish(this.currentEmail, code).then((resp) => {
       console.log("VaultAuthFinish result", resp);
       this.loading = false;
-      if (resp?.has_identity_verification && resp?.verified_identity_csp_type) {
+      if (resp?.has_verified_identity && resp?.verified_identity_csp_type) {
         this.logger.info("setting verified identity csp_type csp type to", resp.data.verified_identity_csp_type);
         this.configService.vaultProfileConfig = {
           verifiedIdentityCspType: resp.data.verified_identity_csp_type,
