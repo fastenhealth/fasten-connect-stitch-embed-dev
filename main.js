@@ -56242,13 +56242,11 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
         return this.authService.GetJWTPayload().then((payload) => {
           this.loading = false;
           if (payload) {
-            console.log("!!!!!GetJWTPayload result", payload);
-            console.log("!!!!!VaultAuthBegin result", resp);
-            if (resp?.data?.has_identity_verification && resp?.data?.verified_identity_csp_type) {
-              this.logger.info("setting verified identity csp_type csp type to", resp.data.verified_identity_csp_type);
+            if (resp?.has_identity_verification && resp?.verified_identity_csp_type) {
+              this.logger.info("setting verified identity csp_type csp type to", resp.verified_identity_csp_type);
               this.configService.vaultProfileConfig = {
-                verifiedIdentityCspType: resp.data.verified_identity_csp_type,
-                verifiedIdentityPatientDemographics: resp.data.verified_identity_patient_demographics
+                verifiedIdentityCspType: resp.verified_identity_csp_type,
+                verifiedIdentityPatientDemographics: resp.verified_identity_patient_demographics
               };
             }
             return this.router.navigateByUrl("dashboard");
