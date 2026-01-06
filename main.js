@@ -57092,10 +57092,10 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
       console.log("VaultAuthFinish result", resp);
       this.loading = false;
       if (resp?.has_verified_identity && resp?.verified_identity_csp_type) {
-        this.logger.info("setting verified identity csp_type csp type to", resp.data.verified_identity_csp_type);
+        this.logger.info("setting verified identity csp_type csp type to", resp.verified_identity_csp_type);
         this.configService.vaultProfileConfig = {
-          verifiedIdentityCspType: resp.data.verified_identity_csp_type,
-          verifiedIdentityPatientDemographics: resp.data.verified_identity_patient_demographics
+          verifiedIdentityCspType: resp.verified_identity_csp_type,
+          verifiedIdentityPatientDemographics: resp.verified_identity_patient_demographics
         };
       }
       this.router.navigateByUrl("dashboard");
