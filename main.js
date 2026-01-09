@@ -56271,7 +56271,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     let message2 = "An unknown error occurred during sign-in.";
     try {
       const status = typeof err?.status === "number" ? err.status : void 0;
-      if (status === 400 || status === 401 || status === 403) {
+      if (status === 401 || status === 403) {
         return "email or password is incorrect";
       }
       if (status === 0 || status !== void 0 && status >= 500) {
