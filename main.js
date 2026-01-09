@@ -56284,6 +56284,9 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
         if (typeof err.error?.message === "string") {
           return err.error.message;
         }
+        if (typeof err.error?.error === "string") {
+          return err.error.error;
+        }
       }
       if (typeof err?.message === "string") {
         return err.message;
