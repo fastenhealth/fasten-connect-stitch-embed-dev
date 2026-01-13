@@ -56233,6 +56233,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     if (this.configService.systemConfig$.sdkMode == SDKMode.ReactNative) {
       this.logger.log("SDK Mode is React Native. Don't attempt to request cookie storage permissions..");
       this.needStorageAccessPermissionSubject.next(false);
+      return;
     }
     if (!this.checkRequiresStoragePermissions()) {
       this.logger.log("Not Safari and not Chrome, or storage API not supported (and not necessary). Don't attempt to request cookie storage permissions.");
