@@ -56230,6 +56230,10 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   ngOnInit() {
     const urlParams = new URLSearchParams(window.location.search);
     this.setMessage(urlParams.get("action") || "");
+    if (this.configService.systemConfig$.sdkMode == SDKMode.ReactNative) {
+      this.logger.log("SDK Mode is React Native. Don't attempt to request cookie storage permissions..");
+      this.needStorageAccessPermissionSubject.next(false);
+    }
     if (!this.checkRequiresStoragePermissions()) {
       this.logger.log("Not Safari and not Chrome, or storage API not supported (and not necessary). Don't attempt to request cookie storage permissions.");
       this.needStorageAccessPermissionSubject.next(false);
@@ -56567,7 +56571,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 29 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 28 });
 })();
 
 // node_modules/angular-code-input/fesm2022/angular-code-input.mjs
