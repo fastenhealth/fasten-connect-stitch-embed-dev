@@ -57628,7 +57628,7 @@ function DashboardComponent_div_12_Template(rf, ctx) {
     \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", connectedAccount_r6.brand == null ? null : connectedAccount_r6.brand.id, ".png", \u0275\u0275sanitizeUrl);
     \u0275\u0275propertyInterpolate("alt", connectedAccount_r6.brand == null ? null : connectedAccount_r6.brand.name);
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(connectedAccount_r6.portal == null ? null : connectedAccount_r6.portal.name);
+    \u0275\u0275textInterpolate((connectedAccount_r6.portal == null ? null : connectedAccount_r6.portal.name) || (connectedAccount_r6.brand == null ? null : connectedAccount_r6.brand.name));
   }
 }
 function DashboardComponent_div_14_Template(rf, ctx) {
@@ -57659,7 +57659,7 @@ function DashboardComponent_div_14_Template(rf, ctx) {
     \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", discoveredAccount_r8.value.brand == null ? null : discoveredAccount_r8.value.brand.id, ".png", \u0275\u0275sanitizeUrl);
     \u0275\u0275propertyInterpolate("alt", discoveredAccount_r8.value.brand == null ? null : discoveredAccount_r8.value.brand.name);
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(discoveredAccount_r8.value.portal == null ? null : discoveredAccount_r8.value.portal.name);
+    \u0275\u0275textInterpolate((discoveredAccount_r8.value.portal == null ? null : discoveredAccount_r8.value.portal.name) || (discoveredAccount_r8.value.brand == null ? null : discoveredAccount_r8.value.brand.name));
   }
 }
 function DashboardComponent_div_17_Template(rf, ctx) {
@@ -57693,7 +57693,7 @@ function DashboardComponent_div_17_Template(rf, ctx) {
     \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", pendingAccount_r10.value.brand == null ? null : pendingAccount_r10.value.brand.id, ".png", \u0275\u0275sanitizeUrl);
     \u0275\u0275propertyInterpolate("alt", pendingAccount_r10.value.brand == null ? null : pendingAccount_r10.value.brand.name);
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(pendingAccount_r10.value.portal.name);
+    \u0275\u0275textInterpolate((pendingAccount_r10.value.portal == null ? null : pendingAccount_r10.value.portal.name) || (pendingAccount_r10.value.brand == null ? null : pendingAccount_r10.value.brand.name));
   }
 }
 function DashboardComponent_app_spinner_46_Template(rf, ctx) {
