@@ -40462,6 +40462,12 @@ var ConfigService = class _ConfigService {
     updatedVaultProfile.addDiscoveredAccount(recordLocatorFacility.brand, recordLocatorFacility.portal, recordLocatorFacility.endpoint, vaultProfileConnectionId);
     this.vaultProfileConfig = updatedVaultProfile;
   }
+  //this can only be used after the account has been connected via a
+  vaultProfileAddConnectedRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId) {
+    let updatedVaultProfile = this.vaultProfileConfig$;
+    updatedVaultProfile.addConnectedAccount(vaultProfileConnectionId, recordLocatorFacility.org_connection_id, "connected", "tefca", recordLocatorFacility.brand?.id, recordLocatorFacility.portal?.id, recordLocatorFacility.endpoint?.id, vaultProfileConnectionId, recordLocatorFacility.patient_authorization_type, "", "", recordLocatorFacility.facility_id);
+    this.vaultProfileConfig = updatedVaultProfile;
+  }
   //Setter
   set searchConfig(value) {
     const mergedSettings = (0, import_lodash.merge)({}, this.searchConfigSubject.getValue(), value);
@@ -40677,6 +40683,7 @@ var RecordLocatorResponse = class {
   constructor() {
     this.pending_patient_accounts = {};
     this.discovered_patient_accounts = {};
+    this.connected_patient_accounts = {};
   }
 };
 
@@ -57730,6 +57737,7 @@ var DashboardComponent = class _DashboardComponent {
         console.log("record locator response", rlsResponse);
         let numDiscovered = Object.keys(rlsResponse.discovered_patient_accounts).length;
         let numPending = Object.keys(rlsResponse.pending_patient_accounts).length;
+        let numConnected = Object.keys(rlsResponse.connected_patient_accounts).length;
         for (let vaultProfileConnectionId in rlsResponse.discovered_patient_accounts) {
           const discoveredFacility = rlsResponse.discovered_patient_accounts[vaultProfileConnectionId];
           this.configService.vaultProfileAddDiscoveredRecordLocatorAccount(discoveredFacility, vaultProfileConnectionId);
@@ -57740,11 +57748,16 @@ var DashboardComponent = class _DashboardComponent {
           this.configService.vaultProfileAddPendingRecordLocatorAccount(pendingFacility, vaultProfileConnectionId);
           console.log("PENDING", pendingFacility);
         }
+        for (let vaultProfileConnectionId in rlsResponse.connected_patient_accounts) {
+          const connectedFacility = rlsResponse.connected_patient_accounts[vaultProfileConnectionId];
+          this.configService.vaultProfileAddConnectedRecordLocatorAccount(connectedFacility, vaultProfileConnectionId);
+          console.log("CONNECTED", connectedFacility);
+        }
         this.loadingTefcaRLS = false;
         this.configService.vaultProfileConfig = {
           rlsQueryComplete: true
         };
-        this.emptyTefcaRLSResult = numDiscovered + numPending == 0;
+        this.emptyTefcaRLSResult = numDiscovered + numPending + numConnected == 0;
       }, (err) => {
         this.loadingTefcaRLS = false;
         console.error("Error fetching RLS data", err);
@@ -57784,7 +57797,9 @@ var DashboardComponent = class _DashboardComponent {
   }
   completeAccounts() {
     const connectedAccounts = this.configService.vaultProfileConfig$.connectedPatientAccounts || [];
-    const tefcaDirectAccounts = connectedAccounts.filter((acc) => acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect);
+    const tefcaDirectAccounts = connectedAccounts.filter((acc) => {
+      acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect && !acc.org_connection_id;
+    });
     const vaultConnectionIds = tefcaDirectAccounts.map((a) => a.vault_profile_connection_id).filter((id) => !!id);
     const uniqueVaultConnectionIds = Array.from(new Set(vaultConnectionIds));
     if (uniqueVaultConnectionIds.length === 0) {
