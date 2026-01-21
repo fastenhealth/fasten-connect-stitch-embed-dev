@@ -57532,7 +57532,9 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     this.environment = environment;
   }
   ngOnDestroy() {
-    this.identityVerificationSubscription.unsubscribe();
+    if (this.identityVerificationSubscription) {
+      this.identityVerificationSubscription.unsubscribe();
+    }
   }
   ngOnInit() {
   }
@@ -59762,7 +59764,9 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
     this.sdkMode = SDKMode.None;
   }
   ngOnDestroy() {
-    this.connectHelperSubscription.unsubscribe();
+    if (this.connectHelperSubscription) {
+      this.connectHelperSubscription.unsubscribe();
+    }
   }
   ngOnInit() {
     this.injector.runInContext(() => {
@@ -60568,7 +60572,9 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
     });
   }
   ngOnDestroy() {
-    this.routeSubscription.unsubscribe();
+    if (this.routeSubscription) {
+      this.routeSubscription.unsubscribe();
+    }
   }
   static {
     this.\u0275fac = function IdentityVerificationErrorComponent_Factory(__ngFactoryType__) {
