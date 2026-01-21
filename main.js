@@ -3902,7 +3902,7 @@ var require_lodash = __commonJS({
         var defer2 = baseRest(function(func, args) {
           return baseDelay(func, 1, args);
         });
-        var delay = baseRest(function(func, wait, args) {
+        var delay2 = baseRest(function(func, wait, args) {
           return baseDelay(func, toNumber(wait) || 0, args);
         });
         function flip(func) {
@@ -5017,7 +5017,7 @@ var require_lodash = __commonJS({
         lodash.defaults = defaults;
         lodash.defaultsDeep = defaultsDeep;
         lodash.defer = defer2;
-        lodash.delay = delay;
+        lodash.delay = delay2;
         lodash.difference = difference;
         lodash.differenceBy = differenceBy;
         lodash.differenceWith = differenceWith;
@@ -6865,7 +6865,7 @@ var Action = class extends Subscription {
   constructor(scheduler, work) {
     super();
   }
-  schedule(state, delay = 0) {
+  schedule(state, delay2 = 0) {
     return this;
   }
 };
@@ -6898,7 +6898,7 @@ var AsyncAction = class extends Action {
     this.work = work;
     this.pending = false;
   }
-  schedule(state, delay = 0) {
+  schedule(state, delay2 = 0) {
     var _a;
     if (this.closed) {
       return this;
@@ -6907,18 +6907,18 @@ var AsyncAction = class extends Action {
     const id = this.id;
     const scheduler = this.scheduler;
     if (id != null) {
-      this.id = this.recycleAsyncId(scheduler, id, delay);
+      this.id = this.recycleAsyncId(scheduler, id, delay2);
     }
     this.pending = true;
-    this.delay = delay;
-    this.id = (_a = this.id) !== null && _a !== void 0 ? _a : this.requestAsyncId(scheduler, this.id, delay);
+    this.delay = delay2;
+    this.id = (_a = this.id) !== null && _a !== void 0 ? _a : this.requestAsyncId(scheduler, this.id, delay2);
     return this;
   }
-  requestAsyncId(scheduler, _id, delay = 0) {
-    return intervalProvider.setInterval(scheduler.flush.bind(scheduler, this), delay);
+  requestAsyncId(scheduler, _id, delay2 = 0) {
+    return intervalProvider.setInterval(scheduler.flush.bind(scheduler, this), delay2);
   }
-  recycleAsyncId(_scheduler, id, delay = 0) {
-    if (delay != null && this.delay === delay && this.pending === false) {
+  recycleAsyncId(_scheduler, id, delay2 = 0) {
+    if (delay2 != null && this.delay === delay2 && this.pending === false) {
       return id;
     }
     if (id != null) {
@@ -6926,12 +6926,12 @@ var AsyncAction = class extends Action {
     }
     return void 0;
   }
-  execute(state, delay) {
+  execute(state, delay2) {
     if (this.closed) {
       return new Error("executing a cancelled action");
     }
     this.pending = false;
-    const error = this._execute(state, delay);
+    const error = this._execute(state, delay2);
     if (error) {
       return error;
     } else if (this.pending === false && this.id != null) {
@@ -6979,8 +6979,8 @@ var Scheduler = class _Scheduler {
     this.schedulerActionCtor = schedulerActionCtor;
     this.now = now;
   }
-  schedule(work, delay = 0, state) {
-    return new this.schedulerActionCtor(this, work).schedule(state, delay);
+  schedule(work, delay2 = 0, state) {
+    return new this.schedulerActionCtor(this, work).schedule(state, delay2);
   }
 };
 Scheduler.now = dateTimestampProvider.now;
@@ -7311,15 +7311,15 @@ function process(asyncIterable, subscriber) {
 }
 
 // node_modules/rxjs/dist/esm/internal/util/executeSchedule.js
-function executeSchedule(parentSubscription, scheduler, work, delay = 0, repeat2 = false) {
+function executeSchedule(parentSubscription, scheduler, work, delay2 = 0, repeat2 = false) {
   const scheduleSubscription = scheduler.schedule(function() {
     work();
     if (repeat2) {
-      parentSubscription.add(this.schedule(null, delay));
+      parentSubscription.add(this.schedule(null, delay2));
     } else {
       this.unsubscribe();
     }
-  }, delay);
+  }, delay2);
   parentSubscription.add(scheduleSubscription);
   if (!repeat2) {
     return scheduleSubscription;
@@ -7327,16 +7327,16 @@ function executeSchedule(parentSubscription, scheduler, work, delay = 0, repeat2
 }
 
 // node_modules/rxjs/dist/esm/internal/operators/observeOn.js
-function observeOn(scheduler, delay = 0) {
+function observeOn(scheduler, delay2 = 0) {
   return operate((source, subscriber) => {
-    source.subscribe(createOperatorSubscriber(subscriber, (value) => executeSchedule(subscriber, scheduler, () => subscriber.next(value), delay), () => executeSchedule(subscriber, scheduler, () => subscriber.complete(), delay), (err) => executeSchedule(subscriber, scheduler, () => subscriber.error(err), delay)));
+    source.subscribe(createOperatorSubscriber(subscriber, (value) => executeSchedule(subscriber, scheduler, () => subscriber.next(value), delay2), () => executeSchedule(subscriber, scheduler, () => subscriber.complete(), delay2), (err) => executeSchedule(subscriber, scheduler, () => subscriber.error(err), delay2)));
   });
 }
 
 // node_modules/rxjs/dist/esm/internal/operators/subscribeOn.js
-function subscribeOn(scheduler, delay = 0) {
+function subscribeOn(scheduler, delay2 = 0) {
   return operate((source, subscriber) => {
-    subscriber.add(scheduler.schedule(() => source.subscribe(subscriber), delay));
+    subscriber.add(scheduler.schedule(() => source.subscribe(subscriber), delay2));
   });
 }
 
@@ -7509,7 +7509,7 @@ function timeout(config2, schedulerArg) {
     let timerSubscription;
     let lastValue = null;
     let seen = 0;
-    const startTimer = (delay) => {
+    const startTimer = (delay2) => {
       timerSubscription = executeSchedule(subscriber, scheduler, () => {
         try {
           originalSourceSubscription.unsubscribe();
@@ -7521,7 +7521,7 @@ function timeout(config2, schedulerArg) {
         } catch (err) {
           subscriber.error(err);
         }
-      }, delay);
+      }, delay2);
     };
     originalSourceSubscription = source.subscribe(createOperatorSubscriber(subscriber, (value) => {
       timerSubscription === null || timerSubscription === void 0 ? void 0 : timerSubscription.unsubscribe();
@@ -7975,6 +7975,32 @@ function take(count) {
   });
 }
 
+// node_modules/rxjs/dist/esm/internal/operators/ignoreElements.js
+function ignoreElements() {
+  return operate((source, subscriber) => {
+    source.subscribe(createOperatorSubscriber(subscriber, noop));
+  });
+}
+
+// node_modules/rxjs/dist/esm/internal/operators/mapTo.js
+function mapTo(value) {
+  return map(() => value);
+}
+
+// node_modules/rxjs/dist/esm/internal/operators/delayWhen.js
+function delayWhen(delayDurationSelector, subscriptionDelay) {
+  if (subscriptionDelay) {
+    return (source) => concat(subscriptionDelay.pipe(take(1), ignoreElements()), source.pipe(delayWhen(delayDurationSelector)));
+  }
+  return mergeMap((value, index) => innerFrom(delayDurationSelector(value, index)).pipe(take(1), mapTo(value)));
+}
+
+// node_modules/rxjs/dist/esm/internal/operators/delay.js
+function delay(due, scheduler = asyncScheduler) {
+  const duration = timer(due, scheduler);
+  return delayWhen(() => duration);
+}
+
 // node_modules/rxjs/dist/esm/internal/operators/distinctUntilChanged.js
 function distinctUntilChanged(comparator, keySelector = identity) {
   comparator = comparator !== null && comparator !== void 0 ? comparator : defaultCompare;
@@ -8053,12 +8079,12 @@ function last2(predicate, defaultValue) {
 // node_modules/rxjs/dist/esm/internal/operators/repeat.js
 function repeat(countOrConfig) {
   let count = Infinity;
-  let delay;
+  let delay2;
   if (countOrConfig != null) {
     if (typeof countOrConfig === "object") {
       ({
         count = Infinity,
-        delay
+        delay: delay2
       } = countOrConfig);
     } else {
       count = countOrConfig;
@@ -8070,8 +8096,8 @@ function repeat(countOrConfig) {
     const resubscribe = () => {
       sourceSub === null || sourceSub === void 0 ? void 0 : sourceSub.unsubscribe();
       sourceSub = null;
-      if (delay != null) {
-        const notifier = typeof delay === "number" ? timer(delay) : innerFrom(delay(soFar));
+      if (delay2 != null) {
+        const notifier = typeof delay2 === "number" ? timer(delay2) : innerFrom(delay2(soFar));
         const notifierSubscriber = createOperatorSubscriber(subscriber, () => {
           notifierSubscriber.unsubscribe();
           subscribeToSource();
@@ -8114,7 +8140,7 @@ function retry(configOrCount = Infinity) {
   }
   const {
     count = Infinity,
-    delay,
+    delay: delay2,
     resetOnSuccess = false
   } = config2;
   return count <= 0 ? identity : operate((source, subscriber) => {
@@ -8138,8 +8164,8 @@ function retry(configOrCount = Infinity) {
               syncUnsub = true;
             }
           };
-          if (delay != null) {
-            const notifier = typeof delay === "number" ? timer(delay) : innerFrom(delay(err, soFar));
+          if (delay2 != null) {
+            const notifier = typeof delay2 === "number" ? timer(delay2) : innerFrom(delay2(err, soFar));
             const notifierSubscriber = createOperatorSubscriber(subscriber, () => {
               notifierSubscriber.unsubscribe();
               resub();
@@ -20104,13 +20130,13 @@ var IdleScheduler = class _IdleScheduler {
     })
   );
 };
-function onTimer(delay) {
-  return (callback, injector) => scheduleTimerTrigger(delay, callback, injector);
+function onTimer(delay2) {
+  return (callback, injector) => scheduleTimerTrigger(delay2, callback, injector);
 }
-function scheduleTimerTrigger(delay, callback, injector) {
+function scheduleTimerTrigger(delay2, callback, injector) {
   const scheduler = injector.get(TimerScheduler);
   const cleanupFn = () => scheduler.remove(callback);
-  scheduler.add(delay, callback);
+  scheduler.add(delay2, callback);
   return cleanupFn;
 }
 var TimerScheduler = class _TimerScheduler {
@@ -20131,9 +20157,9 @@ var TimerScheduler = class _TimerScheduler {
   // the current callback invocation. The shape of this list is the same
   // as the shape of the `current` list.
   deferred = [];
-  add(delay, callback) {
+  add(delay2, callback) {
     const target = this.executingCallbacks ? this.deferred : this.current;
-    this.addToQueue(target, Date.now() + delay, callback);
+    this.addToQueue(target, Date.now() + delay2, callback);
     this.scheduleTimer();
   }
   remove(callback) {
@@ -22562,43 +22588,43 @@ function \u0275\u0275deferHydrateOnImmediate() {
     triggerHydrationFromBlockName(injector, ssrUniqueId);
   }
 }
-function \u0275\u0275deferOnTimer(delay) {
+function \u0275\u0275deferOnTimer(delay2) {
   const lView = getLView();
   const tNode = getCurrentTNode();
   if (ngDevMode) {
-    trackTriggerForDebugging(lView[TVIEW], tNode, `on timer(${delay}ms)`);
+    trackTriggerForDebugging(lView[TVIEW], tNode, `on timer(${delay2}ms)`);
   }
   if (!shouldAttachTrigger(0, lView, tNode)) return;
-  scheduleDelayedTrigger(onTimer(delay));
+  scheduleDelayedTrigger(onTimer(delay2));
 }
-function \u0275\u0275deferPrefetchOnTimer(delay) {
+function \u0275\u0275deferPrefetchOnTimer(delay2) {
   const lView = getLView();
   const tNode = getCurrentTNode();
   if (ngDevMode) {
-    trackTriggerForDebugging(lView[TVIEW], tNode, `prefetch on timer(${delay}ms)`);
+    trackTriggerForDebugging(lView[TVIEW], tNode, `prefetch on timer(${delay2}ms)`);
   }
   if (!shouldAttachTrigger(1, lView, tNode)) return;
   scheduleDelayedPrefetching(
-    onTimer(delay),
+    onTimer(delay2),
     5
     /* DeferBlockTrigger.Timer */
   );
 }
-function \u0275\u0275deferHydrateOnTimer(delay) {
+function \u0275\u0275deferHydrateOnTimer(delay2) {
   const lView = getLView();
   const tNode = getCurrentTNode();
   if (ngDevMode) {
-    trackTriggerForDebugging(lView[TVIEW], tNode, `hydrate on timer(${delay}ms)`);
+    trackTriggerForDebugging(lView[TVIEW], tNode, `hydrate on timer(${delay2}ms)`);
   }
   if (!shouldAttachTrigger(2, lView, tNode)) return;
   const hydrateTriggers = getHydrateTriggers(getTView(), tNode);
   hydrateTriggers.set(5, {
-    delay
+    delay: delay2
   });
   if (false) {
     triggerDeferBlock(2, lView, tNode);
   } else {
-    scheduleDelayedHydrating(onTimer(delay), lView, tNode);
+    scheduleDelayedHydrating(onTimer(delay2), lView, tNode);
   }
 }
 function \u0275\u0275deferOnHover(triggerIndex, walkUpTimes) {
@@ -47801,7 +47827,7 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("room_id", roomId);
     this.logger.debug(redirectUrlParts.toString());
     const openedWindow = this.openWindowInPopup(redirectUrlParts);
-    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, this.configService.systemConfig$.sdkMode);
+    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, this.configService.systemConfig$.sdkMode).pipe(delay(2e3));
   }
   verificationWithPopup(cspType) {
     const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
@@ -61088,8 +61114,8 @@ var NoopAnimationPlayer = class {
   _position = 0;
   parentPlayer = null;
   totalTime;
-  constructor(duration = 0, delay = 0) {
-    this.totalTime = duration + delay;
+  constructor(duration = 0, delay2 = 0) {
+    this.totalTime = duration + delay2;
   }
   _onFinish() {
     if (!this._finished) {
@@ -61586,8 +61612,8 @@ var NoopAnimationDriver = class _NoopAnimationDriver {
   /**
    * @returns An `NoopAnimationPlayer`
    */
-  animate(element, keyframes, duration, delay, easing, previousPlayers = [], scrubberAccessRequested) {
-    return new NoopAnimationPlayer(duration, delay);
+  animate(element, keyframes, duration, delay2, easing, previousPlayers = [], scrubberAccessRequested) {
+    return new NoopAnimationPlayer(duration, delay2);
   }
   static \u0275fac = function NoopAnimationDriver_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _NoopAnimationDriver)();
@@ -61639,7 +61665,7 @@ function resolveTiming(timings, errors, allowNegativeValues) {
 function parseTimeExpression(exp, errors, allowNegativeValues) {
   const regex = /^(-?[\.\d]+)(m?s)(?:\s+(-?[\.\d]+)(m?s))?(?:\s+([-a-z]+(?:\(.+?\))?))?$/i;
   let duration;
-  let delay = 0;
+  let delay2 = 0;
   let easing = "";
   if (typeof exp === "string") {
     const matches = exp.match(regex);
@@ -61654,7 +61680,7 @@ function parseTimeExpression(exp, errors, allowNegativeValues) {
     duration = _convertTimeValueToMS(parseFloat(matches[1]), matches[2]);
     const delayMatch = matches[3];
     if (delayMatch != null) {
-      delay = _convertTimeValueToMS(parseFloat(delayMatch), matches[4]);
+      delay2 = _convertTimeValueToMS(parseFloat(delayMatch), matches[4]);
     }
     const easingVal = matches[5];
     if (easingVal) {
@@ -61670,7 +61696,7 @@ function parseTimeExpression(exp, errors, allowNegativeValues) {
       errors.push(negativeStepValue());
       containsErrors = true;
     }
-    if (delay < 0) {
+    if (delay2 < 0) {
       errors.push(negativeDelayValue());
       containsErrors = true;
     }
@@ -61680,7 +61706,7 @@ function parseTimeExpression(exp, errors, allowNegativeValues) {
   }
   return {
     duration,
-    delay,
+    delay: delay2,
     easing
   };
 }
@@ -61757,8 +61783,8 @@ function dashCaseToCamelCase(input2) {
 function camelCaseToDashCase2(input2) {
   return input2.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
 }
-function allowPreviousPlayerStylesMerge(duration, delay) {
-  return duration === 0 || delay === 0;
+function allowPreviousPlayerStylesMerge(duration, delay2) {
+  return duration === 0 || delay2 === 0;
 }
 function balancePreviousStylesIntoKeyframes(element, keyframes, previousStyles) {
   if (previousStyles.size && keyframes.length) {
@@ -62357,14 +62383,14 @@ function normalizeAnimationOptions(options) {
   }
   return options;
 }
-function makeTimingAst(duration, delay, easing) {
+function makeTimingAst(duration, delay2, easing) {
   return {
     duration,
-    delay,
+    delay: delay2,
     easing
   };
 }
-function createTimelineInstruction(element, keyframes, preStyleProps, postStyleProps, duration, delay, easing = null, subTimeline = false) {
+function createTimelineInstruction(element, keyframes, preStyleProps, postStyleProps, duration, delay2, easing = null, subTimeline = false) {
   return {
     type: 1,
     element,
@@ -62372,8 +62398,8 @@ function createTimelineInstruction(element, keyframes, preStyleProps, postStyleP
     preStyleProps,
     postStyleProps,
     duration,
-    delay,
-    totalTime: duration + delay,
+    delay: delay2,
+    totalTime: duration + delay2,
     easing,
     subTimeline
   };
@@ -62410,8 +62436,8 @@ var AnimationTimelineBuilderVisitor = class {
     subInstructions = subInstructions || new ElementInstructionMap();
     const context2 = new AnimationTimelineContext(driver, rootElement, subInstructions, enterClassName, leaveClassName, errors, []);
     context2.options = options;
-    const delay = options.delay ? resolveTimingValue(options.delay) : 0;
-    context2.currentTimeline.delayNextStep(delay);
+    const delay2 = options.delay ? resolveTimingValue(options.delay) : 0;
+    context2.currentTimeline.delayNextStep(delay2);
     context2.currentTimeline.setStyles([startingStyles], null, context2.errors, options);
     visitDslNode(this, ast, context2);
     const timelines = context2.timelines.filter((timeline) => timeline.containsAnimation());
@@ -62428,7 +62454,7 @@ var AnimationTimelineBuilderVisitor = class {
         lastRootTimeline.setStyles([finalStyles], null, context2.errors, options);
       }
     }
-    return timelines.length ? timelines.map((timeline) => timeline.buildKeyframes()) : [createTimelineInstruction(rootElement, [], [], [], 0, delay, "", false)];
+    return timelines.length ? timelines.map((timeline) => timeline.buildKeyframes()) : [createTimelineInstruction(rootElement, [], [], [], 0, delay2, "", false)];
   }
   visitTrigger(ast, context2) {
   }
@@ -62469,10 +62495,10 @@ var AnimationTimelineBuilderVisitor = class {
     const startTime = context2.currentTimeline.currentTime;
     let furthestTime = startTime;
     const duration = options.duration != null ? resolveTimingValue(options.duration) : null;
-    const delay = options.delay != null ? resolveTimingValue(options.delay) : null;
+    const delay2 = options.delay != null ? resolveTimingValue(options.delay) : null;
     if (duration !== 0) {
       instructions.forEach((instruction) => {
-        const instructionTimings = context2.appendInstructionToTimeline(instruction, duration, delay);
+        const instructionTimings = context2.appendInstructionToTimeline(instruction, duration, delay2);
         furthestTime = Math.max(furthestTime, instructionTimings.duration + instructionTimings.delay);
       });
     }
@@ -62495,8 +62521,8 @@ var AnimationTimelineBuilderVisitor = class {
           ctx.currentTimeline.snapshotCurrentStyles();
           ctx.previousNode = DEFAULT_NOOP_PREVIOUS_NODE;
         }
-        const delay = resolveTimingValue(options.delay);
-        ctx.delayNextStep(delay);
+        const delay2 = resolveTimingValue(options.delay);
+        ctx.delayNextStep(delay2);
       }
     }
     if (ast.steps.length) {
@@ -62511,11 +62537,11 @@ var AnimationTimelineBuilderVisitor = class {
   visitGroup(ast, context2) {
     const innerTimelines = [];
     let furthestTime = context2.currentTimeline.currentTime;
-    const delay = ast.options && ast.options.delay ? resolveTimingValue(ast.options.delay) : 0;
+    const delay2 = ast.options && ast.options.delay ? resolveTimingValue(ast.options.delay) : 0;
     ast.steps.forEach((s) => {
       const innerContext = context2.createSubContext(ast.options);
-      if (delay) {
-        innerContext.delayNextStep(delay);
+      if (delay2) {
+        innerContext.delayNextStep(delay2);
       }
       visitDslNode(this, s, innerContext);
       furthestTime = Math.max(furthestTime, innerContext.currentTimeline.currentTime);
@@ -62590,8 +62616,8 @@ var AnimationTimelineBuilderVisitor = class {
   visitQuery(ast, context2) {
     const startTime = context2.currentTimeline.currentTime;
     const options = ast.options || {};
-    const delay = options.delay ? resolveTimingValue(options.delay) : 0;
-    if (delay && (context2.previousNode.type === AnimationMetadataType.Style || startTime == 0 && context2.currentTimeline.hasCurrentStyleProperties())) {
+    const delay2 = options.delay ? resolveTimingValue(options.delay) : 0;
+    if (delay2 && (context2.previousNode.type === AnimationMetadataType.Style || startTime == 0 && context2.currentTimeline.hasCurrentStyleProperties())) {
       context2.currentTimeline.snapshotCurrentStyles();
       context2.previousNode = DEFAULT_NOOP_PREVIOUS_NODE;
     }
@@ -62602,8 +62628,8 @@ var AnimationTimelineBuilderVisitor = class {
     elms.forEach((element, i) => {
       context2.currentQueryIndex = i;
       const innerContext = context2.createSubContext(ast.options, element);
-      if (delay) {
-        innerContext.delayNextStep(delay);
+      if (delay2) {
+        innerContext.delayNextStep(delay2);
       }
       if (element === context2.element) {
         sameElementTimeline = innerContext.currentTimeline;
@@ -62628,19 +62654,19 @@ var AnimationTimelineBuilderVisitor = class {
     const timings = ast.timings;
     const duration = Math.abs(timings.duration);
     const maxTime = duration * (context2.currentQueryTotal - 1);
-    let delay = duration * context2.currentQueryIndex;
+    let delay2 = duration * context2.currentQueryIndex;
     let staggerTransformer = timings.duration < 0 ? "reverse" : timings.easing;
     switch (staggerTransformer) {
       case "reverse":
-        delay = maxTime - delay;
+        delay2 = maxTime - delay2;
         break;
       case "full":
-        delay = parentContext.currentStaggerTime;
+        delay2 = parentContext.currentStaggerTime;
         break;
     }
     const timeline = context2.currentTimeline;
-    if (delay) {
-      timeline.delayNextStep(delay);
+    if (delay2) {
+      timeline.delayNextStep(delay2);
     }
     const startingTime = timeline.currentTime;
     visitDslNode(this, ast.animation, context2);
@@ -62735,10 +62761,10 @@ var AnimationTimelineContext = class _AnimationTimelineContext {
     this.timelines.push(this.currentTimeline);
     return this.currentTimeline;
   }
-  appendInstructionToTimeline(instruction, duration, delay) {
+  appendInstructionToTimeline(instruction, duration, delay2) {
     const updatedTimings = {
       duration: duration != null ? duration : instruction.duration,
-      delay: this.currentTimeline.currentTime + (delay != null ? delay : 0) + instruction.delay,
+      delay: this.currentTimeline.currentTime + (delay2 != null ? delay2 : 0) + instruction.delay,
       easing: ""
     };
     const builder = new SubTimelineBuilder(this._driver, instruction.element, instruction.keyframes, instruction.preStyleProps, instruction.postStyleProps, updatedTimings, instruction.stretchStartingKeyframe);
@@ -62748,9 +62774,9 @@ var AnimationTimelineContext = class _AnimationTimelineContext {
   incrementTime(time) {
     this.currentTimeline.forwardTime(this.currentTimeline.duration + time);
   }
-  delayNextStep(delay) {
-    if (delay > 0) {
-      this.currentTimeline.delayNextStep(delay);
+  delayNextStep(delay2) {
+    if (delay2 > 0) {
+      this.currentTimeline.delayNextStep(delay2);
     }
   }
   invokeQuery(selector, originalSelector, limit, includeSelf, optional, errors) {
@@ -62821,15 +62847,15 @@ var TimelineBuilder = class _TimelineBuilder {
   get currentTime() {
     return this.startTime + this.duration;
   }
-  delayNextStep(delay) {
+  delayNextStep(delay2) {
     const hasPreStyleStep = this._keyframes.size === 1 && this._pendingStyles.size;
     if (this.duration || hasPreStyleStep) {
-      this.forwardTime(this.currentTime + delay);
+      this.forwardTime(this.currentTime + delay2);
       if (hasPreStyleStep) {
         this.snapshotCurrentStyles();
       }
     } else {
-      this.startTime += delay;
+      this.startTime += delay2;
     }
   }
   fork(element, currentTime) {
@@ -62983,14 +63009,14 @@ var SubTimelineBuilder = class extends TimelineBuilder {
   buildKeyframes() {
     let keyframes = this.keyframes;
     let {
-      delay,
+      delay: delay2,
       duration,
       easing
     } = this.timings;
-    if (this._stretchStartingKeyframe && delay) {
+    if (this._stretchStartingKeyframe && delay2) {
       const newKeyframes = [];
-      const totalTime = duration + delay;
-      const startingGap = delay / totalTime;
+      const totalTime = duration + delay2;
+      const startingGap = delay2 / totalTime;
       const newFirstKeyframe = new Map(keyframes[0]);
       newFirstKeyframe.set("offset", 0);
       newKeyframes.push(newFirstKeyframe);
@@ -63001,16 +63027,16 @@ var SubTimelineBuilder = class extends TimelineBuilder {
       for (let i = 1; i <= limit; i++) {
         let kf = new Map(keyframes[i]);
         const oldOffset = kf.get("offset");
-        const timeAtKeyframe = delay + oldOffset * duration;
+        const timeAtKeyframe = delay2 + oldOffset * duration;
         kf.set("offset", roundOffset(timeAtKeyframe / totalTime));
         newKeyframes.push(kf);
       }
       duration = totalTime;
-      delay = 0;
+      delay2 = 0;
       easing = "";
       keyframes = newKeyframes;
     }
-    return createTimelineInstruction(this.element, keyframes, this.preStyleProps, this.postStyleProps, duration, delay, easing, true);
+    return createTimelineInstruction(this.element, keyframes, this.preStyleProps, this.postStyleProps, duration, delay2, easing, true);
   }
 };
 function roundOffset(offset, decimalPoints = 3) {
@@ -65028,11 +65054,11 @@ var WebAnimationsDriver = class {
   computeStyle(element, prop, defaultValue) {
     return computeStyle(element, prop);
   }
-  animate(element, keyframes, duration, delay, easing, previousPlayers = []) {
-    const fill = delay == 0 ? "both" : "forwards";
+  animate(element, keyframes, duration, delay2, easing, previousPlayers = []) {
+    const fill = delay2 == 0 ? "both" : "forwards";
     const playerOptions = {
       duration,
-      delay,
+      delay: delay2,
       fill
     };
     if (easing) {
@@ -65040,7 +65066,7 @@ var WebAnimationsDriver = class {
     }
     const previousStyles = /* @__PURE__ */ new Map();
     const previousWebAnimationPlayers = previousPlayers.filter((player) => player instanceof WebAnimationsPlayer);
-    if (allowPreviousPlayerStylesMerge(duration, delay)) {
+    if (allowPreviousPlayerStylesMerge(duration, delay2)) {
       previousWebAnimationPlayers.forEach((player) => {
         player.currentSnapshot.forEach((val, prop) => previousStyles.set(prop, val));
       });
