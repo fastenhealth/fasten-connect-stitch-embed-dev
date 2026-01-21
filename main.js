@@ -15085,7 +15085,7 @@ function getOrCreateComponentTView(def) {
   }
   return tView;
 }
-function createLView(parentLView, tView, context2, flags, host, tHostNode, environment2, renderer, injector, embeddedViewInjector, hydrationInfo) {
+function createLView(parentLView, tView, context2, flags, host, tHostNode, environment3, renderer, injector, embeddedViewInjector, hydrationInfo) {
   const lView = tView.blueprint.slice();
   lView[HOST] = host;
   lView[FLAGS] = flags | 4 | 128 | 8 | 64 | 1024;
@@ -15096,7 +15096,7 @@ function createLView(parentLView, tView, context2, flags, host, tHostNode, envir
   ngDevMode && tView.declTNode && parentLView && assertTNodeForLView(tView.declTNode, parentLView);
   lView[PARENT] = lView[DECLARATION_VIEW] = parentLView;
   lView[CONTEXT] = context2;
-  lView[ENVIRONMENT] = environment2 || parentLView && parentLView[ENVIRONMENT];
+  lView[ENVIRONMENT] = environment3 || parentLView && parentLView[ENVIRONMENT];
   ngDevMode && assertDefined(lView[ENVIRONMENT], "LViewEnvironment is required");
   lView[RENDERER] = renderer || parentLView && parentLView[RENDERER];
   ngDevMode && assertDefined(lView[RENDERER], "Renderer is required");
@@ -16183,8 +16183,8 @@ function runEffectsInView(view) {
 }
 var MAXIMUM_REFRESH_RERUNS$1 = 100;
 function detectChangesInternal(lView, notifyErrorHandler = true, mode = 0) {
-  const environment2 = lView[ENVIRONMENT];
-  const rendererFactory = environment2.rendererFactory;
+  const environment3 = lView[ENVIRONMENT];
+  const rendererFactory = environment3.rendererFactory;
   const checkNoChangesMode = !!ngDevMode && isInCheckNoChangesMode();
   if (!checkNoChangesMode) {
     rendererFactory.begin?.();
@@ -18305,10 +18305,10 @@ var ComponentFactory = class extends ComponentFactory$1 {
       );
       const rootTView = createTView(0, null, null, 1, 0, null, null, null, null, [tAttributes], null);
       const rootViewInjector = createRootViewInjector(cmpDef, environmentInjector || this.ngModule, injector);
-      const environment2 = createRootLViewEnvironment(rootViewInjector);
-      const hostRenderer = environment2.rendererFactory.createRenderer(null, cmpDef);
+      const environment3 = createRootLViewEnvironment(rootViewInjector);
+      const hostRenderer = environment3.rendererFactory.createRenderer(null, cmpDef);
       const hostElement = rootSelectorOrNode ? locateHostElement(hostRenderer, rootSelectorOrNode, cmpDef.encapsulation, rootViewInjector) : createHostElement(cmpDef, hostRenderer);
-      const rootLView = createLView(null, rootTView, null, 512 | getInitialLViewFlagsFromDef(cmpDef), null, null, environment2, hostRenderer, rootViewInjector, null, retrieveHydrationInfo(
+      const rootLView = createLView(null, rootTView, null, 512 | getInitialLViewFlagsFromDef(cmpDef), null, null, environment3, hostRenderer, rootViewInjector, null, retrieveHydrationInfo(
         hostElement,
         rootViewInjector,
         true
@@ -30191,6 +30191,7 @@ var environment = {
   name: "development",
   //specify the lighthouse base that we're going to use to authenticate against all our source/providers. Must not have trailing slash
   lighthouse_api_endpoint_base: "https://lighthouse.fastenhealth.com",
+  connect_base_domain: "connect-dev.fastenhealth.com",
   //used to specify the api server that we're going to use (can be relative or absolute). Must not have trailing slash
   // connect_api_endpoint_base: 'https://api.connect-dev.fastenhealth.com/v1',
   // if relative, must start with /
@@ -39054,6 +39055,7 @@ var ConnectMode;
 (function(ConnectMode2) {
   ConnectMode2["Redirect"] = "redirect";
   ConnectMode2["Popup"] = "popup";
+  ConnectMode2["Websocket"] = "websocket";
 })(ConnectMode || (ConnectMode = {}));
 var CspType;
 (function(CspType2) {
@@ -40462,12 +40464,6 @@ var ConfigService = class _ConfigService {
     updatedVaultProfile.addDiscoveredAccount(recordLocatorFacility.brand, recordLocatorFacility.portal, recordLocatorFacility.endpoint, vaultProfileConnectionId);
     this.vaultProfileConfig = updatedVaultProfile;
   }
-  //this can only be used after the RLS account has been previously connected
-  vaultProfileAddConnectedRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId) {
-    let updatedVaultProfile = this.vaultProfileConfig$;
-    updatedVaultProfile.addConnectedRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId);
-    this.vaultProfileConfig = updatedVaultProfile;
-  }
   //Setter
   set searchConfig(value) {
     const mergedSettings = (0, import_lodash.merge)({}, this.searchConfigSubject.getValue(), value);
@@ -40652,24 +40648,6 @@ var VaultProfileConfig = class {
       });
     }
   }
-  addConnectedRecordLocatorAccount(recordLocatorFacilityConnected, vault_profile_connection_id) {
-    if (!this.connectedPatientAccounts) {
-      this.connectedPatientAccounts = [];
-    }
-    this.connectedPatientAccounts?.push({
-      org_connection_id: recordLocatorFacilityConnected.org_connection_id,
-      connection_status: "connected",
-      platform_type: "tefca",
-      brand: recordLocatorFacilityConnected.brand,
-      portal: recordLocatorFacilityConnected.portal,
-      endpoint: recordLocatorFacilityConnected.endpoint,
-      vault_profile_connection_id,
-      patient_auth_type: recordLocatorFacilityConnected.patient_authorization_type,
-      scope: "",
-      consent_expires_at: "",
-      tefca_directory_id: recordLocatorFacilityConnected.facility_id
-    });
-  }
   // this is used when we successfully generated an org_connection_id for a TEFCA Direct account.
   authorizeTefcaDirectConnectedAccount(vaultProfileConnectionId, orgConnectionId, connectionStatus, tefcaDirectoryId) {
     let ndx = this.connectedPatientAccounts?.findIndex((acc) => acc.vault_profile_connection_id === vaultProfileConnectionId);
@@ -40701,7 +40679,6 @@ var RecordLocatorResponse = class {
   constructor() {
     this.pending_patient_accounts = {};
     this.discovered_patient_accounts = {};
-    this.connected_patient_accounts = {};
   }
 };
 
@@ -40751,8 +40728,25 @@ var SearchFilter = class {
 var SearchFilterSortByOpts = class {
 };
 
+// projects/fasten-connect-stitch-embed/src/environments/environment.dev2.ts
+var connect_base_domain = "workspace.fastenhealth.com";
+var environment2 = {
+  name: "development2",
+  //specify the lighthouse base that we're going to use to authenticate against all our source/providers. Must not have trailing slash
+  lighthouse_api_endpoint_base: "https://lighthouse.fastenhealth.com",
+  connect_base_domain,
+  //used to specify the api server that we're going to use (can be relative or absolute). Must not have trailing slash
+  // connect_api_endpoint_base: 'https://api.connect-dev.fastenhealth.com/v1',
+  // if relative, must start with /
+  connect_api_endpoint_base: `https://api.${connect_base_domain}/v1`,
+  connect_api_jwt_issuer_host: `https://api.${connect_base_domain}/v1`,
+  connect_api_websocket_base: `wss://websocket.${connect_base_domain}/v1`,
+  //JWKS for JWT verification
+  jwks_uri: "https://cdn.fastenhealth.com/jwks/fasten-connect/dev.json"
+};
+
 // projects/shared-library/src/lib/utils/post-message.ts
-function waitForOrgConnectionOrTimeout(logger, openedWindow, sdkMode) {
+function waitForPostMessageOrgConnectionOrTimeout(logger, openedWindow, sdkMode) {
   logger.info(`waiting for postMessage notification from popup window`);
   return fromEvent(window, "message").pipe(
     //throw an error if we wait more than 2 minutes (this will close the window)
@@ -40770,7 +40764,7 @@ function waitForOrgConnectionOrTimeout(logger, openedWindow, sdkMode) {
           logger.debug(`ignoring postMessage event from unknown source window`, event.source);
           return false;
         }
-        if (event.origin != "https://api.connect-dev.fastenhealth.com" && event.origin != "https://api.connect.fastenhealth.com" && event.origin != "https://embed.connect-dev.fastenhealth.com" && event.origin != "https://embed.connect.fastenhealth.com") {
+        if (event.origin.includes(environment2.connect_base_domain)) {
           logger.debug(`ignoring postMessage event from unknown origin`, event.origin);
           return false;
         }
@@ -40801,6 +40795,263 @@ function waitForOrgConnectionOrTimeout(logger, openedWindow, sdkMode) {
       return throwError(err);
     })
   );
+}
+
+// node_modules/rxjs/dist/esm/internal/observable/dom/WebSocketSubject.js
+var DEFAULT_WEBSOCKET_CONFIG = {
+  url: "",
+  deserializer: (e) => JSON.parse(e.data),
+  serializer: (value) => JSON.stringify(value)
+};
+var WEBSOCKETSUBJECT_INVALID_ERROR_OBJECT = "WebSocketSubject.error must be called with an object with an error code, and an optional reason: { code: number, reason: string }";
+var WebSocketSubject = class _WebSocketSubject extends AnonymousSubject {
+  constructor(urlConfigOrSource, destination) {
+    super();
+    this._socket = null;
+    if (urlConfigOrSource instanceof Observable) {
+      this.destination = destination;
+      this.source = urlConfigOrSource;
+    } else {
+      const config2 = this._config = Object.assign({}, DEFAULT_WEBSOCKET_CONFIG);
+      this._output = new Subject();
+      if (typeof urlConfigOrSource === "string") {
+        config2.url = urlConfigOrSource;
+      } else {
+        for (const key in urlConfigOrSource) {
+          if (urlConfigOrSource.hasOwnProperty(key)) {
+            config2[key] = urlConfigOrSource[key];
+          }
+        }
+      }
+      if (!config2.WebSocketCtor && WebSocket) {
+        config2.WebSocketCtor = WebSocket;
+      } else if (!config2.WebSocketCtor) {
+        throw new Error("no WebSocket constructor can be found");
+      }
+      this.destination = new ReplaySubject();
+    }
+  }
+  lift(operator) {
+    const sock = new _WebSocketSubject(this._config, this.destination);
+    sock.operator = operator;
+    sock.source = this;
+    return sock;
+  }
+  _resetState() {
+    this._socket = null;
+    if (!this.source) {
+      this.destination = new ReplaySubject();
+    }
+    this._output = new Subject();
+  }
+  multiplex(subMsg, unsubMsg, messageFilter) {
+    const self2 = this;
+    return new Observable((observer) => {
+      try {
+        self2.next(subMsg());
+      } catch (err) {
+        observer.error(err);
+      }
+      const subscription = self2.subscribe({
+        next: (x) => {
+          try {
+            if (messageFilter(x)) {
+              observer.next(x);
+            }
+          } catch (err) {
+            observer.error(err);
+          }
+        },
+        error: (err) => observer.error(err),
+        complete: () => observer.complete()
+      });
+      return () => {
+        try {
+          self2.next(unsubMsg());
+        } catch (err) {
+          observer.error(err);
+        }
+        subscription.unsubscribe();
+      };
+    });
+  }
+  _connectSocket() {
+    const {
+      WebSocketCtor,
+      protocol,
+      url,
+      binaryType
+    } = this._config;
+    const observer = this._output;
+    let socket = null;
+    try {
+      socket = protocol ? new WebSocketCtor(url, protocol) : new WebSocketCtor(url);
+      this._socket = socket;
+      if (binaryType) {
+        this._socket.binaryType = binaryType;
+      }
+    } catch (e) {
+      observer.error(e);
+      return;
+    }
+    const subscription = new Subscription(() => {
+      this._socket = null;
+      if (socket && socket.readyState === 1) {
+        socket.close();
+      }
+    });
+    socket.onopen = (evt) => {
+      const {
+        _socket
+      } = this;
+      if (!_socket) {
+        socket.close();
+        this._resetState();
+        return;
+      }
+      const {
+        openObserver
+      } = this._config;
+      if (openObserver) {
+        openObserver.next(evt);
+      }
+      const queue = this.destination;
+      this.destination = Subscriber.create((x) => {
+        if (socket.readyState === 1) {
+          try {
+            const {
+              serializer
+            } = this._config;
+            socket.send(serializer(x));
+          } catch (e) {
+            this.destination.error(e);
+          }
+        }
+      }, (err) => {
+        const {
+          closingObserver
+        } = this._config;
+        if (closingObserver) {
+          closingObserver.next(void 0);
+        }
+        if (err && err.code) {
+          socket.close(err.code, err.reason);
+        } else {
+          observer.error(new TypeError(WEBSOCKETSUBJECT_INVALID_ERROR_OBJECT));
+        }
+        this._resetState();
+      }, () => {
+        const {
+          closingObserver
+        } = this._config;
+        if (closingObserver) {
+          closingObserver.next(void 0);
+        }
+        socket.close();
+        this._resetState();
+      });
+      if (queue && queue instanceof ReplaySubject) {
+        subscription.add(queue.subscribe(this.destination));
+      }
+    };
+    socket.onerror = (e) => {
+      this._resetState();
+      observer.error(e);
+    };
+    socket.onclose = (e) => {
+      if (socket === this._socket) {
+        this._resetState();
+      }
+      const {
+        closeObserver
+      } = this._config;
+      if (closeObserver) {
+        closeObserver.next(e);
+      }
+      if (e.wasClean) {
+        observer.complete();
+      } else {
+        observer.error(e);
+      }
+    };
+    socket.onmessage = (e) => {
+      try {
+        const {
+          deserializer
+        } = this._config;
+        observer.next(deserializer(e));
+      } catch (err) {
+        observer.error(err);
+      }
+    };
+  }
+  _subscribe(subscriber) {
+    const {
+      source
+    } = this;
+    if (source) {
+      return source.subscribe(subscriber);
+    }
+    if (!this._socket) {
+      this._connectSocket();
+    }
+    this._output.subscribe(subscriber);
+    subscriber.add(() => {
+      const {
+        _socket
+      } = this;
+      if (this._output.observers.length === 0) {
+        if (_socket && (_socket.readyState === 1 || _socket.readyState === 0)) {
+          _socket.close();
+        }
+        this._resetState();
+      }
+    });
+    return subscriber;
+  }
+  unsubscribe() {
+    const {
+      _socket
+    } = this;
+    if (_socket && (_socket.readyState === 1 || _socket.readyState === 0)) {
+      _socket.close();
+    }
+    this._resetState();
+    super.unsubscribe();
+  }
+};
+
+// node_modules/rxjs/dist/esm/internal/observable/dom/webSocket.js
+function webSocket(urlConfigOrSource) {
+  return new WebSocketSubject(urlConfigOrSource);
+}
+
+// projects/shared-library/src/lib/utils/websocket.ts
+function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWindow, sdkMode) {
+  logger.info(`waiting for websocket notification from popup window`);
+  const subject = webSocket(websocketUrl.toString());
+  return subject.pipe(timeout(ConnectWindowTimeout), map((message2) => {
+    logger.debug("websocket message received", message2);
+    if (message2.error) {
+      throw new Error(JSON.stringify(message2));
+    }
+    return message2;
+  }), catchError((err) => {
+    if (err instanceof TimeoutError) {
+      logger.error("websocket connection timed out");
+      if (openedWindow && !openedWindow.closed) {
+        try {
+          openedWindow.close();
+        } catch (e) {
+          logger.error("failed to close opened window after timeout", e);
+        }
+      }
+      return throwError(() => new Error('{"error":"timeout","error_description":"The connection timed out waiting for user to complete authentication."}'));
+    } else {
+      logger.error("websocket connection error", err);
+      return throwError(() => err);
+    }
+  }));
 }
 
 // projects/shared-library/src/lib/utils/base64.ts
@@ -47538,51 +47789,44 @@ var FastenService = class _FastenService {
       features = "popup=true,width=700,height=600";
     }
     let openedWindow = window.open(redirectUrl.toString(), "_blank", features);
-    return waitForOrgConnectionOrTimeout(this.logger, openedWindow, SDKMode.None);
+    return waitForPostMessageOrgConnectionOrTimeout(this.logger, openedWindow, SDKMode.None);
   }
-  // public verificationWithPopup(publicId: string, brandId: string, portalId: string, endpointId: string, reconnectOrgConnectionId?: string, connectMode?: ConnectMode, externalId?: string, externalState?: string): Observable<CallbackPayload> {
-  verificationWithPopup(cspType) {
-    const redirectUrl = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
-    redirectUrl.searchParams.set("public_id", this.configService.systemConfig$.publicId);
-    redirectUrl.searchParams.set("csp_type", cspType || CspType.ClearCsp);
-    const isDesktop = this.deviceService.isDesktop();
-    let features = "";
-    if (isDesktop) {
-      features = "popup=true,width=700,height=600";
-    }
-    let openedWindow = window.open(redirectUrl.toString(), "_blank", features);
-    return waitForOrgConnectionOrTimeout(this.logger, openedWindow, this.configService.systemConfig$.sdkMode);
-  }
-  accountConnectWithPopup(brandId, portalId, endpointId, reconnectOrgConnectionId, externalId, externalState, reconnectVaultProfileConnectionId) {
-    const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/connect`);
-    const redirectParams = new URLSearchParams();
-    redirectParams.set("public_id", this.configService.systemConfig$.publicId);
-    redirectParams.set("brand_id", brandId);
-    redirectParams.set("portal_id", portalId);
-    redirectParams.set("endpoint_id", endpointId);
-    redirectParams.set("connect_mode", "popup");
-    redirectParams.set("sdk_mode", this.configService.systemConfig$.sdkMode);
-    if (reconnectOrgConnectionId) {
-      redirectParams.set("reconnect_org_connection_id", reconnectOrgConnectionId);
-    }
-    if (externalId) {
-      redirectParams.set("external_id", externalId);
-    }
-    if (externalState) {
-      redirectParams.set("external_state", externalState);
-    }
-    if (reconnectVaultProfileConnectionId) {
-      redirectParams.set("reconnect_vault_profile_connection_id", reconnectVaultProfileConnectionId);
-    }
-    redirectUrlParts.search = redirectParams.toString();
+  verificationWithWebsocket(cspType) {
+    const roomId = v4_default();
+    const websocketUrl = this.generateWebsocketURL(roomId);
+    const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
+    redirectUrlParts.searchParams.set("public_id", this.configService.systemConfig$.publicId);
+    redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
+    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
+    redirectUrlParts.searchParams.set("room_id", roomId);
     this.logger.debug(redirectUrlParts.toString());
-    const isDesktop = this.deviceService.isDesktop();
-    let features = "";
-    if (isDesktop) {
-      features = "popup=true,width=700,height=600";
-    }
-    let openedWindow = window.open(redirectUrlParts.toString(), "_blank", features);
-    return waitForOrgConnectionOrTimeout(this.logger, openedWindow, this.configService.systemConfig$.sdkMode);
+    const openedWindow = this.openWindowInPopup(redirectUrlParts);
+    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, this.configService.systemConfig$.sdkMode);
+  }
+  verificationWithPopup(cspType) {
+    const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
+    redirectUrlParts.searchParams.set("public_id", this.configService.systemConfig$.publicId);
+    redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
+    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
+    const openedWindow = this.openWindowInPopup(redirectUrlParts);
+    return waitForPostMessageOrgConnectionOrTimeout(this.logger, openedWindow, this.configService.systemConfig$.sdkMode);
+  }
+  accountConnectWithWebsocket(connectData) {
+    const roomId = v4_default();
+    const websocketUrl = this.generateWebsocketURL(roomId);
+    const redirectUrlParts = this.generateConnectURL(connectData);
+    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
+    redirectUrlParts.searchParams.set("room_id", roomId);
+    this.logger.debug(redirectUrlParts.toString());
+    const openedWindow = this.openWindowInPopup(redirectUrlParts);
+    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, this.configService.systemConfig$.sdkMode);
+  }
+  accountConnectWithPopup(connectData) {
+    const redirectUrlParts = this.generateConnectURL(connectData);
+    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
+    this.logger.debug(redirectUrlParts.toString());
+    const openedWindow = this.openWindowInPopup(redirectUrlParts);
+    return waitForPostMessageOrgConnectionOrTimeout(this.logger, openedWindow, this.configService.systemConfig$.sdkMode);
   }
   authorizeTefcaDirect(vaultConnectionIds, external_id) {
     const url = `${environment.connect_api_endpoint_base}/bridge/vault_connection/authorize`;
@@ -47590,6 +47834,46 @@ var FastenService = class _FastenService {
       vault_connection_ids: vaultConnectionIds,
       external_id
     }, { params: { public_id: this.configService.systemConfig$.publicId } }).pipe(map((resp) => resp.data));
+  }
+  /// HELPERS
+  openWindowInPopup(redirectUrlParts) {
+    const isDesktop = this.deviceService.isDesktop();
+    let features = "";
+    if (isDesktop) {
+      features = "popup=true,width=700,height=600";
+    }
+    return window.open(redirectUrlParts.toString(), "_blank", features);
+  }
+  generateWebsocketURL(roomId) {
+    const websocketUrlParts = new URL(`wss://websocket.${environment.connect_base_domain}/v1`);
+    const websocketParams = new URLSearchParams();
+    websocketParams.set("public_id", this.configService.systemConfig$.publicId);
+    websocketParams.set("room_id", roomId);
+    websocketUrlParts.search = websocketParams.toString();
+    return websocketUrlParts;
+  }
+  generateConnectURL(connectData) {
+    const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/connect`);
+    const redirectParams = new URLSearchParams();
+    redirectParams.set("public_id", this.configService.systemConfig$.publicId);
+    redirectParams.set("brand_id", connectData.brand_id);
+    redirectParams.set("portal_id", connectData.portal_id);
+    redirectParams.set("endpoint_id", connectData.endpoint_id);
+    redirectParams.set("sdk_mode", this.configService.systemConfig$.sdkMode);
+    if (connectData.org_connection_id) {
+      redirectParams.set("reconnect_org_connection_id", connectData.org_connection_id);
+    }
+    if (connectData.external_id) {
+      redirectParams.set("external_id", connectData.external_id);
+    }
+    if (connectData.external_state) {
+      redirectParams.set("external_state", connectData.external_state);
+    }
+    if (connectData.vault_profile_connection_id) {
+      redirectParams.set("reconnect_vault_profile_connection_id", connectData.vault_profile_connection_id);
+    }
+    redirectUrlParts.search = redirectParams.toString();
+    return redirectUrlParts;
   }
   reverseGeocodePostalCode(latitude, longitude) {
     let queryParams = {};
@@ -47744,6 +48028,7 @@ var AppComponent = class _AppComponent {
     this.portalId = urlParams.get("portal-id") || "";
     this.endpointId = urlParams.get("endpoint-id") || "";
     this.sdkMode = urlParams.get("sdk-mode") || SDKMode.None;
+    this.connectMode = urlParams.get("connect-mode") || ConnectMode.Popup;
     if (!this.searchOnly && !this.tefcaMode) {
       this.searchOnly = true;
     }
@@ -47771,6 +48056,7 @@ var AppComponent = class _AppComponent {
     this.portalId = "";
     this.endpointId = "";
     this.sdkMode = "";
+    this.connectMode = "";
     this.loading = true;
   }
   ngOnInit() {
@@ -47796,10 +48082,11 @@ var AppComponent = class _AppComponent {
       tefcaMode: this.tefcaMode,
       tefcaCspPromptForce: this.tefcaCspPromptForce,
       eventTypes,
-      sdkMode: this.sdkMode
+      sdkMode: this.sdkMode,
+      connectMode: this.connectMode
     };
     this.messageBus.messageBusSubject.subscribe((eventPayload) => {
-      this.logger.debug("bubbling up event", eventPayload);
+      this.logger.debug("bubbling up client-event", eventPayload);
       this.sendPostMessage(eventPayload);
     });
     if (this.reconnectOrgConnectionId) {
@@ -47925,7 +48212,7 @@ var AppComponent = class _AppComponent {
   }
   // postMessage registration, listen to events from the parent window
   receivePostMessage(event) {
-    this.logger.debug("received postMessage", event);
+    this.logger.debug("received client-event from parent window", event);
   }
   sendPostMessage(eventPayload) {
     if (eventPayload == null) {
@@ -47933,14 +48220,14 @@ var AppComponent = class _AppComponent {
       return;
     }
     if (this.sdkMode == SDKMode.ReactNative && window.ReactNativeWebView) {
-      this.logger.info("sending postMessage to React Native WebView", eventPayload);
+      this.logger.info("sending client-event to React Native WebView", eventPayload);
       window.ReactNativeWebView.postMessage(JSON.stringify({
         "from": CommunicationEntity.PrimaryWebView,
         "to": CommunicationEntity.External,
         "payload": JSON.stringify(eventPayload)
       }));
     } else if (window.opener || window.parent) {
-      this.logger.info("sending postMessage", eventPayload);
+      this.logger.info("sending client-event", eventPayload);
       let parentWindowRef = window.parent || window.opener;
       parentWindowRef.postMessage(JSON.stringify(eventPayload), "*");
     } else {
@@ -47964,7 +48251,7 @@ var AppComponent = class _AppComponent {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in", "flex", "h-screen", "flex-col", "overflow-hidden"], [1, "flex-1", "min-h-0", "flex", "flex-col"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in", "flex", "h-screen", "flex-col", "overflow-hidden"], [1, "flex-1", "min-h-0", "flex", "flex-col"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275element(0, "link", 0);
         \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
@@ -57244,11 +57531,20 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     this.ApiMode = ApiMode;
     this.environment = environment;
   }
+  ngOnDestroy() {
+    this.identityVerificationSubscription.unsubscribe();
+  }
   ngOnInit() {
   }
   verifyIdentity(cspType) {
     this.loading = true;
-    this.fastenService.verificationWithPopup(cspType).subscribe((result) => {
+    let identityVerificationObservable;
+    if (this.configService.systemConfig$.connectMode == ConnectMode.Websocket) {
+      identityVerificationObservable = this.fastenService.verificationWithWebsocket(cspType);
+    } else {
+      identityVerificationObservable = this.fastenService.verificationWithPopup(cspType);
+    }
+    this.identityVerificationSubscription = identityVerificationObservable.subscribe((result) => {
       this.loading = false;
       if (result?.vault_auth_finish_response?.has_verified_identity && result?.vault_auth_finish_response?.verified_identity_csp_type) {
         this.logger.info("setting verified identity csp_type csp type to", result.vault_auth_finish_response.verified_identity_csp_type);
@@ -57338,7 +57634,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 21 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 22 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/connect-helper.ts
@@ -57350,12 +57646,21 @@ function ConnectHelper(connectData) {
   if (!connectData.external_state) {
     connectData.external_state = v4_default();
   }
+  if (!connectData.connect_mode) {
+    connectData.connect_mode = ConnectMode.Popup;
+  }
   messageBusService.publishOrgConnectionPending(connectData);
   let onSuccessNavigateByUrl = "dashboard";
   if (connectData.org_connection_id) {
     onSuccessNavigateByUrl = "dashboard/complete";
   }
-  vaultApi.accountConnectWithPopup(connectData.brand_id, connectData.portal_id, connectData.endpoint_id, connectData.org_connection_id, connectData.external_id, connectData.external_state, connectData.vault_profile_connection_id).subscribe((orgConnectionCallbackData) => {
+  let connectObservable;
+  if (connectData.connect_mode == ConnectMode.Websocket) {
+    connectObservable = vaultApi.accountConnectWithWebsocket(connectData);
+  } else {
+    connectObservable = vaultApi.accountConnectWithPopup(connectData);
+  }
+  return connectObservable.subscribe((orgConnectionCallbackData) => {
     if (!orgConnectionCallbackData) {
       return;
     }
@@ -57755,7 +58060,6 @@ var DashboardComponent = class _DashboardComponent {
         console.log("record locator response", rlsResponse);
         let numDiscovered = Object.keys(rlsResponse.discovered_patient_accounts).length;
         let numPending = Object.keys(rlsResponse.pending_patient_accounts).length;
-        let numConnected = Object.keys(rlsResponse.connected_patient_accounts).length;
         for (let vaultProfileConnectionId in rlsResponse.discovered_patient_accounts) {
           const discoveredFacility = rlsResponse.discovered_patient_accounts[vaultProfileConnectionId];
           this.configService.vaultProfileAddDiscoveredRecordLocatorAccount(discoveredFacility, vaultProfileConnectionId);
@@ -57766,16 +58070,11 @@ var DashboardComponent = class _DashboardComponent {
           this.configService.vaultProfileAddPendingRecordLocatorAccount(pendingFacility, vaultProfileConnectionId);
           console.log("PENDING", pendingFacility);
         }
-        for (let vaultProfileConnectionId in rlsResponse.connected_patient_accounts) {
-          const connectedFacility = rlsResponse.connected_patient_accounts[vaultProfileConnectionId];
-          this.configService.vaultProfileAddConnectedRecordLocatorAccount(connectedFacility, vaultProfileConnectionId);
-          console.log("CONNECTED", connectedFacility);
-        }
         this.loadingTefcaRLS = false;
         this.configService.vaultProfileConfig = {
           rlsQueryComplete: true
         };
-        this.emptyTefcaRLSResult = numDiscovered + numPending + numConnected == 0;
+        this.emptyTefcaRLSResult = numDiscovered + numPending == 0;
       }, (err) => {
         this.loadingTefcaRLS = false;
         console.error("Error fetching RLS data", err);
@@ -57815,10 +58114,7 @@ var DashboardComponent = class _DashboardComponent {
   }
   completeAccounts() {
     const connectedAccounts = this.configService.vaultProfileConfig$.connectedPatientAccounts || [];
-    const tefcaDirectAccounts = connectedAccounts.filter((acc) => {
-      return acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect && !acc.org_connection_id;
-    });
-    this.logger.debug("TEFCA Direct connected accounts to complete:", tefcaDirectAccounts);
+    const tefcaDirectAccounts = connectedAccounts.filter((acc) => acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect);
     const vaultConnectionIds = tefcaDirectAccounts.map((a) => a.vault_profile_connection_id).filter((id) => !!id);
     const uniqueVaultConnectionIds = Array.from(new Set(vaultConnectionIds));
     if (uniqueVaultConnectionIds.length === 0) {
@@ -59465,9 +59761,12 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
     this.vaultProfileConnectionId = "";
     this.sdkMode = SDKMode.None;
   }
+  ngOnDestroy() {
+    this.connectHelperSubscription.unsubscribe();
+  }
   ngOnInit() {
     this.injector.runInContext(() => {
-      ConnectHelper({
+      this.connectHelperSubscription = ConnectHelper({
         public_id: this.configService.systemConfig$.publicId,
         brand_id: this.brandId,
         portal_id: this.portalId,
@@ -59475,8 +59774,8 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         org_connection_id: this.orgConnectionId,
         external_id: this.externalId,
         external_state: this.externalState,
-        vault_profile_connection_id: this.vaultProfileConnectionId
-        // connect_mode: this.connectMode,
+        vault_profile_connection_id: this.vaultProfileConnectionId,
+        connect_mode: this.configService.systemConfig$.connectMode
       });
     });
   }
@@ -59557,7 +59856,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemConnectingComponent, { className: "HealthSystemConnectingComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts", lineNumber: 20 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemConnectingComponent, { className: "HealthSystemConnectingComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts", lineNumber: 21 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/complete/complete.component.ts
