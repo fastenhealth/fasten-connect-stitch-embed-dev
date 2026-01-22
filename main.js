@@ -40490,6 +40490,12 @@ var ConfigService = class _ConfigService {
     updatedVaultProfile.addDiscoveredAccount(recordLocatorFacility.brand, recordLocatorFacility.portal, recordLocatorFacility.endpoint, vaultProfileConnectionId);
     this.vaultProfileConfig = updatedVaultProfile;
   }
+  //this can only be used after the RLS account has been previously connected
+  vaultProfileAddConnectedRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId) {
+    let updatedVaultProfile = this.vaultProfileConfig$;
+    updatedVaultProfile.addConnectedRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId);
+    this.vaultProfileConfig = updatedVaultProfile;
+  }
   //Setter
   set searchConfig(value) {
     const mergedSettings = (0, import_lodash.merge)({}, this.searchConfigSubject.getValue(), value);
@@ -40674,6 +40680,24 @@ var VaultProfileConfig = class {
       });
     }
   }
+  addConnectedRecordLocatorAccount(recordLocatorFacilityConnected, vault_profile_connection_id) {
+    if (!this.connectedPatientAccounts) {
+      this.connectedPatientAccounts = [];
+    }
+    this.connectedPatientAccounts?.push({
+      org_connection_id: recordLocatorFacilityConnected.org_connection_id,
+      connection_status: "connected",
+      platform_type: "tefca",
+      brand: recordLocatorFacilityConnected.brand,
+      portal: recordLocatorFacilityConnected.portal,
+      endpoint: recordLocatorFacilityConnected.endpoint,
+      vault_profile_connection_id,
+      patient_auth_type: recordLocatorFacilityConnected.patient_authorization_type,
+      scope: "",
+      consent_expires_at: "",
+      tefca_directory_id: recordLocatorFacilityConnected.facility_id
+    });
+  }
   // this is used when we successfully generated an org_connection_id for a TEFCA Direct account.
   authorizeTefcaDirectConnectedAccount(vaultProfileConnectionId, orgConnectionId, connectionStatus, tefcaDirectoryId) {
     let ndx = this.connectedPatientAccounts?.findIndex((acc) => acc.vault_profile_connection_id === vaultProfileConnectionId);
@@ -40705,6 +40729,7 @@ var RecordLocatorResponse = class {
   constructor() {
     this.pending_patient_accounts = {};
     this.discovered_patient_accounts = {};
+    this.connected_patient_accounts = {};
   }
 };
 
@@ -58079,6 +58104,7 @@ var DashboardComponent = class _DashboardComponent {
         console.log("record locator response", rlsResponse);
         let numDiscovered = Object.keys(rlsResponse.discovered_patient_accounts).length;
         let numPending = Object.keys(rlsResponse.pending_patient_accounts).length;
+        let numConnected = Object.keys(rlsResponse.connected_patient_accounts).length;
         for (let vaultProfileConnectionId in rlsResponse.discovered_patient_accounts) {
           const discoveredFacility = rlsResponse.discovered_patient_accounts[vaultProfileConnectionId];
           this.configService.vaultProfileAddDiscoveredRecordLocatorAccount(discoveredFacility, vaultProfileConnectionId);
@@ -58089,11 +58115,16 @@ var DashboardComponent = class _DashboardComponent {
           this.configService.vaultProfileAddPendingRecordLocatorAccount(pendingFacility, vaultProfileConnectionId);
           console.log("PENDING", pendingFacility);
         }
+        for (let vaultProfileConnectionId in rlsResponse.connected_patient_accounts) {
+          const connectedFacility = rlsResponse.connected_patient_accounts[vaultProfileConnectionId];
+          this.configService.vaultProfileAddConnectedRecordLocatorAccount(connectedFacility, vaultProfileConnectionId);
+          console.log("CONNECTED", connectedFacility);
+        }
         this.loadingTefcaRLS = false;
         this.configService.vaultProfileConfig = {
           rlsQueryComplete: true
         };
-        this.emptyTefcaRLSResult = numDiscovered + numPending == 0;
+        this.emptyTefcaRLSResult = numDiscovered + numPending + numConnected == 0;
       }, (err) => {
         this.loadingTefcaRLS = false;
         console.error("Error fetching RLS data", err);
@@ -58133,7 +58164,10 @@ var DashboardComponent = class _DashboardComponent {
   }
   completeAccounts() {
     const connectedAccounts = this.configService.vaultProfileConfig$.connectedPatientAccounts || [];
-    const tefcaDirectAccounts = connectedAccounts.filter((acc) => acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect);
+    const tefcaDirectAccounts = connectedAccounts.filter((acc) => {
+      return acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect && !acc.org_connection_id;
+    });
+    this.logger.debug("TEFCA Direct connected accounts to complete:", tefcaDirectAccounts);
     const vaultConnectionIds = tefcaDirectAccounts.map((a) => a.vault_profile_connection_id).filter((id) => !!id);
     const uniqueVaultConnectionIds = Array.from(new Set(vaultConnectionIds));
     if (uniqueVaultConnectionIds.length === 0) {
