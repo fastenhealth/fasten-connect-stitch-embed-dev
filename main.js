@@ -47798,7 +47798,7 @@ var FastenService = class _FastenService {
       features = "popup=true,width=700,height=600";
     }
     let openedWindow = window.open(redirectUrl.toString(), "_blank", features);
-    return waitForPostMessageOrgConnectionOrTimeout(this.logger, openedWindow, SDKMode.None);
+    return this.waitForPopupNotification(openedWindow, SDKMode.None);
   }
   verificationWithWebsocket(cspType) {
     const roomId = v4_default();
@@ -47810,7 +47810,7 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("room_id", roomId);
     this.logger.debug(redirectUrlParts.toString());
     const openedWindow = this.openWindowInPopup(redirectUrlParts);
-    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, this.configService.systemConfig$.sdkMode).pipe(delay(2500));
+    return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(delay(2500));
   }
   verificationWithPopup(cspType) {
     const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
@@ -47818,7 +47818,7 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
     const openedWindow = this.openWindowInPopup(redirectUrlParts);
-    return waitForPostMessageOrgConnectionOrTimeout(this.logger, openedWindow, this.configService.systemConfig$.sdkMode);
+    return this.waitForPopupNotification(openedWindow);
   }
   accountConnectWithWebsocket(connectData) {
     const roomId = v4_default();
@@ -47828,14 +47828,14 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("room_id", roomId);
     this.logger.debug(redirectUrlParts.toString());
     const openedWindow = this.openWindowInPopup(redirectUrlParts);
-    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, this.configService.systemConfig$.sdkMode);
+    return this.waitForWebsocketNotification(websocketUrl, openedWindow);
   }
   accountConnectWithPopup(connectData) {
     const redirectUrlParts = this.generateConnectURL(connectData);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
     this.logger.debug(redirectUrlParts.toString());
     const openedWindow = this.openWindowInPopup(redirectUrlParts);
-    return waitForPostMessageOrgConnectionOrTimeout(this.logger, openedWindow, this.configService.systemConfig$.sdkMode);
+    return this.waitForPopupNotification(openedWindow);
   }
   authorizeTefcaDirect(vaultConnectionIds, external_id) {
     const url = `${environment.connect_api_endpoint_base}/bridge/vault_connection/authorize`;
@@ -47883,6 +47883,14 @@ var FastenService = class _FastenService {
     }
     redirectUrlParts.search = redirectParams.toString();
     return redirectUrlParts;
+  }
+  waitForPopupNotification(openedWindow, overrideSdkMode) {
+    const sdkMode = overrideSdkMode ?? this.configService.systemConfig$.sdkMode;
+    return waitForPostMessageOrgConnectionOrTimeout(this.logger, openedWindow, sdkMode);
+  }
+  waitForWebsocketNotification(websocketUrl, openedWindow, overrideSdkMode) {
+    const sdkMode = overrideSdkMode ?? this.configService.systemConfig$.sdkMode;
+    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, sdkMode);
   }
   reverseGeocodePostalCode(latitude, longitude) {
     let queryParams = {};
