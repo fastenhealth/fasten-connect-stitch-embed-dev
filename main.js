@@ -47827,7 +47827,7 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("room_id", roomId);
     this.logger.debug(redirectUrlParts.toString());
     const openedWindow = this.openWindowInPopup(redirectUrlParts);
-    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, this.configService.systemConfig$.sdkMode).pipe(delay(2e3));
+    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, this.configService.systemConfig$.sdkMode).pipe(delay(2500));
   }
   verificationWithPopup(cspType) {
     const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
