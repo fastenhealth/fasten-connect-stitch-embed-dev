@@ -59848,11 +59848,10 @@ function HealthSystemBrandDetailsComponent_ng_container_19_div_1_Template(rf, ct
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_4_0;
     const endpoint_r4 = ctx.$implicit;
     const portal_r5 = \u0275\u0275nextContext().$implicit;
     \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate((tmp_4_0 = endpoint_r4.platform_type_override) !== null && tmp_4_0 !== void 0 ? tmp_4_0 : endpoint_r4.platform_type);
+    \u0275\u0275textInterpolate(endpoint_r4.platform_type_override || endpoint_r4.platform_type);
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate(portal_r5.name);
     \u0275\u0275advance(3);
