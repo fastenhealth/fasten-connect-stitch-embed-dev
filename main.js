@@ -40636,7 +40636,7 @@ var VaultProfileConfig = class {
     let foundDiscoveredPatientAccount = this.discoveredPatientAccounts?.[external_state];
     if (foundPendingPatientAccount) {
       delete this.pendingPatientAccounts[external_state];
-      this.connectedPatientAccounts?.push({
+      this.upsertConnectedAccount({
         org_connection_id,
         connection_status,
         platform_type,
@@ -40651,7 +40651,7 @@ var VaultProfileConfig = class {
       });
     } else if (foundDiscoveredPatientAccount) {
       delete this.discoveredPatientAccounts[external_state];
-      this.connectedPatientAccounts?.push({
+      this.upsertConnectedAccount({
         org_connection_id,
         connection_status,
         platform_type,
@@ -40665,7 +40665,7 @@ var VaultProfileConfig = class {
     } else {
       console.warn("we may not know the brand, portal, endpoint information, so generating it with placeholders. Most likely this is a reconnect operation.");
       console.warn("pendingAccounts", this.pendingPatientAccounts, "connectionParams", org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id);
-      this.connectedPatientAccounts?.push({
+      this.upsertConnectedAccount({
         org_connection_id,
         connection_status,
         platform_type,
@@ -40684,7 +40684,7 @@ var VaultProfileConfig = class {
     if (!this.connectedPatientAccounts) {
       this.connectedPatientAccounts = [];
     }
-    this.connectedPatientAccounts?.push({
+    this.upsertConnectedAccount({
       org_connection_id: recordLocatorFacilityConnected.org_connection_id,
       connection_status: "connected",
       platform_type: "tefca",
@@ -40721,6 +40721,22 @@ var VaultProfileConfig = class {
     }
     this.connectedPatientAccounts.splice(ndx, 1);
     return true;
+  }
+  upsertConnectedAccount(account) {
+    if (!this.connectedPatientAccounts) {
+      this.connectedPatientAccounts = [];
+    }
+    const existingIndex = this.connectedPatientAccounts.findIndex((existingAccount) => {
+      if (account.vault_profile_connection_id && existingAccount.vault_profile_connection_id === account.vault_profile_connection_id) {
+        return true;
+      }
+      return !!account.org_connection_id && existingAccount.org_connection_id === account.org_connection_id;
+    });
+    if (existingIndex >= 0) {
+      this.connectedPatientAccounts[existingIndex] = __spreadValues(__spreadValues({}, this.connectedPatientAccounts[existingIndex]), account);
+      return;
+    }
+    this.connectedPatientAccounts.push(account);
   }
 };
 
@@ -41095,6 +41111,164 @@ function Base64UrlDecode(str) {
     str += "=";
   }
   return atob(str);
+}
+
+// projects/shared-library/src/lib/utils/tefca.ts
+function StoreRecordLocatorResultsInVaultProfile(configService, rlsResponse) {
+  const numDiscovered = Object.keys(rlsResponse.discovered_patient_accounts || {}).length;
+  const numPending = Object.keys(rlsResponse.pending_patient_accounts || {}).length;
+  const numConnected = Object.keys(rlsResponse.connected_patient_accounts || {}).length;
+  for (const vaultProfileConnectionId of Object.keys(rlsResponse.discovered_patient_accounts || {})) {
+    const discoveredFacility = rlsResponse.discovered_patient_accounts[vaultProfileConnectionId];
+    configService.vaultProfileAddDiscoveredRecordLocatorAccount(discoveredFacility, vaultProfileConnectionId);
+  }
+  for (const vaultProfileConnectionId of Object.keys(rlsResponse.pending_patient_accounts || {})) {
+    const pendingFacility = rlsResponse.pending_patient_accounts[vaultProfileConnectionId];
+    configService.vaultProfileAddPendingRecordLocatorAccount(pendingFacility, vaultProfileConnectionId);
+  }
+  for (const vaultProfileConnectionId of Object.keys(rlsResponse.connected_patient_accounts || {})) {
+    const connectedFacility = rlsResponse.connected_patient_accounts[vaultProfileConnectionId];
+    configService.vaultProfileAddConnectedRecordLocatorAccount(connectedFacility, vaultProfileConnectionId);
+  }
+  return {
+    numDiscovered,
+    numPending,
+    numConnected
+  };
+}
+function ProcessTefcaDirectAuthorizationResults(vaultConnectionIds, resp) {
+  const configService = inject(ConfigService);
+  const messageBusService = inject(MessageBusService);
+  const successes = resp?.successes || {};
+  const failures = resp?.failures || {};
+  vaultConnectionIds.forEach((id) => {
+    const successData = successes[id];
+    const failureData = failures[id];
+    if (successData) {
+      const orgConnectionId = successData.org_connection_id ?? "";
+      const connectionStatus = successData.connection_status ?? "authorized";
+      const platformType = successData.platform_type ?? "tefca";
+      const payload = {
+        external_state: id,
+        external_id: configService.systemConfig$.externalId,
+        request_id: resp?.request_id,
+        org_connection_id: orgConnectionId,
+        connection_status: connectionStatus,
+        platform_type: platformType,
+        vault_profile_connection_id: id,
+        patient_auth_type: SourceCredentialType.SourceCredentialTypeTefcaDirect,
+        tefca_directory_id: successData.tefca_directory_id
+      };
+      messageBusService.publishOrgConnectionComplete(payload);
+      configService.vaultProfileAuthorizeTefcaDirectConnectedAccount(id, orgConnectionId, connectionStatus, successData.tefca_directory_id);
+    } else if (failureData) {
+      const error = failureData.error || "fasten_server_error";
+      const errorDescription = failureData.error_description || "An unknown server error occurred: missing error type";
+      const payload = {
+        external_state: id,
+        vault_profile_connection_id: id,
+        external_id: configService.systemConfig$.externalId,
+        request_id: resp?.request_id,
+        error,
+        error_description: errorDescription,
+        patient_auth_type: SourceCredentialType.SourceCredentialTypeTefcaDirect
+      };
+      messageBusService.publishOrgConnectionComplete(payload);
+      configService.vaultProfileRevokeTefcaDirectConnectedAccount(id);
+    } else {
+      const payload = {
+        external_state: id,
+        vault_profile_connection_id: id,
+        external_id: configService.systemConfig$.externalId,
+        request_id: resp?.request_id,
+        error: "fasten_server_error",
+        error_description: "An unknown server error occurred: missing error type",
+        patient_auth_type: SourceCredentialType.SourceCredentialTypeTefcaDirect
+      };
+      messageBusService.publishOrgConnectionComplete(payload);
+      configService.vaultProfileRevokeTefcaDirectConnectedAccount(id);
+    }
+  });
+}
+
+// projects/shared-library/src/lib/utils/patient-demographics.ts
+function formatPatientDemographicsName(demographics) {
+  if (!demographics?.patientName?.length) {
+    return "Not available";
+  }
+  const patientName = demographics.patientName[0];
+  const givenNames = (patientName?.given || []).map((name) => name?.trim()).filter((name) => !!name).join(" ");
+  const familyName = (patientName?.family || "").trim();
+  const suffix = patientName?.suffix ? String(patientName.suffix).trim() : "";
+  const parts = [givenNames, familyName, suffix].filter((part) => !!part);
+  return parts.length ? parts.join(" ") : "Not available";
+}
+function formatPatientDemographicsAddress(demographics) {
+  if (!demographics?.addressInformation?.length) {
+    return "Not available";
+  }
+  const address = demographics.addressInformation[0];
+  if (!address) {
+    return "Not available";
+  }
+  const streetLine = [address.street, address.unit].map((value) => toCleanString(value)).filter((value) => !!value).join(" ");
+  const cityState = [
+    toCleanString(address.city),
+    toCleanString(address.state)
+  ].filter((value) => !!value).join(", ");
+  const zip = toCleanString(address.zip);
+  const country = toCleanString(address.country);
+  const county = toCleanString(address.county);
+  const lines = [
+    streetLine,
+    [cityState, zip].filter((value) => !!value).join(" "),
+    [country, county ? `${county} County` : ""].filter((value) => !!value).join(", ")
+  ].filter((line) => !!line);
+  return lines.length ? lines.join("\n") : "Not available";
+}
+function formatPatientDemographicsBirthdate(demographics) {
+  if (demographics?.birthDate) {
+    return String(demographics.birthDate).trim().split("T")[0];
+  }
+  return "Not available";
+}
+function toCleanString(value) {
+  if (value === null || value === void 0) {
+    return "";
+  }
+  return String(value).trim();
+}
+
+// projects/shared-library/src/lib/utils/support-request.ts
+function buildSupportRequestZendeskTicket(request, context2) {
+  const body = `${request.request_content}
+
+
+\`\`\`${JSON.stringify({
+    healthsystem_name: request.healthsystem_name,
+    version: request.version,
+    arch: request.arch,
+    os: request.os,
+    error: request.error,
+    error_description: request.error_description,
+    brand_id: request.brand_id,
+    portal_id: request.portal_id,
+    endpoint_id: request.endpoint_id,
+    org_connection_id: request.org_connection_id,
+    vault_profile_connection_id: request.vault_profile_connection_id,
+    external_id: request.external_id,
+    external_state: request.external_state,
+    request_id: request.request_id
+  })}\`\`\``;
+  return {
+    name: request.email,
+    email: request.email,
+    body,
+    subject: `Support Request from ${request.healthsystem_name}`,
+    organization_id: context2.organizationId,
+    organization_name: context2.organizationName,
+    api_mode: context2.apiMode
+  };
 }
 
 // projects/shared-library/src/lib/shared-library.service.ts
@@ -47785,31 +47959,11 @@ var FastenService = class _FastenService {
   }
   requestSupport(request) {
     const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/support/request`);
-    let body = request.request_content + "\n\n\n```" + JSON.stringify({
-      healthsystem_name: request.healthsystem_name,
-      version: request.version,
-      arch: request.arch,
-      os: request.os,
-      //these fields will be filled out if an error occured while connecting the account
-      error: request.error,
-      error_description: request.error_description,
-      brand_id: request.brand_id,
-      portal_id: request.portal_id,
-      endpoint_id: request.endpoint_id,
-      org_connection_id: request.org_connection_id,
-      external_id: request.external_id,
-      external_state: request.external_state,
-      request_id: request.request_id
-    }) + "```";
-    let zendeskTicket = {
-      name: request.email,
-      email: request.email,
-      body,
-      subject: `Support Request from ${request.healthsystem_name}`,
-      organization_id: this.configService.systemConfig$.org?.id || "",
-      organization_name: this.configService.systemConfig$.org?.name || "",
-      api_mode: this.configService.systemConfig$.apiMode || "test"
-    };
+    const zendeskTicket = buildSupportRequestZendeskTicket(request, {
+      organizationId: this.configService.systemConfig$.org?.id || "",
+      organizationName: this.configService.systemConfig$.org?.name || "",
+      apiMode: this.configService.systemConfig$.apiMode || "test"
+    });
     return this._httpClient.post(endpointUrl.toString(), zendeskTicket, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
       return {};
     }));
@@ -57832,161 +57986,6 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 22 });
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/utils/connect-helper.ts
-function ConnectHelper(connectData) {
-  const vaultApi = inject(FastenService);
-  const configService = inject(ConfigService);
-  const router = inject(Router);
-  const messageBusService = inject(MessageBusService);
-  if (!connectData.external_state) {
-    connectData.external_state = v4_default();
-  }
-  if (!connectData.connect_mode) {
-    connectData.connect_mode = ConnectMode.Popup;
-  }
-  messageBusService.publishOrgConnectionPending(connectData);
-  let onSuccessNavigateByUrl = "dashboard";
-  if (connectData.org_connection_id) {
-    onSuccessNavigateByUrl = "dashboard/complete";
-  }
-  let connectObservable;
-  if (connectData.connect_mode == ConnectMode.Websocket) {
-    connectObservable = vaultApi.accountConnectWithWebsocket(connectData);
-  } else {
-    connectObservable = vaultApi.accountConnectWithPopup(connectData);
-  }
-  return connectObservable.subscribe((orgConnectionCallbackData) => {
-    if (!orgConnectionCallbackData) {
-      return;
-    }
-    messageBusService.publishOrgConnectionComplete(orgConnectionCallbackData);
-    configService.vaultProfileAddConnectedAccount(orgConnectionCallbackData);
-    router.navigateByUrl(onSuccessNavigateByUrl);
-  }, (err) => {
-    console.error("popup error data", err);
-    try {
-      let errData;
-      if (typeof err === "string") {
-        errData = JSON.parse(err);
-      } else if (typeof err.message === "string") {
-        errData = JSON.parse(err.message);
-      } else {
-        errData = err;
-      }
-      if (errData.error == "timeout") {
-        return router.navigateByUrl(onSuccessNavigateByUrl);
-      } else {
-        console.error("an error occurred while attempting to connect health system", err);
-        messageBusService.publishOrgConnectionComplete({
-          org_connection_id: connectData.org_connection_id,
-          endpoint_id: connectData.endpoint_id,
-          brand_id: connectData.brand_id,
-          portal_id: connectData.portal_id,
-          request_id: errData.request_id,
-          error: errData.error || "unknown_error_during_connect",
-          error_description: errData.error_description || "an unknown error occurred during the connection process"
-        });
-        router.navigate(["form/support"], {
-          queryParams: {
-            "error": errData.error || "unknown_error_during_connect",
-            "error_description": errData.error_description || "an unknown error occurred during the connection process",
-            "brand_id": connectData.brand_id,
-            "portal_id": connectData.portal_id,
-            "endpoint_id": connectData.endpoint_id,
-            "org_connection_id": connectData.org_connection_id,
-            "vault_profile_connection_id": connectData.vault_profile_connection_id,
-            "external_id": connectData.external_id,
-            "external_state": connectData.external_state || errData.external_state,
-            "request_id": errData.request_id
-          }
-        });
-      }
-    } catch (e) {
-      console.error("caught error parsing error data", e);
-      messageBusService.publishOrgConnectionComplete({
-        org_connection_id: connectData.org_connection_id,
-        endpoint_id: connectData.endpoint_id,
-        brand_id: connectData.brand_id,
-        portal_id: connectData.portal_id,
-        error: "unknown_error_during_connect",
-        error_description: "an unknown error occurred during the connection process"
-      });
-      router.navigate(["form/support"], {
-        queryParams: {
-          "error": "unknown_error_during_connect",
-          "error_description": `an unknown error occurred during the connection process: ${err}`,
-          "brand_id": connectData.brand_id,
-          "portal_id": connectData.portal_id,
-          "endpoint_id": connectData.endpoint_id,
-          "org_connection_id": connectData.org_connection_id,
-          "vault_profile_connection_id": connectData.vault_profile_connection_id,
-          "external_id": connectData.external_id,
-          "external_state": connectData.external_state || err["external_state"]
-        }
-      });
-    }
-    return null;
-  });
-}
-function ProcessTefcaDirectAuthorizationResultsHelper(vaultConnectionIds, resp) {
-  const configService = inject(ConfigService);
-  const messageBusService = inject(MessageBusService);
-  const successes = resp?.successes || {};
-  const failures = resp?.failures || {};
-  const vaultProfile = configService.vaultProfileConfig$;
-  vaultConnectionIds.forEach((id) => {
-    const successData = successes[id];
-    const failureData = failures[id];
-    if (successData) {
-      const orgConnectionId = successData.org_connection_id ?? "";
-      const connectionStatus = successData.connection_status ?? "authorized";
-      const platformType = successData.platform_type ?? "tefca";
-      const payload = {
-        external_state: id,
-        external_id: configService.systemConfig$.externalId,
-        request_id: resp?.request_id,
-        org_connection_id: orgConnectionId,
-        connection_status: connectionStatus,
-        platform_type: platformType,
-        vault_profile_connection_id: id,
-        patient_auth_type: "tefca_direct",
-        tefca_directory_id: successData.tefca_directory_id
-      };
-      messageBusService.publishOrgConnectionComplete(payload);
-      configService.vaultProfileAuthorizeTefcaDirectConnectedAccount(id, orgConnectionId, connectionStatus);
-    } else if (failureData) {
-      let error = failureData.error;
-      let errorDescription = failureData.error_description;
-      if (!error) {
-        error = "fasten_server_error";
-        errorDescription = "An unknown server error occurred: missing error type";
-      }
-      const payload = {
-        external_state: id,
-        vault_profile_connection_id: id,
-        external_id: configService.systemConfig$.externalId,
-        request_id: resp?.request_id,
-        error,
-        error_description: errorDescription,
-        patient_auth_type: "tefca_direct"
-      };
-      messageBusService.publishOrgConnectionComplete(payload);
-      configService.vaultProfileRevokeTefcaDirectConnectedAccount(id);
-    } else {
-      const payload = {
-        external_state: id,
-        vault_profile_connection_id: id,
-        external_id: configService.systemConfig$.externalId,
-        request_id: resp?.request_id,
-        error: "fasten_server_error",
-        error_description: "An unknown server error occurred: missing error type"
-      };
-      messageBusService.publishOrgConnectionComplete(payload);
-      configService.vaultProfileRevokeTefcaDirectConnectedAccount(id);
-    }
-  });
-}
-
 // projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts
 var _c04 = () => [];
 var _c12 = () => ({});
@@ -58253,24 +58252,7 @@ var DashboardComponent = class _DashboardComponent {
         }
       })).subscribe((rlsResponse) => {
         console.log("record locator response", rlsResponse);
-        let numDiscovered = Object.keys(rlsResponse.discovered_patient_accounts).length;
-        let numPending = Object.keys(rlsResponse.pending_patient_accounts).length;
-        let numConnected = Object.keys(rlsResponse.connected_patient_accounts).length;
-        for (let vaultProfileConnectionId in rlsResponse.discovered_patient_accounts) {
-          const discoveredFacility = rlsResponse.discovered_patient_accounts[vaultProfileConnectionId];
-          this.configService.vaultProfileAddDiscoveredRecordLocatorAccount(discoveredFacility, vaultProfileConnectionId);
-          console.log("DISCOVERED", discoveredFacility);
-        }
-        for (let vaultProfileConnectionId in rlsResponse.pending_patient_accounts) {
-          const pendingFacility = rlsResponse.pending_patient_accounts[vaultProfileConnectionId];
-          this.configService.vaultProfileAddPendingRecordLocatorAccount(pendingFacility, vaultProfileConnectionId);
-          console.log("PENDING", pendingFacility);
-        }
-        for (let vaultProfileConnectionId in rlsResponse.connected_patient_accounts) {
-          const connectedFacility = rlsResponse.connected_patient_accounts[vaultProfileConnectionId];
-          this.configService.vaultProfileAddConnectedRecordLocatorAccount(connectedFacility, vaultProfileConnectionId);
-          console.log("CONNECTED", connectedFacility);
-        }
+        const { numDiscovered, numPending, numConnected } = StoreRecordLocatorResultsInVaultProfile(this.configService, rlsResponse);
         this.loadingTefcaRLS = false;
         this.configService.vaultProfileConfig = {
           rlsQueryComplete: true
@@ -58329,14 +58311,14 @@ var DashboardComponent = class _DashboardComponent {
     this.fastenService.authorizeTefcaDirect(uniqueVaultConnectionIds, this.configService.systemConfig$.externalId).subscribe((resp) => {
       this.logger.info("TEFCA Direct authorization response", resp);
       this.injector.runInContext(() => {
-        ProcessTefcaDirectAuthorizationResultsHelper(uniqueVaultConnectionIds, resp);
+        ProcessTefcaDirectAuthorizationResults(uniqueVaultConnectionIds, resp);
       });
       this.isCompleting = false;
       this.router.navigateByUrl("dashboard/complete");
     }, (err) => {
       this.logger.error("Failed to authorize TEFCA Direct accounts", err);
       this.injector.runInContext(() => {
-        ProcessTefcaDirectAuthorizationResultsHelper(uniqueVaultConnectionIds, null);
+        ProcessTefcaDirectAuthorizationResults(uniqueVaultConnectionIds, null);
       });
       this.isCompleting = false;
       this.router.navigateByUrl("dashboard/complete");
@@ -58362,51 +58344,13 @@ var DashboardComponent = class _DashboardComponent {
     this.showPatientDemographicsPopover = !this.showPatientDemographicsPopover;
   }
   getVerifiedPatientName(demographics) {
-    if (!demographics?.patientName?.length) {
-      return "Not available";
-    }
-    const patientName = demographics.patientName[0];
-    const givenNames = (patientName?.given || []).map((name) => name?.trim()).filter((name) => !!name).join(" ");
-    const familyName = (patientName?.family || "").trim();
-    const suffix = patientName?.suffix ? String(patientName.suffix).trim() : "";
-    const parts = [givenNames, familyName, suffix].filter((part) => !!part);
-    return parts.length ? parts.join(" ") : "Not available";
+    return formatPatientDemographicsName(demographics);
   }
   getVerifiedPatientAddress(demographics) {
-    if (!demographics?.addressInformation?.length) {
-      return "Not available";
-    }
-    const address = demographics.addressInformation[0];
-    if (!address) {
-      return "Not available";
-    }
-    const streetLine = [address.street, address.unit].map((value) => this.toCleanString(value)).filter((value) => !!value).join(" ");
-    const cityStateZip = [
-      this.toCleanString(address.city),
-      this.toCleanString(address.state)
-    ].filter((value) => !!value).join(", ");
-    const zip = this.toCleanString(address.zip);
-    const country = this.toCleanString(address.country);
-    const county = this.toCleanString(address.county);
-    const lines = [
-      streetLine,
-      [cityStateZip, zip].filter((value) => !!value).join(" "),
-      [country, county ? `${county} County` : ""].filter((value) => !!value).join(", ")
-    ].filter((line) => !!line);
-    return lines.length ? lines.join("\n") : "Not available";
+    return formatPatientDemographicsAddress(demographics);
   }
   getVerifiedBirthdate(demographics) {
-    if (demographics?.birthDate) {
-      return String(demographics.birthDate).trim().split("T")[0];
-    }
-    return "Not available";
-  }
-  toCleanString(value) {
-    if (value === null || value === void 0) {
-      return "";
-    }
-    const str = String(value).trim();
-    return str;
+    return formatPatientDemographicsBirthdate(demographics);
   }
   static {
     this.\u0275fac = function DashboardComponent_Factory(__ngFactoryType__) {
@@ -58542,7 +58486,7 @@ var DashboardComponent = class _DashboardComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 38 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 42 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/state-codes.ts
@@ -59948,6 +59892,103 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemBrandDetailsComponent, { className: "HealthSystemBrandDetailsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts", lineNumber: 25 });
 })();
 
+// projects/fasten-connect-stitch-embed/src/app/utils/connect-helper.ts
+function ConnectHelper(connectData) {
+  const vaultApi = inject(FastenService);
+  const configService = inject(ConfigService);
+  const router = inject(Router);
+  const messageBusService = inject(MessageBusService);
+  if (!connectData.external_state) {
+    connectData.external_state = v4_default();
+  }
+  if (!connectData.connect_mode) {
+    connectData.connect_mode = ConnectMode.Popup;
+  }
+  messageBusService.publishOrgConnectionPending(connectData);
+  let onSuccessNavigateByUrl = "dashboard";
+  if (connectData.org_connection_id) {
+    onSuccessNavigateByUrl = "dashboard/complete";
+  }
+  let connectObservable;
+  if (connectData.connect_mode == ConnectMode.Websocket) {
+    connectObservable = vaultApi.accountConnectWithWebsocket(connectData);
+  } else {
+    connectObservable = vaultApi.accountConnectWithPopup(connectData);
+  }
+  return connectObservable.subscribe((orgConnectionCallbackData) => {
+    if (!orgConnectionCallbackData) {
+      return;
+    }
+    messageBusService.publishOrgConnectionComplete(orgConnectionCallbackData);
+    configService.vaultProfileAddConnectedAccount(orgConnectionCallbackData);
+    router.navigateByUrl(onSuccessNavigateByUrl);
+  }, (err) => {
+    console.error("popup error data", err);
+    try {
+      let errData;
+      if (typeof err === "string") {
+        errData = JSON.parse(err);
+      } else if (typeof err.message === "string") {
+        errData = JSON.parse(err.message);
+      } else {
+        errData = err;
+      }
+      if (errData.error == "timeout") {
+        return router.navigateByUrl(onSuccessNavigateByUrl);
+      } else {
+        console.error("an error occurred while attempting to connect health system", err);
+        messageBusService.publishOrgConnectionComplete({
+          org_connection_id: connectData.org_connection_id,
+          endpoint_id: connectData.endpoint_id,
+          brand_id: connectData.brand_id,
+          portal_id: connectData.portal_id,
+          request_id: errData.request_id,
+          error: errData.error || "unknown_error_during_connect",
+          error_description: errData.error_description || "an unknown error occurred during the connection process"
+        });
+        router.navigate(["form/support"], {
+          queryParams: {
+            "error": errData.error || "unknown_error_during_connect",
+            "error_description": errData.error_description || "an unknown error occurred during the connection process",
+            "brand_id": connectData.brand_id,
+            "portal_id": connectData.portal_id,
+            "endpoint_id": connectData.endpoint_id,
+            "org_connection_id": connectData.org_connection_id,
+            "vault_profile_connection_id": connectData.vault_profile_connection_id,
+            "external_id": connectData.external_id,
+            "external_state": connectData.external_state || errData.external_state,
+            "request_id": errData.request_id
+          }
+        });
+      }
+    } catch (e) {
+      console.error("caught error parsing error data", e);
+      messageBusService.publishOrgConnectionComplete({
+        org_connection_id: connectData.org_connection_id,
+        endpoint_id: connectData.endpoint_id,
+        brand_id: connectData.brand_id,
+        portal_id: connectData.portal_id,
+        error: "unknown_error_during_connect",
+        error_description: "an unknown error occurred during the connection process"
+      });
+      router.navigate(["form/support"], {
+        queryParams: {
+          "error": "unknown_error_during_connect",
+          "error_description": `an unknown error occurred during the connection process: ${err}`,
+          "brand_id": connectData.brand_id,
+          "portal_id": connectData.portal_id,
+          "endpoint_id": connectData.endpoint_id,
+          "org_connection_id": connectData.org_connection_id,
+          "vault_profile_connection_id": connectData.vault_profile_connection_id,
+          "external_id": connectData.external_id,
+          "external_state": connectData.external_state || err["external_state"]
+        }
+      });
+    }
+    return null;
+  });
+}
+
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts
 var _c07 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
 var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
@@ -60640,6 +60681,7 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
     this.formSupportRequest.portal_id = this.portal_id;
     this.formSupportRequest.endpoint_id = this.endpoint_id;
     this.formSupportRequest.org_connection_id = this.org_connection_id;
+    this.formSupportRequest.vault_profile_connection_id = this.vault_profile_connection_id;
     this.formSupportRequest.external_id = this.external_id;
     this.formSupportRequest.external_state = this.external_state;
     this.formSupportRequest.request_id = this.request_id;
@@ -60676,7 +60718,7 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormSupportRequestComponent, selectors: [["app-form-support-request"]], inputs: { error: "error", error_description: "error_description", brand_id: "brand_id", portal_id: "portal_id", endpoint_id: "endpoint_id", org_connection_id: "org_connection_id", external_id: "external_id", external_state: "external_state", request_id: "request_id" }, decls: 5, vars: 3, consts: [["requestSuccess", ""], ["supportRequestForm", "ngForm"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], ["class", "rounded-md border border-yellow-200 bg-yellow-50 p-4", 4, "ngIf"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["name", "email", "type", "email", "placeholder", "you@example.com", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["name", "healthsystem_name", "type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["name", "request_content", "placeholder", "please provide as much data as possible, it helps us prioritize your issue", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [4, "ngIf"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "rounded-md", "border", "border-yellow-200", "bg-yellow-50", "p-4"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-yellow-400"], [1, "font-medium", "text-yellow-800"], [1, "mt-1", "text-yellow-700"], ["class", "mt-1", 4, "ngIf"], [1, "font-medium"], [1, "mt-1"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormSupportRequestComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormSupportRequestComponent, selectors: [["app-form-support-request"]], inputs: { error: "error", error_description: "error_description", brand_id: "brand_id", portal_id: "portal_id", endpoint_id: "endpoint_id", org_connection_id: "org_connection_id", vault_profile_connection_id: "vault_profile_connection_id", external_id: "external_id", external_state: "external_state", request_id: "request_id" }, decls: 5, vars: 3, consts: [["requestSuccess", ""], ["supportRequestForm", "ngForm"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], ["class", "rounded-md border border-yellow-200 bg-yellow-50 p-4", 4, "ngIf"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["name", "email", "type", "email", "placeholder", "you@example.com", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["name", "healthsystem_name", "type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["name", "request_content", "placeholder", "please provide as much data as possible, it helps us prioritize your issue", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [4, "ngIf"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "rounded-md", "border", "border-yellow-200", "bg-yellow-50", "p-4"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-yellow-400"], [1, "font-medium", "text-yellow-800"], [1, "mt-1", "text-yellow-700"], ["class", "mt-1", 4, "ngIf"], [1, "font-medium"], [1, "mt-1"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormSupportRequestComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 2);
         \u0275\u0275element(1, "app-header", 3);
