@@ -40623,7 +40623,7 @@ var VaultProfileConfig = class {
     this.pendingPatientAccounts[externalState] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId };
   }
   //discovered accounts do not require a unique external state for matching, because they already have a unique identifier (vaultProfileConnectionId)
-  addDiscoveredAccount(brand, portal, endpoint, vaultProfileConnectionId, patientAuthorizationType) {
+  addDiscoveredAccount(brand, portal, endpoint, vaultProfileConnectionId, patientAuthorizationType = SourceCredentialType.SourceCredentialTypeTefcaDirect) {
     if (!this.discoveredPatientAccounts) {
       this.discoveredPatientAccounts = {};
     }
