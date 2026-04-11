@@ -39093,6 +39093,7 @@ var SourceCredentialType;
   SourceCredentialType2["SourceCredentialTypeSmartOnFhir"] = "smart_on_fhir";
   SourceCredentialType2["SourceCredentialTypeTefcaDirect"] = "tefca_direct";
   SourceCredentialType2["SourceCredentialTypeTefcaFacilitated"] = "tefca_facilitated";
+  SourceCredentialType2["SourceCredentialTypeMedicareDirect"] = "medicare_direct";
 })(SourceCredentialType || (SourceCredentialType = {}));
 var EventTypes;
 (function(EventTypes2) {
@@ -40487,7 +40488,7 @@ var ConfigService = class _ConfigService {
   }
   vaultProfileAddDiscoveredRecordLocatorAccount(recordLocatorFacility, vaultProfileConnectionId) {
     let updatedVaultProfile = this.vaultProfileConfig$;
-    updatedVaultProfile.addDiscoveredAccount(recordLocatorFacility.brand, recordLocatorFacility.portal, recordLocatorFacility.endpoint, vaultProfileConnectionId);
+    updatedVaultProfile.addDiscoveredAccount(recordLocatorFacility.brand, recordLocatorFacility.portal, recordLocatorFacility.endpoint, vaultProfileConnectionId, recordLocatorFacility.patient_authorization_type);
     this.vaultProfileConfig = updatedVaultProfile;
   }
   //this can only be used after the RLS account has been previously connected
@@ -40622,11 +40623,11 @@ var VaultProfileConfig = class {
     this.pendingPatientAccounts[externalState] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId };
   }
   //discovered accounts do not require a unique external state for matching, because they already have a unique identifier (vaultProfileConnectionId)
-  addDiscoveredAccount(brand, portal, endpoint, vaultProfileConnectionId) {
+  addDiscoveredAccount(brand, portal, endpoint, vaultProfileConnectionId, patientAuthorizationType) {
     if (!this.discoveredPatientAccounts) {
       this.discoveredPatientAccounts = {};
     }
-    this.discoveredPatientAccounts[vaultProfileConnectionId] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId };
+    this.discoveredPatientAccounts[vaultProfileConnectionId] = { brand, portal, endpoint, vault_profile_connection_id: vaultProfileConnectionId, patient_auth_type: patientAuthorizationType };
   }
   addConnectedAccount(external_state, org_connection_id, connection_status, platform_type, brand_id, portal_id, endpoint_id, vault_profile_connection_id, patient_auth_type, scope, consent_expires_at, tefca_directory_id) {
     if (!this.connectedPatientAccounts) {
@@ -58292,15 +58293,15 @@ var DashboardComponent = class _DashboardComponent {
       portal_id: pendingAccount.portal?.id,
       endpoint_id: pendingAccount.endpoint?.id,
       vault_profile_connection_id: pendingAccount.vault_profile_connection_id,
-      patient_auth_type: SourceCredentialType.SourceCredentialTypeTefcaDirect
+      patient_auth_type: pendingAccount.patient_auth_type || SourceCredentialType.SourceCredentialTypeTefcaDirect
     });
   }
   completeAccounts() {
     const connectedAccounts = this.configService.vaultProfileConfig$.connectedPatientAccounts || [];
     const tefcaDirectAccounts = connectedAccounts.filter((acc) => {
-      return acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect && !acc.org_connection_id;
+      return !acc.org_connection_id && (acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect || acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeMedicareDirect);
     });
-    this.logger.debug("TEFCA Direct connected accounts to complete:", tefcaDirectAccounts);
+    this.logger.debug(`Direct connected accounts to complete:`, tefcaDirectAccounts);
     const vaultConnectionIds = tefcaDirectAccounts.map((a) => a.vault_profile_connection_id).filter((id) => !!id);
     const uniqueVaultConnectionIds = Array.from(new Set(vaultConnectionIds));
     if (uniqueVaultConnectionIds.length === 0) {
@@ -58309,14 +58310,14 @@ var DashboardComponent = class _DashboardComponent {
     }
     this.isCompleting = true;
     this.fastenService.authorizeTefcaDirect(uniqueVaultConnectionIds, this.configService.systemConfig$.externalId).subscribe((resp) => {
-      this.logger.info("TEFCA Direct authorization response", resp);
+      this.logger.info("Direct authorization response", resp);
       this.injector.runInContext(() => {
         ProcessTefcaDirectAuthorizationResults(uniqueVaultConnectionIds, resp);
       });
       this.isCompleting = false;
       this.router.navigateByUrl("dashboard/complete");
     }, (err) => {
-      this.logger.error("Failed to authorize TEFCA Direct accounts", err);
+      this.logger.error("Failed to authorize Direct accounts", err);
       this.injector.runInContext(() => {
         ProcessTefcaDirectAuthorizationResults(uniqueVaultConnectionIds, null);
       });
