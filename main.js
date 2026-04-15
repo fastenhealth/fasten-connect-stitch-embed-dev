@@ -57875,6 +57875,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
         }
       } catch (e) {
         this.logger.error("Error parsing error response", e);
+        this.logger.error("original verification error", typeof err, err);
         this.router.navigate(["/auth/identity/verification/error"], { queryParams: { "error": "unknown", "error_description": "An unknown error occurred" } });
       }
       return;
