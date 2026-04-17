@@ -49528,7 +49528,7 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("room_id", roomId);
     this.logger.debug(redirectUrlParts.toString());
     let openedWindow;
-    if (this.requiresPartitionedCookies()) {
+    if (this.shouldUsePartitionedCookie()) {
       console.warn("partitioned popup");
       openedWindow = this.openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts);
     } else {
@@ -49615,7 +49615,9 @@ var FastenService = class _FastenService {
     form.submit();
     return opened;
   }
-  requiresPartitionedCookies() {
+  // NOTE: changes to this function, should also be made to in the fasten-connect-api
+  // https://github.com/fastenhealth/fasten-connect-api/blob/13d537db1111f98be38d82f9fdf1497c4b1c0239/pkg/utils/auth_response/cookie.go#L56 function
+  shouldUsePartitionedCookie() {
     let browser = this.deviceService.browser;
     let browser_version_parts = this.deviceService.browser_version.split(".");
     let browser_version_info = {
