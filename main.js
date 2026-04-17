@@ -49593,7 +49593,7 @@ var FastenService = class _FastenService {
     if (isDesktop) {
       features = "popup=true,width=700,height=600";
     }
-    var target = "_blank";
+    var target = "PartitionedPopupWindow" + Math.random().toString(36).substring(2, 7);
     var params = { FASTEN_AUTH_VAULT_COOKIE_NAME: getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME) };
     var form = document.createElement("form");
     form.setAttribute("method", "post");
@@ -49613,7 +49613,6 @@ var FastenService = class _FastenService {
     let opened = window.open("", target, features);
     form.target = target;
     form.submit();
-    document.body.removeChild(form);
     return opened;
   }
   requiresPartitionedCookies() {
