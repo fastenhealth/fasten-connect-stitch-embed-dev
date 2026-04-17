@@ -49529,7 +49529,7 @@ var FastenService = class _FastenService {
     this.logger.debug(redirectUrlParts.toString());
     let openedWindow;
     if (this.shouldUsePartitionedCookie()) {
-      console.warn("partitioned popup");
+      this.logger.warn("partitioned popup");
       openedWindow = this.openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts);
     } else {
       openedWindow = this.openWindowInPopup(redirectUrlParts);
@@ -49628,6 +49628,7 @@ var FastenService = class _FastenService {
     let opened = window.open("", target, features);
     form.target = target;
     form.submit();
+    document.body.removeChild(form);
     return opened;
   }
   // NOTE: changes to this function, should also be made to in the fasten-connect-api
