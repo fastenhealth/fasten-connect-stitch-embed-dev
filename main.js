@@ -49534,7 +49534,17 @@ var FastenService = class _FastenService {
     } else {
       openedWindow = this.openWindowInPopup(redirectUrlParts);
     }
-    return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(delay(2500));
+    return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(
+      switchMap((payload) => {
+        if (this.shouldUsePartitionedCookie()) {
+          return from(this.refreshAuthCookie()).pipe(map(() => payload));
+        }
+        return of(payload);
+      }),
+      //TODO: this is a flaky way to handle the issue where the websocket response is sent before the cookie is set in the browser
+      // wait 2 seconds here -- sometimes the websocket sends the response before the cookie has been recieved by the browser (in the modal popup)
+      delay(2500)
+    );
   }
   verificationWithPopup(cspType) {
     const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
@@ -49574,6 +49584,11 @@ var FastenService = class _FastenService {
     return this._httpClient.post(url, {
       vault_connection_ids: vaultProfileConnectionIds
     }, { params: { public_id: this.configService.systemConfig$.publicId } }).pipe(map((resp) => resp.data));
+  }
+  refreshAuthCookie() {
+    return __async(this, null, function* () {
+      return yield this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+    });
   }
   /// HELPERS
   openWindowInPopup(redirectUrlParts) {
