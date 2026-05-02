@@ -49835,7 +49835,7 @@ var AppComponent = class _AppComponent {
     this.searchOnly = urlParams.get("search-only") == "true";
     this.tefcaMode = urlParams.get("tefca-mode") == "true";
     this.tefcaCspPromptForce = urlParams.get("tefca-csp-prompt-force") == "true";
-    this.identityRequestUri = urlParams.get("csp-request-uri") || "";
+    this.identityRequestUri = urlParams.get("identity-request-uri") || "";
     this.eventTypes = urlParams.get("event-types") || "";
     this.staticBackdrop = urlParams.get("static-backdrop") == "true";
     this.searchQuery = urlParams.get("search-query") || "";
@@ -56946,7 +56946,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     return __async(this, null, function* () {
       const systemConfig = this.configService.systemConfig$;
       if (!systemConfig.tefcaMode || !systemConfig.identityRequestUri) {
-        throw new Error("csp-request-uri sign-in requires tefca-mode.");
+        throw new Error("identity-request-uri sign-in requires tefca-mode.");
       }
       const state = v4_default();
       const codeVerifier = this.generateCodeVerifier();
