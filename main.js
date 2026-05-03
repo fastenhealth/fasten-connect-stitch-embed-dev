@@ -49847,6 +49847,9 @@ var AppComponent = class _AppComponent {
     this.endpointId = urlParams.get("endpoint-id") || "";
     this.sdkMode = urlParams.get("sdk-mode") || SDKMode.None;
     this.connectMode = urlParams.get("connect-mode") || ConnectMode.Popup;
+    this.idpCode = urlParams.get("code") || "";
+    this.idpState = urlParams.get("state") || "";
+    this.idpError = urlParams.get("error") || "";
     if (!this.searchOnly && !this.tefcaMode) {
       this.searchOnly = true;
     }
