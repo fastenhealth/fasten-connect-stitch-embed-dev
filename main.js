@@ -49915,7 +49915,8 @@ var AppComponent = class _AppComponent {
       this.logger.debug("bubbling up client-event", eventPayload);
       this.sendPostMessage(eventPayload);
     });
-    if (!!this.idpCode && !!this.idpState || this.idpError) {
+    this.logger.info("!!!!!Fasten Identity configuration", this.idpState, this.idpError, this.idpCode);
+    if (this.idpCode && this.idpState || this.idpError) {
       this.logger.info("state: auth/callback");
       this.router.navigate(["auth/callback"], {
         queryParams: {
