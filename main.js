@@ -61239,10 +61239,236 @@ var SplashComponent = class _SplashComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SplashComponent, { className: "SplashComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/splash/splash.component.ts", lineNumber: 30 });
 })();
 
+// projects/fasten-connect-stitch-embed/src/app/pages/auth-callback/auth-callback.component.ts
+function AuthCallbackComponent_ng_container_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 3)(2, "h2", 4);
+    \u0275\u0275text(3, "Finishing sign-in");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "p", 5);
+    \u0275\u0275text(5, " Please wait while we securely complete your identity verification. ");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(6, "div", 6);
+    \u0275\u0275element(7, "app-spinner");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementContainerEnd();
+  }
+}
+function AuthCallbackComponent_ng_template_3_p_16_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "p", 14);
+    \u0275\u0275text(1, " More Info: ");
+    \u0275\u0275elementStart(2, "a", 15);
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("href", ctx_r0.errorUri, \u0275\u0275sanitizeUrl);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r0.errorUri);
+  }
+}
+function AuthCallbackComponent_ng_template_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 3)(1, "h2", 7);
+    \u0275\u0275text(2, " We could not complete sign-in ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "p", 5);
+    \u0275\u0275text(4, " Please check the details below and try again. ");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(5, "div", 8)(6, "h3", 9);
+    \u0275\u0275text(7, "Error Details:");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "p", 10);
+    \u0275\u0275text(9, "Error Type: ");
+    \u0275\u0275elementStart(10, "span", 11);
+    \u0275\u0275text(11);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(12, "p", 10);
+    \u0275\u0275text(13, "Description: ");
+    \u0275\u0275elementStart(14, "span");
+    \u0275\u0275text(15);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275template(16, AuthCallbackComponent_ng_template_3_p_16_Template, 4, 2, "p", 12);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(17, "button", 13);
+    \u0275\u0275text(18, " Back to Sign In ");
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance(11);
+    \u0275\u0275textInterpolate(ctx_r0.error);
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate(ctx_r0.errorDescription);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r0.errorUri);
+    \u0275\u0275advance();
+    \u0275\u0275property("routerLink", "/auth/signin");
+  }
+}
+var AuthCallbackComponent = class _AuthCallbackComponent {
+  constructor(httpClient, configService, route, router, logger) {
+    this.httpClient = httpClient;
+    this.configService = configService;
+    this.route = route;
+    this.router = router;
+    this.logger = logger;
+    this.status = "processing";
+    this.error = "";
+    this.errorDescription = "";
+    this.errorUri = "";
+  }
+  ngOnInit() {
+    this.routeSubscription = this.route.queryParamMap.subscribe((queryParams) => {
+      this.handleCallbackParams({
+        code: queryParams.get("code") || "",
+        state: queryParams.get("state") || "",
+        error: queryParams.get("error") || "",
+        errorUri: queryParams.get("error_uri") || "",
+        errorDescription: queryParams.get("error_description") || ""
+      });
+    });
+  }
+  ngOnDestroy() {
+    if (this.routeSubscription) {
+      this.routeSubscription.unsubscribe();
+    }
+  }
+  handleCallbackParams(params) {
+    if (params.error) {
+      this.showError(params.error, params.errorDescription || "The identity provider returned an error before sign-in could finish.", params.errorUri);
+      return;
+    }
+    if (!params.code || !params.state) {
+      this.showError("missing_callback_parameters", "The sign-in callback was missing required parameters. Please try signing in again.");
+      return;
+    }
+    const oauthContext = this.getOAuthCallbackContext(params.state);
+    if (!oauthContext.codeVerifier || !oauthContext.systemConfig?.publicId) {
+      this.showError("missing_code_verifier", "Your secure sign-in session could not be found. Please return to sign in and try again.");
+      return;
+    }
+    this.restoreConfiguration(oauthContext);
+    this.exchangeCodeForCookie(params.code, params.state, oauthContext);
+  }
+  exchangeCodeForCookie(code, state, oauthContext) {
+    this.status = "processing";
+    this.error = "";
+    this.errorDescription = "";
+    this.errorUri = "";
+    const formBody = new URLSearchParams();
+    formBody.set("grant_type", "authorization_code");
+    formBody.set("client_id", oauthContext.systemConfig.publicId);
+    formBody.set("code", code);
+    formBody.set("code_verifier", oauthContext.codeVerifier);
+    formBody.set("redirect_uri", this.getCallbackUrl());
+    formBody.set("response_mode", "cookie");
+    this.httpClient.post(`${environment.identity_api_endpoint_base}/oauth2/token`, formBody.toString(), {
+      headers: new HttpHeaders({ "Content-Type": "application/x-www-form-urlencoded" }),
+      withCredentials: true
+    }).subscribe({
+      next: () => __async(this, null, function* () {
+        localStorage.removeItem(`${FASTEN_CONNECT_OAUTH_CONTEXT_CACHE_KEY_PREFIX}${state}`);
+        this.restoreConfiguration(oauthContext);
+        yield this.router.navigateByUrl("/dashboard", { replaceUrl: true });
+      }),
+      error: (err) => {
+        this.logger.error("OAuth token exchange failed", err);
+        this.showError("token_exchange_failed", "We could not finish signing you in. Please return to sign in and try again.");
+      }
+    });
+  }
+  restoreConfiguration(oauthContext) {
+    this.configService.systemConfig = oauthContext.systemConfig;
+    if (oauthContext.vaultProfileConfig) {
+      this.configService.vaultProfileConfig = oauthContext.vaultProfileConfig;
+    }
+    if (oauthContext.searchConfig) {
+      this.configService.searchConfig = oauthContext.searchConfig;
+    }
+  }
+  showError(error, errorDescription, errorUri = "") {
+    this.status = "error";
+    this.error = error;
+    this.errorDescription = errorDescription;
+    this.errorUri = errorUri;
+  }
+  getOAuthCallbackContext(state) {
+    const storedContext = localStorage.getItem(`${FASTEN_CONNECT_OAUTH_CONTEXT_CACHE_KEY_PREFIX}${state}`);
+    if (storedContext) {
+      try {
+        const parsedContext = JSON.parse(storedContext);
+        if (parsedContext.codeVerifier && parsedContext.systemConfig?.publicId) {
+          const systemConfig = __spreadProps(__spreadValues({}, parsedContext.systemConfig), {
+            apiMode: parsedContext.systemConfig.apiMode || this.getApiModeFromPublicId(parsedContext.systemConfig.publicId)
+          });
+          return {
+            codeVerifier: parsedContext.codeVerifier,
+            systemConfig,
+            vaultProfileConfig: parsedContext.vaultProfileConfig,
+            searchConfig: parsedContext.searchConfig
+          };
+        }
+      } catch (err) {
+        this.logger.warn("Failed to parse OAuth callback context", err);
+      }
+    }
+    return {};
+  }
+  getApiModeFromPublicId(publicId) {
+    const publicIdParts = publicId.split("_");
+    if (publicIdParts.length === 3 && publicIdParts[1] === ApiMode.Live) {
+      return ApiMode.Live;
+    }
+    return ApiMode.Test;
+  }
+  getCallbackUrl() {
+    if (environment.connect_base_domain === "localhost") {
+      return `${window.location.origin}/auth/callback`;
+    }
+    return `https://${environment.connect_base_domain}/auth/callback`;
+  }
+  static {
+    this.\u0275fac = function AuthCallbackComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _AuthCallbackComponent)(\u0275\u0275directiveInject(HttpClient), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _AuthCallbackComponent, selectors: [["app-auth-callback"]], decls: 5, vars: 2, consts: [["callbackError", ""], [1, "space-y-6", "text-center"], [4, "ngIf", "ngIfElse"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], [1, "text-sm", "text-gray-600"], [1, "flex", "justify-center", "text-[#5B47FB]"], [1, "text-xl", "font-semibold", "text-red-600"], [1, "bg-gray-100", "p-4", "rounded-md", "text-left"], [1, "text-md", "font-medium"], [1, "text-sm", "text-gray-800"], [1, "font-semibold"], ["class", "text-sm text-gray-800 break-words", 4, "ngIf"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"], [1, "text-sm", "text-gray-800", "break-words"], [1, "font-medium", "text-[#5B47FB]", "hover:text-[#4936E8]", 3, "href"]], template: function AuthCallbackComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 1);
+        \u0275\u0275element(1, "app-header");
+        \u0275\u0275template(2, AuthCallbackComponent_ng_container_2_Template, 8, 0, "ng-container", 2)(3, AuthCallbackComponent_ng_template_3_Template, 19, 4, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
+        \u0275\u0275elementEnd();
+      }
+      if (rf & 2) {
+        const callbackError_r2 = \u0275\u0275reference(4);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("ngIf", ctx.status === "processing")("ngIfElse", callbackError_r2);
+      }
+    }, dependencies: [
+      CommonModule,
+      NgIf,
+      RouterModule,
+      RouterLink,
+      HeaderComponent,
+      SpinnerComponent
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: block;\n}\n/*# sourceMappingURL=auth-callback.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AuthCallbackComponent, { className: "AuthCallbackComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/auth-callback/auth-callback.component.ts", lineNumber: 33 });
+})();
+
 // projects/fasten-connect-stitch-embed/src/app/app.routes.ts
 var routes = [
   { path: "auth/signin", component: VaultProfileSigninComponent },
   { path: "auth/signin/code", component: VaultProfileSigninCodeComponent },
+  { path: "auth/callback", component: AuthCallbackComponent },
   { path: "auth/identity/verification", component: IdentityVerificationComponent },
   //canActivate: [IsAuthenticatedAuthGuard] },
   { path: "auth/identity/verification/error", component: IdentityVerificationErrorComponent },
