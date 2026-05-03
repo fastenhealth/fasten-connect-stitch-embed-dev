@@ -47035,6 +47035,47 @@ function getLoadedRoutes(route) {
 }
 publishExternalGlobalUtil("\u0275getLoadedRoutes", getLoadedRoutes);
 
+// projects/fasten-connect-stitch-embed/src/app/utils/oauth2_callback_context.ts
+var FASTEN_CONNECT_OAUTH_CONTEXT_CACHE_KEY_PREFIX = "fasten_connect_oauth_context:";
+function getOAuthCallbackContext(state, logger) {
+  const storedContext = localStorage.getItem(`${FASTEN_CONNECT_OAUTH_CONTEXT_CACHE_KEY_PREFIX}${state}`);
+  if (storedContext) {
+    try {
+      const parsedContext = JSON.parse(storedContext);
+      if (parsedContext.codeVerifier && parsedContext.systemConfig?.publicId) {
+        const systemConfig = __spreadProps(__spreadValues({}, parsedContext.systemConfig), {
+          apiMode: parsedContext.systemConfig.apiMode || getApiModeFromPublicId(parsedContext.systemConfig.publicId)
+        });
+        return {
+          codeVerifier: parsedContext.codeVerifier,
+          systemConfig,
+          vaultProfileConfig: parsedContext.vaultProfileConfig,
+          searchConfig: parsedContext.searchConfig
+        };
+      }
+    } catch (err) {
+      logger?.warn("Failed to parse OAuth callback context", err);
+    }
+  }
+  return {};
+}
+function restoreConfigurationFromOauthContext(oauthContext, configService) {
+  configService.systemConfig = oauthContext.systemConfig;
+  if (oauthContext.vaultProfileConfig) {
+    configService.vaultProfileConfig = oauthContext.vaultProfileConfig;
+  }
+  if (oauthContext.searchConfig) {
+    configService.searchConfig = oauthContext.searchConfig;
+  }
+}
+function getApiModeFromPublicId(publicId) {
+  const publicIdParts = publicId.split("_");
+  if (publicIdParts.length === 3 && publicIdParts[1] === ApiMode.Live) {
+    return ApiMode.Live;
+  }
+  return ApiMode.Test;
+}
+
 // node_modules/jose/dist/browser/runtime/webcrypto.js
 var webcrypto_default = crypto;
 var isCryptoKey = (key) => key instanceof CryptoKey;
@@ -49850,6 +49891,8 @@ var AppComponent = class _AppComponent {
     this.idpCode = urlParams.get("code") || "";
     this.idpState = urlParams.get("state") || "";
     this.idpError = urlParams.get("error") || "";
+    this.idpErrorDescription = urlParams.get("error_description") || "";
+    this.idpErrorUri = urlParams.get("error_uri") || "";
     if (!this.searchOnly && !this.tefcaMode) {
       this.searchOnly = true;
     }
@@ -49882,11 +49925,33 @@ var AppComponent = class _AppComponent {
     this.idpCode = "";
     this.idpState = "";
     this.idpError = "";
+    this.idpErrorDescription = "";
+    this.idpErrorUri = "";
     this.loading = true;
   }
   ngOnInit() {
     this.logger.info("QUERY STRING MAP", new URLSearchParams(window.location.search));
     this.populateInputsFromWindowLocation();
+    this.messageBus.messageBusSubject.subscribe((eventPayload) => {
+      this.logger.debug("bubbling up client-event", eventPayload);
+      this.sendPostMessage(eventPayload);
+    });
+    if (this.isIdentityCallbackRequest()) {
+      this.logger.info("state: auth/callback", this.idpState, this.idpError, this.idpCode);
+      this.restoreIdentityCallbackConfiguration();
+      this.loading = false;
+      this.errorMessage = "";
+      this.router.navigate(["auth/callback"], {
+        queryParams: {
+          code: this.idpCode || void 0,
+          state: this.idpState || void 0,
+          error: this.idpError || void 0,
+          error_description: this.idpErrorDescription || void 0,
+          error_uri: this.idpErrorUri || void 0
+        }
+      });
+      return;
+    }
     let apiMode = this.getApiModeFromPublicId(this.publicId);
     let eventTypes = [];
     if (this.eventTypes) {
@@ -49911,21 +49976,7 @@ var AppComponent = class _AppComponent {
       sdkMode: this.sdkMode,
       connectMode: this.connectMode
     };
-    this.messageBus.messageBusSubject.subscribe((eventPayload) => {
-      this.logger.debug("bubbling up client-event", eventPayload);
-      this.sendPostMessage(eventPayload);
-    });
-    this.logger.info("!!!!!Fasten Identity configuration", this.idpState, this.idpError, this.idpCode);
-    if (this.idpCode && this.idpState || this.idpError) {
-      this.logger.info("state: auth/callback");
-      this.router.navigate(["auth/callback"], {
-        queryParams: {
-          code: this.idpCode,
-          state: this.idpState,
-          error: this.idpError
-        }
-      });
-    } else if (this.reconnectOrgConnectionId) {
+    if (this.reconnectOrgConnectionId) {
       this.fastenService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
         this.logger.info("state: dashboard/connecting#reconnectOrgConnectionId", orgConnection);
         this.router.navigate(["dashboard/connecting"], {
@@ -50002,6 +50053,18 @@ var AppComponent = class _AppComponent {
   }
   ngOnChanges(changes) {
     this.logger.debug("embed ngOnChanges", changes);
+  }
+  isIdentityCallbackRequest() {
+    return !!(this.idpCode && this.idpState) || !!this.idpError;
+  }
+  restoreIdentityCallbackConfiguration() {
+    if (!this.idpState) {
+      return;
+    }
+    const oauthContext = getOAuthCallbackContext(this.idpState, this.logger);
+    if (oauthContext.systemConfig?.publicId) {
+      restoreConfigurationFromOauthContext(oauthContext, this.configService);
+    }
   }
   getApiModeFromPublicId(publicId) {
     let publicIdParts = publicId.split("_");
@@ -50087,7 +50150,7 @@ var AppComponent = class _AppComponent {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], identityRequestUri: [0, "identity-request-uri", "identityRequestUri"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"], idpCode: [0, "code", "idpCode"], idpState: [0, "state", "idpState"], idpError: [0, "error", "idpError"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in", "flex", "h-screen", "flex-col", "overflow-hidden"], [1, "flex-1", "min-h-0", "flex", "flex-col"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], identityRequestUri: [0, "identity-request-uri", "identityRequestUri"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"], idpCode: [0, "code", "idpCode"], idpState: [0, "state", "idpState"], idpError: [0, "error", "idpError"], idpErrorDescription: [0, "error-description", "idpErrorDescription"], idpErrorUri: [0, "error-uri", "idpErrorUri"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in", "flex", "h-screen", "flex-col", "overflow-hidden"], [1, "flex-1", "min-h-0", "flex", "flex-col"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275element(0, "link", 0);
         \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
@@ -50117,7 +50180,7 @@ var AppComponent = class _AppComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 37 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 41 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts
@@ -56860,7 +56923,6 @@ function VaultProfileSigninComponent_app_spinner_56_Template(rf, ctx) {
     \u0275\u0275element(0, "app-spinner");
   }
 }
-var FASTEN_CONNECT_OAUTH_CONTEXT_CACHE_KEY_PREFIX = "fasten_connect_oauth_context:";
 var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   get isCspRequestUriSignin() {
     return !!(this.configService.systemConfig$?.tefcaMode && this.configService.systemConfig$?.identityRequestUri);
@@ -61363,12 +61425,11 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
       this.showError("missing_callback_parameters", "The sign-in callback was missing required parameters. Please try signing in again.");
       return;
     }
-    const oauthContext = this.getOAuthCallbackContext(params.state);
-    if (!oauthContext.codeVerifier || !oauthContext.systemConfig?.publicId) {
+    const oauthContext = getOAuthCallbackContext(params.state, this.logger);
+    if (!oauthContext.codeVerifier) {
       this.showError("missing_code_verifier", "Your secure sign-in session could not be found. Please return to sign in and try again.");
       return;
     }
-    this.restoreConfiguration(oauthContext);
     this.exchangeCodeForCookie(params.code, params.state, oauthContext);
   }
   exchangeCodeForCookie(code, state, oauthContext) {
@@ -61378,7 +61439,7 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
     this.errorUri = "";
     const formBody = new URLSearchParams();
     formBody.set("grant_type", "authorization_code");
-    formBody.set("client_id", oauthContext.systemConfig.publicId);
+    formBody.set("client_id", this.configService.systemConfig$.publicId);
     formBody.set("code", code);
     formBody.set("code_verifier", oauthContext.codeVerifier);
     formBody.set("redirect_uri", this.getCallbackUrl());
@@ -61389,7 +61450,6 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
     }).subscribe({
       next: () => __async(this, null, function* () {
         localStorage.removeItem(`${FASTEN_CONNECT_OAUTH_CONTEXT_CACHE_KEY_PREFIX}${state}`);
-        this.restoreConfiguration(oauthContext);
         yield this.router.navigateByUrl("/dashboard", { replaceUrl: true });
       }),
       error: (err) => {
@@ -61398,49 +61458,11 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
       }
     });
   }
-  restoreConfiguration(oauthContext) {
-    this.configService.systemConfig = oauthContext.systemConfig;
-    if (oauthContext.vaultProfileConfig) {
-      this.configService.vaultProfileConfig = oauthContext.vaultProfileConfig;
-    }
-    if (oauthContext.searchConfig) {
-      this.configService.searchConfig = oauthContext.searchConfig;
-    }
-  }
   showError(error, errorDescription, errorUri = "") {
     this.status = "error";
     this.error = error;
     this.errorDescription = errorDescription;
     this.errorUri = errorUri;
-  }
-  getOAuthCallbackContext(state) {
-    const storedContext = localStorage.getItem(`${FASTEN_CONNECT_OAUTH_CONTEXT_CACHE_KEY_PREFIX}${state}`);
-    if (storedContext) {
-      try {
-        const parsedContext = JSON.parse(storedContext);
-        if (parsedContext.codeVerifier && parsedContext.systemConfig?.publicId) {
-          const systemConfig = __spreadProps(__spreadValues({}, parsedContext.systemConfig), {
-            apiMode: parsedContext.systemConfig.apiMode || this.getApiModeFromPublicId(parsedContext.systemConfig.publicId)
-          });
-          return {
-            codeVerifier: parsedContext.codeVerifier,
-            systemConfig,
-            vaultProfileConfig: parsedContext.vaultProfileConfig,
-            searchConfig: parsedContext.searchConfig
-          };
-        }
-      } catch (err) {
-        this.logger.warn("Failed to parse OAuth callback context", err);
-      }
-    }
-    return {};
-  }
-  getApiModeFromPublicId(publicId) {
-    const publicIdParts = publicId.split("_");
-    if (publicIdParts.length === 3 && publicIdParts[1] === ApiMode.Live) {
-      return ApiMode.Live;
-    }
-    return ApiMode.Test;
   }
   getCallbackUrl() {
     if (environment.connect_base_domain === "localhost") {
@@ -61477,7 +61499,7 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AuthCallbackComponent, { className: "AuthCallbackComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/auth-callback/auth-callback.component.ts", lineNumber: 33 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AuthCallbackComponent, { className: "AuthCallbackComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/auth-callback/auth-callback.component.ts", lineNumber: 29 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/app.routes.ts
