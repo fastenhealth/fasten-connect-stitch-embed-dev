@@ -61468,7 +61468,7 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
     if (environment.connect_base_domain === "localhost") {
       return `${window.location.origin}/auth/callback`;
     }
-    return `https://${environment.connect_base_domain}/auth/callback`;
+    return `https://embed.${environment.connect_base_domain}/auth/callback`;
   }
   static {
     this.\u0275fac = function AuthCallbackComponent_Factory(__ngFactoryType__) {
