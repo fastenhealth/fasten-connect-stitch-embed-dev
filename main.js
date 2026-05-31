@@ -48542,17 +48542,16 @@ var AuthService = class _AuthService {
         return null;
       }
       let jwks = createRemoteJWKSet(new URL(environment.jwks_uri));
-      let issuerHosts = [environment.connect_api_jwt_issuer_host, environment.identity_api_endpoint_base];
-      let audHost = environment.connect_api_jwt_issuer_host;
+      let issuerHost = environment.connect_api_jwt_issuer_host;
       try {
         const { payload, protectedHeader } = yield jwtVerify(authToken, jwks, {
-          issuer: issuerHosts,
-          audience: audHost
+          issuer: issuerHost,
+          audience: issuerHost
         });
         this.configService.systemConfig = { user: payload };
         return payload;
       } catch (e) {
-        console.error("failed to verify jwt:", e, audHost, issuerHosts);
+        console.error("failed to verify jwt:", e, issuerHost);
         return null;
       }
     });
@@ -61431,6 +61430,7 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
       this.showError("missing_code_verifier", "Your secure sign-in session could not be found. Please return to sign in and try again.");
       return;
     }
+    restoreConfigurationFromOauthContext(oauthContext, this.configService);
     this.exchangeCodeForCookie(params.code, params.state, oauthContext);
   }
   exchangeCodeForCookie(code, state, oauthContext) {
@@ -61500,12 +61500,61 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AuthCallbackComponent, { className: "AuthCallbackComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/auth-callback/auth-callback.component.ts", lineNumber: 29 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AuthCallbackComponent, { className: "AuthCallbackComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/auth-callback/auth-callback.component.ts", lineNumber: 30 });
 })();
+
+// projects/fasten-connect-stitch-embed/src/app/auth-guards/skip-verified-tefca-auth-guard.ts
+var SkipVerifiedTefcaAuthGuard = class _SkipVerifiedTefcaAuthGuard {
+  constructor(authService, router, configService, logger) {
+    this.authService = authService;
+    this.router = router;
+    this.configService = configService;
+    this.logger = logger;
+  }
+  canActivate() {
+    return __async(this, null, function* () {
+      if (!this.configService.systemConfig$.tefcaMode) {
+        return true;
+      }
+      try {
+        const jwtPayload = yield this.authService.GetJWTPayload();
+        if (jwtPayload?.has_verified_identity !== true) {
+          return true;
+        }
+        this.syncVerifiedIdentity(jwtPayload);
+        this.logger.info("TEFCA identity is already verified; routing directly to dashboard");
+        return this.router.createUrlTree(["/dashboard"]);
+      } catch (err) {
+        this.logger.error("Error checking verified TEFCA identity; continuing to auth flow", err);
+        return true;
+      }
+    });
+  }
+  syncVerifiedIdentity(jwtPayload) {
+    const verifiedIdentityConfig = {};
+    if (jwtPayload.verified_identity_csp_type) {
+      verifiedIdentityConfig.verifiedIdentityCspType = jwtPayload.verified_identity_csp_type;
+    }
+    if (jwtPayload.verified_identity_patient_demographics) {
+      verifiedIdentityConfig.verifiedIdentityPatientDemographics = jwtPayload.verified_identity_patient_demographics;
+    }
+    if (Object.keys(verifiedIdentityConfig).length > 0) {
+      this.configService.vaultProfileConfig = verifiedIdentityConfig;
+    }
+  }
+  static {
+    this.\u0275fac = function SkipVerifiedTefcaAuthGuard_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _SkipVerifiedTefcaAuthGuard)(\u0275\u0275inject(AuthService), \u0275\u0275inject(Router), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _SkipVerifiedTefcaAuthGuard, factory: _SkipVerifiedTefcaAuthGuard.\u0275fac, providedIn: "root" });
+  }
+};
 
 // projects/fasten-connect-stitch-embed/src/app/app.routes.ts
 var routes = [
-  { path: "auth/signin", component: VaultProfileSigninComponent },
+  { path: "auth/signin", component: VaultProfileSigninComponent, canActivate: [SkipVerifiedTefcaAuthGuard] },
   { path: "auth/signin/code", component: VaultProfileSigninCodeComponent },
   { path: "auth/callback", component: AuthCallbackComponent },
   { path: "auth/identity/verification", component: IdentityVerificationComponent },
