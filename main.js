@@ -48542,16 +48542,17 @@ var AuthService = class _AuthService {
         return null;
       }
       let jwks = createRemoteJWKSet(new URL(environment.jwks_uri));
-      let issuerHost = environment.connect_api_jwt_issuer_host;
+      let issuerHosts = [environment.connect_api_jwt_issuer_host, environment.identity_api_endpoint_base];
+      let audHost = environment.connect_api_jwt_issuer_host;
       try {
         const { payload, protectedHeader } = yield jwtVerify(authToken, jwks, {
-          issuer: issuerHost,
-          audience: issuerHost
+          issuer: issuerHosts,
+          audience: audHost
         });
         this.configService.systemConfig = { user: payload };
         return payload;
       } catch (e) {
-        console.error("failed to verify jwt:", e, issuerHost);
+        console.error("failed to verify jwt:", e, audHost, issuerHosts);
         return null;
       }
     });
