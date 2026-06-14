@@ -86563,19 +86563,19 @@ var appConfig = {
 // projects/fasten-connect-stitch-embed/src/main.ts
 if (environment.name != "local") {
   enableProdMode();
+  let isProd = environment.name === "production";
   init2({
     dsn: "https://fab87f90d0799c5ef57a6990c83a4329@o4504673495482368.ingest.us.sentry.io/4509928258666496",
     integrations: [
       browserTracingIntegration2(),
-      replayIntegration(),
+      isProd ? replayIntegration() : replayIntegration({ maskAllText: false, blockAllMedia: false }),
       consoleLoggingIntegration({ levels: ["log", "warn", "error"] })
     ],
     tracesSampleRate: 1,
-    replaysSessionSampleRate: environment.name === "production" ? 0.5 : 1,
+    replaysSessionSampleRate: isProd ? 0.5 : 1,
     // Capture 100% for non-prod, 50% for prod
     replaysOnErrorSampleRate: 1,
     enableLogs: true,
-    sendDefaultPii: true,
     environment: environment.name
   });
 }
