@@ -21554,6 +21554,13 @@ function isSubscribable(obj) {
   return !!obj && typeof obj.subscribe === "function";
 }
 var APP_INITIALIZER = new InjectionToken(ngDevMode ? "Application Initializer" : "");
+function provideAppInitializer(initializerFn) {
+  return makeEnvironmentProviders([{
+    provide: APP_INITIALIZER,
+    multi: true,
+    useValue: initializerFn
+  }]);
+}
 var ApplicationInitStatus = class _ApplicationInitStatus {
   // Using non null assertion, these fields are defined below
   // within the `new Promise` callback (synchronously).
@@ -66122,30 +66129,6 @@ var NoopAnimationsModule = class _NoopAnimationsModule {
   }], null, null);
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/app.config.ts
-var appConfig = {
-  providers: [
-    provideZoneChangeDetection({ eventCoalescing: true }),
-    {
-      provide: HTTP_INTERCEPTORS,
-      useClass: AuthInterceptorService,
-      multi: true
-      // deps: [AuthService, NavOutletService]
-      // deps: [AuthService, NavOutletService]
-    },
-    IsAuthenticatedAuthGuard,
-    IsTefcaModeAuthGuard,
-    provideHttpClient(withInterceptorsFromDi()),
-    provideAnimations(),
-    // <- required for animations to work
-    provideRouter(routes, withComponentInputBinding()),
-    importProvidersFrom(LoggerModule.forRoot({
-      level: NgxLoggerLevel.DEBUG,
-      context: "stitch-embed"
-    }))
-  ]
-};
-
 // node_modules/@sentry/core/build/esm/debug-build.js
 var DEBUG_BUILD = typeof __SENTRY_DEBUG__ === "undefined" || __SENTRY_DEBUG__;
 
@@ -70771,6 +70754,50 @@ function defineIntegration(fn) {
   return fn;
 }
 
+// node_modules/@sentry/core/build/esm/utils/timestampSequence.js
+var SEQUENCE_ATTR_KEY = "sentry.timestamp.sequence";
+var _sequenceNumber = 0;
+var _previousTimestampMs;
+function getSequenceAttribute(timestampInSeconds2) {
+  const nowMs = Math.floor(timestampInSeconds2 * 1e3);
+  if (_previousTimestampMs !== void 0 && nowMs !== _previousTimestampMs) {
+    _sequenceNumber = 0;
+  }
+  const value = _sequenceNumber;
+  _sequenceNumber++;
+  _previousTimestampMs = nowMs;
+  return {
+    key: SEQUENCE_ATTR_KEY,
+    value: {
+      value,
+      type: "integer"
+    }
+  };
+}
+
+// node_modules/@sentry/core/build/esm/utils/trace-info.js
+function _getTraceInfoFromScope(client, scope) {
+  if (!scope) {
+    return [void 0, void 0];
+  }
+  return withScope2(scope, () => {
+    const span = getActiveSpan();
+    const traceContext = span ? spanToTraceContext(span) : getTraceContextFromScope(scope);
+    const dynamicSamplingContext = span ? getDynamicSamplingContextFromSpan(span) : getDynamicSamplingContextFromScope(client, scope);
+    return [dynamicSamplingContext, traceContext];
+  });
+}
+
+// node_modules/@sentry/core/build/esm/logs/constants.js
+var SEVERITY_TEXT_TO_SEVERITY_NUMBER = {
+  trace: 1,
+  debug: 5,
+  info: 9,
+  warn: 13,
+  error: 17,
+  fatal: 21
+};
+
 // node_modules/@sentry/core/build/esm/utils/env.js
 function isBrowserBundle() {
   return typeof __SENTRY_BROWSER_BUNDLE__ !== "undefined" && !!__SENTRY_BROWSER_BUNDLE__;
@@ -70826,6 +70853,115 @@ function createLogEnvelope(logs, metadata, tunnel, dsn, inferUserData) {
 }
 
 // node_modules/@sentry/core/build/esm/logs/internal.js
+var MAX_LOG_BUFFER_SIZE = 100;
+function setLogAttribute(logAttributes, key, value, setEvenIfPresent = true) {
+  if (value && (!logAttributes[key] || setEvenIfPresent)) {
+    logAttributes[key] = value;
+  }
+}
+function _INTERNAL_captureSerializedLog(client, serializedLog) {
+  const bufferMap = _getBufferMap();
+  const logBuffer = _INTERNAL_getLogBuffer(client);
+  if (logBuffer === void 0) {
+    bufferMap.set(client, [serializedLog]);
+  } else {
+    if (logBuffer.length >= MAX_LOG_BUFFER_SIZE) {
+      _INTERNAL_flushLogsBuffer(client, logBuffer);
+      bufferMap.set(client, [serializedLog]);
+    } else {
+      bufferMap.set(client, [...logBuffer, serializedLog]);
+    }
+  }
+}
+function _INTERNAL_captureLog(beforeLog, currentScope = getCurrentScope(), captureSerializedLog = _INTERNAL_captureSerializedLog) {
+  const client = currentScope?.getClient() ?? getClient();
+  if (!client) {
+    DEBUG_BUILD && debug.warn("No client available to capture log.");
+    return;
+  }
+  const {
+    release,
+    environment: environment2,
+    enableLogs = false,
+    beforeSendLog
+  } = client.getOptions();
+  if (!enableLogs) {
+    DEBUG_BUILD && debug.warn("logging option not enabled, log will not be captured.");
+    return;
+  }
+  const [, traceContext] = _getTraceInfoFromScope(client, currentScope);
+  const processedLogAttributes = __spreadValues({}, beforeLog.attributes);
+  const {
+    user: {
+      id,
+      email,
+      username
+    },
+    attributes: scopeAttributes = {}
+  } = getCombinedScopeData(getIsolationScope(), currentScope);
+  setLogAttribute(processedLogAttributes, "user.id", id, false);
+  setLogAttribute(processedLogAttributes, "user.email", email, false);
+  setLogAttribute(processedLogAttributes, "user.name", username, false);
+  setLogAttribute(processedLogAttributes, "sentry.release", release);
+  setLogAttribute(processedLogAttributes, "sentry.environment", environment2);
+  const {
+    name,
+    version
+  } = client.getSdkMetadata()?.sdk ?? {};
+  setLogAttribute(processedLogAttributes, "sentry.sdk.name", name);
+  setLogAttribute(processedLogAttributes, "sentry.sdk.version", version);
+  const replay = client.getIntegrationByName("Replay");
+  const replayId = replay?.getReplayId(true);
+  setLogAttribute(processedLogAttributes, "sentry.replay_id", replayId);
+  if (replayId && replay?.getRecordingMode() === "buffer") {
+    setLogAttribute(processedLogAttributes, "sentry._internal.replay_is_buffering", true);
+  }
+  const beforeLogMessage = beforeLog.message;
+  if (isParameterizedString(beforeLogMessage)) {
+    const {
+      __sentry_template_string__,
+      __sentry_template_values__ = []
+    } = beforeLogMessage;
+    if (__sentry_template_values__?.length) {
+      processedLogAttributes["sentry.message.template"] = __sentry_template_string__;
+    }
+    __sentry_template_values__.forEach((param, index) => {
+      processedLogAttributes[`sentry.message.parameter.${index}`] = param;
+    });
+  }
+  const span = _getSpanForScope(currentScope);
+  setLogAttribute(processedLogAttributes, "sentry.trace.parent_span_id", span?.spanContext().spanId);
+  const processedLog = __spreadProps(__spreadValues({}, beforeLog), {
+    attributes: processedLogAttributes
+  });
+  client.emit("beforeCaptureLog", processedLog);
+  const log2 = beforeSendLog ? consoleSandbox(() => beforeSendLog(processedLog)) : processedLog;
+  if (!log2) {
+    client.recordDroppedEvent("before_send", "log_item", 1);
+    DEBUG_BUILD && debug.warn("beforeSendLog returned null, log will not be captured.");
+    return;
+  }
+  const {
+    level,
+    message: message2,
+    attributes: logAttributes = {},
+    severityNumber
+  } = log2;
+  const timestamp = timestampInSeconds();
+  const sequenceAttr = getSequenceAttribute(timestamp);
+  const serializedLog = {
+    timestamp,
+    level,
+    body: _removeLoneSurrogates(String(message2)),
+    trace_id: traceContext?.trace_id,
+    severity_number: severityNumber ?? SEVERITY_TEXT_TO_SEVERITY_NUMBER[level],
+    attributes: sanitizeLogAttributes(__spreadProps(__spreadValues(__spreadValues({}, serializeAttributes(scopeAttributes)), serializeAttributes(logAttributes, true)), {
+      [sequenceAttr.key]: sequenceAttr.value
+    }))
+  };
+  captureSerializedLog(client, serializedLog);
+  client.emit("afterCaptureLog", log2);
+}
 function _INTERNAL_flushLogsBuffer(client, maybeLogBuffer) {
   const logBuffer = maybeLogBuffer ?? _INTERNAL_getLogBuffer(client) ?? [];
   if (logBuffer.length === 0) {
@@ -70842,6 +70978,29 @@ function _INTERNAL_getLogBuffer(client) {
 }
 function _getBufferMap() {
   return getGlobalSingleton("clientToLogBufferMap", () => /* @__PURE__ */ new WeakMap());
+}
+function sanitizeLogAttributes(attributes) {
+  const sanitized = {};
+  for (const [key, attr] of Object.entries(attributes)) {
+    const sanitizedKey = _removeLoneSurrogates(key);
+    if (attr.type === "string") {
+      sanitized[sanitizedKey] = __spreadProps(__spreadValues({}, attr), {
+        value: _removeLoneSurrogates(attr.value)
+      });
+    } else {
+      sanitized[sanitizedKey] = attr;
+    }
+  }
+  return sanitized;
+}
+function _removeLoneSurrogates(str) {
+  const strObj = Object(str);
+  const isWellFormed = strObj["isWellFormed"];
+  const toWellFormed = strObj["toWellFormed"];
+  if (typeof isWellFormed === "function" && typeof toWellFormed === "function") {
+    return isWellFormed.call(str) ? str : toWellFormed.call(str);
+  }
+  return str;
 }
 
 // node_modules/@sentry/core/build/esm/metrics/envelope.js
@@ -72896,6 +73055,81 @@ function getFetchSpanAttributes(url, parsedUrl, method, spanOrigin) {
   }
   return attributes;
 }
+
+// node_modules/@sentry/core/build/esm/logs/utils.js
+function formatConsoleArgs(values, normalizeDepth, normalizeMaxBreadth) {
+  return "util" in GLOBAL_OBJ && typeof GLOBAL_OBJ.util.format === "function" ? GLOBAL_OBJ.util.format(...values) : safeJoinConsoleArgs(values, normalizeDepth, normalizeMaxBreadth);
+}
+function safeJoinConsoleArgs(values, normalizeDepth, normalizeMaxBreadth) {
+  return values.map((value) => isPrimitive(value) ? String(value) : JSON.stringify(normalize(value, normalizeDepth, normalizeMaxBreadth))).join(" ");
+}
+function hasConsoleSubstitutions(str) {
+  return /%[sdifocO]/.test(str);
+}
+function createConsoleTemplateAttributes(firstArg, followingArgs) {
+  const attributes = {};
+  const template = new Array(followingArgs.length).fill("{}").join(" ");
+  attributes["sentry.message.template"] = `${firstArg} ${template}`;
+  followingArgs.forEach((arg, index) => {
+    attributes[`sentry.message.parameter.${index}`] = arg;
+  });
+  return attributes;
+}
+
+// node_modules/@sentry/core/build/esm/logs/console-integration.js
+var INTEGRATION_NAME5 = "ConsoleLogs";
+var DEFAULT_ATTRIBUTES = {
+  [SEMANTIC_ATTRIBUTE_SENTRY_ORIGIN]: "auto.log.console"
+};
+var _consoleLoggingIntegration = (options = {}) => {
+  const levels = options.levels || CONSOLE_LEVELS;
+  return {
+    name: INTEGRATION_NAME5,
+    setup(client) {
+      const {
+        enableLogs,
+        normalizeDepth = 3,
+        normalizeMaxBreadth = 1e3
+      } = client.getOptions();
+      if (!enableLogs) {
+        DEBUG_BUILD && debug.warn("`enableLogs` is not enabled, ConsoleLogs integration disabled");
+        return;
+      }
+      const unsubscribe = addConsoleInstrumentationHandler(({
+        args,
+        level
+      }) => {
+        if (getClient() !== client || !levels.includes(level)) {
+          return;
+        }
+        const firstArg = args[0];
+        const followingArgs = args.slice(1);
+        if (level === "assert") {
+          if (!firstArg) {
+            const assertionMessage = followingArgs.length > 0 ? `Assertion failed: ${formatConsoleArgs(followingArgs, normalizeDepth, normalizeMaxBreadth)}` : "Assertion failed";
+            _INTERNAL_captureLog({
+              level: "error",
+              message: assertionMessage,
+              attributes: DEFAULT_ATTRIBUTES
+            });
+          }
+          return;
+        }
+        const isLevelLog = level === "log";
+        const shouldGenerateTemplate = args.length > 1 && typeof args[0] === "string" && !hasConsoleSubstitutions(args[0]);
+        const attributes = __spreadValues(__spreadValues({}, DEFAULT_ATTRIBUTES), shouldGenerateTemplate ? createConsoleTemplateAttributes(firstArg, followingArgs) : {});
+        _INTERNAL_captureLog({
+          level: isLevelLog ? "info" : level,
+          message: formatConsoleArgs(args, normalizeDepth, normalizeMaxBreadth),
+          severityNumber: isLevelLog ? 10 : void 0,
+          attributes
+        });
+      });
+      client.registerCleanup(unsubscribe);
+    }
+  };
+};
+var consoleLoggingIntegration = defineIntegration(_consoleLoggingIntegration);
 
 // node_modules/@sentry/core/build/esm/utils/breadcrumb-log-level.js
 function getBreadcrumbLogLevelFromHttpStatusCode(statusCode) {
@@ -76078,7 +76312,7 @@ var extractSafariExtensionDetails = (func, filename) => {
 
 // node_modules/@sentry/browser/build/npm/esm/dev/integrations/breadcrumbs.js
 var MAX_ALLOWED_STRING_LENGTH = 1024;
-var INTEGRATION_NAME5 = "Breadcrumbs";
+var INTEGRATION_NAME6 = "Breadcrumbs";
 var _breadcrumbsIntegration = (options = {}) => {
   const _options = __spreadValues({
     console: true,
@@ -76089,7 +76323,7 @@ var _breadcrumbsIntegration = (options = {}) => {
     xhr: true
   }, options);
   return {
-    name: INTEGRATION_NAME5,
+    name: INTEGRATION_NAME6,
     setup(client) {
       if (_options.console) {
         addConsoleInstrumentationHandler(_getConsoleBreadcrumbHandler(client));
@@ -76328,7 +76562,7 @@ function _isEvent(event) {
 
 // node_modules/@sentry/browser/build/npm/esm/dev/integrations/browserapierrors.js
 var DEFAULT_EVENT_TARGET = "EventTarget,Window,Node,ApplicationCache,AudioTrackList,BroadcastChannel,ChannelMergerNode,CryptoOperation,EventSource,FileReader,HTMLUnknownElement,IDBDatabase,IDBRequest,IDBTransaction,KeyOperation,MediaController,MessagePort,ModalWindow,Notification,SVGElementInstance,Screen,SharedWorker,TextTrack,TextTrackCue,TextTrackList,WebSocket,WebSocketWorker,Worker,XMLHttpRequest,XMLHttpRequestEventTarget,XMLHttpRequestUpload".split(",");
-var INTEGRATION_NAME6 = "BrowserApiErrors";
+var INTEGRATION_NAME7 = "BrowserApiErrors";
 var _browserApiErrorsIntegration = (options = {}) => {
   const _options = __spreadValues({
     XMLHttpRequest: true,
@@ -76339,7 +76573,7 @@ var _browserApiErrorsIntegration = (options = {}) => {
     unregisterOriginalCallbacks: false
   }, options);
   return {
-    name: INTEGRATION_NAME6,
+    name: INTEGRATION_NAME7,
     // TODO: This currently only works for the first client this is setup
     // We may want to adjust this to check for client etc.
     setupOnce() {
@@ -76517,10 +76751,10 @@ var browserSessionIntegration = defineIntegration((options = {}) => {
 });
 
 // node_modules/@sentry/browser/build/npm/esm/dev/integrations/culturecontext.js
-var INTEGRATION_NAME7 = "CultureContext";
+var INTEGRATION_NAME8 = "CultureContext";
 var _cultureContextIntegration = () => {
   return {
-    name: INTEGRATION_NAME7,
+    name: INTEGRATION_NAME8,
     preprocessEvent(event) {
       const culture = getCultureContext();
       if (culture) {
@@ -76560,14 +76794,14 @@ function getCultureContext() {
 }
 
 // node_modules/@sentry/browser/build/npm/esm/dev/integrations/globalhandlers.js
-var INTEGRATION_NAME8 = "GlobalHandlers";
+var INTEGRATION_NAME9 = "GlobalHandlers";
 var _globalHandlersIntegration = (options = {}) => {
   const _options = __spreadValues({
     onerror: true,
     onunhandledrejection: true
   }, options);
   return {
-    name: INTEGRATION_NAME8,
+    name: INTEGRATION_NAME9,
     setupOnce() {
       Error.stackTraceLimit = 50;
     },
@@ -76729,12 +76963,12 @@ var httpContextIntegration = defineIntegration(() => {
 // node_modules/@sentry/browser/build/npm/esm/dev/integrations/linkederrors.js
 var DEFAULT_KEY = "cause";
 var DEFAULT_LIMIT = 5;
-var INTEGRATION_NAME9 = "LinkedErrors";
+var INTEGRATION_NAME10 = "LinkedErrors";
 var _linkedErrorsIntegration = (options = {}) => {
   const limit = options.limit || DEFAULT_LIMIT;
   const key = options.key || DEFAULT_KEY;
   return {
-    name: INTEGRATION_NAME9,
+    name: INTEGRATION_NAME10,
     preprocessEvent(event, hint, client) {
       const options2 = client.getOptions();
       applyAggregateErrorsToEvent(
@@ -76752,7 +76986,7 @@ var _linkedErrorsIntegration = (options = {}) => {
 var linkedErrorsIntegration = defineIntegration(_linkedErrorsIntegration);
 
 // node_modules/@sentry/browser/build/npm/esm/dev/integrations/spotlight.js
-var INTEGRATION_NAME10 = "SpotlightBrowser";
+var INTEGRATION_NAME11 = "SpotlightBrowser";
 var SPOTLIGHT_IGNORE_SPANS = [{
   op: "ui.interaction.click",
   name: "#sentry-spotlight"
@@ -76760,7 +76994,7 @@ var SPOTLIGHT_IGNORE_SPANS = [{
 var _spotlightIntegration = (options = {}) => {
   const sidecarUrl = options.sidecarUrl || "http://localhost:8969/stream";
   return {
-    name: INTEGRATION_NAME10,
+    name: INTEGRATION_NAME11,
     setup: () => {
       DEBUG_BUILD3 && debug.log("Using Sidecar URL", sidecarUrl);
     },
@@ -86047,6 +86281,9 @@ SentryErrorHandler.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
     }];
   }, null);
 })();
+function createErrorHandler(config2) {
+  return new SentryErrorHandler(config2);
+}
 var ANGULAR_ROUTING_OP = "ui.angular.routing";
 var ANGULAR_INIT_OP = "ui.angular.init";
 var instrumentationInitialized;
@@ -86288,12 +86525,51 @@ function getParameterizedRouteFromSnapshot(route) {
   return fullPath ? `/${fullPath}/` : "/";
 }
 
+// projects/fasten-connect-stitch-embed/src/app/app.config.ts
+var appConfig = {
+  providers: [
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptorService,
+      multi: true
+      // deps: [AuthService, NavOutletService]
+      // deps: [AuthService, NavOutletService]
+    },
+    IsAuthenticatedAuthGuard,
+    IsTefcaModeAuthGuard,
+    provideHttpClient(withInterceptorsFromDi()),
+    provideAnimations(),
+    // <- required for animations to work
+    provideRouter(routes, withComponentInputBinding()),
+    importProvidersFrom(LoggerModule.forRoot({
+      level: NgxLoggerLevel.DEBUG,
+      context: "stitch-embed"
+    })),
+    {
+      provide: ErrorHandler,
+      useValue: createErrorHandler()
+    },
+    {
+      provide: TraceService,
+      deps: [Router]
+    },
+    provideAppInitializer(() => {
+      inject(TraceService);
+    })
+  ]
+};
+
 // projects/fasten-connect-stitch-embed/src/main.ts
 if (environment.name != "local") {
   enableProdMode();
   init2({
     dsn: "https://fab87f90d0799c5ef57a6990c83a4329@o4504673495482368.ingest.us.sentry.io/4509928258666496",
-    integrations: [browserTracingIntegration2(), replayIntegration()],
+    integrations: [
+      browserTracingIntegration2(),
+      replayIntegration(),
+      consoleLoggingIntegration({ levels: ["log", "warn", "error"] })
+    ],
     tracesSampleRate: 1,
     replaysSessionSampleRate: environment.name === "production" ? 0.5 : 1,
     // Capture 100% for non-prod, 50% for prod
