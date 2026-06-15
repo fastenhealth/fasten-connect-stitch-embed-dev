@@ -86572,8 +86572,7 @@ if (environment.name != "local") {
       consoleLoggingIntegration({ levels: ["log", "warn", "error"] })
     ],
     tracesSampleRate: 1,
-    replaysSessionSampleRate: isProd ? 0.5 : 1,
-    // Capture 100% for non-prod, 50% for prod
+    replaysSessionSampleRate: 1,
     replaysOnErrorSampleRate: 1,
     enableLogs: true,
     environment: environment.name
