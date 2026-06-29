@@ -7849,14 +7849,6 @@ function timer(dueTime = 0, intervalOrScheduler, scheduler = async) {
   });
 }
 
-// node_modules/rxjs/dist/esm/internal/observable/interval.js
-function interval(period = 0, scheduler = asyncScheduler) {
-  if (period < 0) {
-    period = 0;
-  }
-  return timer(period, period, scheduler);
-}
-
 // node_modules/rxjs/dist/esm/internal/operators/filter.js
 function filter(predicate, thisArg) {
   return operate((source, subscriber) => {
@@ -39134,8 +39126,6 @@ var CommunicationEntity;
   CommunicationEntity2["External"] = "FASTEN_CONNECT_EXTERNAL";
 })(CommunicationEntity || (CommunicationEntity = {}));
 var ConnectWindowTimeout = 20 * 60 * 1e3;
-var WebsocketHeartbeatInterval = 4 * 60 * 1e3;
-var WebsocketKeepaliveMessageType = "fasten.websocket.keepalive";
 
 // projects/shared-library/src/lib/pipes/safe-html.pipe.ts
 var SafeHtmlPipe = class _SafeHtmlPipe {
@@ -41102,85 +41092,18 @@ var FastenConnectionError = class extends Error {
     this.name = "FastenConnectionError";
   }
 };
-function isWebsocketKeepaliveMessage(message2) {
-  return message2?.type === WebsocketKeepaliveMessageType;
-}
-var WebsocketReconnectDelayMs = 1e3;
 function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWindow, sdkMode) {
-  logger.info(`waiting for websocket notification from popup window`, {
-    websocketUrl: websocketUrl.toString(),
-    sdkMode,
-    hasOpenedWindow: !!openedWindow
-  });
-  let connectionAttempt = 0;
-  return defer(() => new Observable((observer) => {
-    connectionAttempt += 1;
-    logger.info("websocket connection attempt started", {
-      attempt: connectionAttempt,
-      websocketUrl: websocketUrl.toString()
-    });
-    const subject = webSocket(websocketUrl.toString());
-    const subjectSubscription = subject.pipe(filter((message2) => {
-      if (isWebsocketKeepaliveMessage(message2)) {
-        logger.debug("websocket keepalive received", {
-          attempt: connectionAttempt,
-          websocketUrl: websocketUrl.toString()
-        });
-        return false;
-      }
-      return true;
-    }), map((message2) => {
-      logger.debug("websocket message received", {
-        attempt: connectionAttempt,
-        websocketUrl: websocketUrl.toString(),
-        message: message2
-      });
-      if (message2.error) {
-        throw new FastenConnectionError(JSON.stringify(message2));
-      }
-      return message2;
-    }), first()).subscribe(observer);
-    logger.debug("websocket keepalive sent", {
-      attempt: connectionAttempt,
-      websocketUrl: websocketUrl.toString()
-    });
-    subject.next({ type: WebsocketKeepaliveMessageType });
-    const heartbeatSubscription = interval(WebsocketHeartbeatInterval).subscribe(() => {
-      logger.debug("websocket keepalive sent", {
-        attempt: connectionAttempt,
-        websocketUrl: websocketUrl.toString()
-      });
-      subject.next({ type: WebsocketKeepaliveMessageType });
-    });
-    return () => {
-      logger.debug("websocket connection attempt cleanup", {
-        attempt: connectionAttempt,
-        websocketUrl: websocketUrl.toString()
-      });
-      heartbeatSubscription.unsubscribe();
-      subjectSubscription.unsubscribe();
-      subject.complete();
-    };
-  })).pipe(retry({
-    delay: (err, retryCount) => {
-      if (err instanceof FastenConnectionError || err instanceof TimeoutError) {
-        return throwError(() => err);
-      }
-      logger.warn("websocket disconnected before auth completed; reconnecting", {
-        websocketUrl: websocketUrl.toString(),
-        retryCount,
-        code: err?.code,
-        reason: err?.reason,
-        err
-      });
-      return timer(WebsocketReconnectDelayMs);
+  logger.info(`waiting for websocket notification from popup window`);
+  const subject = webSocket(websocketUrl.toString());
+  return subject.pipe(timeout(ConnectWindowTimeout), map((message2) => {
+    logger.debug("websocket message received", message2);
+    if (message2.error) {
+      throw new FastenConnectionError(JSON.stringify(message2));
     }
-  }), timeout(ConnectWindowTimeout), catchError((err) => {
+    return message2;
+  }), catchError((err) => {
     if (err instanceof TimeoutError) {
-      logger.error("websocket connection timed out", {
-        websocketUrl: websocketUrl.toString(),
-        attempts: connectionAttempt
-      });
+      logger.error("websocket connection timed out");
       if (openedWindow && !openedWindow.closed) {
         try {
           openedWindow.close();
@@ -41193,11 +41116,7 @@ function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWind
       logger.error("fasten connection error", err);
       return throwError(() => err);
     } else {
-      logger.error("websocket connection error", {
-        websocketUrl: websocketUrl.toString(),
-        attempts: connectionAttempt,
-        err
-      });
+      logger.error("websocket connection error", err);
       return throwError(() => new Error(`{"error": "websocket_connection", "error_description": "An error occurred while communicating with Fasten server (code: '${err?.code}', reason: '${err?.reason}' )"}`));
     }
   }));
@@ -49527,7 +49446,6 @@ var FastenService = class _FastenService {
     this.deviceService = deviceService;
     this.configService = configService;
     this.logger = logger;
-    this.pendingWebsocketAuthFlowStorageKey = "fasten_connect_pending_websocket_auth_flow";
     this.configService.systemConfigSubject.subscribe((systemConfig) => {
       this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
@@ -49653,27 +49571,9 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
     redirectUrlParts.searchParams.set("room_id", roomId);
-    this.logger.debug("starting websocket identity verification flow", {
-      roomId,
-      websocketUrl: websocketUrl.toString(),
-      redirectUrl: redirectUrlParts.toString(),
-      cspType
-    });
+    this.logger.debug(redirectUrlParts.toString());
     let openedWindow;
-    const partitionedCookie = this.shouldUsePartitionedCookie();
-    this.savePendingWebsocketAuthFlow({
-      flowType: "identity_verification",
-      roomId,
-      websocketUrl: websocketUrl.toString(),
-      popupUrl: redirectUrlParts.toString(),
-      publicId: this.configService.systemConfig$.publicId,
-      openedAt: Date.now(),
-      expiresAt: Date.now() + ConnectWindowTimeout,
-      sdkMode: this.configService.systemConfig$.sdkMode,
-      cspType,
-      partitionedCookie
-    });
-    if (partitionedCookie) {
+    if (this.shouldUsePartitionedCookie()) {
       this.logger.warn("partitioned popup");
       openedWindow = this.openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts);
     } else {
@@ -49681,18 +49581,14 @@ var FastenService = class _FastenService {
     }
     return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(
       switchMap((payload) => {
-        if (partitionedCookie) {
+        if (this.shouldUsePartitionedCookie()) {
           return from(this.refreshAuthCookie()).pipe(map(() => payload));
         }
         return of(payload);
       }),
       //TODO: this is a flaky way to handle the issue where the websocket response is sent before the cookie is set in the browser
       // wait 2 seconds here -- sometimes the websocket sends the response before the cookie has been recieved by the browser (in the modal popup)
-      delay(2500),
-      tap({
-        next: () => this.clearPendingWebsocketAuthFlow("identity verification websocket completed", roomId),
-        error: (err) => this.clearPendingWebsocketAuthFlow("identity verification websocket errored", roomId, err)
-      })
+      delay(2500)
     );
   }
   verificationWithPopup(cspType) {
@@ -49709,28 +49605,9 @@ var FastenService = class _FastenService {
     const redirectUrlParts = this.generateConnectURL(connectData);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
     redirectUrlParts.searchParams.set("room_id", roomId);
-    this.logger.debug("starting websocket account connect flow", {
-      roomId,
-      websocketUrl: websocketUrl.toString(),
-      redirectUrl: redirectUrlParts.toString(),
-      connectData
-    });
-    this.savePendingWebsocketAuthFlow({
-      flowType: "account_connect",
-      roomId,
-      websocketUrl: websocketUrl.toString(),
-      popupUrl: redirectUrlParts.toString(),
-      publicId: this.configService.systemConfig$.publicId,
-      openedAt: Date.now(),
-      expiresAt: Date.now() + ConnectWindowTimeout,
-      sdkMode: this.configService.systemConfig$.sdkMode,
-      connectData: __spreadValues({}, connectData)
-    });
+    this.logger.debug(redirectUrlParts.toString());
     const openedWindow = this.openWindowInPopup(redirectUrlParts);
-    return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(tap({
-      next: () => this.clearPendingWebsocketAuthFlow("account connect websocket completed", roomId),
-      error: (err) => this.clearPendingWebsocketAuthFlow("account connect websocket errored", roomId, err)
-    }));
+    return this.waitForWebsocketNotification(websocketUrl, openedWindow);
   }
   accountConnectWithPopup(connectData) {
     const redirectUrlParts = this.generateConnectURL(connectData);
@@ -49858,125 +49735,6 @@ var FastenService = class _FastenService {
   waitForWebsocketNotification(websocketUrl, openedWindow, overrideSdkMode) {
     const sdkMode = overrideSdkMode ?? this.configService.systemConfig$.sdkMode;
     return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, sdkMode);
-  }
-  getPendingWebsocketAuthFlow() {
-    try {
-      const storedFlow = sessionStorage.getItem(this.pendingWebsocketAuthFlowStorageKey);
-      if (!storedFlow) {
-        this.logger.debug("no pending websocket auth flow in storage");
-        return null;
-      }
-      const pendingFlow = JSON.parse(storedFlow);
-      if (!pendingFlow.roomId || !pendingFlow.websocketUrl || !pendingFlow.flowType) {
-        this.logger.warn("pending websocket auth flow is missing required data; clearing", pendingFlow);
-        this.clearPendingWebsocketAuthFlow("invalid pending websocket flow payload");
-        return null;
-      }
-      if (pendingFlow.expiresAt && Date.now() > pendingFlow.expiresAt) {
-        this.logger.warn("pending websocket auth flow expired; clearing", pendingFlow);
-        this.clearPendingWebsocketAuthFlow("expired pending websocket flow");
-        return null;
-      }
-      if (pendingFlow.publicId && pendingFlow.publicId !== this.configService.systemConfig$.publicId) {
-        this.logger.debug("pending websocket auth flow belongs to a different public id; ignoring", {
-          pendingPublicId: pendingFlow.publicId,
-          currentPublicId: this.configService.systemConfig$.publicId
-        });
-        return null;
-      }
-      this.logger.debug("loaded pending websocket auth flow", pendingFlow);
-      return pendingFlow;
-    } catch (err) {
-      this.logger.warn("failed to load pending websocket auth flow; clearing", err);
-      this.clearPendingWebsocketAuthFlow("failed to parse pending websocket flow", void 0, err);
-      return null;
-    }
-  }
-  getPendingAccountConnectWebsocketFlow(connectData) {
-    const pendingFlow = this.getPendingWebsocketAuthFlow();
-    if (!pendingFlow || pendingFlow.flowType !== "account_connect" || !pendingFlow.connectData) {
-      return null;
-    }
-    if (!this.isSameAccountConnectFlow(pendingFlow.connectData, connectData)) {
-      this.logger.debug("pending websocket account connect flow does not match current connect request", {
-        pendingConnectData: pendingFlow.connectData,
-        currentConnectData: connectData
-      });
-      return null;
-    }
-    this.logger.info("found matching pending websocket account connect flow", {
-      roomId: pendingFlow.roomId,
-      connectData
-    });
-    return pendingFlow;
-  }
-  getPendingIdentityVerificationWebsocketFlow() {
-    const pendingFlow = this.getPendingWebsocketAuthFlow();
-    if (!pendingFlow || pendingFlow.flowType !== "identity_verification") {
-      return null;
-    }
-    this.logger.info("found pending websocket identity verification flow", {
-      roomId: pendingFlow.roomId,
-      cspType: pendingFlow.cspType
-    });
-    return pendingFlow;
-  }
-  resumePendingWebsocketAuthFlow(pendingFlow) {
-    this.logger.info("resuming pending websocket auth flow", pendingFlow);
-    return this.waitForWebsocketNotification(new URL(pendingFlow.websocketUrl), null, pendingFlow.sdkMode).pipe(switchMap((payload) => {
-      if (pendingFlow.flowType === "identity_verification" && pendingFlow.partitionedCookie) {
-        return from(this.refreshAuthCookie()).pipe(map(() => payload));
-      }
-      return of(payload);
-    }), delay(pendingFlow.flowType === "identity_verification" ? 2500 : 0), tap({
-      next: () => this.clearPendingWebsocketAuthFlow("resumed websocket auth flow completed", pendingFlow.roomId),
-      error: (err) => this.clearPendingWebsocketAuthFlow("resumed websocket auth flow errored", pendingFlow.roomId, err)
-    }));
-  }
-  clearPendingWebsocketAuthFlow(reason, roomId, err) {
-    try {
-      if (roomId) {
-        const pendingFlow = this.getPendingWebsocketAuthFlowWithoutValidation();
-        if (pendingFlow?.roomId && pendingFlow.roomId !== roomId) {
-          this.logger.debug("skipping pending websocket auth flow clear for different room", {
-            reason,
-            requestedRoomId: roomId,
-            storedRoomId: pendingFlow.roomId
-          });
-          return;
-        }
-      }
-      this.logger.debug("clearing pending websocket auth flow", {
-        reason,
-        roomId,
-        err
-      });
-      sessionStorage.removeItem(this.pendingWebsocketAuthFlowStorageKey);
-    } catch (storageErr) {
-      this.logger.warn("failed to clear pending websocket auth flow", {
-        reason,
-        err,
-        storageErr
-      });
-    }
-  }
-  savePendingWebsocketAuthFlow(pendingFlow) {
-    try {
-      this.logger.info("saving pending websocket auth flow", pendingFlow);
-      sessionStorage.setItem(this.pendingWebsocketAuthFlowStorageKey, JSON.stringify(pendingFlow));
-    } catch (err) {
-      this.logger.warn("failed to save pending websocket auth flow", {
-        pendingFlow,
-        err
-      });
-    }
-  }
-  getPendingWebsocketAuthFlowWithoutValidation() {
-    const storedFlow = sessionStorage.getItem(this.pendingWebsocketAuthFlowStorageKey);
-    return storedFlow ? JSON.parse(storedFlow) : null;
-  }
-  isSameAccountConnectFlow(left, right) {
-    return (left.brand_id || "") === (right.brand_id || "") && (left.portal_id || "") === (right.portal_id || "") && (left.endpoint_id || "") === (right.endpoint_id || "") && (left.org_connection_id || "") === (right.org_connection_id || "") && (left.vault_profile_connection_id || "") === (right.vault_profile_connection_id || "") && (left.external_id || "") === (right.external_id || "");
   }
   reverseGeocodePostalCode(latitude, longitude) {
     let queryParams = {};
@@ -50111,8 +49869,6 @@ function AppComponent_ng_container_6_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r1.errorMessage, " ");
   }
 }
-var STITCH_EMBED_STATE_STORAGE_KEY_PREFIX = "fasten_connect_stitch_embed_state:";
-var STITCH_PARENT_RESUME_EVENT_TYPE = "widget.resume";
 var AppComponent = class _AppComponent {
   populateInputsFromWindowLocation() {
     let urlParams = new URLSearchParams(window.location.search);
@@ -50177,17 +49933,12 @@ var AppComponent = class _AppComponent {
     this.idpErrorDescription = "";
     this.idpErrorUri = "";
     this.loading = true;
-    this.statePersistenceReady = false;
-    this.statePersistenceRegistered = false;
-    this.authFlowPending = false;
   }
   ngOnInit() {
     this.logger.info("QUERY STRING MAP", new URLSearchParams(window.location.search));
     this.populateInputsFromWindowLocation();
-    this.messageBusSubscription = this.messageBus.messageBusSubject.subscribe((eventPayload) => {
+    this.messageBus.messageBusSubject.subscribe((eventPayload) => {
       this.logger.debug("bubbling up client-event", eventPayload);
-      this.updateAuthFlowStateFromMessage(eventPayload);
-      this.saveEmbedState("message bus event");
       this.sendPostMessage(eventPayload);
     });
     if (this.isIdentityCallbackRequest()) {
@@ -50233,14 +49984,6 @@ var AppComponent = class _AppComponent {
     this.configService.vaultProfileConfig = {
       email: this.email
     };
-    const restoredFromState = this.restorePersistedEmbedState();
-    this.statePersistenceReady = true;
-    this.registerStatePersistence();
-    if (restoredFromState) {
-      this.logger.info("restored stitch embed state; skipping initial route selection");
-      this.saveEmbedState("restored persisted state");
-      return;
-    }
     if (this.reconnectOrgConnectionId) {
       this.fastenService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
         this.logger.info("state: dashboard/connecting#reconnectOrgConnectionId", orgConnection);
@@ -50319,13 +50062,6 @@ var AppComponent = class _AppComponent {
   ngOnChanges(changes) {
     this.logger.debug("embed ngOnChanges", changes);
   }
-  ngOnDestroy() {
-    this.messageBusSubscription?.unsubscribe();
-    this.routerEventsSubscription?.unsubscribe();
-    this.systemConfigSubscription?.unsubscribe();
-    this.vaultProfileConfigSubscription?.unsubscribe();
-    this.searchConfigSubscription?.unsubscribe();
-  }
   isIdentityCallbackRequest() {
     return !!(this.idpCode && this.idpState) || !!this.idpError;
   }
@@ -50384,30 +50120,6 @@ var AppComponent = class _AppComponent {
   // postMessage registration, listen to events from the parent window
   receivePostMessage(event) {
     this.logger.debug("received client-event from parent window", event);
-    try {
-      const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
-      if (payload?.event_type === STITCH_PARENT_RESUME_EVENT_TYPE) {
-        this.handlePageResume("parent resume postMessage");
-      }
-    } catch (err) {
-      this.logger.debug("parent window message was not JSON; ignoring for resume handling", err);
-    }
-  }
-  onWindowFocus() {
-    this.handlePageResume("window focus");
-  }
-  onPageShow() {
-    this.handlePageResume("window pageshow");
-  }
-  onPageHide() {
-    this.saveEmbedState("window pagehide");
-  }
-  onVisibilityChange() {
-    if (document.visibilityState === "visible") {
-      this.handlePageResume("document visible");
-      return;
-    }
-    this.saveEmbedState(`document ${document.visibilityState}`);
   }
   sendPostMessage(eventPayload) {
     if (eventPayload == null) {
@@ -50434,172 +50146,6 @@ var AppComponent = class _AppComponent {
     const orgFlags = org?.feature_flags || [];
     return orgFlags.includes(`${this.configService.systemConfig$.apiMode}.tefca.enable`);
   }
-  registerStatePersistence() {
-    if (this.statePersistenceRegistered) {
-      return;
-    }
-    this.statePersistenceRegistered = true;
-    this.logger.debug("registering stitch embed state persistence");
-    this.routerEventsSubscription = this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((event) => {
-      this.logger.debug("router navigation completed; saving stitch embed state", event.urlAfterRedirects);
-      this.saveEmbedState("router navigation");
-    });
-    this.systemConfigSubscription = this.configService.systemConfigSubject.subscribe(() => {
-      this.saveEmbedState("system config changed");
-    });
-    this.vaultProfileConfigSubscription = this.configService.vaultProfileConfigSubject.subscribe(() => {
-      this.saveEmbedState("vault profile config changed");
-    });
-    this.searchConfigSubscription = this.configService.searchConfigSubject.subscribe(() => {
-      this.saveEmbedState("search config changed");
-    });
-  }
-  handlePageResume(reason) {
-    const pendingFlow = this.fastenService.getPendingWebsocketAuthFlow();
-    this.logger.info("stitch embed page resumed", {
-      reason,
-      currentUrl: this.router.url,
-      authFlowPending: this.authFlowPending,
-      pendingWebsocketFlow: pendingFlow
-    });
-    if (pendingFlow) {
-      this.authFlowPending = true;
-    }
-    this.saveEmbedState(reason);
-  }
-  updateAuthFlowStateFromMessage(eventPayload) {
-    if (!eventPayload?.event_type) {
-      return;
-    }
-    if (eventPayload.event_type === EventTypes.EventTypeConnectionPending) {
-      this.authFlowPending = true;
-      this.logger.info("stitch embed auth flow marked pending", eventPayload);
-      return;
-    }
-    if ([
-      EventTypes.EventTypeConnectionSuccess,
-      EventTypes.EventTypeConnectionFailed,
-      EventTypes.EventTypeWidgetClose,
-      EventTypes.EventTypeWidgetComplete,
-      EventTypes.EventTypeWidgetConfigError
-    ].includes(eventPayload.event_type)) {
-      this.authFlowPending = false;
-      this.logger.info("stitch embed auth flow marked not pending", eventPayload);
-      this.clearPersistedEmbedState(`message bus event ${eventPayload.event_type}`);
-    }
-  }
-  saveEmbedState(reason) {
-    if (!this.statePersistenceReady || !this.publicId || this.isIdentityCallbackRequest()) {
-      return;
-    }
-    const state = {
-      version: 1,
-      currentUrl: this.router.url,
-      authFlowPending: this.authFlowPending || !!this.fastenService.getPendingWebsocketAuthFlow(),
-      savedAt: Date.now(),
-      systemConfig: this.configService.systemConfig$,
-      vaultProfileConfig: this.configService.vaultProfileConfig$,
-      searchConfig: this.configService.searchConfig$
-    };
-    try {
-      sessionStorage.setItem(this.getEmbedStateStorageKey(), JSON.stringify(state));
-      this.logger.debug("saved stitch embed state", {
-        reason,
-        state,
-        storageKey: this.getEmbedStateStorageKey()
-      });
-    } catch (err) {
-      this.logger.warn("failed to save stitch embed state", {
-        reason,
-        err
-      });
-    }
-  }
-  restorePersistedEmbedState() {
-    const state = this.getPersistedEmbedState();
-    if (!state) {
-      return false;
-    }
-    const pendingFlow = this.fastenService.getPendingWebsocketAuthFlow();
-    if (!state.authFlowPending && !pendingFlow) {
-      this.logger.debug("persisted stitch embed state was not pending auth; ignoring", state);
-      return false;
-    }
-    if (Date.now() - state.savedAt > ConnectWindowTimeout) {
-      this.logger.warn("persisted stitch embed state is older than the auth timeout; clearing", state);
-      this.clearPersistedEmbedState("persisted state expired");
-      return false;
-    }
-    if (state.systemConfig) {
-      this.configService.systemConfig = state.systemConfig;
-    }
-    if (state.vaultProfileConfig) {
-      this.configService.vaultProfileConfig = state.vaultProfileConfig;
-    }
-    if (state.searchConfig) {
-      this.configService.searchConfig = state.searchConfig;
-    }
-    this.authFlowPending = state.authFlowPending || !!pendingFlow;
-    if (!state.currentUrl || state.currentUrl === "/" || state.currentUrl.startsWith("/auth/callback")) {
-      this.logger.debug("persisted stitch embed state did not have a restorable route", state);
-      return false;
-    }
-    this.logger.info("restoring stitch embed route from persisted state", {
-      currentUrl: state.currentUrl,
-      pendingFlow
-    });
-    this.router.navigateByUrl(state.currentUrl, { replaceUrl: true });
-    return true;
-  }
-  getPersistedEmbedState() {
-    try {
-      const storedState = sessionStorage.getItem(this.getEmbedStateStorageKey());
-      if (!storedState) {
-        this.logger.debug("no persisted stitch embed state found", this.getEmbedStateStorageKey());
-        return null;
-      }
-      const state = JSON.parse(storedState);
-      if (state.version !== 1) {
-        this.logger.warn("persisted stitch embed state version is unsupported; clearing", state);
-        this.clearPersistedEmbedState("unsupported state version");
-        return null;
-      }
-      this.logger.debug("loaded persisted stitch embed state", state);
-      return state;
-    } catch (err) {
-      this.logger.warn("failed to load persisted stitch embed state; clearing", err);
-      this.clearPersistedEmbedState("failed to parse persisted state");
-      return null;
-    }
-  }
-  clearPersistedEmbedState(reason) {
-    try {
-      this.logger.debug("clearing persisted stitch embed state", {
-        reason,
-        storageKey: this.getEmbedStateStorageKey()
-      });
-      sessionStorage.removeItem(this.getEmbedStateStorageKey());
-    } catch (err) {
-      this.logger.warn("failed to clear persisted stitch embed state", {
-        reason,
-        err
-      });
-    }
-  }
-  getEmbedStateStorageKey() {
-    const keyParts = [
-      this.publicId || "",
-      this.externalId || "",
-      this.reconnectOrgConnectionId || "",
-      this.brandId || "",
-      this.portalId || "",
-      this.endpointId || "",
-      this.tefcaMode ? "tefca" : "",
-      this.searchOnly ? "search" : "",
-      this.connectMode || ""
-    ];
-    return `${STITCH_EMBED_STATE_STORAGE_KEY_PREFIX}${encodeURIComponent(keyParts.join("|"))}`;
-  }
   static {
     this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
       return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
@@ -50610,15 +50156,7 @@ var AppComponent = class _AppComponent {
       if (rf & 1) {
         \u0275\u0275listener("message", function AppComponent_message_HostBindingHandler($event) {
           return ctx.receivePostMessage($event);
-        }, false, \u0275\u0275resolveWindow)("focus", function AppComponent_focus_HostBindingHandler() {
-          return ctx.onWindowFocus();
-        }, false, \u0275\u0275resolveWindow)("pageshow", function AppComponent_pageshow_HostBindingHandler() {
-          return ctx.onPageShow();
-        }, false, \u0275\u0275resolveWindow)("pagehide", function AppComponent_pagehide_HostBindingHandler() {
-          return ctx.onPageHide();
-        }, false, \u0275\u0275resolveWindow)("visibilitychange", function AppComponent_visibilitychange_HostBindingHandler() {
-          return ctx.onVisibilityChange();
-        }, false, \u0275\u0275resolveDocument);
+        }, false, \u0275\u0275resolveWindow);
       }
     }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], email: "email", externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], identityRequestUri: [0, "identity-request-uri", "identityRequestUri"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"], idpCode: [0, "code", "idpCode"], idpState: [0, "state", "idpState"], idpError: [0, "error", "idpError"], idpErrorDescription: [0, "error-description", "idpErrorDescription"], idpErrorUri: [0, "error-uri", "idpErrorUri"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in", "flex", "h-screen", "flex-col", "overflow-hidden"], [1, "flex-1", "min-h-0", "flex", "flex-col"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
@@ -50650,7 +50188,7 @@ var AppComponent = class _AppComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 55 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 41 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts
@@ -58438,21 +57976,21 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
 
 // projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts
 var _c03 = (a0, a1, a2, a3) => ({ "hover:bg-gray-50 border-gray-200": a0, "cursor-not-allowed opacity-70 border-indigo-200 text-indigo-500": a1, "border-green-400 bg-green-50 text-green-600": a2, "border-red-400 bg-red-50 text-red-600": a3 });
-function IdentityVerificationComponent_div_21_Template(rf, ctx) {
+function IdentityVerificationComponent_div_22_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 14);
     \u0275\u0275text(1, " Please complete the identity verification process in the new window. ");
     \u0275\u0275elementEnd();
   }
 }
-function IdentityVerificationComponent_div_22_div_3_Template(rf, ctx) {
+function IdentityVerificationComponent_div_23_div_3_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 25);
     \u0275\u0275element(1, "span", 26);
     \u0275\u0275elementEnd();
   }
 }
-function IdentityVerificationComponent_div_22__svg_svg_7_Template(rf, ctx) {
+function IdentityVerificationComponent_div_23__svg_svg_7_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275namespaceSVG();
     \u0275\u0275elementStart(0, "svg", 27);
@@ -58460,7 +57998,7 @@ function IdentityVerificationComponent_div_22__svg_svg_7_Template(rf, ctx) {
     \u0275\u0275elementEnd();
   }
 }
-function IdentityVerificationComponent_div_22__svg_svg_8_Template(rf, ctx) {
+function IdentityVerificationComponent_div_23__svg_svg_8_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275namespaceSVG();
     \u0275\u0275elementStart(0, "svg", 27);
@@ -58468,7 +58006,7 @@ function IdentityVerificationComponent_div_22__svg_svg_8_Template(rf, ctx) {
     \u0275\u0275elementEnd();
   }
 }
-function IdentityVerificationComponent_div_22__svg_svg_9_Template(rf, ctx) {
+function IdentityVerificationComponent_div_23__svg_svg_9_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275namespaceSVG();
     \u0275\u0275elementStart(0, "svg", 32);
@@ -58476,11 +58014,11 @@ function IdentityVerificationComponent_div_22__svg_svg_9_Template(rf, ctx) {
     \u0275\u0275elementEnd();
   }
 }
-function IdentityVerificationComponent_div_22_div_10_Template(rf, ctx) {
+function IdentityVerificationComponent_div_23_div_10_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "div", 34)(1, "button", 35);
-    \u0275\u0275listener("click", function IdentityVerificationComponent_div_22_div_10_Template_button_click_1_listener() {
+    \u0275\u0275listener("click", function IdentityVerificationComponent_div_23_div_10_Template_button_click_1_listener() {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.onResetConnections());
@@ -58494,28 +58032,28 @@ function IdentityVerificationComponent_div_22_div_10_Template(rf, ctx) {
     \u0275\u0275property("disabled", ctx_r1.resetButtonState === "loading");
   }
 }
-function IdentityVerificationComponent_div_22_Template(rf, ctx) {
+function IdentityVerificationComponent_div_23_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "div", 15)(1, "div", 16);
-    \u0275\u0275listener("click", function IdentityVerificationComponent_div_22_Template_div_click_1_listener($event) {
+    \u0275\u0275listener("click", function IdentityVerificationComponent_div_23_Template_div_click_1_listener($event) {
       \u0275\u0275restoreView(_r1);
       return \u0275\u0275resetView($event.stopPropagation());
     });
     \u0275\u0275elementStart(2, "div", 17);
-    \u0275\u0275template(3, IdentityVerificationComponent_div_22_div_3_Template, 2, 0, "div", 18);
+    \u0275\u0275template(3, IdentityVerificationComponent_div_23_div_3_Template, 2, 0, "div", 18);
     \u0275\u0275elementStart(4, "button", 19);
-    \u0275\u0275listener("click", function IdentityVerificationComponent_div_22_Template_button_click_4_listener() {
+    \u0275\u0275listener("click", function IdentityVerificationComponent_div_23_Template_button_click_4_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.toggleResetMenu());
     });
     \u0275\u0275elementStart(5, "div", 20);
     \u0275\u0275elementContainerStart(6, 21);
-    \u0275\u0275template(7, IdentityVerificationComponent_div_22__svg_svg_7_Template, 3, 0, "svg", 22)(8, IdentityVerificationComponent_div_22__svg_svg_8_Template, 3, 0, "svg", 22)(9, IdentityVerificationComponent_div_22__svg_svg_9_Template, 2, 0, "svg", 23);
+    \u0275\u0275template(7, IdentityVerificationComponent_div_23__svg_svg_7_Template, 3, 0, "svg", 22)(8, IdentityVerificationComponent_div_23__svg_svg_8_Template, 3, 0, "svg", 22)(9, IdentityVerificationComponent_div_23__svg_svg_9_Template, 2, 0, "svg", 23);
     \u0275\u0275elementContainerEnd();
     \u0275\u0275elementEnd()()();
-    \u0275\u0275template(10, IdentityVerificationComponent_div_22_div_10_Template, 3, 1, "div", 24);
+    \u0275\u0275template(10, IdentityVerificationComponent_div_23_div_10_Template, 3, 1, "div", 24);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -58559,17 +58097,6 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     }
   }
   ngOnInit() {
-    if (this.configService.systemConfig$.connectMode != ConnectMode.Websocket) {
-      return;
-    }
-    const pendingFlow = this.fastenService.getPendingIdentityVerificationWebsocketFlow();
-    if (!pendingFlow) {
-      this.logger.debug("no pending identity verification websocket flow to resume");
-      return;
-    }
-    this.logger.info("resuming pending identity verification websocket flow", pendingFlow);
-    this.loading = true;
-    this.subscribeToIdentityVerification(this.fastenService.resumePendingWebsocketAuthFlow(pendingFlow), pendingFlow.cspType || CspType.ClearCsp);
   }
   verifyIdentity(cspType) {
     this.loading = true;
@@ -58579,9 +58106,6 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     } else {
       identityVerificationObservable = this.fastenService.verificationWithPopup(cspType);
     }
-    this.subscribeToIdentityVerification(identityVerificationObservable, cspType);
-  }
-  subscribeToIdentityVerification(identityVerificationObservable, cspType) {
     this.identityVerificationSubscription = identityVerificationObservable.subscribe((result) => {
       this.loading = false;
       if (result?.vault_auth_finish_response?.has_verified_identity && result?.vault_auth_finish_response?.verified_identity_csp_type) {
@@ -58663,7 +58187,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
           return ctx.closeResetMenu();
         }, false, \u0275\u0275resolveDocument);
       }
-    }, decls: 23, vars: 4, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["src", "https://s3.amazonaws.com/idme-design/brand-assets/Primary-IDme-Logo-RGB.svg", 2, "height", "0.8rem", "display", "inline", "vertical-align", "center"], [1, "space-y-4", "flex", "flex-col", "items-center"], ["type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "clear-button", 3, "click", "disabled"], ["src", "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Generator: Adobe Illustrator 26.3.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 353.2 337.6' style='enable-background:new 0 0 353.2 337.6;' xml:space='preserve'%3E%3Cstyle type='text/css'%3E .st0%7Bdisplay:none;%7D .st1%7Bdisplay:inline;fill:%23192958;%7D .st2%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Cg id='BKGD' class='st0'%3E%3Crect class='st1' width='353.2' height='337.6'/%3E%3C/g%3E%3Cg id='Layer_2'%3E%3Cg%3E%3Cg%3E%3Ccircle class='st2' cx='14' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='77.1' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='227.8' r='14'/%3E%3Ccircle class='st2' cx='99.4' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='45.5' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='108.7' r='14'/%3E%3Ccircle class='st2' cx='98.4' cy='61.7' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='61.1' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='109.7' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='227.9' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='45.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='301.5' r='14'/%3E%3Ccircle class='st2' cx='226.7' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='126.6' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='276.5' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='339.2' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='35.5' r='14'/%3E%3Ccircle class='st2' cx='126.2' cy='14' r='14'/%3E%3Ccircle class='st2' cx='226.8' cy='14' r='14'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E", 1, "px-[8px]", 2, "height", "24px", "display", "inline", "vertical-align", "bottom"], ["data-testid", "idme-button", "type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "gap-2", "clear-button", "idme-button", 3, "click", "disabled"], [1, "text-base", "font-semibold"], ["src", "data:image/svg+xml,%3Csvg%20%20%20%20role%3D%22img%22%20%20%20%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%20%20%20viewBox%3D%220%200%2030%2012%22%20%20%20%20fill%3D%22none%22%20%20%20%20aria-labelledby%3D%22idme-title%22%3E%3Ctitle%20id%3D%22idme-title%22%3EID.me%3C%2Ftitle%3E%3Cg%20fillRule%3D%22nonzero%22%20fill%3D%22none%22%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M1.48515.0384H.96978C.32628.0384%200%20.24588%200%20.6551v10.12096c0%20.40922.32627.6167.96978.6167h.51537c.64332%200%20.96977-.20748.96977-.6167V.6551c0-.40922-.32645-.6167-.96977-.6167M7.67332%209.10802H6.14794V2.31206h1.52538c1.90854%200%202.30924%201.84782%202.30924%203.39798s-.4007%203.39798-2.30924%203.39798zm2.901%201.04522c0-1.20723.73212-2.22915%201.74336-2.58106.11573-.56263.17475-1.18411.17475-1.86214%200-3.65857-1.71147-5.67336-4.81911-5.67336h-3.3127c-.4629%200-.67823.23232-.67823.73114v9.88444c0%20.49882.21532.73114.67824.73114h3.31269c1.18475%200%202.16587-.29364%202.92723-.85876-.01542-.1217-.02623-.24512-.02623-.3714z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M14.24058%2010.15324c0%20.68452-.51484%201.23952-1.14984%201.23952-.63518%200-1.14984-.555-1.14984-1.23952%200-.68453.51466-1.23952%201.14984-1.23952.635%200%201.14984.555%201.14984%201.23952%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M27.26344%205.99604c.00248.0298.00478.05941.00514.0896%200%20.04337-.0016.08769-.0062.13488-.01525.15857-.04236.30625-.08047.43922-.2536.88646-.96747%201.0435-1.58492%201.06604.08383-.38496.20718-.76209.35906-1.09489.30057-.66007.67788-1.07006.98466-1.07025.028%200%20.05547.0044.08347.013.01188.00362.02233.00973.04112.01967l.01276.0063c.00514.0023.01028.00459.01506.00803.01312.00898.02464.02082.0374.03343l.01046.0105c.0039.00383.00797.00765.0117.01204.0085.01032.01559.02236.02268.03401l.00921.0151c.00638.00993.01259.02005.01826.03209.00336.00707.0062.0149.01418.03553.00815.0216.01648.04337.02268.06706l.00567.02751c.00656.02847.01223.0575.01577.08789l.0023.03324zm2.17934%202.4177a.2772.2772%200%2000-.10652-.0256c-.15702-.00553-.26406.06095-.3587.22564-.056.09877-.11112.19926-.1657.29975-.2086.38305-.4241.77871-.73726%201.06223-.42534.38496-1.04102.56512-1.56898.46061-.31404-.06209-.53823-.30701-.67115-.5015-.24386-.35726-.36242-.83832-.34328-1.39274.77713-.0705%203.11951-.4438%203.30578-2.35791.03597-.37102-.06203-.70745-.28356-.97263-.2809-.33624-.72928-.52156-1.26238-.52156-1.56224%200-3.1041%201.76147-3.29958%203.76957-.05334.5508.01028%201.05974.18963%201.5129-.13362.13336-.2598.22946-.3851.29327-.1308.06725-.24422.08081-.32734.03973-.10297-.05158-.14462-.1811-.1611-.28045-.0615-.36777.0179-.79037.11183-1.22691.05547-.256.12477-.5229.18591-.75827.18874-.72618.38422-1.47718.319-2.23584-.05936-.69465-.51164-1.12603-1.18031-1.12603-.93753%200-1.5548.7212-1.95462%201.33943-.0085-.4608-.11041-.79533-.30997-1.01885-.1898-.21283-.46876-.32058-.82888-.32058-.91962%200-1.52928.69274-1.92803%201.29912.00531-.05578.01063-.11271.0163-.16946.02517-.26001.03651-.63256-.15578-.86239-.11466-.13717-.28693-.20652-.51218-.20652-.19885%200-.24847.00115-.46203.03917-.00212.00019-.20877.04394-.28728.1217-.1377.13621-.09393.32401-.06876.43138.00319.01356.00602.02598.00762.03649.01506.10374.01967.22142.01435.35917-.0287.72942-.15436%201.45827-.27363%202.07516-.06433.33243-.137.67058-.2086%201.00434-.15914.7405-.3236%201.50603-.40797%202.27595-.00904.08158.01259.15915.06079.21818.04838.05923.11661.0919.19211.09209l.04963.00038c.50526.00726%201.00185-.01529%201.11882-.32574.1292-.34274.20062-.7596.26389-1.12833l.02782-.16334c.14993-.84787.2809-1.4554.5448-2.23641.13592-.40254.3844-.76515.58537-1.03643.24333-.32822.50562-.64957.80176-.6576.12264-.00687.2024.03249.26265.11865.28764.41362-.07054%201.74866-.2233%202.31875-.03314.12322-.06115.22734-.07887.30376l-.10527.44037c-.15507.64211-.31528%201.306-.39752%201.97754a7.70047%207.70047%200%2000-.0225.20747l-.00692.09362.0647.05368c.13043.10909%201.06192-.04356%201.06955-.04604.34346-.12514.41825-.4736.44288-.58805.06398-.29631.12051-.59893.17492-.89123l.0039-.02178c.10261-.5508.2086-1.1207.36739-1.67053.30961-1.06987.72255-1.79986%201.22728-2.16973.21586-.15857.4374-.17614.53806-.04222.17439.23117.0638.85704.01648%201.12432-.06522.37063-.1487.74814-.2295%201.11285l-.00408.01872c-.05175.2325-.10315.46482-.151.6979-.14763.72235-.26885%201.6178.10846%202.13458.19194.26345.48897.3968.88294.3968.41754%200%20.81045-.15016%201.23632-.47265.11733-.0896.23571-.19372.3743-.3179.4794.58747%201.02401.83908%201.80965.83908%201.77721%200%202.61265-1.27295%203.08655-2.23048.05973-.12132.12654-.26136.16642-.38019.0592-.17652-.01134-.3691-.16021-.43845z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E", 1, "px-[8px]", 2, "height", "22px", "display", "inline", "vertical-align", "center"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["class", "mt-4 absolute bottom-10", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "mt-4", "absolute", "bottom-10"], [1, "relative", "inline-block", "text-left", 3, "click"], [1, "relative", "inline-flex"], ["class", "pointer-events-none absolute inset-0 flex items-center justify-center", 4, "ngIf"], ["type", "button", "aria-label", "Open tools menu", 1, "relative", "z-10", "flex", "h-10", "w-10", "items-center", "justify-center", "rounded-full", "border", "bg-white", "text-gray-700", "shadow", "transition-colors", "focus:outline-none", "focus:ring-2", "focus:ring-offset-2", "focus:ring-indigo-500", 3, "click", "disabled", "ngClass"], [1, "flex", "items-center", "justify-center"], [3, "ngSwitch"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", "class", "size-6 tools-button-icon tools-button-icon-pop", 4, "ngSwitchCase"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", "class", "size-6 tools-button-icon", 4, "ngSwitchDefault"], ["class", "absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 transform rounded-md border border-gray-200 bg-white text-left shadow-lg", 4, "ngIf"], [1, "pointer-events-none", "absolute", "inset-0", "flex", "items-center", "justify-center"], [1, "absolute", "-inset-1", "rounded-full", "border-2", "border-indigo-300", "border-t-transparent", "animate-spin"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", 1, "size-6", "tools-button-icon", "tools-button-icon-pop"], ["x", "4", "y", "4", "width", "16", "height", "16", "rx", "2", "ry", "2"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M8.5 12.25 11 14.75 15.5 9.75"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 18 18 6"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 6l12 12"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", 1, "size-6", "tools-button-icon"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"], [1, "absolute", "bottom-full", "left-1/2", "mb-2", "w-48", "-translate-x-1/2", "transform", "rounded-md", "border", "border-gray-200", "bg-white", "text-left", "shadow-lg"], ["type", "button", 1, "block", "w-full", "px-3", "py-2", "text-sm", "text-gray-700", "hover:bg-gray-50", "disabled:cursor-not-allowed", "disabled:opacity-60", 3, "click", "disabled"]], template: function IdentityVerificationComponent_Template(rf, ctx) {
+    }, decls: 24, vars: 7, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["src", "https://s3.amazonaws.com/idme-design/brand-assets/Primary-IDme-Logo-RGB.svg", 2, "height", "0.8rem", "display", "inline", "vertical-align", "center"], [1, "space-y-4", "flex", "flex-col", "items-center"], ["type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "clear-button", 3, "click", "disabled"], ["src", "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Generator: Adobe Illustrator 26.3.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 353.2 337.6' style='enable-background:new 0 0 353.2 337.6;' xml:space='preserve'%3E%3Cstyle type='text/css'%3E .st0%7Bdisplay:none;%7D .st1%7Bdisplay:inline;fill:%23192958;%7D .st2%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Cg id='BKGD' class='st0'%3E%3Crect class='st1' width='353.2' height='337.6'/%3E%3C/g%3E%3Cg id='Layer_2'%3E%3Cg%3E%3Cg%3E%3Ccircle class='st2' cx='14' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='77.1' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='227.8' r='14'/%3E%3Ccircle class='st2' cx='99.4' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='45.5' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='108.7' r='14'/%3E%3Ccircle class='st2' cx='98.4' cy='61.7' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='61.1' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='109.7' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='227.9' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='45.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='301.5' r='14'/%3E%3Ccircle class='st2' cx='226.7' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='126.6' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='276.5' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='339.2' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='35.5' r='14'/%3E%3Ccircle class='st2' cx='126.2' cy='14' r='14'/%3E%3Ccircle class='st2' cx='226.8' cy='14' r='14'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E", 1, "px-[8px]", 2, "height", "24px", "display", "inline", "vertical-align", "bottom"], ["data-testid", "idme-button", "type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "gap-2", "clear-button", "idme-button", 3, "click", "disabled"], [1, "text-base", "font-semibold"], ["src", "data:image/svg+xml,%3Csvg%20%20%20%20role%3D%22img%22%20%20%20%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%20%20%20viewBox%3D%220%200%2030%2012%22%20%20%20%20fill%3D%22none%22%20%20%20%20aria-labelledby%3D%22idme-title%22%3E%3Ctitle%20id%3D%22idme-title%22%3EID.me%3C%2Ftitle%3E%3Cg%20fillRule%3D%22nonzero%22%20fill%3D%22none%22%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M1.48515.0384H.96978C.32628.0384%200%20.24588%200%20.6551v10.12096c0%20.40922.32627.6167.96978.6167h.51537c.64332%200%20.96977-.20748.96977-.6167V.6551c0-.40922-.32645-.6167-.96977-.6167M7.67332%209.10802H6.14794V2.31206h1.52538c1.90854%200%202.30924%201.84782%202.30924%203.39798s-.4007%203.39798-2.30924%203.39798zm2.901%201.04522c0-1.20723.73212-2.22915%201.74336-2.58106.11573-.56263.17475-1.18411.17475-1.86214%200-3.65857-1.71147-5.67336-4.81911-5.67336h-3.3127c-.4629%200-.67823.23232-.67823.73114v9.88444c0%20.49882.21532.73114.67824.73114h3.31269c1.18475%200%202.16587-.29364%202.92723-.85876-.01542-.1217-.02623-.24512-.02623-.3714z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M14.24058%2010.15324c0%20.68452-.51484%201.23952-1.14984%201.23952-.63518%200-1.14984-.555-1.14984-1.23952%200-.68453.51466-1.23952%201.14984-1.23952.635%200%201.14984.555%201.14984%201.23952%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M27.26344%205.99604c.00248.0298.00478.05941.00514.0896%200%20.04337-.0016.08769-.0062.13488-.01525.15857-.04236.30625-.08047.43922-.2536.88646-.96747%201.0435-1.58492%201.06604.08383-.38496.20718-.76209.35906-1.09489.30057-.66007.67788-1.07006.98466-1.07025.028%200%20.05547.0044.08347.013.01188.00362.02233.00973.04112.01967l.01276.0063c.00514.0023.01028.00459.01506.00803.01312.00898.02464.02082.0374.03343l.01046.0105c.0039.00383.00797.00765.0117.01204.0085.01032.01559.02236.02268.03401l.00921.0151c.00638.00993.01259.02005.01826.03209.00336.00707.0062.0149.01418.03553.00815.0216.01648.04337.02268.06706l.00567.02751c.00656.02847.01223.0575.01577.08789l.0023.03324zm2.17934%202.4177a.2772.2772%200%2000-.10652-.0256c-.15702-.00553-.26406.06095-.3587.22564-.056.09877-.11112.19926-.1657.29975-.2086.38305-.4241.77871-.73726%201.06223-.42534.38496-1.04102.56512-1.56898.46061-.31404-.06209-.53823-.30701-.67115-.5015-.24386-.35726-.36242-.83832-.34328-1.39274.77713-.0705%203.11951-.4438%203.30578-2.35791.03597-.37102-.06203-.70745-.28356-.97263-.2809-.33624-.72928-.52156-1.26238-.52156-1.56224%200-3.1041%201.76147-3.29958%203.76957-.05334.5508.01028%201.05974.18963%201.5129-.13362.13336-.2598.22946-.3851.29327-.1308.06725-.24422.08081-.32734.03973-.10297-.05158-.14462-.1811-.1611-.28045-.0615-.36777.0179-.79037.11183-1.22691.05547-.256.12477-.5229.18591-.75827.18874-.72618.38422-1.47718.319-2.23584-.05936-.69465-.51164-1.12603-1.18031-1.12603-.93753%200-1.5548.7212-1.95462%201.33943-.0085-.4608-.11041-.79533-.30997-1.01885-.1898-.21283-.46876-.32058-.82888-.32058-.91962%200-1.52928.69274-1.92803%201.29912.00531-.05578.01063-.11271.0163-.16946.02517-.26001.03651-.63256-.15578-.86239-.11466-.13717-.28693-.20652-.51218-.20652-.19885%200-.24847.00115-.46203.03917-.00212.00019-.20877.04394-.28728.1217-.1377.13621-.09393.32401-.06876.43138.00319.01356.00602.02598.00762.03649.01506.10374.01967.22142.01435.35917-.0287.72942-.15436%201.45827-.27363%202.07516-.06433.33243-.137.67058-.2086%201.00434-.15914.7405-.3236%201.50603-.40797%202.27595-.00904.08158.01259.15915.06079.21818.04838.05923.11661.0919.19211.09209l.04963.00038c.50526.00726%201.00185-.01529%201.11882-.32574.1292-.34274.20062-.7596.26389-1.12833l.02782-.16334c.14993-.84787.2809-1.4554.5448-2.23641.13592-.40254.3844-.76515.58537-1.03643.24333-.32822.50562-.64957.80176-.6576.12264-.00687.2024.03249.26265.11865.28764.41362-.07054%201.74866-.2233%202.31875-.03314.12322-.06115.22734-.07887.30376l-.10527.44037c-.15507.64211-.31528%201.306-.39752%201.97754a7.70047%207.70047%200%2000-.0225.20747l-.00692.09362.0647.05368c.13043.10909%201.06192-.04356%201.06955-.04604.34346-.12514.41825-.4736.44288-.58805.06398-.29631.12051-.59893.17492-.89123l.0039-.02178c.10261-.5508.2086-1.1207.36739-1.67053.30961-1.06987.72255-1.79986%201.22728-2.16973.21586-.15857.4374-.17614.53806-.04222.17439.23117.0638.85704.01648%201.12432-.06522.37063-.1487.74814-.2295%201.11285l-.00408.01872c-.05175.2325-.10315.46482-.151.6979-.14763.72235-.26885%201.6178.10846%202.13458.19194.26345.48897.3968.88294.3968.41754%200%20.81045-.15016%201.23632-.47265.11733-.0896.23571-.19372.3743-.3179.4794.58747%201.02401.83908%201.80965.83908%201.77721%200%202.61265-1.27295%203.08655-2.23048.05973-.12132.12654-.26136.16642-.38019.0592-.17652-.01134-.3691-.16021-.43845z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E", 1, "px-[8px]", 2, "height", "22px", "display", "inline", "vertical-align", "center"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["class", "mt-4 absolute bottom-10", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "mt-4", "absolute", "bottom-10"], [1, "relative", "inline-block", "text-left", 3, "click"], [1, "relative", "inline-flex"], ["class", "pointer-events-none absolute inset-0 flex items-center justify-center", 4, "ngIf"], ["type", "button", "aria-label", "Open tools menu", 1, "relative", "z-10", "flex", "h-10", "w-10", "items-center", "justify-center", "rounded-full", "border", "bg-white", "text-gray-700", "shadow", "transition-colors", "focus:outline-none", "focus:ring-2", "focus:ring-offset-2", "focus:ring-indigo-500", 3, "click", "disabled", "ngClass"], [1, "flex", "items-center", "justify-center"], [3, "ngSwitch"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", "class", "size-6 tools-button-icon tools-button-icon-pop", 4, "ngSwitchCase"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", "class", "size-6 tools-button-icon", 4, "ngSwitchDefault"], ["class", "absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 transform rounded-md border border-gray-200 bg-white text-left shadow-lg", 4, "ngIf"], [1, "pointer-events-none", "absolute", "inset-0", "flex", "items-center", "justify-center"], [1, "absolute", "-inset-1", "rounded-full", "border-2", "border-indigo-300", "border-t-transparent", "animate-spin"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", 1, "size-6", "tools-button-icon", "tools-button-icon-pop"], ["x", "4", "y", "4", "width", "16", "height", "16", "rx", "2", "ry", "2"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M8.5 12.25 11 14.75 15.5 9.75"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 18 18 6"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 6l12 12"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", 1, "size-6", "tools-button-icon"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"], [1, "absolute", "bottom-full", "left-1/2", "mb-2", "w-48", "-translate-x-1/2", "transform", "rounded-md", "border", "border-gray-200", "bg-white", "text-left", "shadow-lg"], ["type", "button", 1, "block", "w-full", "px-3", "py-2", "text-sm", "text-gray-700", "hover:bg-gray-50", "disabled:cursor-not-allowed", "disabled:opacity-60", 3, "click", "disabled"]], template: function IdentityVerificationComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -58673,32 +58197,36 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
         \u0275\u0275text(6, "just once ");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(7, "p", 3);
-        \u0275\u0275text(8, " Your leaving Acme Labs to verify your identity with our partners, ");
-        \u0275\u0275element(9, "img", 4);
-        \u0275\u0275text(10, " or ");
-        \u0275\u0275element(11, "img", 5);
-        \u0275\u0275text(12, " This one-time step will bring you right back after your ID has been verified. ");
+        \u0275\u0275text(8);
+        \u0275\u0275pipe(9, "async");
+        \u0275\u0275element(10, "img", 4);
+        \u0275\u0275text(11, " or ");
+        \u0275\u0275element(12, "img", 5);
+        \u0275\u0275text(13, " This one-time step will bring you right back after your ID has been verified. ");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(13, "div", 6)(14, "button", 7);
-        \u0275\u0275listener("click", function IdentityVerificationComponent_Template_button_click_14_listener() {
+        \u0275\u0275elementStart(14, "div", 6)(15, "button", 7);
+        \u0275\u0275listener("click", function IdentityVerificationComponent_Template_button_click_15_listener() {
           return ctx.verifyIdentity(ctx.CspType.ClearCsp);
         });
-        \u0275\u0275element(15, "img", 8);
-        \u0275\u0275text(16, " Verify with CLEAR ");
+        \u0275\u0275element(16, "img", 8);
+        \u0275\u0275text(17, " Verify with CLEAR ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(17, "button", 9);
-        \u0275\u0275listener("click", function IdentityVerificationComponent_Template_button_click_17_listener() {
+        \u0275\u0275elementStart(18, "button", 9);
+        \u0275\u0275listener("click", function IdentityVerificationComponent_Template_button_click_18_listener() {
           return ctx.verifyIdentity(ctx.CspType.IdmeCsp);
         });
-        \u0275\u0275elementStart(18, "span", 10);
-        \u0275\u0275text(19, "Verify with ");
-        \u0275\u0275element(20, "img", 11);
+        \u0275\u0275elementStart(19, "span", 10);
+        \u0275\u0275text(20, "Verify with ");
+        \u0275\u0275element(21, "img", 11);
         \u0275\u0275elementEnd()();
-        \u0275\u0275template(21, IdentityVerificationComponent_div_21_Template, 2, 0, "div", 12)(22, IdentityVerificationComponent_div_22_Template, 11, 14, "div", 13);
+        \u0275\u0275template(22, IdentityVerificationComponent_div_22_Template, 2, 0, "div", 12)(23, IdentityVerificationComponent_div_23_Template, 11, 14, "div", 13);
         \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
-        \u0275\u0275advance(14);
+        let tmp_0_0;
+        \u0275\u0275advance(8);
+        \u0275\u0275textInterpolate1(" You're leaving ", ((tmp_0_0 = \u0275\u0275pipeBind1(9, 5, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.org == null ? null : tmp_0_0.org.name) || "Unknown", " to verify your identity with our partners, ");
+        \u0275\u0275advance(7);
         \u0275\u0275property("disabled", ctx.loading);
         \u0275\u0275advance(3);
         \u0275\u0275property("disabled", ctx.loading);
@@ -58714,6 +58242,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
       NgSwitch,
       NgSwitchCase,
       NgSwitchDefault,
+      AsyncPipe,
       RouterModule,
       HeaderComponent
     ], styles: ['\n\n.clear-button[_ngcontent-%COMP%] {\n  border-radius: 32px;\n  background-color: #041A55;\n  font-family: "Inter", serif;\n  font-weight: 600;\n  font-size: 16px;\n  line-height: 26px;\n  height: 56px;\n  width: 328px;\n}\n.idme-button[_ngcontent-%COMP%] {\n  background-color: #08833D;\n  font-family: "Open Sans Light", sans-serif;\n}\n.tools-button-icon[_ngcontent-%COMP%] {\n  transition: transform 0.25s ease, opacity 0.25s ease;\n}\n.tools-button-icon-pop[_ngcontent-%COMP%] {\n  animation: _ngcontent-%COMP%_tools-button-pop 0.45s ease;\n}\n@keyframes _ngcontent-%COMP%_tools-button-pop {\n  0% {\n    transform: scale(0.6);\n    opacity: 0;\n  }\n  60% {\n    transform: scale(1.1);\n    opacity: 1;\n  }\n  100% {\n    transform: scale(1);\n    opacity: 1;\n  }\n}\n/*# sourceMappingURL=identity-verification.component.css.map */'] });
@@ -60685,15 +60214,12 @@ function ConnectHelper(connectData) {
   const configService = inject(ConfigService);
   const router = inject(Router);
   const messageBusService = inject(MessageBusService);
-  const logger = inject(NGXLogger);
   if (!connectData.external_state) {
     connectData.external_state = v4_default();
-    logger.debug("generated external_state for connect flow", connectData.external_state);
   }
   if (!connectData.connect_mode) {
     connectData.connect_mode = ConnectMode.Popup;
   }
-  logger.info("starting ConnectHelper flow", connectData);
   messageBusService.publishOrgConnectionPending(connectData);
   let onSuccessNavigateByUrl = "dashboard";
   if (connectData.org_connection_id) {
@@ -60701,28 +60227,18 @@ function ConnectHelper(connectData) {
   }
   let connectObservable;
   if (connectData.connect_mode == ConnectMode.Websocket) {
-    const pendingFlow = vaultApi.getPendingAccountConnectWebsocketFlow(connectData);
-    if (pendingFlow) {
-      logger.info("resuming existing websocket connect flow from pending state", pendingFlow);
-      connectObservable = vaultApi.resumePendingWebsocketAuthFlow(pendingFlow);
-    } else {
-      logger.info("opening new websocket connect flow", connectData);
-      connectObservable = vaultApi.accountConnectWithWebsocket(connectData);
-    }
+    connectObservable = vaultApi.accountConnectWithWebsocket(connectData);
   } else {
-    logger.info("opening new popup connect flow", connectData);
     connectObservable = vaultApi.accountConnectWithPopup(connectData);
   }
   return connectObservable.subscribe((orgConnectionCallbackData) => {
     if (!orgConnectionCallbackData) {
       return;
     }
-    logger.info("connect flow completed", orgConnectionCallbackData);
     messageBusService.publishOrgConnectionComplete(orgConnectionCallbackData);
     configService.vaultProfileAddConnectedAccount(orgConnectionCallbackData);
     router.navigateByUrl(onSuccessNavigateByUrl);
   }, (err) => {
-    logger.error("connect flow error", err);
     console.error("popup error data", err);
     try {
       let errData;
