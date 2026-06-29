@@ -41105,8 +41105,13 @@ var FastenConnectionError = class extends Error {
 function isWebsocketKeepaliveMessage(message2) {
   return message2?.type === WebsocketKeepaliveMessageType;
 }
-function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWindow, sdkMode) {
-  logger.info(`waiting for websocket notification from popup window`);
+function waitForForegroundOrRetryDelay() {
+  if (typeof document !== "undefined" && document.hidden) {
+    return fromEvent(document, "visibilitychange").pipe(filter(() => !document.hidden), first());
+  }
+  return timer(1e3);
+}
+function waitForWebsocketMessage(logger, websocketUrl) {
   return new Observable((observer) => {
     const subject = webSocket(websocketUrl.toString());
     const subjectSubscription = subject.pipe(filter((message2) => {
@@ -41133,7 +41138,19 @@ function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWind
       subjectSubscription.unsubscribe();
       subject.complete();
     };
-  }).pipe(timeout(ConnectWindowTimeout), catchError((err) => {
+  });
+}
+function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWindow, sdkMode) {
+  logger.info(`waiting for websocket notification from popup window`);
+  return defer(() => waitForWebsocketMessage(logger, websocketUrl)).pipe(retry({
+    delay: (err) => {
+      if (err instanceof FastenConnectionError) {
+        return throwError(() => err);
+      }
+      logger.warn("websocket connection interrupted, waiting to resume", err);
+      return waitForForegroundOrRetryDelay();
+    }
+  }), timeout(ConnectWindowTimeout), catchError((err) => {
     if (err instanceof TimeoutError) {
       logger.error("websocket connection timed out");
       if (openedWindow && !openedWindow.closed) {
