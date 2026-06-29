@@ -41105,64 +41105,82 @@ var FastenConnectionError = class extends Error {
 function isWebsocketKeepaliveMessage(message2) {
   return message2?.type === WebsocketKeepaliveMessageType;
 }
-function waitForForegroundOrRetryDelay() {
-  if (typeof document !== "undefined" && document.hidden) {
-    return fromEvent(document, "visibilitychange").pipe(filter(() => !document.hidden), first());
-  }
-  return timer(1e3);
-}
-function waitForWebsocketMessage(logger, websocketUrl) {
-  return new Observable((observer) => {
+var WebsocketReconnectDelayMs = 1e3;
+function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWindow, sdkMode) {
+  logger.info(`waiting for websocket notification from popup window`, {
+    websocketUrl: websocketUrl.toString(),
+    sdkMode,
+    hasOpenedWindow: !!openedWindow
+  });
+  let connectionAttempt = 0;
+  return defer(() => new Observable((observer) => {
+    connectionAttempt += 1;
+    logger.info("websocket connection attempt started", {
+      attempt: connectionAttempt,
+      websocketUrl: websocketUrl.toString()
+    });
     const subject = webSocket(websocketUrl.toString());
     const subjectSubscription = subject.pipe(filter((message2) => {
       if (isWebsocketKeepaliveMessage(message2)) {
-        logger.debug("websocket keepalive received");
+        logger.debug("websocket keepalive received", {
+          attempt: connectionAttempt,
+          websocketUrl: websocketUrl.toString()
+        });
         return false;
       }
       return true;
     }), map((message2) => {
-      logger.debug("websocket message received", message2);
+      logger.debug("websocket message received", {
+        attempt: connectionAttempt,
+        websocketUrl: websocketUrl.toString(),
+        message: message2
+      });
       if (message2.error) {
         throw new FastenConnectionError(JSON.stringify(message2));
       }
       return message2;
     }), first()).subscribe(observer);
-    logger.debug("websocket keepalive sent");
+    logger.debug("websocket keepalive sent", {
+      attempt: connectionAttempt,
+      websocketUrl: websocketUrl.toString()
+    });
     subject.next({ type: WebsocketKeepaliveMessageType });
     const heartbeatSubscription = interval(WebsocketHeartbeatInterval).subscribe(() => {
-      logger.debug("websocket keepalive sent");
+      logger.debug("websocket keepalive sent", {
+        attempt: connectionAttempt,
+        websocketUrl: websocketUrl.toString()
+      });
       subject.next({ type: WebsocketKeepaliveMessageType });
     });
     return () => {
+      logger.debug("websocket connection attempt cleanup", {
+        attempt: connectionAttempt,
+        websocketUrl: websocketUrl.toString()
+      });
       heartbeatSubscription.unsubscribe();
       subjectSubscription.unsubscribe();
       subject.complete();
     };
-  });
-}
-function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWindow, sdkMode) {
-  logger.info(`waiting for websocket notification from popup window`);
-  let websocketAttempt = 0;
-  return defer(() => {
-    websocketAttempt += 1;
-    if (websocketAttempt > 1) {
-      logger.warn("resuming websocket notification listener", {
-        attempt: websocketAttempt,
-        websocket_url: websocketUrl.toString()
-      });
-    }
-    return waitForWebsocketMessage(logger, websocketUrl);
-  }).pipe(retry({
-    delay: (err) => {
-      if (err instanceof FastenConnectionError) {
+  })).pipe(retry({
+    delay: (err, retryCount) => {
+      if (err instanceof FastenConnectionError || err instanceof TimeoutError) {
         return throwError(() => err);
       }
-      logger.warn("websocket connection interrupted, waiting to resume", err);
-      return waitForForegroundOrRetryDelay();
+      logger.warn("websocket disconnected before auth completed; reconnecting", {
+        websocketUrl: websocketUrl.toString(),
+        retryCount,
+        code: err?.code,
+        reason: err?.reason,
+        err
+      });
+      return timer(WebsocketReconnectDelayMs);
     }
   }), timeout(ConnectWindowTimeout), catchError((err) => {
     if (err instanceof TimeoutError) {
-      logger.error("websocket connection timed out");
+      logger.error("websocket connection timed out", {
+        websocketUrl: websocketUrl.toString(),
+        attempts: connectionAttempt
+      });
       if (openedWindow && !openedWindow.closed) {
         try {
           openedWindow.close();
@@ -41175,7 +41193,11 @@ function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWind
       logger.error("fasten connection error", err);
       return throwError(() => err);
     } else {
-      logger.error("websocket connection error", err);
+      logger.error("websocket connection error", {
+        websocketUrl: websocketUrl.toString(),
+        attempts: connectionAttempt,
+        err
+      });
       return throwError(() => new Error(`{"error": "websocket_connection", "error_description": "An error occurred while communicating with Fasten server (code: '${err?.code}', reason: '${err?.reason}' )"}`));
     }
   }));
@@ -49505,6 +49527,7 @@ var FastenService = class _FastenService {
     this.deviceService = deviceService;
     this.configService = configService;
     this.logger = logger;
+    this.pendingWebsocketAuthFlowStorageKey = "fasten_connect_pending_websocket_auth_flow";
     this.configService.systemConfigSubject.subscribe((systemConfig) => {
       this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
@@ -49630,9 +49653,27 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
     redirectUrlParts.searchParams.set("room_id", roomId);
-    this.logger.debug(redirectUrlParts.toString());
+    this.logger.debug("starting websocket identity verification flow", {
+      roomId,
+      websocketUrl: websocketUrl.toString(),
+      redirectUrl: redirectUrlParts.toString(),
+      cspType
+    });
     let openedWindow;
-    if (this.shouldUsePartitionedCookie()) {
+    const partitionedCookie = this.shouldUsePartitionedCookie();
+    this.savePendingWebsocketAuthFlow({
+      flowType: "identity_verification",
+      roomId,
+      websocketUrl: websocketUrl.toString(),
+      popupUrl: redirectUrlParts.toString(),
+      publicId: this.configService.systemConfig$.publicId,
+      openedAt: Date.now(),
+      expiresAt: Date.now() + ConnectWindowTimeout,
+      sdkMode: this.configService.systemConfig$.sdkMode,
+      cspType,
+      partitionedCookie
+    });
+    if (partitionedCookie) {
       this.logger.warn("partitioned popup");
       openedWindow = this.openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts);
     } else {
@@ -49640,14 +49681,18 @@ var FastenService = class _FastenService {
     }
     return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(
       switchMap((payload) => {
-        if (this.shouldUsePartitionedCookie()) {
+        if (partitionedCookie) {
           return from(this.refreshAuthCookie()).pipe(map(() => payload));
         }
         return of(payload);
       }),
       //TODO: this is a flaky way to handle the issue where the websocket response is sent before the cookie is set in the browser
       // wait 2 seconds here -- sometimes the websocket sends the response before the cookie has been recieved by the browser (in the modal popup)
-      delay(2500)
+      delay(2500),
+      tap({
+        next: () => this.clearPendingWebsocketAuthFlow("identity verification websocket completed", roomId),
+        error: (err) => this.clearPendingWebsocketAuthFlow("identity verification websocket errored", roomId, err)
+      })
     );
   }
   verificationWithPopup(cspType) {
@@ -49659,23 +49704,33 @@ var FastenService = class _FastenService {
     return this.waitForPopupNotification(openedWindow);
   }
   accountConnectWithWebsocket(connectData) {
-    const roomId = connectData.room_id || v4_default();
-    connectData.room_id = roomId;
+    const roomId = v4_default();
     const websocketUrl = this.generateWebsocketURL(roomId);
-    let openedWindow = null;
-    if (connectData.resume_existing_connection) {
-      this.logger.warn("resuming existing account connect websocket room without reopening auth window", {
-        room_id: roomId,
-        external_state: connectData.external_state
-      });
-    } else {
-      const redirectUrlParts = this.generateConnectURL(connectData);
-      redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
-      redirectUrlParts.searchParams.set("room_id", roomId);
-      this.logger.debug(redirectUrlParts.toString());
-      openedWindow = this.openWindowInPopup(redirectUrlParts);
-    }
-    return this.waitForWebsocketNotification(websocketUrl, openedWindow);
+    const redirectUrlParts = this.generateConnectURL(connectData);
+    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
+    redirectUrlParts.searchParams.set("room_id", roomId);
+    this.logger.debug("starting websocket account connect flow", {
+      roomId,
+      websocketUrl: websocketUrl.toString(),
+      redirectUrl: redirectUrlParts.toString(),
+      connectData
+    });
+    this.savePendingWebsocketAuthFlow({
+      flowType: "account_connect",
+      roomId,
+      websocketUrl: websocketUrl.toString(),
+      popupUrl: redirectUrlParts.toString(),
+      publicId: this.configService.systemConfig$.publicId,
+      openedAt: Date.now(),
+      expiresAt: Date.now() + ConnectWindowTimeout,
+      sdkMode: this.configService.systemConfig$.sdkMode,
+      connectData: __spreadValues({}, connectData)
+    });
+    const openedWindow = this.openWindowInPopup(redirectUrlParts);
+    return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(tap({
+      next: () => this.clearPendingWebsocketAuthFlow("account connect websocket completed", roomId),
+      error: (err) => this.clearPendingWebsocketAuthFlow("account connect websocket errored", roomId, err)
+    }));
   }
   accountConnectWithPopup(connectData) {
     const redirectUrlParts = this.generateConnectURL(connectData);
@@ -49803,6 +49858,125 @@ var FastenService = class _FastenService {
   waitForWebsocketNotification(websocketUrl, openedWindow, overrideSdkMode) {
     const sdkMode = overrideSdkMode ?? this.configService.systemConfig$.sdkMode;
     return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, sdkMode);
+  }
+  getPendingWebsocketAuthFlow() {
+    try {
+      const storedFlow = sessionStorage.getItem(this.pendingWebsocketAuthFlowStorageKey);
+      if (!storedFlow) {
+        this.logger.debug("no pending websocket auth flow in storage");
+        return null;
+      }
+      const pendingFlow = JSON.parse(storedFlow);
+      if (!pendingFlow.roomId || !pendingFlow.websocketUrl || !pendingFlow.flowType) {
+        this.logger.warn("pending websocket auth flow is missing required data; clearing", pendingFlow);
+        this.clearPendingWebsocketAuthFlow("invalid pending websocket flow payload");
+        return null;
+      }
+      if (pendingFlow.expiresAt && Date.now() > pendingFlow.expiresAt) {
+        this.logger.warn("pending websocket auth flow expired; clearing", pendingFlow);
+        this.clearPendingWebsocketAuthFlow("expired pending websocket flow");
+        return null;
+      }
+      if (pendingFlow.publicId && pendingFlow.publicId !== this.configService.systemConfig$.publicId) {
+        this.logger.debug("pending websocket auth flow belongs to a different public id; ignoring", {
+          pendingPublicId: pendingFlow.publicId,
+          currentPublicId: this.configService.systemConfig$.publicId
+        });
+        return null;
+      }
+      this.logger.debug("loaded pending websocket auth flow", pendingFlow);
+      return pendingFlow;
+    } catch (err) {
+      this.logger.warn("failed to load pending websocket auth flow; clearing", err);
+      this.clearPendingWebsocketAuthFlow("failed to parse pending websocket flow", void 0, err);
+      return null;
+    }
+  }
+  getPendingAccountConnectWebsocketFlow(connectData) {
+    const pendingFlow = this.getPendingWebsocketAuthFlow();
+    if (!pendingFlow || pendingFlow.flowType !== "account_connect" || !pendingFlow.connectData) {
+      return null;
+    }
+    if (!this.isSameAccountConnectFlow(pendingFlow.connectData, connectData)) {
+      this.logger.debug("pending websocket account connect flow does not match current connect request", {
+        pendingConnectData: pendingFlow.connectData,
+        currentConnectData: connectData
+      });
+      return null;
+    }
+    this.logger.info("found matching pending websocket account connect flow", {
+      roomId: pendingFlow.roomId,
+      connectData
+    });
+    return pendingFlow;
+  }
+  getPendingIdentityVerificationWebsocketFlow() {
+    const pendingFlow = this.getPendingWebsocketAuthFlow();
+    if (!pendingFlow || pendingFlow.flowType !== "identity_verification") {
+      return null;
+    }
+    this.logger.info("found pending websocket identity verification flow", {
+      roomId: pendingFlow.roomId,
+      cspType: pendingFlow.cspType
+    });
+    return pendingFlow;
+  }
+  resumePendingWebsocketAuthFlow(pendingFlow) {
+    this.logger.info("resuming pending websocket auth flow", pendingFlow);
+    return this.waitForWebsocketNotification(new URL(pendingFlow.websocketUrl), null, pendingFlow.sdkMode).pipe(switchMap((payload) => {
+      if (pendingFlow.flowType === "identity_verification" && pendingFlow.partitionedCookie) {
+        return from(this.refreshAuthCookie()).pipe(map(() => payload));
+      }
+      return of(payload);
+    }), delay(pendingFlow.flowType === "identity_verification" ? 2500 : 0), tap({
+      next: () => this.clearPendingWebsocketAuthFlow("resumed websocket auth flow completed", pendingFlow.roomId),
+      error: (err) => this.clearPendingWebsocketAuthFlow("resumed websocket auth flow errored", pendingFlow.roomId, err)
+    }));
+  }
+  clearPendingWebsocketAuthFlow(reason, roomId, err) {
+    try {
+      if (roomId) {
+        const pendingFlow = this.getPendingWebsocketAuthFlowWithoutValidation();
+        if (pendingFlow?.roomId && pendingFlow.roomId !== roomId) {
+          this.logger.debug("skipping pending websocket auth flow clear for different room", {
+            reason,
+            requestedRoomId: roomId,
+            storedRoomId: pendingFlow.roomId
+          });
+          return;
+        }
+      }
+      this.logger.debug("clearing pending websocket auth flow", {
+        reason,
+        roomId,
+        err
+      });
+      sessionStorage.removeItem(this.pendingWebsocketAuthFlowStorageKey);
+    } catch (storageErr) {
+      this.logger.warn("failed to clear pending websocket auth flow", {
+        reason,
+        err,
+        storageErr
+      });
+    }
+  }
+  savePendingWebsocketAuthFlow(pendingFlow) {
+    try {
+      this.logger.info("saving pending websocket auth flow", pendingFlow);
+      sessionStorage.setItem(this.pendingWebsocketAuthFlowStorageKey, JSON.stringify(pendingFlow));
+    } catch (err) {
+      this.logger.warn("failed to save pending websocket auth flow", {
+        pendingFlow,
+        err
+      });
+    }
+  }
+  getPendingWebsocketAuthFlowWithoutValidation() {
+    const storedFlow = sessionStorage.getItem(this.pendingWebsocketAuthFlowStorageKey);
+    return storedFlow ? JSON.parse(storedFlow) : null;
+  }
+  isSameAccountConnectFlow(left, right) {
+    return (left.brand_id || "") === (right.brand_id || "") && (left.portal_id || "") === (right.portal_id || "") && (left.endpoint_id || "") === (right.endpoint_id || "") && (left.org_connection_id || "") === (right.org_connection_id || "") && (left.vault_profile_connection_id || "") === (right.vault_profile_connection_id || "") && (left.external_id || "") === (right.external_id || "");
   }
   reverseGeocodePostalCode(latitude, longitude) {
     let queryParams = {};
@@ -49937,6 +50111,8 @@ function AppComponent_ng_container_6_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" ", ctx_r1.errorMessage, " ");
   }
 }
+var STITCH_EMBED_STATE_STORAGE_KEY_PREFIX = "fasten_connect_stitch_embed_state:";
+var STITCH_PARENT_RESUME_EVENT_TYPE = "widget.resume";
 var AppComponent = class _AppComponent {
   populateInputsFromWindowLocation() {
     let urlParams = new URLSearchParams(window.location.search);
@@ -49958,9 +50134,6 @@ var AppComponent = class _AppComponent {
     this.brandId = urlParams.get("brand-id") || "";
     this.portalId = urlParams.get("portal-id") || "";
     this.endpointId = urlParams.get("endpoint-id") || "";
-    this.vaultProfileConnectionId = urlParams.get("vault-profile-connection-id") || "";
-    this.roomId = urlParams.get("room-id") || "";
-    this.resumeConnection = urlParams.get("resume-connection") == "true";
     this.sdkMode = urlParams.get("sdk-mode") || SDKMode.None;
     this.connectMode = urlParams.get("connect-mode") || ConnectMode.Popup;
     this.idpCode = urlParams.get("code") || "";
@@ -49996,9 +50169,6 @@ var AppComponent = class _AppComponent {
     this.brandId = "";
     this.portalId = "";
     this.endpointId = "";
-    this.vaultProfileConnectionId = "";
-    this.roomId = "";
-    this.resumeConnection = false;
     this.sdkMode = "";
     this.connectMode = "";
     this.idpCode = "";
@@ -50007,12 +50177,17 @@ var AppComponent = class _AppComponent {
     this.idpErrorDescription = "";
     this.idpErrorUri = "";
     this.loading = true;
+    this.statePersistenceReady = false;
+    this.statePersistenceRegistered = false;
+    this.authFlowPending = false;
   }
   ngOnInit() {
     this.logger.info("QUERY STRING MAP", new URLSearchParams(window.location.search));
     this.populateInputsFromWindowLocation();
-    this.messageBus.messageBusSubject.subscribe((eventPayload) => {
+    this.messageBusSubscription = this.messageBus.messageBusSubject.subscribe((eventPayload) => {
       this.logger.debug("bubbling up client-event", eventPayload);
+      this.updateAuthFlowStateFromMessage(eventPayload);
+      this.saveEmbedState("message bus event");
       this.sendPostMessage(eventPayload);
     });
     if (this.isIdentityCallbackRequest()) {
@@ -50058,6 +50233,14 @@ var AppComponent = class _AppComponent {
     this.configService.vaultProfileConfig = {
       email: this.email
     };
+    const restoredFromState = this.restorePersistedEmbedState();
+    this.statePersistenceReady = true;
+    this.registerStatePersistence();
+    if (restoredFromState) {
+      this.logger.info("restored stitch embed state; skipping initial route selection");
+      this.saveEmbedState("restored persisted state");
+      return;
+    }
     if (this.reconnectOrgConnectionId) {
       this.fastenService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
         this.logger.info("state: dashboard/connecting#reconnectOrgConnectionId", orgConnection);
@@ -50069,10 +50252,7 @@ var AppComponent = class _AppComponent {
             "orgConnectionId": orgConnection.org_connection_id,
             "externalId": this.externalId,
             "externalState": this.externalState,
-            "sdkMode": this.sdkMode,
-            "vaultProfileConnectionId": this.vaultProfileConnectionId,
-            "roomId": this.roomId,
-            "resumeConnection": this.resumeConnection
+            "sdkMode": this.sdkMode
           },
           skipLocationChange: true
           // navigate without changing URL to preserve security context
@@ -50090,10 +50270,7 @@ var AppComponent = class _AppComponent {
           "endpointId": this.endpointId,
           "externalId": this.externalId,
           "externalState": this.externalState,
-          "sdkMode": this.sdkMode,
-          "vaultProfileConnectionId": this.vaultProfileConnectionId,
-          "roomId": this.roomId,
-          "resumeConnection": this.resumeConnection
+          "sdkMode": this.sdkMode
         }
       });
     } else if (this.brandId) {
@@ -50141,6 +50318,13 @@ var AppComponent = class _AppComponent {
   }
   ngOnChanges(changes) {
     this.logger.debug("embed ngOnChanges", changes);
+  }
+  ngOnDestroy() {
+    this.messageBusSubscription?.unsubscribe();
+    this.routerEventsSubscription?.unsubscribe();
+    this.systemConfigSubscription?.unsubscribe();
+    this.vaultProfileConfigSubscription?.unsubscribe();
+    this.searchConfigSubscription?.unsubscribe();
   }
   isIdentityCallbackRequest() {
     return !!(this.idpCode && this.idpState) || !!this.idpError;
@@ -50200,6 +50384,30 @@ var AppComponent = class _AppComponent {
   // postMessage registration, listen to events from the parent window
   receivePostMessage(event) {
     this.logger.debug("received client-event from parent window", event);
+    try {
+      const payload = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (payload?.event_type === STITCH_PARENT_RESUME_EVENT_TYPE) {
+        this.handlePageResume("parent resume postMessage");
+      }
+    } catch (err) {
+      this.logger.debug("parent window message was not JSON; ignoring for resume handling", err);
+    }
+  }
+  onWindowFocus() {
+    this.handlePageResume("window focus");
+  }
+  onPageShow() {
+    this.handlePageResume("window pageshow");
+  }
+  onPageHide() {
+    this.saveEmbedState("window pagehide");
+  }
+  onVisibilityChange() {
+    if (document.visibilityState === "visible") {
+      this.handlePageResume("document visible");
+      return;
+    }
+    this.saveEmbedState(`document ${document.visibilityState}`);
   }
   sendPostMessage(eventPayload) {
     if (eventPayload == null) {
@@ -50226,6 +50434,172 @@ var AppComponent = class _AppComponent {
     const orgFlags = org?.feature_flags || [];
     return orgFlags.includes(`${this.configService.systemConfig$.apiMode}.tefca.enable`);
   }
+  registerStatePersistence() {
+    if (this.statePersistenceRegistered) {
+      return;
+    }
+    this.statePersistenceRegistered = true;
+    this.logger.debug("registering stitch embed state persistence");
+    this.routerEventsSubscription = this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe((event) => {
+      this.logger.debug("router navigation completed; saving stitch embed state", event.urlAfterRedirects);
+      this.saveEmbedState("router navigation");
+    });
+    this.systemConfigSubscription = this.configService.systemConfigSubject.subscribe(() => {
+      this.saveEmbedState("system config changed");
+    });
+    this.vaultProfileConfigSubscription = this.configService.vaultProfileConfigSubject.subscribe(() => {
+      this.saveEmbedState("vault profile config changed");
+    });
+    this.searchConfigSubscription = this.configService.searchConfigSubject.subscribe(() => {
+      this.saveEmbedState("search config changed");
+    });
+  }
+  handlePageResume(reason) {
+    const pendingFlow = this.fastenService.getPendingWebsocketAuthFlow();
+    this.logger.info("stitch embed page resumed", {
+      reason,
+      currentUrl: this.router.url,
+      authFlowPending: this.authFlowPending,
+      pendingWebsocketFlow: pendingFlow
+    });
+    if (pendingFlow) {
+      this.authFlowPending = true;
+    }
+    this.saveEmbedState(reason);
+  }
+  updateAuthFlowStateFromMessage(eventPayload) {
+    if (!eventPayload?.event_type) {
+      return;
+    }
+    if (eventPayload.event_type === EventTypes.EventTypeConnectionPending) {
+      this.authFlowPending = true;
+      this.logger.info("stitch embed auth flow marked pending", eventPayload);
+      return;
+    }
+    if ([
+      EventTypes.EventTypeConnectionSuccess,
+      EventTypes.EventTypeConnectionFailed,
+      EventTypes.EventTypeWidgetClose,
+      EventTypes.EventTypeWidgetComplete,
+      EventTypes.EventTypeWidgetConfigError
+    ].includes(eventPayload.event_type)) {
+      this.authFlowPending = false;
+      this.logger.info("stitch embed auth flow marked not pending", eventPayload);
+      this.clearPersistedEmbedState(`message bus event ${eventPayload.event_type}`);
+    }
+  }
+  saveEmbedState(reason) {
+    if (!this.statePersistenceReady || !this.publicId || this.isIdentityCallbackRequest()) {
+      return;
+    }
+    const state = {
+      version: 1,
+      currentUrl: this.router.url,
+      authFlowPending: this.authFlowPending || !!this.fastenService.getPendingWebsocketAuthFlow(),
+      savedAt: Date.now(),
+      systemConfig: this.configService.systemConfig$,
+      vaultProfileConfig: this.configService.vaultProfileConfig$,
+      searchConfig: this.configService.searchConfig$
+    };
+    try {
+      sessionStorage.setItem(this.getEmbedStateStorageKey(), JSON.stringify(state));
+      this.logger.debug("saved stitch embed state", {
+        reason,
+        state,
+        storageKey: this.getEmbedStateStorageKey()
+      });
+    } catch (err) {
+      this.logger.warn("failed to save stitch embed state", {
+        reason,
+        err
+      });
+    }
+  }
+  restorePersistedEmbedState() {
+    const state = this.getPersistedEmbedState();
+    if (!state) {
+      return false;
+    }
+    const pendingFlow = this.fastenService.getPendingWebsocketAuthFlow();
+    if (!state.authFlowPending && !pendingFlow) {
+      this.logger.debug("persisted stitch embed state was not pending auth; ignoring", state);
+      return false;
+    }
+    if (Date.now() - state.savedAt > ConnectWindowTimeout) {
+      this.logger.warn("persisted stitch embed state is older than the auth timeout; clearing", state);
+      this.clearPersistedEmbedState("persisted state expired");
+      return false;
+    }
+    if (state.systemConfig) {
+      this.configService.systemConfig = state.systemConfig;
+    }
+    if (state.vaultProfileConfig) {
+      this.configService.vaultProfileConfig = state.vaultProfileConfig;
+    }
+    if (state.searchConfig) {
+      this.configService.searchConfig = state.searchConfig;
+    }
+    this.authFlowPending = state.authFlowPending || !!pendingFlow;
+    if (!state.currentUrl || state.currentUrl === "/" || state.currentUrl.startsWith("/auth/callback")) {
+      this.logger.debug("persisted stitch embed state did not have a restorable route", state);
+      return false;
+    }
+    this.logger.info("restoring stitch embed route from persisted state", {
+      currentUrl: state.currentUrl,
+      pendingFlow
+    });
+    this.router.navigateByUrl(state.currentUrl, { replaceUrl: true });
+    return true;
+  }
+  getPersistedEmbedState() {
+    try {
+      const storedState = sessionStorage.getItem(this.getEmbedStateStorageKey());
+      if (!storedState) {
+        this.logger.debug("no persisted stitch embed state found", this.getEmbedStateStorageKey());
+        return null;
+      }
+      const state = JSON.parse(storedState);
+      if (state.version !== 1) {
+        this.logger.warn("persisted stitch embed state version is unsupported; clearing", state);
+        this.clearPersistedEmbedState("unsupported state version");
+        return null;
+      }
+      this.logger.debug("loaded persisted stitch embed state", state);
+      return state;
+    } catch (err) {
+      this.logger.warn("failed to load persisted stitch embed state; clearing", err);
+      this.clearPersistedEmbedState("failed to parse persisted state");
+      return null;
+    }
+  }
+  clearPersistedEmbedState(reason) {
+    try {
+      this.logger.debug("clearing persisted stitch embed state", {
+        reason,
+        storageKey: this.getEmbedStateStorageKey()
+      });
+      sessionStorage.removeItem(this.getEmbedStateStorageKey());
+    } catch (err) {
+      this.logger.warn("failed to clear persisted stitch embed state", {
+        reason,
+        err
+      });
+    }
+  }
+  getEmbedStateStorageKey() {
+    const keyParts = [
+      this.publicId || "",
+      this.externalId || "",
+      this.reconnectOrgConnectionId || "",
+      this.brandId || "",
+      this.portalId || "",
+      this.endpointId || "",
+      this.tefcaMode ? "tefca" : "",
+      this.searchOnly ? "search" : "",
+      this.connectMode || ""
+    ];
+    return `${STITCH_EMBED_STATE_STORAGE_KEY_PREFIX}${encodeURIComponent(keyParts.join("|"))}`;
+  }
   static {
     this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
       return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
@@ -50236,9 +50610,17 @@ var AppComponent = class _AppComponent {
       if (rf & 1) {
         \u0275\u0275listener("message", function AppComponent_message_HostBindingHandler($event) {
           return ctx.receivePostMessage($event);
-        }, false, \u0275\u0275resolveWindow);
+        }, false, \u0275\u0275resolveWindow)("focus", function AppComponent_focus_HostBindingHandler() {
+          return ctx.onWindowFocus();
+        }, false, \u0275\u0275resolveWindow)("pageshow", function AppComponent_pageshow_HostBindingHandler() {
+          return ctx.onPageShow();
+        }, false, \u0275\u0275resolveWindow)("pagehide", function AppComponent_pagehide_HostBindingHandler() {
+          return ctx.onPageHide();
+        }, false, \u0275\u0275resolveWindow)("visibilitychange", function AppComponent_visibilitychange_HostBindingHandler() {
+          return ctx.onVisibilityChange();
+        }, false, \u0275\u0275resolveDocument);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], email: "email", externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], identityRequestUri: [0, "identity-request-uri", "identityRequestUri"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], vaultProfileConnectionId: [0, "vault-profile-connection-id", "vaultProfileConnectionId"], roomId: [0, "room-id", "roomId"], resumeConnection: [0, "resume-connection", "resumeConnection"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"], idpCode: [0, "code", "idpCode"], idpState: [0, "state", "idpState"], idpError: [0, "error", "idpError"], idpErrorDescription: [0, "error-description", "idpErrorDescription"], idpErrorUri: [0, "error-uri", "idpErrorUri"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in", "flex", "h-screen", "flex-col", "overflow-hidden"], [1, "flex-1", "min-h-0", "flex", "flex-col"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], email: "email", externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], identityRequestUri: [0, "identity-request-uri", "identityRequestUri"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"], idpCode: [0, "code", "idpCode"], idpState: [0, "state", "idpState"], idpError: [0, "error", "idpError"], idpErrorDescription: [0, "error-description", "idpErrorDescription"], idpErrorUri: [0, "error-uri", "idpErrorUri"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "w-full", "p-6", "min-h-96", "fade-in", "flex", "h-screen", "flex-col", "overflow-hidden"], [1, "flex-1", "min-h-0", "flex", "flex-col"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275element(0, "link", 0);
         \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
@@ -50268,7 +50650,7 @@ var AppComponent = class _AppComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 41 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 55 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts
@@ -58177,6 +58559,17 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     }
   }
   ngOnInit() {
+    if (this.configService.systemConfig$.connectMode != ConnectMode.Websocket) {
+      return;
+    }
+    const pendingFlow = this.fastenService.getPendingIdentityVerificationWebsocketFlow();
+    if (!pendingFlow) {
+      this.logger.debug("no pending identity verification websocket flow to resume");
+      return;
+    }
+    this.logger.info("resuming pending identity verification websocket flow", pendingFlow);
+    this.loading = true;
+    this.subscribeToIdentityVerification(this.fastenService.resumePendingWebsocketAuthFlow(pendingFlow), pendingFlow.cspType || CspType.ClearCsp);
   }
   verifyIdentity(cspType) {
     this.loading = true;
@@ -58186,6 +58579,9 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     } else {
       identityVerificationObservable = this.fastenService.verificationWithPopup(cspType);
     }
+    this.subscribeToIdentityVerification(identityVerificationObservable, cspType);
+  }
+  subscribeToIdentityVerification(identityVerificationObservable, cspType) {
     this.identityVerificationSubscription = identityVerificationObservable.subscribe((result) => {
       this.loading = false;
       if (result?.vault_auth_finish_response?.has_verified_identity && result?.vault_auth_finish_response?.verified_identity_csp_type) {
@@ -60289,15 +60685,15 @@ function ConnectHelper(connectData) {
   const configService = inject(ConfigService);
   const router = inject(Router);
   const messageBusService = inject(MessageBusService);
+  const logger = inject(NGXLogger);
   if (!connectData.external_state) {
     connectData.external_state = v4_default();
+    logger.debug("generated external_state for connect flow", connectData.external_state);
   }
   if (!connectData.connect_mode) {
     connectData.connect_mode = ConnectMode.Popup;
   }
-  if (connectData.connect_mode == ConnectMode.Websocket && !connectData.room_id) {
-    connectData.room_id = v4_default();
-  }
+  logger.info("starting ConnectHelper flow", connectData);
   messageBusService.publishOrgConnectionPending(connectData);
   let onSuccessNavigateByUrl = "dashboard";
   if (connectData.org_connection_id) {
@@ -60305,18 +60701,28 @@ function ConnectHelper(connectData) {
   }
   let connectObservable;
   if (connectData.connect_mode == ConnectMode.Websocket) {
-    connectObservable = vaultApi.accountConnectWithWebsocket(connectData);
+    const pendingFlow = vaultApi.getPendingAccountConnectWebsocketFlow(connectData);
+    if (pendingFlow) {
+      logger.info("resuming existing websocket connect flow from pending state", pendingFlow);
+      connectObservable = vaultApi.resumePendingWebsocketAuthFlow(pendingFlow);
+    } else {
+      logger.info("opening new websocket connect flow", connectData);
+      connectObservable = vaultApi.accountConnectWithWebsocket(connectData);
+    }
   } else {
+    logger.info("opening new popup connect flow", connectData);
     connectObservable = vaultApi.accountConnectWithPopup(connectData);
   }
   return connectObservable.subscribe((orgConnectionCallbackData) => {
     if (!orgConnectionCallbackData) {
       return;
     }
+    logger.info("connect flow completed", orgConnectionCallbackData);
     messageBusService.publishOrgConnectionComplete(orgConnectionCallbackData);
     configService.vaultProfileAddConnectedAccount(orgConnectionCallbackData);
     router.navigateByUrl(onSuccessNavigateByUrl);
   }, (err) => {
+    logger.error("connect flow error", err);
     console.error("popup error data", err);
     try {
       let errData;
@@ -60398,8 +60804,6 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
     this.externalState = "";
     this.orgConnectionId = "";
     this.vaultProfileConnectionId = "";
-    this.roomId = "";
-    this.resumeConnection = false;
     this.sdkMode = SDKMode.None;
   }
   ngOnDestroy() {
@@ -60418,9 +60822,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         external_id: this.externalId,
         external_state: this.externalState,
         vault_profile_connection_id: this.vaultProfileConnectionId,
-        connect_mode: this.configService.systemConfig$.connectMode,
-        room_id: this.roomId,
-        resume_existing_connection: this.resumeConnection === true || this.resumeConnection === "true"
+        connect_mode: this.configService.systemConfig$.connectMode
       });
     });
   }
@@ -60437,7 +60839,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId", roomId: "roomId", resumeConnection: "resumeConnection", sdkMode: "sdkMode" }, decls: 32, vars: 16, consts: [[1, "space-y-6"], [3, "backButtonEvent", "closeButtonEvent", "backButtonLink", "showClose"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId", sdkMode: "sdkMode" }, decls: 32, vars: 16, consts: [[1, "space-y-6"], [3, "backButtonEvent", "closeButtonEvent", "backButtonLink", "showClose"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "app-header", 1);
         \u0275\u0275listener("backButtonEvent", function HealthSystemConnectingComponent_Template_app_header_backButtonEvent_1_listener() {
