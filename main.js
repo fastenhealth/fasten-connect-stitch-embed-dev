@@ -7849,6 +7849,14 @@ function timer(dueTime = 0, intervalOrScheduler, scheduler = async) {
   });
 }
 
+// node_modules/rxjs/dist/esm/internal/observable/interval.js
+function interval(period = 0, scheduler = asyncScheduler) {
+  if (period < 0) {
+    period = 0;
+  }
+  return timer(period, period, scheduler);
+}
+
 // node_modules/rxjs/dist/esm/internal/operators/filter.js
 function filter(predicate, thisArg) {
   return operate((source, subscriber) => {
@@ -39126,6 +39134,8 @@ var CommunicationEntity;
   CommunicationEntity2["External"] = "FASTEN_CONNECT_EXTERNAL";
 })(CommunicationEntity || (CommunicationEntity = {}));
 var ConnectWindowTimeout = 20 * 60 * 1e3;
+var WebsocketHeartbeatInterval = 4 * 60 * 1e3;
+var WebsocketKeepaliveMessageType = "fasten.websocket.keepalive";
 
 // projects/shared-library/src/lib/pipes/safe-html.pipe.ts
 var SafeHtmlPipe = class _SafeHtmlPipe {
@@ -41092,16 +41102,38 @@ var FastenConnectionError = class extends Error {
     this.name = "FastenConnectionError";
   }
 };
+function isWebsocketKeepaliveMessage(message2) {
+  return message2?.type === WebsocketKeepaliveMessageType;
+}
 function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWindow, sdkMode) {
   logger.info(`waiting for websocket notification from popup window`);
-  const subject = webSocket(websocketUrl.toString());
-  return subject.pipe(timeout(ConnectWindowTimeout), map((message2) => {
-    logger.debug("websocket message received", message2);
-    if (message2.error) {
-      throw new FastenConnectionError(JSON.stringify(message2));
-    }
-    return message2;
-  }), catchError((err) => {
+  return new Observable((observer) => {
+    const subject = webSocket(websocketUrl.toString());
+    const subjectSubscription = subject.pipe(filter((message2) => {
+      if (isWebsocketKeepaliveMessage(message2)) {
+        logger.debug("websocket keepalive received");
+        return false;
+      }
+      return true;
+    }), map((message2) => {
+      logger.debug("websocket message received", message2);
+      if (message2.error) {
+        throw new FastenConnectionError(JSON.stringify(message2));
+      }
+      return message2;
+    }), first()).subscribe(observer);
+    logger.debug("websocket keepalive sent");
+    subject.next({ type: WebsocketKeepaliveMessageType });
+    const heartbeatSubscription = interval(WebsocketHeartbeatInterval).subscribe(() => {
+      logger.debug("websocket keepalive sent");
+      subject.next({ type: WebsocketKeepaliveMessageType });
+    });
+    return () => {
+      heartbeatSubscription.unsubscribe();
+      subjectSubscription.unsubscribe();
+      subject.complete();
+    };
+  }).pipe(timeout(ConnectWindowTimeout), catchError((err) => {
     if (err instanceof TimeoutError) {
       logger.error("websocket connection timed out");
       if (openedWindow && !openedWindow.closed) {
