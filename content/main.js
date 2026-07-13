@@ -48597,6 +48597,21 @@ var AuthService = class _AuthService {
       return deleteCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
     });
   }
+  IsVaultAuthCookieSet() {
+    const debugInfo = this.GetVaultAuthCookieDebugInfo();
+    console.debug("[AuthService] Vault auth cookie check", debugInfo);
+    return debugInfo.isSet;
+  }
+  GetVaultAuthCookieDebugInfo() {
+    const cookieValue = getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
+    const isSet = !!cookieValue;
+    return {
+      cookieName: FASTEN_AUTH_VAULT_COOKIE_NAME,
+      isSet,
+      value: isSet ? "[REDACTED]" : "",
+      valueLength: cookieValue.length
+    };
+  }
   GetJWTPayload() {
     return __async(this, null, function* () {
       let authToken = getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
@@ -57095,6 +57110,10 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
     }).then((resp) => {
+      if (!this.authService.IsVaultAuthCookieSet()) {
+        this.loading = false;
+        return this.router.navigateByUrl("auth/signin/cookies-required");
+      }
       if (this.configService.systemConfig$.apiMode === ApiMode.Test) {
         return this.authService.GetJWTPayload().then((payload) => {
           this.loading = false;
@@ -61674,10 +61693,116 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AuthCallbackComponent, { className: "AuthCallbackComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/auth-callback/auth-callback.component.ts", lineNumber: 30 });
 })();
 
+// projects/fasten-connect-stitch-embed/src/app/pages/third-party-cookies-error/third-party-cookies-error.component.ts
+function ThirdPartyCookiesErrorComponent_div_15_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 12)(1, "h3", 8);
+    \u0275\u0275text(2, "Cookie debug information (test mode)");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "dl", 13)(4, "dt", 14);
+    \u0275\u0275text(5, "Cookie name");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "dd", 15);
+    \u0275\u0275text(7);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(8, "dt", 14);
+    \u0275\u0275text(9, "Is set");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(10, "dd", 16);
+    \u0275\u0275text(11);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "dt", 14);
+    \u0275\u0275text(13, "Value");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(14, "dd", 15);
+    \u0275\u0275text(15);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(16, "dt", 14);
+    \u0275\u0275text(17, "Value length");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(18, "dd", 16);
+    \u0275\u0275text(19);
+    \u0275\u0275elementEnd()()();
+  }
+  if (rf & 2) {
+    const debugInfo_r1 = ctx.ngIf;
+    \u0275\u0275advance(7);
+    \u0275\u0275textInterpolate(debugInfo_r1.cookieName);
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate(debugInfo_r1.isSet ? "Yes" : "No");
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate(debugInfo_r1.value || "(empty)");
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate(debugInfo_r1.valueLength);
+  }
+}
+var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
+  constructor(authService, configService) {
+    this.authService = authService;
+    this.configService = configService;
+  }
+  ngOnInit() {
+    if (this.configService.systemConfig$.apiMode === ApiMode.Test) {
+      this.cookieDebugInfo = this.authService.GetVaultAuthCookieDebugInfo();
+    }
+  }
+  static {
+    this.\u0275fac = function ThirdPartyCookiesErrorComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _ThirdPartyCookiesErrorComponent)(\u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(ConfigService));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ThirdPartyCookiesErrorComponent, selectors: [["app-third-party-cookies-error"]], decls: 18, vars: 2, consts: [["id", "third-party-cookies-error", "aria-labelledby", "cookies-required-title", 1, "space-y-6", "text-center"], [1, "w-16", "h-16", "mx-auto", "bg-red-50", "rounded-full", "flex", "items-center", "justify-center"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", "aria-hidden", "true", 1, "w-8", "h-8", "text-red-600"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 4.5h.008v.008H12V16.5Z"], [1, "space-y-2"], ["id", "cookies-required-title", 1, "text-xl", "font-semibold", "text-red-600"], [1, "text-sm", "text-gray-600"], [1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "text-base", "font-medium", "text-gray-900"], [1, "mt-1", "text-sm", "text-gray-600"], ["id", "cookie-debug-info", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"], ["id", "cookie-debug-info", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "mt-3", "grid", "grid-cols-[auto,minmax(0,1fr)]", "gap-x-4", "gap-y-2", "text-sm"], [1, "font-medium", "text-gray-600"], [1, "break-all", "font-mono", "text-xs", "text-gray-900"], [1, "font-mono", "text-xs", "text-gray-900"]], template: function ThirdPartyCookiesErrorComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0);
+        \u0275\u0275element(1, "app-header");
+        \u0275\u0275elementStart(2, "div", 1);
+        \u0275\u0275namespaceSVG();
+        \u0275\u0275elementStart(3, "svg", 2);
+        \u0275\u0275element(4, "path", 3);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275namespaceHTML();
+        \u0275\u0275elementStart(5, "div", 4)(6, "h2", 5);
+        \u0275\u0275text(7, " Third-party cookies are required ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(8, "p", 6);
+        \u0275\u0275text(9, " Third-party cookies must be enabled for Fasten Connect to work. ");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(10, "div", 7)(11, "h3", 8);
+        \u0275\u0275text(12, "Enable cookies in your browser");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(13, "p", 9);
+        \u0275\u0275text(14, " Open your browser's privacy or cookie settings and allow third-party cookies for this application. Then return and try signing in again. ");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275template(15, ThirdPartyCookiesErrorComponent_div_15_Template, 20, 4, "div", 10);
+        \u0275\u0275elementStart(16, "button", 11);
+        \u0275\u0275text(17, " Back to Sign In ");
+        \u0275\u0275elementEnd()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance(15);
+        \u0275\u0275property("ngIf", ctx.cookieDebugInfo);
+        \u0275\u0275advance();
+        \u0275\u0275property("routerLink", "/auth/signin");
+      }
+    }, dependencies: [
+      CommonModule,
+      NgIf,
+      HeaderComponent,
+      RouterModule,
+      RouterLink
+    ], encapsulation: 2 });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ThirdPartyCookiesErrorComponent, { className: "ThirdPartyCookiesErrorComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/third-party-cookies-error/third-party-cookies-error.component.ts", lineNumber: 18 });
+})();
+
 // projects/fasten-connect-stitch-embed/src/app/app.routes.ts
 var routes = [
   { path: "auth/signin", component: VaultProfileSigninComponent },
   { path: "auth/signin/code", component: VaultProfileSigninCodeComponent },
+  { path: "auth/signin/cookies-required", component: ThirdPartyCookiesErrorComponent },
   { path: "auth/callback", component: AuthCallbackComponent },
   { path: "auth/identity/verification", component: IdentityVerificationComponent },
   //canActivate: [IsAuthenticatedAuthGuard] },
