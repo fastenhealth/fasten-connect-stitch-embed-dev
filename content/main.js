@@ -57046,12 +57046,13 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   get isCspRequestUriSignin() {
     return !!(this.configService.systemConfig$?.tefcaMode && this.configService.systemConfig$?.identityRequestUri);
   }
-  constructor(configService, authService, fastenService, router, logger) {
+  constructor(configService, authService, fastenService, router, logger, deviceDetectorService) {
     this.configService = configService;
     this.authService = authService;
     this.fastenService = fastenService;
     this.router = router;
     this.logger = logger;
+    this.deviceDetectorService = deviceDetectorService;
     this.loading = false;
     this.showMessage = false;
     this.submitted = false;
@@ -57244,13 +57245,11 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //check if the browser is Safari (which requires the Storage Access API for third-party cookies)
   isSafari() {
-    const userAgent = navigator.userAgent.toLowerCase();
-    return userAgent.indexOf("safari") >= -1;
+    return this.deviceDetectorService.browser === BROWSERS.SAFARI;
   }
   //check if the browser is Chrome (which also requires the Storage Access API for third-party cookies)
   isChrome() {
-    const userAgent = navigator.userAgent.toLowerCase();
-    return userAgent.indexOf("chrome") >= -1;
+    return this.deviceDetectorService.browser === BROWSERS.CHROME;
   }
   //check if the browser supports the Storage Access API (if not, we assume it is not needed)
   isStorageAccessApiSupportedByBrowser() {
@@ -57319,7 +57318,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
   static {
     this.\u0275fac = function VaultProfileSigninComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(DeviceDetectorService));
     };
   }
   static {
@@ -57470,7 +57469,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 33 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 34 });
 })();
 
 // node_modules/angular-code-input/fesm2022/angular-code-input.mjs
@@ -61694,9 +61693,9 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/third-party-cookies-error/third-party-cookies-error.component.ts
-function ThirdPartyCookiesErrorComponent_a_15_Template(rf, ctx) {
+function ThirdPartyCookiesErrorComponent_div_10_a_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "a", 14);
+    \u0275\u0275elementStart(0, "a", 16);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -61707,46 +61706,93 @@ function ThirdPartyCookiesErrorComponent_a_15_Template(rf, ctx) {
     \u0275\u0275textInterpolate1(" View ", documentationLink_r1.browserName, " cookie instructions ");
   }
 }
-function ThirdPartyCookiesErrorComponent_div_21_Template(rf, ctx) {
+function ThirdPartyCookiesErrorComponent_div_10_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 15)(1, "h3", 8);
+    \u0275\u0275elementStart(0, "div", 12)(1, "h3", 13);
+    \u0275\u0275text(2, "Enable cookies in your browser");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "p", 14);
+    \u0275\u0275text(4, " Open your browser's privacy or cookie settings and allow third-party cookies for this application. Then return and try signing in again. ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(5, ThirdPartyCookiesErrorComponent_div_10_a_5_Template, 2, 2, "a", 15);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(5);
+    \u0275\u0275property("ngIf", ctx_r1.thirdPartyCookieDocumentationLink);
+  }
+}
+function ThirdPartyCookiesErrorComponent_div_11_a_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "a", 21);
+    \u0275\u0275text(1, " Open in Safari ");
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("href", ctx_r1.safariDeepLink, \u0275\u0275sanitizeUrl);
+  }
+}
+function ThirdPartyCookiesErrorComponent_div_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 17)(1, "h3", 13);
+    \u0275\u0275text(2, "Open Fasten Connect in Safari");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "p", 18);
+    \u0275\u0275text(4, " Safari is currently required on iPhone and iPad. Other browsers on iOS are not currently supported. ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275template(5, ThirdPartyCookiesErrorComponent_div_11_a_5_Template, 2, 1, "a", 19);
+    \u0275\u0275elementStart(6, "p", 20);
+    \u0275\u0275text(7, " If Safari does not open, copy this page's address and paste it into Safari. ");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(5);
+    \u0275\u0275property("ngIf", ctx_r1.safariDeepLink);
+  }
+}
+function ThirdPartyCookiesErrorComponent_div_17_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 22)(1, "h3", 13);
     \u0275\u0275text(2, "Cookie debug information (test mode)");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "dl", 16)(4, "dt", 17);
+    \u0275\u0275elementStart(3, "dl", 23)(4, "dt", 24);
     \u0275\u0275text(5, "Cookie name");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "dd", 18);
+    \u0275\u0275elementStart(6, "dd", 25);
     \u0275\u0275text(7);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "dt", 17);
+    \u0275\u0275elementStart(8, "dt", 24);
     \u0275\u0275text(9, "Is set");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "dd", 19);
+    \u0275\u0275elementStart(10, "dd", 26);
     \u0275\u0275text(11);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "dt", 17);
+    \u0275\u0275elementStart(12, "dt", 24);
     \u0275\u0275text(13, "Value");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "dd", 18);
+    \u0275\u0275elementStart(14, "dd", 25);
     \u0275\u0275text(15);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "dt", 17);
+    \u0275\u0275elementStart(16, "dt", 24);
     \u0275\u0275text(17, "Value length");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "dd", 19);
+    \u0275\u0275elementStart(18, "dd", 26);
     \u0275\u0275text(19);
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    const debugInfo_r2 = ctx.ngIf;
+    const debugInfo_r3 = ctx.ngIf;
     \u0275\u0275advance(7);
-    \u0275\u0275textInterpolate(debugInfo_r2.cookieName);
+    \u0275\u0275textInterpolate(debugInfo_r3.cookieName);
     \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate(debugInfo_r2.isSet ? "Yes" : "No");
+    \u0275\u0275textInterpolate(debugInfo_r3.isSet ? "Yes" : "No");
     \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate(debugInfo_r2.value || "(empty)");
+    \u0275\u0275textInterpolate(debugInfo_r3.value || "(empty)");
     \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate(debugInfo_r2.valueLength);
+    \u0275\u0275textInterpolate(debugInfo_r3.valueLength);
   }
 }
 var GENERIC_DOCUMENTATION = "generic";
@@ -61801,11 +61847,31 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
     this.authService = authService;
     this.configService = configService;
     this.deviceDetectorService = deviceDetectorService;
+    this.requiresSafariOnIos = false;
   }
   ngOnInit() {
-    this.thirdPartyCookieDocumentationLink = this.getThirdPartyCookieDocumentationLink();
+    this.requiresSafariOnIos = this.isUnsupportedIosBrowser();
+    if (this.requiresSafariOnIos) {
+      this.safariDeepLink = this.getSafariDeepLink(document.referrer || window.location.href);
+    } else {
+      this.thirdPartyCookieDocumentationLink = this.getThirdPartyCookieDocumentationLink();
+    }
     if (this.configService.systemConfig$.apiMode === ApiMode.Test) {
       this.cookieDebugInfo = this.authService.GetVaultAuthCookieDebugInfo();
+    }
+  }
+  isUnsupportedIosBrowser() {
+    return this.deviceDetectorService.os === OS.IOS && this.deviceDetectorService.browser !== BROWSERS.SAFARI;
+  }
+  getSafariDeepLink(targetUrl) {
+    try {
+      const url = new URL(targetUrl);
+      if (url.protocol !== "http:" && url.protocol !== "https:") {
+        return void 0;
+      }
+      return `x-safari-${url.href}`;
+    } catch {
+      return void 0;
     }
   }
   getThirdPartyCookieDocumentationLink() {
@@ -61818,7 +61884,7 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ThirdPartyCookiesErrorComponent, selectors: [["app-third-party-cookies-error"]], decls: 24, vars: 4, consts: [["id", "third-party-cookies-error", "aria-labelledby", "cookies-required-title", 1, "space-y-6", "text-center"], [1, "w-16", "h-16", "mx-auto", "bg-red-50", "rounded-full", "flex", "items-center", "justify-center"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", "aria-hidden", "true", 1, "w-8", "h-8", "text-red-600"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 4.5h.008v.008H12V16.5Z"], [1, "space-y-2"], ["id", "cookies-required-title", 1, "text-xl", "font-semibold", "text-red-600"], [1, "text-sm", "text-gray-600"], [1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "text-base", "font-medium", "text-gray-900"], [1, "mt-1", "text-sm", "text-gray-600"], ["id", "third-party-cookie-documentation-link", "class", "mt-3 inline-block text-sm font-medium text-[#5B47FB] hover:underline", "target", "_blank", "rel", "noopener noreferrer", 3, "href", 4, "ngIf"], ["id", "cookie-support-link", 1, "font-medium", "text-[#5B47FB]", "hover:underline", 3, "routerLink"], ["id", "cookie-debug-info", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"], ["id", "third-party-cookie-documentation-link", "target", "_blank", "rel", "noopener noreferrer", 1, "mt-3", "inline-block", "text-sm", "font-medium", "text-[#5B47FB]", "hover:underline", 3, "href"], ["id", "cookie-debug-info", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "mt-3", "grid", "grid-cols-[auto,minmax(0,1fr)]", "gap-x-4", "gap-y-2", "text-sm"], [1, "font-medium", "text-gray-600"], [1, "break-all", "font-mono", "text-xs", "text-gray-900"], [1, "font-mono", "text-xs", "text-gray-900"]], template: function ThirdPartyCookiesErrorComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ThirdPartyCookiesErrorComponent, selectors: [["app-third-party-cookies-error"]], decls: 20, vars: 5, consts: [["id", "third-party-cookies-error", "aria-labelledby", "cookies-required-title", 1, "space-y-6", "text-center"], [1, "w-16", "h-16", "mx-auto", "bg-red-50", "rounded-full", "flex", "items-center", "justify-center"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", "aria-hidden", "true", 1, "w-8", "h-8", "text-red-600"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 4.5h.008v.008H12V16.5Z"], [1, "space-y-2"], ["id", "cookies-required-title", 1, "text-xl", "font-semibold", "text-red-600"], [1, "text-sm", "text-gray-600"], ["id", "browser-cookie-instructions", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["id", "ios-safari-required", "class", "rounded-md border border-amber-200 bg-amber-50 p-4 text-left", 4, "ngIf"], ["id", "cookie-support-link", 1, "font-medium", "text-[#5B47FB]", "hover:underline", 3, "routerLink"], ["id", "cookie-debug-info", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"], ["id", "browser-cookie-instructions", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "text-base", "font-medium", "text-gray-900"], [1, "mt-1", "text-sm", "text-gray-600"], ["id", "third-party-cookie-documentation-link", "class", "mt-3 inline-block text-sm font-medium text-[#5B47FB] hover:underline", "target", "_blank", "rel", "noopener noreferrer", 3, "href", 4, "ngIf"], ["id", "third-party-cookie-documentation-link", "target", "_blank", "rel", "noopener noreferrer", 1, "mt-3", "inline-block", "text-sm", "font-medium", "text-[#5B47FB]", "hover:underline", 3, "href"], ["id", "ios-safari-required", 1, "rounded-md", "border", "border-amber-200", "bg-amber-50", "p-4", "text-left"], [1, "mt-1", "text-sm", "text-gray-700"], ["id", "open-in-safari-link", "target", "_top", "class", "mt-3 flex w-full items-center justify-center rounded-md border border-[#5B47FB] bg-white px-4 py-2.5 text-sm font-medium text-[#5B47FB] hover:bg-[#5B47FB] hover:text-white", 3, "href", 4, "ngIf"], [1, "mt-2", "text-xs", "text-gray-600"], ["id", "open-in-safari-link", "target", "_top", 1, "mt-3", "flex", "w-full", "items-center", "justify-center", "rounded-md", "border", "border-[#5B47FB]", "bg-white", "px-4", "py-2.5", "text-sm", "font-medium", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", 3, "href"], ["id", "cookie-debug-info", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "mt-3", "grid", "grid-cols-[auto,minmax(0,1fr)]", "gap-x-4", "gap-y-2", "text-sm"], [1, "font-medium", "text-gray-600"], [1, "break-all", "font-mono", "text-xs", "text-gray-900"], [1, "font-mono", "text-xs", "text-gray-900"]], template: function ThirdPartyCookiesErrorComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -61834,29 +61900,24 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
         \u0275\u0275elementStart(8, "p", 6);
         \u0275\u0275text(9, " Third-party cookies must be enabled for Fasten Connect to work. ");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(10, "div", 7)(11, "h3", 8);
-        \u0275\u0275text(12, "Enable cookies in your browser");
+        \u0275\u0275template(10, ThirdPartyCookiesErrorComponent_div_10_Template, 6, 1, "div", 7)(11, ThirdPartyCookiesErrorComponent_div_11_Template, 8, 1, "div", 8);
+        \u0275\u0275elementStart(12, "p", 6);
+        \u0275\u0275text(13, " If this issue continues, please ");
+        \u0275\u0275elementStart(14, "a", 9);
+        \u0275\u0275text(15, "contact support");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(13, "p", 9);
-        \u0275\u0275text(14, " Open your browser's privacy or cookie settings and allow third-party cookies for this application. Then return and try signing in again. ");
+        \u0275\u0275text(16, ". ");
         \u0275\u0275elementEnd();
-        \u0275\u0275template(15, ThirdPartyCookiesErrorComponent_a_15_Template, 2, 2, "a", 10);
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(16, "p", 6);
-        \u0275\u0275text(17, " If this issue continues even after third-party cookies are enabled, please ");
-        \u0275\u0275elementStart(18, "a", 11);
-        \u0275\u0275text(19, "contact support");
-        \u0275\u0275elementEnd();
-        \u0275\u0275text(20, ". ");
-        \u0275\u0275elementEnd();
-        \u0275\u0275template(21, ThirdPartyCookiesErrorComponent_div_21_Template, 20, 4, "div", 12);
-        \u0275\u0275elementStart(22, "button", 13);
-        \u0275\u0275text(23, " Back to Sign In ");
+        \u0275\u0275template(17, ThirdPartyCookiesErrorComponent_div_17_Template, 20, 4, "div", 10);
+        \u0275\u0275elementStart(18, "button", 11);
+        \u0275\u0275text(19, " Back to Sign In ");
         \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
-        \u0275\u0275advance(15);
-        \u0275\u0275property("ngIf", ctx.thirdPartyCookieDocumentationLink);
+        \u0275\u0275advance(10);
+        \u0275\u0275property("ngIf", !ctx.requiresSafariOnIos);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.requiresSafariOnIos);
         \u0275\u0275advance(3);
         \u0275\u0275property("routerLink", "/form/support");
         \u0275\u0275advance(3);
