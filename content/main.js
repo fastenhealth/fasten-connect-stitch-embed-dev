@@ -61847,6 +61847,7 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
     this.authService = authService;
     this.configService = configService;
     this.deviceDetectorService = deviceDetectorService;
+    this.showCookieDebugInfo = false;
     this.requiresSafariOnIos = false;
   }
   ngOnInit() {
@@ -61856,7 +61857,8 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
     } else {
       this.thirdPartyCookieDocumentationLink = this.getThirdPartyCookieDocumentationLink();
     }
-    if (this.configService.systemConfig$.apiMode === ApiMode.Test) {
+    this.showCookieDebugInfo = this.isCookieDebugEnabled();
+    if (this.showCookieDebugInfo) {
       this.cookieDebugInfo = this.authService.GetVaultAuthCookieDebugInfo();
     }
   }
@@ -61877,6 +61879,10 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
   getThirdPartyCookieDocumentationLink() {
     const browserDocumentation = THIRD_PARTY_COOKIE_DOCUMENTATION_MATRIX[this.deviceDetectorService.browser];
     return browserDocumentation?.[this.deviceDetectorService.os] ?? browserDocumentation?.[GENERIC_DOCUMENTATION];
+  }
+  isCookieDebugEnabled() {
+    const systemConfig = this.configService.systemConfig$;
+    return systemConfig.apiMode === ApiMode.Test && systemConfig.showCookieDebugInfo === true;
   }
   static {
     this.\u0275fac = function ThirdPartyCookiesErrorComponent_Factory(__ngFactoryType__) {
@@ -61921,7 +61927,7 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
         \u0275\u0275advance(3);
         \u0275\u0275property("routerLink", "/form/support");
         \u0275\u0275advance(3);
-        \u0275\u0275property("ngIf", ctx.cookieDebugInfo);
+        \u0275\u0275property("ngIf", ctx.showCookieDebugInfo && ctx.cookieDebugInfo);
         \u0275\u0275advance();
         \u0275\u0275property("routerLink", "/auth/signin");
       }
