@@ -39125,6 +39125,7 @@ var SDKMode;
 (function(SDKMode2) {
   SDKMode2["None"] = "none";
   SDKMode2["ReactNative"] = "react-native";
+  SDKMode2["Flutter"] = "flutter";
 })(SDKMode || (SDKMode = {}));
 var CommunicationEntity;
 (function(CommunicationEntity2) {
@@ -40823,9 +40824,9 @@ function waitForPostMessageOrgConnectionOrTimeout(logger, openedWindow, sdkMode)
     timeout(ConnectWindowTimeout),
     filter((event) => {
       logger.debug(`received postMessage event, must determine if this message is safe to process`, event);
-      if (sdkMode == SDKMode.ReactNative && window.ReactNativeWebView) {
+      if (sdkMode == SDKMode.ReactNative && window.ReactNativeWebView || sdkMode == SDKMode.Flutter) {
         if (event.source || event.origin) {
-          logger.debug(`ignoring postMessage event from unknown source or origin. React-native webview should be null for both`, event.source, event.origin);
+          logger.debug(`ignoring postMessage event from unknown source or origin. ${sdkMode} webview should be null for both`, event.source, event.origin);
           return false;
         }
         return true;
@@ -48596,21 +48597,6 @@ var AuthService = class _AuthService {
       this.publishAuthenticationState(false);
       return deleteCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
     });
-  }
-  IsVaultAuthCookieSet() {
-    const debugInfo = this.GetVaultAuthCookieDebugInfo();
-    console.debug("[AuthService] Vault auth cookie check", debugInfo);
-    return debugInfo.isSet;
-  }
-  GetVaultAuthCookieDebugInfo() {
-    const cookieValue = getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
-    const isSet = !!cookieValue;
-    return {
-      cookieName: FASTEN_AUTH_VAULT_COOKIE_NAME,
-      isSet,
-      value: isSet ? "[REDACTED]" : "",
-      valueLength: cookieValue.length
-    };
   }
   GetJWTPayload() {
     return __async(this, null, function* () {
@@ -57046,13 +57032,12 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   get isCspRequestUriSignin() {
     return !!(this.configService.systemConfig$?.tefcaMode && this.configService.systemConfig$?.identityRequestUri);
   }
-  constructor(configService, authService, fastenService, router, logger, deviceDetectorService) {
+  constructor(configService, authService, fastenService, router, logger) {
     this.configService = configService;
     this.authService = authService;
     this.fastenService = fastenService;
     this.router = router;
     this.logger = logger;
-    this.deviceDetectorService = deviceDetectorService;
     this.loading = false;
     this.showMessage = false;
     this.submitted = false;
@@ -57071,8 +57056,8 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     if (this.configService.vaultProfileConfig$.email) {
       this.existingVaultProfile.email = this.configService.vaultProfileConfig$.email;
     }
-    if (this.configService.systemConfig$.sdkMode == SDKMode.ReactNative) {
-      this.logger.log("SDK Mode is React Native. Don't attempt to request cookie storage permissions..");
+    if (this.configService.systemConfig$.sdkMode == SDKMode.ReactNative || this.configService.systemConfig$.sdkMode == SDKMode.Flutter) {
+      this.logger.log(`SDK Mode is ${this.configService.systemConfig$.sdkMode}. Don't attempt to request cookie storage permissions..`);
       this.needStorageAccessPermissionSubject.next(false);
       return;
     }
@@ -57111,10 +57096,6 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
     }).then((resp) => {
-      if (!this.authService.IsVaultAuthCookieSet()) {
-        this.loading = false;
-        return this.router.navigateByUrl("auth/signin/cookies-required");
-      }
       if (this.configService.systemConfig$.apiMode === ApiMode.Test) {
         return this.authService.GetJWTPayload().then((payload) => {
           this.loading = false;
@@ -57245,11 +57226,13 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //check if the browser is Safari (which requires the Storage Access API for third-party cookies)
   isSafari() {
-    return this.deviceDetectorService.browser === BROWSERS.SAFARI;
+    const userAgent = navigator.userAgent.toLowerCase();
+    return userAgent.indexOf("safari") >= -1;
   }
   //check if the browser is Chrome (which also requires the Storage Access API for third-party cookies)
   isChrome() {
-    return this.deviceDetectorService.browser === BROWSERS.CHROME;
+    const userAgent = navigator.userAgent.toLowerCase();
+    return userAgent.indexOf("chrome") >= -1;
   }
   //check if the browser supports the Storage Access API (if not, we assume it is not needed)
   isStorageAccessApiSupportedByBrowser() {
@@ -57318,7 +57301,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
   static {
     this.\u0275fac = function VaultProfileSigninComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(DeviceDetectorService));
+      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -57469,7 +57452,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 34 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 33 });
 })();
 
 // node_modules/angular-code-input/fesm2022/angular-code-input.mjs
@@ -61692,263 +61675,10 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AuthCallbackComponent, { className: "AuthCallbackComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/auth-callback/auth-callback.component.ts", lineNumber: 30 });
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/pages/third-party-cookies-error/third-party-cookies-error.component.ts
-function ThirdPartyCookiesErrorComponent_div_10_a_5_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "a", 16);
-    \u0275\u0275text(1);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const documentationLink_r1 = ctx.ngIf;
-    \u0275\u0275property("href", documentationLink_r1.url, \u0275\u0275sanitizeUrl);
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" View ", documentationLink_r1.browserName, " cookie instructions ");
-  }
-}
-function ThirdPartyCookiesErrorComponent_div_10_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 12)(1, "h3", 13);
-    \u0275\u0275text(2, "Enable cookies in your browser");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "p", 14);
-    \u0275\u0275text(4, " Open your browser's privacy or cookie settings and allow third-party cookies for this application. Then return and try signing in again. ");
-    \u0275\u0275elementEnd();
-    \u0275\u0275template(5, ThirdPartyCookiesErrorComponent_div_10_a_5_Template, 2, 2, "a", 15);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(5);
-    \u0275\u0275property("ngIf", ctx_r1.thirdPartyCookieDocumentationLink);
-  }
-}
-function ThirdPartyCookiesErrorComponent_div_11_a_5_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "a", 21);
-    \u0275\u0275text(1, " Open in Safari ");
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275property("href", ctx_r1.safariDeepLink, \u0275\u0275sanitizeUrl);
-  }
-}
-function ThirdPartyCookiesErrorComponent_div_11_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 17)(1, "h3", 13);
-    \u0275\u0275text(2, "Open Fasten Connect in Safari");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "p", 18);
-    \u0275\u0275text(4, " Safari is currently required on iPhone and iPad. Other browsers on iOS are not currently supported. ");
-    \u0275\u0275elementEnd();
-    \u0275\u0275template(5, ThirdPartyCookiesErrorComponent_div_11_a_5_Template, 2, 1, "a", 19);
-    \u0275\u0275elementStart(6, "p", 20);
-    \u0275\u0275text(7, " If Safari does not open, copy this page's address and paste it into Safari. ");
-    \u0275\u0275elementEnd()();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(5);
-    \u0275\u0275property("ngIf", ctx_r1.safariDeepLink);
-  }
-}
-function ThirdPartyCookiesErrorComponent_div_17_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 22)(1, "h3", 13);
-    \u0275\u0275text(2, "Cookie debug information (test mode)");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "dl", 23)(4, "dt", 24);
-    \u0275\u0275text(5, "Cookie name");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "dd", 25);
-    \u0275\u0275text(7);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "dt", 24);
-    \u0275\u0275text(9, "Is set");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "dd", 26);
-    \u0275\u0275text(11);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "dt", 24);
-    \u0275\u0275text(13, "Value");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "dd", 25);
-    \u0275\u0275text(15);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "dt", 24);
-    \u0275\u0275text(17, "Value length");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "dd", 26);
-    \u0275\u0275text(19);
-    \u0275\u0275elementEnd()()();
-  }
-  if (rf & 2) {
-    const debugInfo_r3 = ctx.ngIf;
-    \u0275\u0275advance(7);
-    \u0275\u0275textInterpolate(debugInfo_r3.cookieName);
-    \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate(debugInfo_r3.isSet ? "Yes" : "No");
-    \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate(debugInfo_r3.value || "(empty)");
-    \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate(debugInfo_r3.valueLength);
-  }
-}
-var GENERIC_DOCUMENTATION = "generic";
-var EDGE_COOKIE_DOCUMENTATION = {
-  [GENERIC_DOCUMENTATION]: {
-    browserName: "Microsoft Edge",
-    url: "https://support.microsoft.com/en-us/edge/manage-cookies-in-microsoft-edge-view-allow-block-delete-and-use"
-  }
-};
-var THIRD_PARTY_COOKIE_DOCUMENTATION_MATRIX = {
-  [BROWSERS.CHROME]: {
-    [GENERIC_DOCUMENTATION]: {
-      browserName: "Google Chrome",
-      url: "https://support.google.com/chrome/answer/95647"
-    }
-  },
-  [BROWSERS.FIREFOX]: {
-    [GENERIC_DOCUMENTATION]: {
-      browserName: "Firefox",
-      url: "https://support.mozilla.org/en-US/kb/third-party-cookies-firefox-tracking-protection"
-    },
-    [OS.ANDROID]: {
-      browserName: "Firefox",
-      url: "https://support.mozilla.org/en-US/kb/enhanced-tracking-protection-firefox-android"
-    },
-    [OS.IOS]: {
-      browserName: "Firefox",
-      url: "https://support.mozilla.org/en-US/kb/enhanced-tracking-protection-firefox-ios"
-    }
-  },
-  [BROWSERS.SAFARI]: {
-    [GENERIC_DOCUMENTATION]: {
-      browserName: "Safari",
-      url: "https://support.apple.com/guide/safari/enable-cookies-ibrw850f6c51/mac"
-    },
-    [OS.IOS]: {
-      browserName: "Safari",
-      url: "https://support.apple.com/guide/iphone/iphb01fc3c85/ios"
-    }
-  },
-  [BROWSERS.OPERA]: {
-    [GENERIC_DOCUMENTATION]: {
-      browserName: "Opera",
-      url: "https://help.opera.com/en/latest/web-preferences/#cookies"
-    }
-  },
-  [BROWSERS.MS_EDGE]: EDGE_COOKIE_DOCUMENTATION,
-  [BROWSERS.MS_EDGE_CHROMIUM]: EDGE_COOKIE_DOCUMENTATION
-};
-var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
-  constructor(authService, configService, deviceDetectorService) {
-    this.authService = authService;
-    this.configService = configService;
-    this.deviceDetectorService = deviceDetectorService;
-    this.showCookieDebugInfo = false;
-    this.requiresSafariOnIos = false;
-  }
-  ngOnInit() {
-    this.requiresSafariOnIos = this.isUnsupportedIosBrowser();
-    if (this.requiresSafariOnIos) {
-      this.safariDeepLink = this.getSafariDeepLink(document.referrer || window.location.href);
-    } else {
-      this.thirdPartyCookieDocumentationLink = this.getThirdPartyCookieDocumentationLink();
-    }
-    this.showCookieDebugInfo = this.isCookieDebugEnabled();
-    if (this.showCookieDebugInfo) {
-      this.cookieDebugInfo = this.authService.GetVaultAuthCookieDebugInfo();
-    }
-  }
-  isUnsupportedIosBrowser() {
-    return this.deviceDetectorService.os === OS.IOS && this.deviceDetectorService.browser !== BROWSERS.SAFARI;
-  }
-  getSafariDeepLink(targetUrl) {
-    try {
-      const url = new URL(targetUrl);
-      if (url.protocol !== "http:" && url.protocol !== "https:") {
-        return void 0;
-      }
-      return `x-safari-${url.href}`;
-    } catch {
-      return void 0;
-    }
-  }
-  getThirdPartyCookieDocumentationLink() {
-    const browserDocumentation = THIRD_PARTY_COOKIE_DOCUMENTATION_MATRIX[this.deviceDetectorService.browser];
-    return browserDocumentation?.[this.deviceDetectorService.os] ?? browserDocumentation?.[GENERIC_DOCUMENTATION];
-  }
-  isCookieDebugEnabled() {
-    const systemConfig = this.configService.systemConfig$;
-    return systemConfig.apiMode === ApiMode.Test && systemConfig.showCookieDebugInfo === true;
-  }
-  static {
-    this.\u0275fac = function ThirdPartyCookiesErrorComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _ThirdPartyCookiesErrorComponent)(\u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(DeviceDetectorService));
-    };
-  }
-  static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ThirdPartyCookiesErrorComponent, selectors: [["app-third-party-cookies-error"]], decls: 20, vars: 5, consts: [["id", "third-party-cookies-error", "aria-labelledby", "cookies-required-title", 1, "space-y-6", "text-center"], [1, "w-16", "h-16", "mx-auto", "bg-red-50", "rounded-full", "flex", "items-center", "justify-center"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", "aria-hidden", "true", 1, "w-8", "h-8", "text-red-600"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 4.5h.008v.008H12V16.5Z"], [1, "space-y-2"], ["id", "cookies-required-title", 1, "text-xl", "font-semibold", "text-red-600"], [1, "text-sm", "text-gray-600"], ["id", "browser-cookie-instructions", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["id", "ios-safari-required", "class", "rounded-md border border-amber-200 bg-amber-50 p-4 text-left", 4, "ngIf"], ["id", "cookie-support-link", 1, "font-medium", "text-[#5B47FB]", "hover:underline", 3, "routerLink"], ["id", "cookie-debug-info", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"], ["id", "browser-cookie-instructions", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "text-base", "font-medium", "text-gray-900"], [1, "mt-1", "text-sm", "text-gray-600"], ["id", "third-party-cookie-documentation-link", "class", "mt-3 inline-block text-sm font-medium text-[#5B47FB] hover:underline", "target", "_blank", "rel", "noopener noreferrer", 3, "href", 4, "ngIf"], ["id", "third-party-cookie-documentation-link", "target", "_blank", "rel", "noopener noreferrer", 1, "mt-3", "inline-block", "text-sm", "font-medium", "text-[#5B47FB]", "hover:underline", 3, "href"], ["id", "ios-safari-required", 1, "rounded-md", "border", "border-amber-200", "bg-amber-50", "p-4", "text-left"], [1, "mt-1", "text-sm", "text-gray-700"], ["id", "open-in-safari-link", "target", "_top", "class", "mt-3 flex w-full items-center justify-center rounded-md border border-[#5B47FB] bg-white px-4 py-2.5 text-sm font-medium text-[#5B47FB] hover:bg-[#5B47FB] hover:text-white", 3, "href", 4, "ngIf"], [1, "mt-2", "text-xs", "text-gray-600"], ["id", "open-in-safari-link", "target", "_top", 1, "mt-3", "flex", "w-full", "items-center", "justify-center", "rounded-md", "border", "border-[#5B47FB]", "bg-white", "px-4", "py-2.5", "text-sm", "font-medium", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", 3, "href"], ["id", "cookie-debug-info", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "mt-3", "grid", "grid-cols-[auto,minmax(0,1fr)]", "gap-x-4", "gap-y-2", "text-sm"], [1, "font-medium", "text-gray-600"], [1, "break-all", "font-mono", "text-xs", "text-gray-900"], [1, "font-mono", "text-xs", "text-gray-900"]], template: function ThirdPartyCookiesErrorComponent_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275element(1, "app-header");
-        \u0275\u0275elementStart(2, "div", 1);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(3, "svg", 2);
-        \u0275\u0275element(4, "path", 3);
-        \u0275\u0275elementEnd()();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(5, "div", 4)(6, "h2", 5);
-        \u0275\u0275text(7, " Third-party cookies are required ");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(8, "p", 6);
-        \u0275\u0275text(9, " Third-party cookies must be enabled for Fasten Connect to work. ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275template(10, ThirdPartyCookiesErrorComponent_div_10_Template, 6, 1, "div", 7)(11, ThirdPartyCookiesErrorComponent_div_11_Template, 8, 1, "div", 8);
-        \u0275\u0275elementStart(12, "p", 6);
-        \u0275\u0275text(13, " If this issue continues, please ");
-        \u0275\u0275elementStart(14, "a", 9);
-        \u0275\u0275text(15, "contact support");
-        \u0275\u0275elementEnd();
-        \u0275\u0275text(16, ". ");
-        \u0275\u0275elementEnd();
-        \u0275\u0275template(17, ThirdPartyCookiesErrorComponent_div_17_Template, 20, 4, "div", 10);
-        \u0275\u0275elementStart(18, "button", 11);
-        \u0275\u0275text(19, " Back to Sign In ");
-        \u0275\u0275elementEnd()();
-      }
-      if (rf & 2) {
-        \u0275\u0275advance(10);
-        \u0275\u0275property("ngIf", !ctx.requiresSafariOnIos);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ctx.requiresSafariOnIos);
-        \u0275\u0275advance(3);
-        \u0275\u0275property("routerLink", "/form/support");
-        \u0275\u0275advance(3);
-        \u0275\u0275property("ngIf", ctx.showCookieDebugInfo && ctx.cookieDebugInfo);
-        \u0275\u0275advance();
-        \u0275\u0275property("routerLink", "/auth/signin");
-      }
-    }, dependencies: [
-      CommonModule,
-      NgIf,
-      HeaderComponent,
-      RouterModule,
-      RouterLink
-    ], encapsulation: 2 });
-  }
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ThirdPartyCookiesErrorComponent, { className: "ThirdPartyCookiesErrorComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/third-party-cookies-error/third-party-cookies-error.component.ts", lineNumber: 78 });
-})();
-
 // projects/fasten-connect-stitch-embed/src/app/app.routes.ts
 var routes = [
   { path: "auth/signin", component: VaultProfileSigninComponent },
   { path: "auth/signin/code", component: VaultProfileSigninCodeComponent },
-  { path: "auth/signin/cookies-required", component: ThirdPartyCookiesErrorComponent },
   { path: "auth/callback", component: AuthCallbackComponent },
   { path: "auth/identity/verification", component: IdentityVerificationComponent },
   //canActivate: [IsAuthenticatedAuthGuard] },
