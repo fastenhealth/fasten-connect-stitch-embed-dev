@@ -48607,7 +48607,10 @@ var AuthService = class _AuthService {
   }
   IsVaultAuthCookieSet() {
     const debugInfo = this.GetVaultAuthCookieDebugInfo();
-    console.debug("[AuthService] Vault auth cookie check", debugInfo);
+    if (!debugInfo.isSet) {
+      console.warn("[AuthServices] Vault auth cookie not set!");
+    }
+    console.info("[AuthService] Vault auth cookie check", debugInfo);
     return debugInfo.isSet;
   }
   WaitForVaultAuthCookie() {
