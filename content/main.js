@@ -57167,6 +57167,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     })).catch((err) => {
       this.loading = false;
       this.errorMsg = this.deriveSignInErrorMessage(err);
+      this.logger.error("Sign-in failed with user message: ", this.errorMsg, "; And error: ", err);
     });
   }
   signinWithCspRequestUri() {
