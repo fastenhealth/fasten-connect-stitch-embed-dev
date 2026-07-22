@@ -48574,7 +48574,15 @@ function createRemoteJWKSet(url, options) {
 
 // projects/fasten-connect-stitch-embed/src/app/services/auth.service.ts
 var FASTEN_AUTH_VAULT_COOKIE_NAME = "fasten_connect_auth_vault";
-var VAULT_AUTH_COOKIE_RECHECK_DELAY_MS = 100;
+var FASTEN_COOKIE_TEST_NAME = "fasten_cookie_test";
+var FASTEN_PARTITIONED_COOKIE_TEST_NAME = "fasten_part_cookie_test";
+var COOKIE_SUPPORT_RECHECK_DELAY_MS = 100;
+var CookieSupport;
+(function(CookieSupport2) {
+  CookieSupport2["None"] = "none";
+  CookieSupport2["Partitioned"] = "partitioned";
+  CookieSupport2["Regular"] = "regular";
+})(CookieSupport || (CookieSupport = {}));
 var AuthService = class _AuthService {
   constructor(_httpClient, configService) {
     this._httpClient = _httpClient;
@@ -48605,21 +48613,23 @@ var AuthService = class _AuthService {
       return deleteCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
     });
   }
-  IsVaultAuthCookieSet() {
-    const debugInfo = this.GetVaultAuthCookieDebugInfo();
-    if (!debugInfo.isSet) {
-      console.warn("[AuthServices] Vault auth cookie not set!");
+  GetCookieSupport() {
+    if (getCookie(FASTEN_PARTITIONED_COOKIE_TEST_NAME)) {
+      return CookieSupport.Partitioned;
     }
-    console.info("[AuthService] Vault auth cookie check", debugInfo);
-    return debugInfo.isSet;
+    if (getCookie(FASTEN_COOKIE_TEST_NAME)) {
+      return CookieSupport.Regular;
+    }
+    return CookieSupport.None;
   }
-  WaitForVaultAuthCookie() {
+  WaitForCookieSupport() {
     return __async(this, null, function* () {
-      if (this.IsVaultAuthCookieSet()) {
-        return true;
+      let cookie_support = this.GetCookieSupport();
+      if (cookie_support != CookieSupport.None) {
+        return cookie_support;
       }
-      yield new Promise((resolve) => setTimeout(resolve, VAULT_AUTH_COOKIE_RECHECK_DELAY_MS));
-      return this.IsVaultAuthCookieSet();
+      yield new Promise((resolve) => setTimeout(resolve, COOKIE_SUPPORT_RECHECK_DELAY_MS));
+      return this.GetCookieSupport();
     });
   }
   GetVaultAuthCookieDebugInfo() {
@@ -48680,6 +48690,7 @@ var AuthService = class _AuthService {
 };
 function getCookie(name) {
   const ca = decodeURIComponent(document.cookie).split(";");
+  console.info("Cookie document: ", ca);
   const caLen = ca.length;
   const cookieName = `${name}=`;
   let c;
@@ -49544,7 +49555,7 @@ var FastenService = class _FastenService {
       this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
         this.logger.info("attempt to download org information, and store in config");
-        this.getOrgByPublicId(systemConfig.publicId).subscribe((org) => {
+        this.getOrgConfig(systemConfig.publicId).subscribe((org) => {
           this.logger.debug("org:", org);
           this.configService.systemConfig = { org };
         });
@@ -49613,9 +49624,23 @@ var FastenService = class _FastenService {
   getOrgByPublicId(publicId) {
     let queryParams = {};
     queryParams["public_id"] = publicId;
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/org`, { params: queryParams }).pipe(map((response) => {
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/org`, {
+      params: queryParams,
+      withCredentials: true
+    }).pipe(map((response) => {
       this.logger.info("Organization", response);
-      return response.data;
+      return response;
+    }));
+  }
+  getOrgConfig(publicId) {
+    let queryParams = {};
+    queryParams["public_id"] = publicId;
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/config`, {
+      params: queryParams,
+      withCredentials: true
+    }).pipe(map((response) => {
+      this.logger.info("Organization", response);
+      return response;
     }));
   }
   getOrgConnectionById(publicId, orgConnectionId) {
@@ -50000,11 +50025,12 @@ var AppComponent = class _AppComponent {
       this.searchOnly = true;
     }
   }
-  constructor(activatedRoute, configService, messageBus, fastenService, router, logger) {
+  constructor(activatedRoute, configService, messageBus, fastenService, authService, router, logger) {
     this.activatedRoute = activatedRoute;
     this.configService = configService;
     this.messageBus = messageBus;
     this.fastenService = fastenService;
+    this.authService = authService;
     this.router = router;
     this.logger = logger;
     this.logoText = logoText;
@@ -50191,12 +50217,25 @@ var AppComponent = class _AppComponent {
       return apiMode;
     } else {
       this.errorMessage = "";
-      this.fastenService.getOrgByPublicId(this.publicId).subscribe((org) => {
+      this.fastenService.getOrgConfig(this.publicId).subscribe((org) => {
         this.logger.info("Fasten Connect registration", org);
         this.loading = false;
         this.configService.systemConfig = {
           org
         };
+        let cookieSupport = CookieSupport.None;
+        if (this.tefcaMode) {
+          const cookieSupportPromise = this.authService.WaitForCookieSupport();
+          cookieSupportPromise.then((queriedCookieSupport) => {
+            cookieSupport = queriedCookieSupport;
+            if (queriedCookieSupport === CookieSupport.None) {
+              console.info("[AppComponent] Cookie support was not found!");
+              this.router.navigateByUrl("auth/signin/cookies-required");
+              return;
+            }
+            console.info("[AppComponent] Cookie support detected", cookieSupport);
+          });
+        }
         if (this.configService.systemConfig$.tefcaMode && !this.isFeatureFlagOrgTefcaModeEnabled(this.configService.systemConfig$.org)) {
           this.logger.error("TEFCA mode requested but organization is not enabled for TEFCA", this.configService.systemConfig$.org?.feature_flags);
           this.loading = false;
@@ -50248,7 +50287,7 @@ var AppComponent = class _AppComponent {
   }
   static {
     this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -50288,7 +50327,7 @@ var AppComponent = class _AppComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 42 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 43 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts
@@ -57139,12 +57178,8 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     chainPromise.then((result) => {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
-    }).then((resp) => __async(this, null, function* () {
+    }).then((resp) => {
       if (this.configService.systemConfig$.apiMode === ApiMode.Test) {
-        if (!(yield this.authService.WaitForVaultAuthCookie())) {
-          this.loading = false;
-          return this.router.navigateByUrl("auth/signin/cookies-required");
-        }
         return this.authService.GetJWTPayload().then((payload) => {
           this.loading = false;
           if (payload) {
@@ -57164,7 +57199,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
         this.loading = false;
         return this.router.navigate(["auth/signin/code"], { queryParams: { currentEmail: this.existingVaultProfile.email } });
       }
-    })).catch((err) => {
+    }).catch((err) => {
       this.loading = false;
       this.errorMsg = this.deriveSignInErrorMessage(err);
       this.logger.error("Sign-in failed with user message: ", this.errorMsg, "; And error: ", err);
@@ -58039,13 +58074,9 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
   onCodeCompleted(code) {
     this.loading = true;
     this.logger.info("submit finish", this.currentEmail, code);
-    this.authService.VaultAuthFinish(this.currentEmail, code).then((resp) => __async(this, null, function* () {
+    this.authService.VaultAuthFinish(this.currentEmail, code).then((resp) => {
       console.log("VaultAuthFinish result", resp);
-      const isAuthCookieSet = yield this.authService.WaitForVaultAuthCookie();
       this.loading = false;
-      if (!isAuthCookieSet) {
-        return this.router.navigateByUrl("auth/signin/cookies-required");
-      }
       if (resp?.has_verified_identity && resp?.verified_identity_csp_type) {
         this.logger.info("setting verified identity csp_type csp type to", resp.verified_identity_csp_type);
         this.configService.vaultProfileConfig = {
@@ -58054,7 +58085,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
         };
       }
       return this.router.navigateByUrl("dashboard");
-    })).catch((err) => {
+    }).catch((err) => {
       console.error(err);
       this.loading = false;
       if (err?.name) {
