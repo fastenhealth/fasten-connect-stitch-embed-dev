@@ -48588,12 +48588,14 @@ var AuthService = class _AuthService {
     this._httpClient = _httpClient;
     this.configService = configService;
     this.IsAuthenticatedSubject = new BehaviorSubject(false);
+    this.cookieSupport = CookieSupport.None;
   }
   VaultAuthBegin(email, cspPromptForce) {
     return __async(this, null, function* () {
       let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_begin`, {
         "email": email,
-        "csp_prompt_force": cspPromptForce
+        "csp_prompt_force": cspPromptForce,
+        "part_cookie": this.UsesPartitionedCookie()
       }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
       return resp;
     });
@@ -48602,7 +48604,8 @@ var AuthService = class _AuthService {
     return __async(this, null, function* () {
       let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_finish`, {
         "email": email,
-        "code": code
+        "code": code,
+        "part_cookie": this.UsesPartitionedCookie()
       }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
       return resp;
     });
@@ -48623,13 +48626,23 @@ var AuthService = class _AuthService {
     return CookieSupport.None;
   }
   WaitForCookieSupport() {
+    if (!this.cookieSupportPromise) {
+      this.cookieSupportPromise = this.detectCookieSupport();
+    }
+    return this.cookieSupportPromise;
+  }
+  UsesPartitionedCookie() {
+    return this.cookieSupport === CookieSupport.Partitioned;
+  }
+  detectCookieSupport() {
     return __async(this, null, function* () {
       let cookie_support = this.GetCookieSupport();
-      if (cookie_support != CookieSupport.None) {
-        return cookie_support;
+      if (cookie_support === CookieSupport.None) {
+        yield new Promise((resolve) => setTimeout(resolve, COOKIE_SUPPORT_RECHECK_DELAY_MS));
+        cookie_support = this.GetCookieSupport();
       }
-      yield new Promise((resolve) => setTimeout(resolve, COOKIE_SUPPORT_RECHECK_DELAY_MS));
-      return this.GetCookieSupport();
+      this.cookieSupport = cookie_support;
+      return cookie_support;
     });
   }
   GetVaultAuthCookieDebugInfo() {
@@ -49546,11 +49559,12 @@ var DeviceDetectorService = class _DeviceDetectorService {
 
 // projects/fasten-connect-stitch-embed/src/app/services/fasten.service.ts
 var FastenService = class _FastenService {
-  constructor(_httpClient, deviceService, configService, logger) {
+  constructor(_httpClient, deviceService, configService, logger, authService) {
     this._httpClient = _httpClient;
     this.deviceService = deviceService;
     this.configService = configService;
     this.logger = logger;
+    this.authService = authService;
     this.configService.systemConfigSubject.subscribe((systemConfig) => {
       this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
@@ -49690,6 +49704,7 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
     redirectUrlParts.searchParams.set("room_id", roomId);
+    redirectUrlParts.searchParams.set("part_cookie", this.authService.UsesPartitionedCookie().toString());
     this.logger.debug(redirectUrlParts.toString());
     let openedWindow;
     if (this.shouldUsePartitionedCookie()) {
@@ -49715,6 +49730,7 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("public_id", this.configService.systemConfig$.publicId);
     redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
+    redirectUrlParts.searchParams.set("part_cookie", this.authService.UsesPartitionedCookie().toString());
     const openedWindow = this.openWindowInPopup(redirectUrlParts);
     return this.waitForPopupNotification(openedWindow);
   }
@@ -49751,7 +49767,10 @@ var FastenService = class _FastenService {
   }
   refreshAuthCookie() {
     return __async(this, null, function* () {
-      return yield this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+      return yield this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, { withCredentials: true, params: {
+        "public_id": this.configService.systemConfig$.publicId,
+        "part_cookie": this.authService.UsesPartitionedCookie()
+      } }).toPromise();
     });
   }
   /// HELPERS
@@ -49864,7 +49883,7 @@ var FastenService = class _FastenService {
   }
   static {
     this.\u0275fac = function FastenService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _FastenService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
+      return new (__ngFactoryType__ || _FastenService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger), \u0275\u0275inject(AuthService));
     };
   }
   static {
