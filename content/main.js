@@ -48577,6 +48577,7 @@ var FASTEN_AUTH_VAULT_COOKIE_NAME = "fasten_connect_auth_vault";
 var FASTEN_COOKIE_TEST_NAME = "fasten_cookie_test";
 var FASTEN_PARTITIONED_COOKIE_TEST_NAME = "fasten_part_cookie_test";
 var COOKIE_SUPPORT_RECHECK_DELAY_MS = 100;
+var VAULT_AUTH_COOKIE_RECHECK_DELAY_MS = 100;
 var CookieSupport;
 (function(CookieSupport2) {
   CookieSupport2["None"] = "none";
@@ -48592,20 +48593,22 @@ var AuthService = class _AuthService {
   }
   VaultAuthBegin(email, cspPromptForce) {
     return __async(this, null, function* () {
+      const cookieSupport = yield this.WaitForCookieSupport();
       let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_begin`, {
         "email": email,
         "csp_prompt_force": cspPromptForce,
-        "part_cookie": this.UsesPartitionedCookie()
+        "part_cookie": cookieSupport === CookieSupport.Partitioned
       }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
       return resp;
     });
   }
   VaultAuthFinish(email, code) {
     return __async(this, null, function* () {
+      const cookieSupport = yield this.WaitForCookieSupport();
       let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_finish`, {
         "email": email,
         "code": code,
-        "part_cookie": this.UsesPartitionedCookie()
+        "part_cookie": cookieSupport === CookieSupport.Partitioned
       }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
       return resp;
     });
@@ -48614,6 +48617,22 @@ var AuthService = class _AuthService {
     return __async(this, null, function* () {
       this.publishAuthenticationState(false);
       return deleteCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
+    });
+  }
+  IsVaultAuthCookieSet() {
+    const isSet = this.GetVaultAuthCookieDebugInfo().isSet;
+    if (!isSet) {
+      console.warn("[AuthService] Vault auth cookie is not set");
+    }
+    return isSet;
+  }
+  WaitForVaultAuthCookie() {
+    return __async(this, null, function* () {
+      if (this.IsVaultAuthCookieSet()) {
+        return true;
+      }
+      yield new Promise((resolve) => setTimeout(resolve, VAULT_AUTH_COOKIE_RECHECK_DELAY_MS));
+      return this.IsVaultAuthCookieSet();
     });
   }
   GetCookieSupport() {
@@ -48702,28 +48721,32 @@ var AuthService = class _AuthService {
   }
 };
 function getCookie(name) {
-  const ca = decodeURIComponent(document.cookie).split(";");
-  console.info("Cookie document: ", ca);
+  const ca = document.cookie.split(";");
   const caLen = ca.length;
   const cookieName = `${name}=`;
   let c;
   for (let i = 0; i < caLen; i += 1) {
     c = ca[i].replace(/^\s+/g, "");
     if (c.indexOf(cookieName) === 0) {
-      return c.substring(cookieName.length, c.length);
+      const value = c.substring(cookieName.length, c.length);
+      try {
+        return decodeURIComponent(value);
+      } catch {
+        return value;
+      }
     }
   }
   return "";
 }
-function setCookie(name, value, expireDays, path = "") {
-  const d = /* @__PURE__ */ new Date();
-  d.setTime(d.getTime() + expireDays * 24 * 60 * 60 * 1e3);
-  const expires = `expires=${d.toUTCString()}`;
-  const cpath = path ? `; path=${path}` : "";
-  document.cookie = `${name}=${value}; ${expires}${cpath}; SameSite=Lax`;
-}
 function deleteCookie(name) {
-  setCookie(name, "", -99999);
+  const baseCookie = `${name}=; Max-Age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
+  const domains = ["", `; Domain=${environment.connect_base_domain}`];
+  for (const domain of domains) {
+    document.cookie = `${baseCookie}${domain}; SameSite=Lax`;
+    document.cookie = `${baseCookie}${domain}; SameSite=None; Secure`;
+    document.cookie = `${baseCookie}${domain}; SameSite=None; Secure; Partitioned`;
+  }
+  return Promise.resolve();
 }
 
 // node_modules/ngx-device-detector/fesm2022/ngx-device-detector.mjs
@@ -49707,7 +49730,8 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("part_cookie", this.authService.UsesPartitionedCookie().toString());
     this.logger.debug(redirectUrlParts.toString());
     let openedWindow;
-    if (this.shouldUsePartitionedCookie()) {
+    const usesPartitionedCookie = this.authService.UsesPartitionedCookie();
+    if (usesPartitionedCookie) {
       this.logger.warn("partitioned popup");
       openedWindow = this.openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts);
     } else {
@@ -49715,7 +49739,7 @@ var FastenService = class _FastenService {
     }
     return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(
       switchMap((payload) => {
-        if (this.shouldUsePartitionedCookie()) {
+        if (usesPartitionedCookie) {
           return from(this.refreshAuthCookie()).pipe(map(() => payload));
         }
         return of(payload);
@@ -49731,8 +49755,9 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
     redirectUrlParts.searchParams.set("part_cookie", this.authService.UsesPartitionedCookie().toString());
-    const openedWindow = this.openWindowInPopup(redirectUrlParts);
-    return this.waitForPopupNotification(openedWindow);
+    const usesPartitionedCookie = this.authService.UsesPartitionedCookie();
+    const openedWindow = usesPartitionedCookie ? this.openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts) : this.openWindowInPopup(redirectUrlParts);
+    return this.waitForPopupNotification(openedWindow).pipe(switchMap((payload) => usesPartitionedCookie ? from(this.refreshAuthCookie()).pipe(map(() => payload)) : of(payload)));
   }
   accountConnectWithWebsocket(connectData) {
     const roomId = v4_default();
@@ -49813,27 +49838,6 @@ var FastenService = class _FastenService {
     form.submit();
     document.body.removeChild(form);
     return opened;
-  }
-  // NOTE: changes to this function, should also be made to in the fasten-connect-api
-  // https://github.com/fastenhealth/fasten-connect-api/blob/13d537db1111f98be38d82f9fdf1497c4b1c0239/pkg/utils/auth_response/cookie.go#L56 function
-  shouldUsePartitionedCookie() {
-    let browser = this.deviceService.browser;
-    let browser_version_parts = this.deviceService.browser_version.split(".");
-    let browser_version_info = {
-      major: 0,
-      minor: 0,
-      patch: 0
-    };
-    if (browser_version_parts.length > 0) {
-      browser_version_info.major = parseInt(browser_version_parts[0]) || 0;
-      if (browser_version_parts.length > 1) {
-        browser_version_info.minor = parseInt(browser_version_parts[1]) || 0;
-      }
-      if (browser_version_parts.length > 2) {
-        browser_version_info.patch = parseInt(browser_version_parts[2]) || 0;
-      }
-    }
-    return browser == "Safari" && (browser_version_info.major > 26 || browser_version_info.major == 26 && browser_version_info.minor >= 3);
   }
   generateWebsocketURL(roomId) {
     const websocketUrlParts = new URL(`wss://websocket.${environment.connect_base_domain}/v1`);
@@ -50238,28 +50242,27 @@ var AppComponent = class _AppComponent {
       this.errorMessage = "";
       this.fastenService.getOrgConfig(this.publicId).subscribe((org) => {
         this.logger.info("Fasten Connect registration", org);
-        this.loading = false;
         this.configService.systemConfig = {
           org
         };
-        let cookieSupport = CookieSupport.None;
-        if (this.tefcaMode) {
-          const cookieSupportPromise = this.authService.WaitForCookieSupport();
-          cookieSupportPromise.then((queriedCookieSupport) => {
-            cookieSupport = queriedCookieSupport;
-            if (queriedCookieSupport === CookieSupport.None) {
-              console.info("[AppComponent] Cookie support was not found!");
-              this.router.navigateByUrl("auth/signin/cookies-required");
-              return;
-            }
-            console.info("[AppComponent] Cookie support detected", cookieSupport);
-          });
-        }
         if (this.configService.systemConfig$.tefcaMode && !this.isFeatureFlagOrgTefcaModeEnabled(this.configService.systemConfig$.org)) {
           this.logger.error("TEFCA mode requested but organization is not enabled for TEFCA", this.configService.systemConfig$.org?.feature_flags);
           this.loading = false;
           this.errorMessage = "TEFCA mode not enabled for this organization and/or api mode. Please contact your account representative or the developer of this app.";
           this.messageBus.publishWidgetConfigError();
+          return;
+        }
+        if (this.tefcaMode) {
+          this.authService.WaitForCookieSupport().then((cookieSupport) => __async(this, null, function* () {
+            if (cookieSupport === CookieSupport.None) {
+              console.info("[AppComponent] Cookie support was not found!");
+              yield this.router.navigateByUrl("auth/signin/cookies-required");
+              return;
+            }
+            console.info("[AppComponent] Cookie support detected", cookieSupport);
+          })).finally(() => this.loading = false);
+        } else {
+          this.loading = false;
         }
       }, (err) => {
         this.loading = false;
@@ -57187,18 +57190,22 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.configService.vaultProfileConfig = {
       email: this.existingVaultProfile.email
     };
-    this.authService.Signout().then((m) => {
-      this.logger.info(m);
+    let chainPromise = this.authService.Signout().then((result) => {
+      this.logger.info(result);
+      return true;
     });
-    var chainPromise = Promise.resolve(true);
-    if (this.needStorageAccessPermissionSubject) {
-      chainPromise = this.requestStorageAccess();
+    if (this.needStorageAccessPermissionSubject.getValue()) {
+      chainPromise = chainPromise.then(() => this.requestStorageAccess());
     }
     chainPromise.then((result) => {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
-    }).then((resp) => {
+    }).then((resp) => __async(this, null, function* () {
       if (this.configService.systemConfig$.apiMode === ApiMode.Test) {
+        if (!(yield this.authService.WaitForVaultAuthCookie())) {
+          this.loading = false;
+          return this.router.navigateByUrl("auth/signin/cookies-required");
+        }
         return this.authService.GetJWTPayload().then((payload) => {
           this.loading = false;
           if (payload) {
@@ -57218,7 +57225,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
         this.loading = false;
         return this.router.navigate(["auth/signin/code"], { queryParams: { currentEmail: this.existingVaultProfile.email } });
       }
-    }).catch((err) => {
+    })).catch((err) => {
       this.loading = false;
       this.errorMsg = this.deriveSignInErrorMessage(err);
       this.logger.error("Sign-in failed with user message: ", this.errorMsg, "; And error: ", err);
@@ -57324,7 +57331,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     }
   }
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Safari/Chrome privacy workaround methods because Partitioned cookies are not supported in Safari yet
+  // Storage Access API fallback for browsers without usable partitioned cookies.
   // https://blog.certa.dev/third-party-cookie-restrictions-for-iframes-in-safari
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
   //check if the browser is Safari (which requires the Storage Access API for third-party cookies)
@@ -57341,7 +57348,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
   //check if the browser requires storage access permissions, or if we can assume that it is not needed
   checkRequiresStoragePermissions() {
-    return (this.isSafari() || this.isChrome()) && this.isStorageAccessApiSupportedByBrowser();
+    return !this.authService.UsesPartitionedCookie() && (this.isSafari() || this.isChrome()) && this.isStorageAccessApiSupportedByBrowser();
   }
   //check to see if the browser has storage access permissions granted.
   //check to see if the browser has the embedFirstPartyCookie cookie set, which indicates that the user has interacted with the page and granted storage access.
@@ -58093,9 +58100,13 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
   onCodeCompleted(code) {
     this.loading = true;
     this.logger.info("submit finish", this.currentEmail, code);
-    this.authService.VaultAuthFinish(this.currentEmail, code).then((resp) => {
+    this.authService.VaultAuthFinish(this.currentEmail, code).then((resp) => __async(this, null, function* () {
       console.log("VaultAuthFinish result", resp);
+      const isAuthCookieSet = yield this.authService.WaitForVaultAuthCookie();
       this.loading = false;
+      if (!isAuthCookieSet) {
+        return this.router.navigateByUrl("auth/signin/cookies-required");
+      }
       if (resp?.has_verified_identity && resp?.verified_identity_csp_type) {
         this.logger.info("setting verified identity csp_type csp type to", resp.verified_identity_csp_type);
         this.configService.vaultProfileConfig = {
@@ -58104,7 +58115,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
         };
       }
       return this.router.navigateByUrl("dashboard");
-    }).catch((err) => {
+    })).catch((err) => {
       console.error(err);
       this.loading = false;
       if (err?.name) {
