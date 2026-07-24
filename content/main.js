@@ -57201,30 +57201,12 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
     }).then((resp) => __async(this, null, function* () {
-      if (this.configService.systemConfig$.apiMode === ApiMode.Test) {
-        if (!(yield this.authService.WaitForVaultAuthCookie())) {
-          this.loading = false;
-          return this.router.navigateByUrl("auth/signin/cookies-required");
-        }
-        return this.authService.GetJWTPayload().then((payload) => {
-          this.loading = false;
-          if (payload) {
-            if (resp?.has_verified_identity && resp?.verified_identity_csp_type) {
-              this.logger.info("setting verified identity csp_type csp type to", resp.verified_identity_csp_type);
-              this.configService.vaultProfileConfig = {
-                verifiedIdentityCspType: resp.verified_identity_csp_type,
-                verifiedIdentityPatientDemographics: resp.verified_identity_patient_demographics
-              };
-            }
-            return this.router.navigateByUrl("dashboard");
-          } else {
-            return this.router.navigate(["auth/signin/code"], { queryParams: { currentEmail: this.existingVaultProfile.email } });
-          }
-        });
-      } else {
+      if (this.configService.systemConfig$.apiMode === ApiMode.Test && !(yield this.authService.WaitForVaultAuthCookie())) {
         this.loading = false;
-        return this.router.navigate(["auth/signin/code"], { queryParams: { currentEmail: this.existingVaultProfile.email } });
+        return this.router.navigateByUrl("auth/signin/cookies-required");
       }
+      this.loading = false;
+      return this.router.navigate(["auth/signin/code"], { queryParams: { currentEmail: this.existingVaultProfile.email } });
     })).catch((err) => {
       this.loading = false;
       this.errorMsg = this.deriveSignInErrorMessage(err);
@@ -58073,7 +58055,7 @@ var CodeInputModule = class _CodeInputModule {
 // projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts
 function VaultProfileSigninCodeComponent_p_13_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 11);
+    \u0275\u0275elementStart(0, "p", 12);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -58081,6 +58063,19 @@ function VaultProfileSigninCodeComponent_p_13_Template(rf, ctx) {
     const ctx_r0 = \u0275\u0275nextContext();
     \u0275\u0275advance();
     \u0275\u0275textInterpolate(ctx_r0.errorMsg);
+  }
+}
+function VaultProfileSigninCodeComponent_button_23_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r2 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 13);
+    \u0275\u0275listener("click", function VaultProfileSigninCodeComponent_button_23_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r2);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.skipSignInCode());
+    });
+    \u0275\u0275text(1, " Skip ");
+    \u0275\u0275elementEnd();
   }
 }
 var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
@@ -58091,11 +58086,25 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     this.logger = logger;
     this.loading = false;
     this.errorMsg = "";
+    this.canSkipSignInCode = false;
     this.currentEmail = "test@example.com";
     this.codeExpirySeconds = 300;
     this.timeRemaining$ = timer(0, 1e3).pipe(map((n2) => (this.codeExpirySeconds - n2) * 1e3), takeWhile((n2) => n2 >= 0));
   }
   ngOnInit() {
+    void this.checkCanSkipSignInCode();
+  }
+  checkCanSkipSignInCode() {
+    return __async(this, null, function* () {
+      this.canSkipSignInCode = false;
+      if (this.configService.systemConfig$.apiMode !== ApiMode.Test) {
+        return;
+      }
+      this.canSkipSignInCode = !!(yield this.authService.GetJWTPayload());
+    });
+  }
+  skipSignInCode() {
+    return this.router.navigateByUrl("dashboard");
   }
   onCodeCompleted(code) {
     this.loading = true;
@@ -58131,7 +58140,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail" }, decls: 25, vars: 10, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2"], [3, "codeCompleted", "isCodeHidden", "codeLength"], ["id", "verification-error", "class", "text-sm text-red-500", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["id", "verification-countdown", 1, "font-semibold", "text-gray-900"], ["type", "button", "id", "resend-code", 1, "verification-button"], ["type", "button", "id", "use-other-method", 1, "verification-button", 2, "display", "none"], ["id", "verification-error", 1, "text-sm", "text-red-500"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail" }, decls: 26, vars: 11, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2"], [3, "codeCompleted", "isCodeHidden", "codeLength"], ["id", "verification-error", "class", "text-sm text-red-500", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["id", "verification-countdown", 1, "font-semibold", "text-gray-900"], ["type", "button", "id", "resend-code", 1, "verification-button"], ["type", "button", "id", "skip-signin-code", "class", "verification-button", 3, "click", 4, "ngIf"], ["type", "button", "id", "use-other-method", 1, "verification-button", 2, "display", "none"], ["id", "verification-error", 1, "text-sm", "text-red-500"], ["type", "button", "id", "skip-signin-code", 1, "verification-button", 3, "click"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -58161,8 +58170,9 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
         \u0275\u0275elementStart(20, "div", 1)(21, "button", 9);
         \u0275\u0275text(22, " Re-send code ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(23, "button", 10);
-        \u0275\u0275text(24, " Use another verification method ");
+        \u0275\u0275template(23, VaultProfileSigninCodeComponent_button_23_Template, 2, 0, "button", 10);
+        \u0275\u0275elementStart(24, "button", 11);
+        \u0275\u0275text(25, " Use another verification method ");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
@@ -58173,7 +58183,9 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.errorMsg);
         \u0275\u0275advance(4);
-        \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 7, \u0275\u0275pipeBind1(18, 5, ctx.timeRemaining$), "mm:ss"));
+        \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 8, \u0275\u0275pipeBind1(18, 6, ctx.timeRemaining$), "mm:ss"));
+        \u0275\u0275advance(6);
+        \u0275\u0275property("ngIf", ctx.canSkipSignInCode);
       }
     }, dependencies: [
       CommonModule,
