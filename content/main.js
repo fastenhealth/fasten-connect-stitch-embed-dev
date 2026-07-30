@@ -58455,7 +58455,9 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
         };
       }
       this.logger.info("verification result", result);
-      this.router.navigateByUrl("dashboard");
+      this.router.navigateByUrl("dashboard", {
+        state: { identityVerificationSucceeded: true }
+      });
     }, (err) => {
       this.loading = false;
       this.logger.error("verification error", err);
@@ -61522,7 +61524,8 @@ var IsTefcaModeAuthGuard = class _IsTefcaModeAuthGuard {
       if (!this.configService.systemConfig$.tefcaMode) {
         return Promise.resolve(true);
       }
-      const skipIdentityVerification = this.router.getCurrentNavigation()?.extras.state?.["skipIdentityVerification"] === true;
+      const navigationState = this.router.getCurrentNavigation()?.extras.state;
+      const identityVerificationHandled = navigationState?.["skipIdentityVerification"] === true || navigationState?.["identityVerificationSucceeded"] === true;
       return this.authService.GetJWTPayload().then((jwtPayload) => {
         if (!jwtPayload) {
           if (route.url.toString() === "/auth/signin") {
@@ -61531,7 +61534,7 @@ var IsTefcaModeAuthGuard = class _IsTefcaModeAuthGuard {
             this.logger.info("User is not authenticated, redirecting to login page");
             return this.router.navigate(["/auth/signin"]);
           }
-        } else if (!jwtPayload.has_verified_identity || this.configService.systemConfig$.apiMode === ApiMode.Test && !skipIdentityVerification) {
+        } else if (!jwtPayload.has_verified_identity || this.configService.systemConfig$.apiMode === ApiMode.Test && !identityVerificationHandled) {
           if (route.url.toString() === "/auth/identity/verification") {
             return true;
           } else {
