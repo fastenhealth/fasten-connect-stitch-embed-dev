@@ -48636,17 +48636,13 @@ var AuthService = class _AuthService {
     });
   }
   GetCookieSupport() {
-    return __async(this, null, function* () {
-      const partitionedCookie = yield getParsedCookie(FASTEN_PARTITIONED_COOKIE_TEST_NAME);
-      console.log("[AuthService] Parsed Partitioned cookie: ", partitionedCookie);
-      if (partitionedCookie?.partitioned === true) {
-        return CookieSupport.Partitioned;
-      }
-      if (getCookie(FASTEN_COOKIE_TEST_NAME)) {
-        return CookieSupport.Regular;
-      }
-      return CookieSupport.None;
-    });
+    if (getCookie(FASTEN_PARTITIONED_COOKIE_TEST_NAME)) {
+      return CookieSupport.Partitioned;
+    }
+    if (getCookie(FASTEN_COOKIE_TEST_NAME)) {
+      return CookieSupport.Regular;
+    }
+    return CookieSupport.None;
   }
   WaitForCookieSupport() {
     if (!this.cookieSupportPromise) {
@@ -48670,10 +48666,10 @@ var AuthService = class _AuthService {
   }
   detectCookieSupport() {
     return __async(this, null, function* () {
-      let cookie_support = yield this.GetCookieSupport();
+      let cookie_support = this.GetCookieSupport();
       if (cookie_support === CookieSupport.None) {
         yield new Promise((resolve) => setTimeout(resolve, COOKIE_SUPPORT_RECHECK_DELAY_MS));
-        cookie_support = yield this.GetCookieSupport();
+        cookie_support = this.GetCookieSupport();
       }
       this.cookieSupport = cookie_support;
       return cookie_support;
@@ -48735,19 +48731,6 @@ var AuthService = class _AuthService {
     this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _AuthService, factory: _AuthService.\u0275fac, providedIn: "root" });
   }
 };
-function getParsedCookie(name) {
-  return __async(this, null, function* () {
-    const cookieStore = window.cookieStore;
-    if (typeof cookieStore?.get !== "function") {
-      return null;
-    }
-    try {
-      return yield cookieStore.get(name);
-    } catch {
-      return null;
-    }
-  });
-}
 function getCookie(name) {
   const ca = document.cookie.split(";");
   const caLen = ca.length;
