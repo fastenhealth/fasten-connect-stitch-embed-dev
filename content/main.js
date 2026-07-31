@@ -48636,13 +48636,16 @@ var AuthService = class _AuthService {
     });
   }
   GetCookieSupport() {
-    if (getCookie(FASTEN_PARTITIONED_COOKIE_TEST_NAME)) {
-      return CookieSupport.Partitioned;
-    }
-    if (getCookie(FASTEN_COOKIE_TEST_NAME)) {
-      return CookieSupport.Regular;
-    }
-    return CookieSupport.None;
+    return __async(this, null, function* () {
+      const partitionedCookie = yield getParsedCookie(FASTEN_PARTITIONED_COOKIE_TEST_NAME);
+      if (partitionedCookie?.partitioned === true) {
+        return CookieSupport.Partitioned;
+      }
+      if (getCookie(FASTEN_COOKIE_TEST_NAME)) {
+        return CookieSupport.Regular;
+      }
+      return CookieSupport.None;
+    });
   }
   WaitForCookieSupport() {
     if (!this.cookieSupportPromise) {
@@ -48653,12 +48656,23 @@ var AuthService = class _AuthService {
   UsesPartitionedCookie() {
     return this.cookieSupport === CookieSupport.Partitioned;
   }
+  GetDetectedCookieSupport() {
+    return this.cookieSupport;
+  }
+  CanUseStorageAccessFallback() {
+    const sdkMode = this.configService.systemConfig$.sdkMode;
+    return sdkMode === SDKMode.None && typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
+  }
+  UseRegularCookieFallback() {
+    this.cookieSupport = CookieSupport.Regular;
+    this.cookieSupportPromise = Promise.resolve(CookieSupport.Regular);
+  }
   detectCookieSupport() {
     return __async(this, null, function* () {
-      let cookie_support = this.GetCookieSupport();
+      let cookie_support = yield this.GetCookieSupport();
       if (cookie_support === CookieSupport.None) {
         yield new Promise((resolve) => setTimeout(resolve, COOKIE_SUPPORT_RECHECK_DELAY_MS));
-        cookie_support = this.GetCookieSupport();
+        cookie_support = yield this.GetCookieSupport();
       }
       this.cookieSupport = cookie_support;
       return cookie_support;
@@ -48720,6 +48734,19 @@ var AuthService = class _AuthService {
     this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _AuthService, factory: _AuthService.\u0275fac, providedIn: "root" });
   }
 };
+function getParsedCookie(name) {
+  return __async(this, null, function* () {
+    const cookieStore = window.cookieStore;
+    if (typeof cookieStore?.get !== "function") {
+      return null;
+    }
+    try {
+      return yield cookieStore.get(name);
+    } catch {
+      return null;
+    }
+  });
+}
 function getCookie(name) {
   const ca = document.cookie.split(";");
   const caLen = ca.length;
@@ -49661,12 +49688,9 @@ var FastenService = class _FastenService {
   getOrgByPublicId(publicId) {
     let queryParams = {};
     queryParams["public_id"] = publicId;
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/org`, {
-      params: queryParams,
-      withCredentials: true
-    }).pipe(map((response) => {
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/org`, { params: queryParams }).pipe(map((response) => {
       this.logger.info("Organization", response);
-      return response;
+      return response.data;
     }));
   }
   getOrgConfig(publicId) {
@@ -50255,8 +50279,12 @@ var AppComponent = class _AppComponent {
         if (this.tefcaMode) {
           this.authService.WaitForCookieSupport().then((cookieSupport) => __async(this, null, function* () {
             if (cookieSupport === CookieSupport.None) {
-              console.info("[AppComponent] Cookie support was not found!");
-              yield this.router.navigateByUrl("auth/signin/cookies-required");
+              if (this.authService.CanUseStorageAccessFallback()) {
+                console.info("[AppComponent] Cookie probes were blocked; continuing with the Storage Access API fallback");
+              } else {
+                console.info("[AppComponent] Cookie support was not found!");
+                yield this.router.navigateByUrl("auth/signin/cookies-required");
+              }
               return;
             }
             console.info("[AppComponent] Cookie support detected", cookieSupport);
@@ -57136,13 +57164,12 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   get isCspRequestUriSignin() {
     return !!(this.configService.systemConfig$?.tefcaMode && this.configService.systemConfig$?.identityRequestUri);
   }
-  constructor(configService, authService, fastenService, router, logger, deviceDetectorService) {
+  constructor(configService, authService, fastenService, router, logger) {
     this.configService = configService;
     this.authService = authService;
     this.fastenService = fastenService;
     this.router = router;
     this.logger = logger;
-    this.deviceDetectorService = deviceDetectorService;
     this.loading = false;
     this.showMessage = false;
     this.submitted = false;
@@ -57161,13 +57188,8 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     if (this.configService.vaultProfileConfig$.email) {
       this.existingVaultProfile.email = this.configService.vaultProfileConfig$.email;
     }
-    if (this.configService.systemConfig$.sdkMode == SDKMode.ReactNative || this.configService.systemConfig$.sdkMode == SDKMode.Flutter) {
-      this.logger.log(`SDK Mode is ${this.configService.systemConfig$.sdkMode}. Don't attempt to request cookie storage permissions..`);
-      this.needStorageAccessPermissionSubject.next(false);
-      return;
-    }
     if (!this.checkRequiresStoragePermissions()) {
-      this.logger.log("Not Safari and not Chrome, or storage API not supported (and not necessary). Don't attempt to request cookie storage permissions.");
+      this.logger.log("Storage Access API fallback is not required or is unavailable.");
       this.needStorageAccessPermissionSubject.next(false);
     } else {
       this.hasStorageAccess().then((hasAccess) => {
@@ -57190,14 +57212,12 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.configService.vaultProfileConfig = {
       email: this.existingVaultProfile.email
     };
-    let chainPromise = this.authService.Signout().then((result) => {
+    const signoutPromise = this.authService.Signout().then((result) => {
       this.logger.info(result);
       return true;
     });
-    if (this.needStorageAccessPermissionSubject.getValue()) {
-      chainPromise = chainPromise.then(() => this.requestStorageAccess());
-    }
-    chainPromise.then((result) => {
+    const storageAccessPromise = this.needStorageAccessPermissionSubject.getValue() ? this.requestStorageAccess() : Promise.resolve(true);
+    Promise.all([signoutPromise, storageAccessPromise]).then((result) => {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
     }).then((resp) => __async(this, null, function* () {
@@ -57316,21 +57336,13 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   // Storage Access API fallback for browsers without usable partitioned cookies.
   // https://blog.certa.dev/third-party-cookie-restrictions-for-iframes-in-safari
   //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //check if the browser is Safari (which requires the Storage Access API for third-party cookies)
-  isSafari() {
-    return this.deviceDetectorService.browser === BROWSERS.SAFARI;
-  }
-  //check if the browser is Chrome (which also requires the Storage Access API for third-party cookies)
-  isChrome() {
-    return this.deviceDetectorService.browser === BROWSERS.CHROME;
-  }
   //check if the browser supports the Storage Access API (if not, we assume it is not needed)
   isStorageAccessApiSupportedByBrowser() {
-    return "hasStorageAccess" in document && "requestStorageAccess" in document;
+    return typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
   }
   //check if the browser requires storage access permissions, or if we can assume that it is not needed
   checkRequiresStoragePermissions() {
-    return !this.authService.UsesPartitionedCookie() && (this.isSafari() || this.isChrome()) && this.isStorageAccessApiSupportedByBrowser();
+    return this.authService.GetDetectedCookieSupport() === CookieSupport.None && this.authService.CanUseStorageAccessFallback();
   }
   //check to see if the browser has storage access permissions granted.
   //check to see if the browser has the embedFirstPartyCookie cookie set, which indicates that the user has interacted with the page and granted storage access.
@@ -57341,10 +57353,11 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     }
     return document.hasStorageAccess().then((result) => {
       this.logger.log("Storage Access API unpartitioned or already granted!", result);
-      if (document.cookie.split("; ").find((row) => row.startsWith("embedFirstPartyCookie="))?.split("=")[1]) {
+      if (result) {
+        this.authService.UseRegularCookieFallback();
         return true;
       } else {
-        this.logger.log("no embedFirstPartyCookie found, storage access is partitioned or not granted yet.");
+        this.logger.log("Storage access is not granted yet.");
         return false;
       }
     }).catch((error2) => {
@@ -57362,6 +57375,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     }
     return document.requestStorageAccess().then(() => {
       this.logger.log("Storage access granted!");
+      this.authService.UseRegularCookieFallback();
       return Promise.resolve(true);
     }).catch((error2) => {
       this.logger.log("Storage access denied by user", error2);
@@ -57391,7 +57405,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
   static {
     this.\u0275fac = function VaultProfileSigninComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(DeviceDetectorService));
+      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -57542,7 +57556,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 34 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 33 });
 })();
 
 // node_modules/angular-code-input/fesm2022/angular-code-input.mjs
@@ -58201,7 +58215,7 @@ var DevToolsComponent = class _DevToolsComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.showSkip);
       }
-    }, dependencies: [CommonModule, NgClass, NgIf], styles: ["\n\n[_nghost-%COMP%] {\n  display: block;\n}\n.dev-tool-tooltip[_ngcontent-%COMP%] {\n  position: fixed;\n  right: 0.5rem;\n  bottom: 3.75rem;\n  left: 0.5rem;\n  width: fit-content;\n  max-width: min(24rem, calc(100vw - 1rem));\n  margin: 0 auto;\n  padding: 0.5rem 0.625rem;\n  border-radius: 0.375rem;\n  background: #111827;\n  color: #ffffff;\n  font-size: 0.75rem;\n  font-weight: 400;\n  line-height: 1rem;\n  text-align: left;\n  white-space: normal;\n  visibility: hidden;\n  opacity: 0;\n  pointer-events: none;\n  transition: opacity 0.15s ease;\n}\n.dev-tool-action-group[_ngcontent-%COMP%]:hover   .dev-tool-tooltip[_ngcontent-%COMP%], \n.dev-tool-action-group[_ngcontent-%COMP%]:focus-within   .dev-tool-tooltip[_ngcontent-%COMP%] {\n  visibility: visible;\n  opacity: 1;\n}\n@media (max-width: 359px) {\n  .dev-tools-label[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n    display: none;\n  }\n}\n/*# sourceMappingURL=dev-tools.component.css.map */"] });
+    }, dependencies: [CommonModule, NgClass, NgIf], styles: ["\n\n[_nghost-%COMP%] {\n  display: block;\n  min-height: 3.5rem;\n}\n.dev-tool-tooltip[_ngcontent-%COMP%] {\n  position: fixed;\n  right: 0.5rem;\n  bottom: 3.75rem;\n  left: 0.5rem;\n  width: fit-content;\n  max-width: min(24rem, calc(100vw - 1rem));\n  margin: 0 auto;\n  padding: 0.5rem 0.625rem;\n  border-radius: 0.375rem;\n  background: #111827;\n  color: #ffffff;\n  font-size: 0.75rem;\n  font-weight: 400;\n  line-height: 1rem;\n  text-align: left;\n  white-space: normal;\n  visibility: hidden;\n  opacity: 0;\n  pointer-events: none;\n  transition: opacity 0.15s ease;\n}\n.dev-tool-action-group[_ngcontent-%COMP%]:hover   .dev-tool-tooltip[_ngcontent-%COMP%], \n.dev-tool-action-group[_ngcontent-%COMP%]:focus-within   .dev-tool-tooltip[_ngcontent-%COMP%] {\n  visibility: visible;\n  opacity: 1;\n}\n@media (max-width: 359px) {\n  .dev-tools-label[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n    display: none;\n  }\n}\n/*# sourceMappingURL=dev-tools.component.css.map */"] });
   }
 };
 (() => {
