@@ -48638,6 +48638,7 @@ var AuthService = class _AuthService {
   GetCookieSupport() {
     return __async(this, null, function* () {
       const partitionedCookie = yield getParsedCookie(FASTEN_PARTITIONED_COOKIE_TEST_NAME);
+      console.log("[AuthService] Parsed Partitioned cookie: ", partitionedCookie);
       if (partitionedCookie?.partitioned === true) {
         return CookieSupport.Partitioned;
       }
@@ -50280,14 +50281,14 @@ var AppComponent = class _AppComponent {
           this.authService.WaitForCookieSupport().then((cookieSupport) => __async(this, null, function* () {
             if (cookieSupport === CookieSupport.None) {
               if (this.authService.CanUseStorageAccessFallback()) {
-                console.info("[AppComponent] Cookie probes were blocked; continuing with the Storage Access API fallback");
+                this.logger.info("[AppComponent] Cookie probes were blocked; continuing with the Storage Access API fallback");
               } else {
-                console.info("[AppComponent] Cookie support was not found!");
+                this.logger.info("[AppComponent] Cookie support was not found!");
                 yield this.router.navigateByUrl("auth/signin/cookies-required");
               }
               return;
             }
-            console.info("[AppComponent] Cookie support detected", cookieSupport);
+            this.logger.info("[AppComponent] Cookie support detected", cookieSupport);
           })).finally(() => this.loading = false);
         } else {
           this.loading = false;
