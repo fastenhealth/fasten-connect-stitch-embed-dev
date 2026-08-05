@@ -7477,6 +7477,28 @@ var EmptyError = createErrorClass((_super) => function EmptyErrorImpl() {
   this.message = "no elements in sequence";
 });
 
+// node_modules/rxjs/dist/esm/internal/firstValueFrom.js
+function firstValueFrom(source, config2) {
+  const hasConfig = typeof config2 === "object";
+  return new Promise((resolve, reject) => {
+    const subscriber = new SafeSubscriber({
+      next: (value) => {
+        resolve(value);
+        subscriber.unsubscribe();
+      },
+      error: reject,
+      complete: () => {
+        if (hasConfig) {
+          resolve(config2.defaultValue);
+        } else {
+          reject(new EmptyError());
+        }
+      }
+    });
+    source.subscribe(subscriber);
+  });
+}
+
 // node_modules/rxjs/dist/esm/internal/util/isDate.js
 function isValidDate(value) {
   return value instanceof Date && !isNaN(value);
@@ -48574,41 +48596,27 @@ function createRemoteJWKSet(url, options) {
 
 // projects/fasten-connect-stitch-embed/src/app/services/auth.service.ts
 var FASTEN_AUTH_VAULT_COOKIE_NAME = "fasten_connect_auth_vault";
-var FASTEN_COOKIE_TEST_NAME = "fasten_cookie_test";
-var FASTEN_PARTITIONED_COOKIE_TEST_NAME = "fasten_part_cookie_test";
-var COOKIE_SUPPORT_RECHECK_DELAY_MS = 100;
 var VAULT_AUTH_COOKIE_RECHECK_DELAY_MS = 100;
-var CookieSupport;
-(function(CookieSupport2) {
-  CookieSupport2["None"] = "none";
-  CookieSupport2["Partitioned"] = "partitioned";
-  CookieSupport2["Regular"] = "regular";
-})(CookieSupport || (CookieSupport = {}));
 var AuthService = class _AuthService {
   constructor(_httpClient, configService) {
     this._httpClient = _httpClient;
     this.configService = configService;
     this.IsAuthenticatedSubject = new BehaviorSubject(false);
-    this.cookieSupport = CookieSupport.None;
   }
   VaultAuthBegin(email, cspPromptForce) {
     return __async(this, null, function* () {
-      const cookieSupport = yield this.WaitForCookieSupport();
       let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_begin`, {
         "email": email,
-        "csp_prompt_force": cspPromptForce,
-        "part_cookie": cookieSupport === CookieSupport.Partitioned
+        "csp_prompt_force": cspPromptForce
       }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
       return resp;
     });
   }
   VaultAuthFinish(email, code) {
     return __async(this, null, function* () {
-      const cookieSupport = yield this.WaitForCookieSupport();
       let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_finish`, {
         "email": email,
-        "code": code,
-        "part_cookie": cookieSupport === CookieSupport.Partitioned
+        "code": code
       }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
       return resp;
     });
@@ -48635,44 +48643,16 @@ var AuthService = class _AuthService {
       return this.IsVaultAuthCookieSet();
     });
   }
-  GetCookieSupport() {
-    if (getCookie(FASTEN_PARTITIONED_COOKIE_TEST_NAME)) {
-      return CookieSupport.Partitioned;
-    }
-    if (getCookie(FASTEN_COOKIE_TEST_NAME)) {
-      return CookieSupport.Regular;
-    }
-    return CookieSupport.None;
-  }
-  WaitForCookieSupport() {
-    if (!this.cookieSupportPromise) {
-      this.cookieSupportPromise = this.detectCookieSupport();
-    }
-    return this.cookieSupportPromise;
-  }
-  UsesPartitionedCookie() {
-    return this.cookieSupport === CookieSupport.Partitioned;
-  }
-  GetDetectedCookieSupport() {
-    return this.cookieSupport;
-  }
-  CanUseStorageAccessFallback() {
-    const sdkMode = this.configService.systemConfig$.sdkMode;
-    return sdkMode === SDKMode.None && typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
-  }
-  UseRegularCookieFallback() {
-    this.cookieSupport = CookieSupport.Regular;
-    this.cookieSupportPromise = Promise.resolve(CookieSupport.Regular);
-  }
-  detectCookieSupport() {
+  CheckCookieSupport() {
     return __async(this, null, function* () {
-      let cookie_support = this.GetCookieSupport();
-      if (cookie_support === CookieSupport.None) {
-        yield new Promise((resolve) => setTimeout(resolve, COOKIE_SUPPORT_RECHECK_DELAY_MS));
-        cookie_support = this.GetCookieSupport();
+      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_support`, null, {
+        withCredentials: true
+      }));
+      const supported = response.data?.supported;
+      if (typeof supported !== "boolean") {
+        throw new Error(`Invalid cookie support response: ${supported}`);
       }
-      this.cookieSupport = cookie_support;
-      return cookie_support;
+      return supported;
     });
   }
   GetVaultAuthCookieDebugInfo() {
@@ -49593,12 +49573,11 @@ var DeviceDetectorService = class _DeviceDetectorService {
 
 // projects/fasten-connect-stitch-embed/src/app/services/fasten.service.ts
 var FastenService = class _FastenService {
-  constructor(_httpClient, deviceService, configService, logger, authService) {
+  constructor(_httpClient, deviceService, configService, logger) {
     this._httpClient = _httpClient;
     this.deviceService = deviceService;
     this.configService = configService;
     this.logger = logger;
-    this.authService = authService;
     this.configService.systemConfigSubject.subscribe((systemConfig) => {
       this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
@@ -49716,17 +49695,6 @@ var FastenService = class _FastenService {
       return {};
     }));
   }
-  // public storageApiWithPopup(): Observable<CallbackPayload> {
-  storageApiUserInteractionWithPopup() {
-    const redirectUrl = new URL(`${window.location.origin}/consent`);
-    const isDesktop = this.deviceService.isDesktop();
-    let features = "";
-    if (isDesktop) {
-      features = "popup=true,width=700,height=600";
-    }
-    let openedWindow = window.open(redirectUrl.toString(), "_blank", features);
-    return this.waitForPopupNotification(openedWindow, SDKMode.None);
-  }
   verificationWithWebsocket(cspType) {
     const roomId = v4_default();
     const websocketUrl = this.generateWebsocketURL(roomId);
@@ -49735,23 +49703,10 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
     redirectUrlParts.searchParams.set("room_id", roomId);
-    redirectUrlParts.searchParams.set("part_cookie", this.authService.UsesPartitionedCookie().toString());
     this.logger.debug(redirectUrlParts.toString());
-    let openedWindow;
-    const usesPartitionedCookie = this.authService.UsesPartitionedCookie();
-    if (usesPartitionedCookie) {
-      this.logger.warn("partitioned popup");
-      openedWindow = this.openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts);
-    } else {
-      openedWindow = this.openWindowInPopup(redirectUrlParts);
-    }
+    const openedWindow = this.openWindowInPopupForIdentityVerification(redirectUrlParts);
     return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(
-      switchMap((payload) => {
-        if (usesPartitionedCookie) {
-          return from(this.refreshAuthCookie()).pipe(map(() => payload));
-        }
-        return of(payload);
-      }),
+      switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))),
       //TODO: this is a flaky way to handle the issue where the websocket response is sent before the cookie is set in the browser
       // wait 2 seconds here -- sometimes the websocket sends the response before the cookie has been recieved by the browser (in the modal popup)
       delay(2500)
@@ -49762,10 +49717,8 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("public_id", this.configService.systemConfig$.publicId);
     redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
-    redirectUrlParts.searchParams.set("part_cookie", this.authService.UsesPartitionedCookie().toString());
-    const usesPartitionedCookie = this.authService.UsesPartitionedCookie();
-    const openedWindow = usesPartitionedCookie ? this.openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts) : this.openWindowInPopup(redirectUrlParts);
-    return this.waitForPopupNotification(openedWindow).pipe(switchMap((payload) => usesPartitionedCookie ? from(this.refreshAuthCookie()).pipe(map(() => payload)) : of(payload)));
+    const openedWindow = this.openWindowInPopupForIdentityVerification(redirectUrlParts);
+    return this.waitForPopupNotification(openedWindow).pipe(switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))));
   }
   accountConnectWithWebsocket(connectData) {
     const roomId = v4_default();
@@ -49801,8 +49754,7 @@ var FastenService = class _FastenService {
   refreshAuthCookie() {
     return __async(this, null, function* () {
       return yield this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, { withCredentials: true, params: {
-        "public_id": this.configService.systemConfig$.publicId,
-        "part_cookie": this.authService.UsesPartitionedCookie()
+        "public_id": this.configService.systemConfig$.publicId
       } }).toPromise();
     });
   }
@@ -49815,16 +49767,16 @@ var FastenService = class _FastenService {
     }
     return window.open(redirectUrlParts.toString(), "_blank", features);
   }
-  //SECURITY: this is specifically for the identity verification flow. Some browsers require Partitioned Cookies (since the embed app
-  // is in a third-party context), and those cookies are not accessible in a regular popup window.
-  // We must send the JWT token to the popup via a POST message and then the popup can use that token to set the cookie in its own context.
-  openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts) {
+  // SECURITY: identity verification crosses from the embedded context into a
+  // top-level popup. POST the JWT so the popup does not depend on sharing the
+  // iframe's cookie partition. The API determines cookie attributes itself.
+  openWindowInPopupForIdentityVerification(redirectUrlParts) {
     const isDesktop = this.deviceService.isDesktop();
     let features = "";
     if (isDesktop) {
       features = "popup=true,width=700,height=600";
     }
-    var target = "PartitionedPopupWindow" + Math.random().toString(36).substring(2, 7);
+    var target = "IdentityVerificationPopupWindow" + Math.random().toString(36).substring(2, 7);
     var params = { [FASTEN_AUTH_VAULT_COOKIE_NAME]: getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME) };
     var form = document.createElement("form");
     form.setAttribute("method", "post");
@@ -49895,7 +49847,7 @@ var FastenService = class _FastenService {
   }
   static {
     this.\u0275fac = function FastenService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _FastenService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger), \u0275\u0275inject(AuthService));
+      return new (__ngFactoryType__ || _FastenService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
     };
   }
   static {
@@ -50261,17 +50213,13 @@ var AppComponent = class _AppComponent {
           return;
         }
         if (this.tefcaMode) {
-          this.authService.WaitForCookieSupport().then((cookieSupport) => __async(this, null, function* () {
-            if (cookieSupport === CookieSupport.None) {
-              if (this.authService.CanUseStorageAccessFallback()) {
-                this.logger.info("[AppComponent] Cookie probes were blocked; continuing with the Storage Access API fallback");
-              } else {
-                this.logger.info("[AppComponent] Cookie support was not found!");
-                yield this.router.navigateByUrl("auth/signin/cookies-required");
-              }
+          this.authService.CheckCookieSupport().then((cookieSupported) => __async(this, null, function* () {
+            if (!cookieSupported) {
+              this.logger.info("[AppComponent] Cookie support was not found!");
+              yield this.router.navigateByUrl("auth/signin/cookies-required");
               return;
             }
-            this.logger.info("[AppComponent] Cookie support detected", cookieSupport);
+            this.logger.info("[AppComponent] Cookie support detected");
           })).finally(() => this.loading = false);
         } else {
           this.loading = false;
@@ -56944,20 +56892,18 @@ var TEST_IDENTITY_PHONE_NUMBERS = Object.freeze({
 var TEST_IDENTITY_EMAILS = Object.freeze(Object.keys(TEST_IDENTITY_PHONE_NUMBERS));
 
 // projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts
-var _c0 = (a0, a1) => ({ "space-y-3": a0, "space-y-6": a1 });
-var _c1 = (a0) => ({ "custom-checkbox-checked": a0 });
-function VaultProfileSigninComponent_div_47_Template(rf, ctx) {
+function VaultProfileSigninComponent_div_45_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 35)(1, "div", 36);
+    \u0275\u0275elementStart(0, "div", 37)(1, "div", 38);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 37);
-    \u0275\u0275element(3, "path", 38);
+    \u0275\u0275elementStart(2, "svg", 39);
+    \u0275\u0275element(3, "path", 40);
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(4, "div", 39)(5, "p", 40);
+    \u0275\u0275elementStart(4, "div", 41)(5, "p", 42);
     \u0275\u0275text(6, "We couldn't sign you in.");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "p", 41);
+    \u0275\u0275elementStart(7, "p", 43);
     \u0275\u0275text(8);
     \u0275\u0275elementEnd()()()();
   }
@@ -56967,19 +56913,19 @@ function VaultProfileSigninComponent_div_47_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r1.errorMsg);
   }
 }
-function VaultProfileSigninComponent_ng_container_48_datalist_5_option_1_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_46_datalist_5_option_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "option", 48);
+    \u0275\u0275element(0, "option", 50);
   }
   if (rf & 2) {
     const testIdentityEmail_r4 = ctx.$implicit;
     \u0275\u0275property("value", testIdentityEmail_r4);
   }
 }
-function VaultProfileSigninComponent_ng_container_48_datalist_5_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_46_datalist_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "datalist", 46);
-    \u0275\u0275template(1, VaultProfileSigninComponent_ng_container_48_datalist_5_option_1_Template, 1, 1, "option", 47);
+    \u0275\u0275elementStart(0, "datalist", 48);
+    \u0275\u0275template(1, VaultProfileSigninComponent_ng_container_46_datalist_5_option_1_Template, 1, 1, "option", 49);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -56988,31 +56934,31 @@ function VaultProfileSigninComponent_ng_container_48_datalist_5_Template(rf, ctx
     \u0275\u0275property("ngForOf", ctx_r1.testIdentityEmails);
   }
 }
-function VaultProfileSigninComponent_ng_container_48_p_6_span_1_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_46_p_6_span_1_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, " Email is required. ");
     \u0275\u0275elementEnd();
   }
 }
-function VaultProfileSigninComponent_ng_container_48_p_6_span_2_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_46_p_6_span_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, " Email must be at least 4 characters long. ");
     \u0275\u0275elementEnd();
   }
 }
-function VaultProfileSigninComponent_ng_container_48_p_6_span_3_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_46_p_6_span_3_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, " Email must be a valid email address. ");
     \u0275\u0275elementEnd();
   }
 }
-function VaultProfileSigninComponent_ng_container_48_p_6_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_46_p_6_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 49);
-    \u0275\u0275template(1, VaultProfileSigninComponent_ng_container_48_p_6_span_1_Template, 2, 0, "span", 32)(2, VaultProfileSigninComponent_ng_container_48_p_6_span_2_Template, 2, 0, "span", 32)(3, VaultProfileSigninComponent_ng_container_48_p_6_span_3_Template, 2, 0, "span", 32);
+    \u0275\u0275elementStart(0, "p", 51);
+    \u0275\u0275template(1, VaultProfileSigninComponent_ng_container_46_p_6_span_1_Template, 2, 0, "span", 31)(2, VaultProfileSigninComponent_ng_container_46_p_6_span_2_Template, 2, 0, "span", 31)(3, VaultProfileSigninComponent_ng_container_46_p_6_span_3_Template, 2, 0, "span", 31);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -57026,27 +56972,27 @@ function VaultProfileSigninComponent_ng_container_48_p_6_Template(rf, ctx) {
     \u0275\u0275property("ngIf", email_r5.errors == null ? null : email_r5.errors["email"]);
   }
 }
-function VaultProfileSigninComponent_ng_container_48_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_46_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "label", 42);
+    \u0275\u0275elementStart(1, "label", 44);
     \u0275\u0275text(2, "Email address");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "input", 43, 2);
-    \u0275\u0275twoWayListener("ngModelChange", function VaultProfileSigninComponent_ng_container_48_Template_input_ngModelChange_3_listener($event) {
+    \u0275\u0275elementStart(3, "input", 45, 1);
+    \u0275\u0275twoWayListener("ngModelChange", function VaultProfileSigninComponent_ng_container_46_Template_input_ngModelChange_3_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.existingVaultProfile.email, $event) || (ctx_r1.existingVaultProfile.email = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275listener("ngModelChange", function VaultProfileSigninComponent_ng_container_48_Template_input_ngModelChange_3_listener($event) {
+    \u0275\u0275listener("ngModelChange", function VaultProfileSigninComponent_ng_container_46_Template_input_ngModelChange_3_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.existingVaultProfile.email = $event.toLowerCase().trim());
     });
     \u0275\u0275elementEnd();
-    \u0275\u0275template(5, VaultProfileSigninComponent_ng_container_48_datalist_5_Template, 2, 1, "datalist", 44)(6, VaultProfileSigninComponent_ng_container_48_p_6_Template, 4, 3, "p", 45);
+    \u0275\u0275template(5, VaultProfileSigninComponent_ng_container_46_datalist_5_Template, 2, 1, "datalist", 46)(6, VaultProfileSigninComponent_ng_container_46_p_6_Template, 4, 3, "p", 47);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
@@ -57061,85 +57007,7 @@ function VaultProfileSigninComponent_ng_container_48_Template(rf, ctx) {
     \u0275\u0275property("ngIf", email_r5.invalid && (email_r5.dirty || email_r5.touched));
   }
 }
-function VaultProfileSigninComponent_p_49_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 50);
-    \u0275\u0275text(1, " By clicking continue you agree to: ");
-    \u0275\u0275element(2, "br");
-    \u0275\u0275text(3, "Fasten's ");
-    \u0275\u0275elementStart(4, "a", 51);
-    \u0275\u0275text(5, "Privacy Policy");
-    \u0275\u0275elementEnd();
-    \u0275\u0275text(6, " and ");
-    \u0275\u0275elementStart(7, "a", 52);
-    \u0275\u0275text(8, "Terms & Conditions");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(9, "br");
-    \u0275\u0275text(10);
-    \u0275\u0275pipe(11, "async");
-    \u0275\u0275elementStart(12, "a", 53);
-    \u0275\u0275pipe(13, "async");
-    \u0275\u0275text(14, "Privacy Policy");
-    \u0275\u0275elementEnd()();
-  }
-  if (rf & 2) {
-    let tmp_3_0;
-    let tmp_4_0;
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(10);
-    \u0275\u0275textInterpolate1("", ((tmp_3_0 = \u0275\u0275pipeBind1(11, 2, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.name) || "Unknown", "'s ");
-    \u0275\u0275advance(2);
-    \u0275\u0275propertyInterpolate("href", (tmp_4_0 = \u0275\u0275pipeBind1(13, 4, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_4_0.org == null ? null : tmp_4_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
-  }
-}
-function VaultProfileSigninComponent_ng_template_51_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r6 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "p", 50);
-    \u0275\u0275element(1, "br");
-    \u0275\u0275text(2, "Fasten's ");
-    \u0275\u0275elementStart(3, "span", 54);
-    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_51_Template_span_click_3_listener() {
-      \u0275\u0275restoreView(_r6);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.awaitUserInteractionCompleted());
-    });
-    \u0275\u0275text(4, "Privacy Policy");
-    \u0275\u0275elementEnd();
-    \u0275\u0275text(5, " and ");
-    \u0275\u0275elementStart(6, "a", 52);
-    \u0275\u0275text(7, "Terms & Conditions");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(8, "br");
-    \u0275\u0275text(9);
-    \u0275\u0275pipe(10, "async");
-    \u0275\u0275elementStart(11, "a", 53);
-    \u0275\u0275pipe(12, "async");
-    \u0275\u0275text(13, "Privacy Policy");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(14, "div", 55)(15, "span", 56);
-    \u0275\u0275pipe(16, "async");
-    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_51_Template_span_click_15_listener() {
-      \u0275\u0275restoreView(_r6);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.awaitUserInteractionCompleted());
-    });
-    \u0275\u0275text(17, " I agree to Fasten Health's Privacy Policy ");
-    \u0275\u0275elementEnd()();
-  }
-  if (rf & 2) {
-    let tmp_3_0;
-    let tmp_4_0;
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(9);
-    \u0275\u0275textInterpolate1("", ((tmp_3_0 = \u0275\u0275pipeBind1(10, 3, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.name) || "Unknown", "'s ");
-    \u0275\u0275advance(2);
-    \u0275\u0275propertyInterpolate("href", (tmp_4_0 = \u0275\u0275pipeBind1(12, 5, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_4_0.org == null ? null : tmp_4_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
-    \u0275\u0275advance(4);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction1(9, _c1, \u0275\u0275pipeBind1(16, 7, ctx_r1.userInteractionCompletedSubject)));
-  }
-}
-function VaultProfileSigninComponent_app_spinner_56_Template(rf, ctx) {
+function VaultProfileSigninComponent_app_spinner_63_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275element(0, "app-spinner");
   }
@@ -57148,10 +57016,9 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   get isCspRequestUriSignin() {
     return !!(this.configService.systemConfig$?.tefcaMode && this.configService.systemConfig$?.identityRequestUri);
   }
-  constructor(configService, authService, fastenService, router, logger) {
+  constructor(configService, authService, router, logger) {
     this.configService = configService;
     this.authService = authService;
-    this.fastenService = fastenService;
     this.router = router;
     this.logger = logger;
     this.loading = false;
@@ -57161,9 +57028,6 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.errorMsg = "";
     this.message = "";
     this.testIdentityEmails = TEST_IDENTITY_EMAILS;
-    this.needStorageAccessPermissionSubject = new BehaviorSubject(false);
-    this.userInteractionWindowOpened = false;
-    this.userInteractionCompletedSubject = new BehaviorSubject(false);
     this.ApiMode = ApiMode;
   }
   ngOnInit() {
@@ -57171,18 +57035,6 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.setMessage(urlParams.get("action") || "");
     if (this.configService.vaultProfileConfig$.email) {
       this.existingVaultProfile.email = this.configService.vaultProfileConfig$.email;
-    }
-    if (!this.checkRequiresStoragePermissions()) {
-      this.logger.log("Storage Access API fallback is not required or is unavailable.");
-      this.needStorageAccessPermissionSubject.next(false);
-    } else {
-      this.hasStorageAccess().then((hasAccess) => {
-        if (hasAccess) {
-          this.needStorageAccessPermissionSubject.next(false);
-        } else {
-          this.needStorageAccessPermissionSubject.next(true);
-        }
-      });
     }
   }
   signinSubmit() {
@@ -57196,12 +57048,10 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.configService.vaultProfileConfig = {
       email: this.existingVaultProfile.email
     };
-    const signoutPromise = this.authService.Signout().then((result) => {
+    this.authService.Signout().then((result) => {
       this.logger.info(result);
       return true;
-    });
-    const storageAccessPromise = this.needStorageAccessPermissionSubject.getValue() ? this.requestStorageAccess() : Promise.resolve(true);
-    Promise.all([signoutPromise, storageAccessPromise]).then((result) => {
+    }).then((result) => {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
     }).then((resp) => __async(this, null, function* () {
@@ -57316,173 +57166,114 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       this.message = "Password successfully changed! Please sign in with your new password.";
     }
   }
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Storage Access API fallback for browsers without usable partitioned cookies.
-  // https://blog.certa.dev/third-party-cookie-restrictions-for-iframes-in-safari
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //check if the browser supports the Storage Access API (if not, we assume it is not needed)
-  isStorageAccessApiSupportedByBrowser() {
-    return typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
-  }
-  //check if the browser requires storage access permissions, or if we can assume that it is not needed
-  checkRequiresStoragePermissions() {
-    return this.authService.GetDetectedCookieSupport() === CookieSupport.None && this.authService.CanUseStorageAccessFallback();
-  }
-  //check to see if the browser has storage access permissions granted.
-  //check to see if the browser has the embedFirstPartyCookie cookie set, which indicates that the user has interacted with the page and granted storage access.
-  hasStorageAccess() {
-    if (!this.isStorageAccessApiSupportedByBrowser()) {
-      this.logger.warn("Storage Access API not available in this browser.");
-      return Promise.resolve(true);
-    }
-    return document.hasStorageAccess().then((result) => {
-      this.logger.log("Storage Access API unpartitioned or already granted!", result);
-      if (result) {
-        this.authService.UseRegularCookieFallback();
-        return true;
-      } else {
-        this.logger.log("Storage access is not granted yet.");
-        return false;
-      }
-    }).catch((error2) => {
-      this.logger.error("Storage access is partitioned and has not been granted", error2);
-      return false;
-    });
-  }
-  //assuming that the user has visited the /cookie URL and interacted with the page, lets attempt to request storage access
-  // the user will be promted to allow storage access, and if they do, we can continue.
-  // this function must be called from an event handler (where the user interacted wiht the page) -- ie. a click handler
-  requestStorageAccess() {
-    if (!this.isStorageAccessApiSupportedByBrowser()) {
-      this.logger.warn("Storage Access API not available in this browser.");
-      return Promise.resolve(true);
-    }
-    return document.requestStorageAccess().then(() => {
-      this.logger.log("Storage access granted!");
-      this.authService.UseRegularCookieFallback();
-      return Promise.resolve(true);
-    }).catch((error2) => {
-      this.logger.log("Storage access denied by user", error2);
-      alert("Cookies are required for the Fasten widget to function. Please allow storage access to continue.");
-      return Promise.reject(false);
-    });
-  }
-  awaitUserInteractionCompleted() {
-    if (!this.needStorageAccessPermissionSubject.getValue()) {
-      this.logger.log("No storage access required, no user interaction needed.");
-      return;
-    }
-    if (this.userInteractionCompletedSubject.getValue()) {
-      this.logger.log("User interaction already completed, no need to wait.");
-      return;
-    }
-    if (this.userInteractionWindowOpened) {
-      this.logger.log("User interaction window already opened, waiting for completion.");
-      return;
-    }
-    this.userInteractionWindowOpened = true;
-    this.fastenService.storageApiUserInteractionWithPopup().subscribe((result) => {
-      this.logger.log("User interaction completed", result);
-      this.userInteractionCompletedSubject.next(result.success);
-      this.userInteractionWindowOpened = false;
-    });
-  }
   static {
     this.\u0275fac = function VaultProfileSigninComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], decls: 58, vars: 26, consts: [["vaultProfileForm", "ngForm"], ["needStorageAccessPermissionTemplate", ""], ["email", "ngModel"], ["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [3, "ngSubmit", "ngClass"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], [4, "ngIf"], ["class", "text-xs text-gray-400 text-center", 4, "ngIf", "ngIfElse"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "block", "text-sm", "font-medium", "text-gray-700"], ["name", "email", "required", "", "email", "", "minlength", "4", "type", "email", "placeholder", "you@example.com", 1, "block", "w-full", "mt-2", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["id", "test-identity-emails", 4, "ngIf"], ["id", "initialError", "class", "text-sm text-red-500", 4, "ngIf"], ["id", "test-identity-emails"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], ["id", "initialError", 1, "text-sm", "text-red-500"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], [1, "text-gray-500", "hover:text-gray-600", "underline", 3, "click"], [1, "flex", "items-center", "justify-center"], [1, "custom-checkbox", "ml-2", "text-sm", "text-gray-600", 3, "click", "ngClass"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], decls: 65, vars: 16, consts: [["vaultProfileForm", "ngForm"], ["email", "ngModel"], ["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [1, "space-y-6", 3, "ngSubmit"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], [4, "ngIf"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "block", "text-sm", "font-medium", "text-gray-700"], ["name", "email", "required", "", "email", "", "minlength", "4", "type", "email", "placeholder", "you@example.com", 1, "block", "w-full", "mt-2", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["id", "test-identity-emails", 4, "ngIf"], ["id", "initialError", "class", "text-sm text-red-500", 4, "ngIf"], ["id", "test-identity-emails"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], ["id", "initialError", 1, "text-sm", "text-red-500"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
       if (rf & 1) {
         const _r1 = \u0275\u0275getCurrentView();
-        \u0275\u0275elementStart(0, "div", 3);
+        \u0275\u0275elementStart(0, "div", 2);
         \u0275\u0275element(1, "app-header");
-        \u0275\u0275elementStart(2, "div", 4)(3, "div", 5);
-        \u0275\u0275element(4, "img", 6);
+        \u0275\u0275elementStart(2, "div", 3)(3, "div", 4);
+        \u0275\u0275element(4, "img", 5);
         \u0275\u0275pipe(5, "async");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(6, "div", 7);
-        \u0275\u0275element(7, "div", 8)(8, "div", 9)(9, "div", 10);
+        \u0275\u0275elementStart(6, "div", 6);
+        \u0275\u0275element(7, "div", 7)(8, "div", 8)(9, "div", 9);
         \u0275\u0275elementEnd();
         \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(10, "svg", 11);
-        \u0275\u0275element(11, "path", 12)(12, "path", 13)(13, "path", 14)(14, "path", 15)(15, "path", 16)(16, "path", 17);
+        \u0275\u0275elementStart(10, "svg", 10);
+        \u0275\u0275element(11, "path", 11)(12, "path", 12)(13, "path", 13)(14, "path", 14)(15, "path", 15)(16, "path", 16);
         \u0275\u0275elementEnd()();
         \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(17, "div", 18)(18, "h2", 19);
+        \u0275\u0275elementStart(17, "div", 17)(18, "h2", 18);
         \u0275\u0275text(19, "Connect Your Health Records");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(20, "p", 20);
+        \u0275\u0275elementStart(20, "p", 19);
         \u0275\u0275text(21);
         \u0275\u0275pipe(22, "async");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(23, "div", 21)(24, "div", 22)(25, "div", 23);
+        \u0275\u0275elementStart(23, "div", 20)(24, "div", 21)(25, "div", 22);
         \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(26, "svg", 24);
-        \u0275\u0275element(27, "path", 25);
+        \u0275\u0275elementStart(26, "svg", 23);
+        \u0275\u0275element(27, "path", 24);
         \u0275\u0275elementEnd()();
         \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(28, "div")(29, "h3", 26);
+        \u0275\u0275elementStart(28, "div")(29, "h3", 25);
         \u0275\u0275text(30, "Safe");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(31, "p", 20);
+        \u0275\u0275elementStart(31, "p", 19);
         \u0275\u0275text(32, " Securely connect your medical records with bank-level encryption ");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(33, "div", 22)(34, "div", 23);
+        \u0275\u0275elementStart(33, "div", 21)(34, "div", 22);
         \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(35, "svg", 27);
-        \u0275\u0275element(36, "rect", 28)(37, "path", 29);
+        \u0275\u0275elementStart(35, "svg", 26);
+        \u0275\u0275element(36, "rect", 27)(37, "path", 28);
         \u0275\u0275elementEnd()();
         \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(38, "div")(39, "h3", 26);
+        \u0275\u0275elementStart(38, "div")(39, "h3", 25);
         \u0275\u0275text(40, "Private");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(41, "p", 20);
+        \u0275\u0275elementStart(41, "p", 19);
         \u0275\u0275text(42, " We never sell your personal info and only use it with your permission ");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(43, "form", 30, 0);
-        \u0275\u0275pipe(45, "async");
-        \u0275\u0275pipe(46, "async");
+        \u0275\u0275elementStart(43, "form", 29, 0);
         \u0275\u0275listener("ngSubmit", function VaultProfileSigninComponent_Template_form_ngSubmit_43_listener() {
           \u0275\u0275restoreView(_r1);
           return \u0275\u0275resetView(ctx.signinSubmit());
         });
-        \u0275\u0275template(47, VaultProfileSigninComponent_div_47_Template, 9, 1, "div", 31)(48, VaultProfileSigninComponent_ng_container_48_Template, 7, 4, "ng-container", 32)(49, VaultProfileSigninComponent_p_49_Template, 15, 6, "p", 33);
-        \u0275\u0275pipe(50, "async");
-        \u0275\u0275template(51, VaultProfileSigninComponent_ng_template_51_Template, 18, 11, "ng-template", null, 1, \u0275\u0275templateRefExtractor);
-        \u0275\u0275elementStart(53, "button", 34);
-        \u0275\u0275pipe(54, "async");
-        \u0275\u0275pipe(55, "async");
-        \u0275\u0275template(56, VaultProfileSigninComponent_app_spinner_56_Template, 1, 0, "app-spinner", 32);
-        \u0275\u0275text(57, " Continue ");
+        \u0275\u0275template(45, VaultProfileSigninComponent_div_45_Template, 9, 1, "div", 30)(46, VaultProfileSigninComponent_ng_container_46_Template, 7, 4, "ng-container", 31);
+        \u0275\u0275elementStart(47, "p", 32);
+        \u0275\u0275text(48, " By clicking continue you agree to: ");
+        \u0275\u0275element(49, "br");
+        \u0275\u0275text(50, "Fasten's ");
+        \u0275\u0275elementStart(51, "a", 33);
+        \u0275\u0275text(52, "Privacy Policy");
+        \u0275\u0275elementEnd();
+        \u0275\u0275text(53, " and ");
+        \u0275\u0275elementStart(54, "a", 34);
+        \u0275\u0275text(55, "Terms & Conditions");
+        \u0275\u0275elementEnd();
+        \u0275\u0275element(56, "br");
+        \u0275\u0275text(57);
+        \u0275\u0275pipe(58, "async");
+        \u0275\u0275elementStart(59, "a", 35);
+        \u0275\u0275pipe(60, "async");
+        \u0275\u0275text(61, "Privacy Policy");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(62, "button", 36);
+        \u0275\u0275template(63, VaultProfileSigninComponent_app_spinner_63_Template, 1, 0, "app-spinner", 31);
+        \u0275\u0275text(64, " Continue ");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
+        let tmp_1_0;
         let tmp_2_0;
-        let tmp_3_0;
-        const vaultProfileForm_r7 = \u0275\u0275reference(44);
-        const needStorageAccessPermissionTemplate_r8 = \u0275\u0275reference(52);
+        let tmp_5_0;
+        let tmp_6_0;
+        const vaultProfileForm_r6 = \u0275\u0275reference(44);
         \u0275\u0275advance(4);
-        \u0275\u0275property("src", (tmp_2_0 = \u0275\u0275pipeBind1(5, 9, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.logo_uri, \u0275\u0275sanitizeUrl);
+        \u0275\u0275property("src", (tmp_1_0 = \u0275\u0275pipeBind1(5, 8, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.org == null ? null : tmp_1_0.org.logo_uri, \u0275\u0275sanitizeUrl);
         \u0275\u0275advance(17);
-        \u0275\u0275textInterpolate1(" ", ((tmp_3_0 = \u0275\u0275pipeBind1(22, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.name) || "Unknown", " uses Fasten to securely link your health systems ");
-        \u0275\u0275advance(22);
-        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(23, _c0, \u0275\u0275pipeBind1(45, 13, ctx.needStorageAccessPermissionSubject), !\u0275\u0275pipeBind1(46, 15, ctx.needStorageAccessPermissionSubject)));
-        \u0275\u0275advance(4);
+        \u0275\u0275textInterpolate1(" ", ((tmp_2_0 = \u0275\u0275pipeBind1(22, 10, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.name) || "Unknown", " uses Fasten to securely link your health systems ");
+        \u0275\u0275advance(24);
         \u0275\u0275property("ngIf", ctx.errorMsg);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.isCspRequestUriSignin);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", !\u0275\u0275pipeBind1(50, 17, ctx.needStorageAccessPermissionSubject))("ngIfElse", needStorageAccessPermissionTemplate_r8);
-        \u0275\u0275advance(4);
-        \u0275\u0275property("disabled", !ctx.isCspRequestUriSignin && !vaultProfileForm_r7.form.valid || ctx.loading || \u0275\u0275pipeBind1(54, 19, ctx.needStorageAccessPermissionSubject) && !\u0275\u0275pipeBind1(55, 21, ctx.userInteractionCompletedSubject));
+        \u0275\u0275advance(11);
+        \u0275\u0275textInterpolate1("", ((tmp_5_0 = \u0275\u0275pipeBind1(58, 12, ctx.configService.systemConfigSubject)) == null ? null : tmp_5_0.org == null ? null : tmp_5_0.org.name) || "Unknown", "'s ");
+        \u0275\u0275advance(2);
+        \u0275\u0275propertyInterpolate("href", (tmp_6_0 = \u0275\u0275pipeBind1(60, 14, ctx.configService.systemConfigSubject)) == null ? null : tmp_6_0.org == null ? null : tmp_6_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
         \u0275\u0275advance(3);
+        \u0275\u0275property("disabled", !ctx.isCspRequestUriSignin && !vaultProfileForm_r6.form.valid || ctx.loading);
+        \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.loading);
       }
     }, dependencies: [
       CommonModule,
-      NgClass,
       NgForOf,
       NgIf,
       AsyncPipe,
@@ -57540,11 +57331,11 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 33 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 31 });
 })();
 
 // node_modules/angular-code-input/fesm2022/angular-code-input.mjs
-var _c02 = ["input"];
+var _c0 = ["input"];
 function CodeInputComponent_span_0_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -57903,7 +57694,7 @@ var CodeInputComponent = class _CodeInputComponent {
       selectors: [["code-input"]],
       viewQuery: function CodeInputComponent_Query(rf, ctx) {
         if (rf & 1) {
-          \u0275\u0275viewQuery(_c02, 5);
+          \u0275\u0275viewQuery(_c0, 5);
         }
         if (rf & 2) {
           let _t;
@@ -58051,7 +57842,7 @@ var CodeInputModule = class _CodeInputModule {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/components/dev-tools/dev-tools.component.ts
-var _c03 = (a0, a1, a2, a3) => ({ "border-gray-400 text-gray-800 hover:bg-gray-50": a0, "border-gray-400 text-gray-600": a1, "border-green-500 text-green-700": a2, "border-red-500 text-red-700 hover:bg-red-50": a3 });
+var _c02 = (a0, a1, a2, a3) => ({ "border-gray-400 text-gray-800 hover:bg-gray-50": a0, "border-gray-400 text-gray-600": a1, "border-green-500 text-green-700": a2, "border-red-500 text-red-700 hover:bg-red-50": a3 });
 function DevToolsComponent_div_9__svg_svg_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275namespaceSVG();
@@ -58104,7 +57895,7 @@ function DevToolsComponent_div_9_Template(rf, ctx) {
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance();
-    \u0275\u0275property("disabled", ctx_r1.resetState === "loading")("ngClass", \u0275\u0275pureFunction4(10, _c03, ctx_r1.resetState === "idle", ctx_r1.resetState === "loading", ctx_r1.resetState === "success", ctx_r1.resetState === "error"));
+    \u0275\u0275property("disabled", ctx_r1.resetState === "loading")("ngClass", \u0275\u0275pureFunction4(10, _c02, ctx_r1.resetState === "idle", ctx_r1.resetState === "loading", ctx_r1.resetState === "success", ctx_r1.resetState === "error"));
     \u0275\u0275attribute("aria-busy", ctx_r1.resetState === "loading")("title", ctx_r1.resetConnectionsTooltip);
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.resetState === "loading");
@@ -58572,8 +58363,8 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts
-var _c04 = () => [];
-var _c12 = () => ({});
+var _c03 = () => [];
+var _c1 = () => ({});
 var _c2 = (a0) => ({ "rotate-180": a0 });
 function DashboardComponent_div_10_ng_container_4_Template(rf, ctx) {
   if (rf & 1) {
@@ -59087,15 +58878,15 @@ var DashboardComponent = class _DashboardComponent {
         \u0275\u0275advance(8);
         \u0275\u0275property("ngIf", (tmp_1_0 = \u0275\u0275pipeBind1(11, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.tefcaMode);
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(13, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(31, _c04));
+        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(13, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(31, _c03));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(16, 17, ((tmp_3_0 = \u0275\u0275pipeBind1(15, 15, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(32, _c12)));
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(16, 17, ((tmp_3_0 = \u0275\u0275pipeBind1(15, 15, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(32, _c1)));
         \u0275\u0275advance(3);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(19, 21, ((tmp_4_0 = \u0275\u0275pipeBind1(18, 19, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(33, _c12)));
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(19, 21, ((tmp_4_0 = \u0275\u0275pipeBind1(18, 19, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(33, _c1)));
         \u0275\u0275advance(4);
         \u0275\u0275property("routerLink", "/search")("ngClass", ctx.shouldShowMultiConnectHint(\u0275\u0275pipeBind1(22, 23, ctx.configService.vaultProfileConfigSubject)) ? "multi-connect-hint border border-[#5B47FB]/40 bg-[#5B47FB]/5 text-gray-700" : "border bg-gray-50 border-gray-200 hover:border-[#5B47FB] hover:bg-[#5B47FB]/5");
         \u0275\u0275advance(23);
-        \u0275\u0275property("disabled", !(((tmp_7_0 = \u0275\u0275pipeBind1(45, 25, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_7_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(34, _c04)).length || ctx.isCompleting);
+        \u0275\u0275property("disabled", !(((tmp_7_0 = \u0275\u0275pipeBind1(45, 25, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_7_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(34, _c03)).length || ctx.isCompleting);
         \u0275\u0275advance(2);
         \u0275\u0275property("ngIf", ctx.isCompleting);
         \u0275\u0275advance(13);
@@ -59701,7 +59492,7 @@ var InfiniteScrollModule = class _InfiniteScrollModule {
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts
 var import_lodash2 = __toESM(require_lodash());
-var _c05 = () => [];
+var _c04 = () => [];
 function HealthSystemSearchComponent_div_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 16);
@@ -59964,7 +59755,7 @@ function HealthSystemSearchComponent_button_15_span_9_Template(rf, ctx) {
   if (rf & 2) {
     const brand_r8 = \u0275\u0275nextContext().$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(1, _c05)).length, "");
+    \u0275\u0275textInterpolate1("+ ", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(1, _c04)).length, "");
   }
 }
 function HealthSystemSearchComponent_button_15_Template(rf, ctx) {
@@ -60000,11 +59791,11 @@ function HealthSystemSearchComponent_button_15_Template(rf, ctx) {
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate(brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.name);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.searchHighlights) || \u0275\u0275pureFunction0(11, _c05)).length > 0);
+    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.searchHighlights) || \u0275\u0275pureFunction0(11, _c04)).length > 0);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(8, 7, (brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(12, _c05), 0, 3));
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(8, 7, (brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(12, _c04), 0, 3));
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(13, _c05)).length > 4);
+    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(13, _c04)).length > 4);
   }
 }
 function HealthSystemSearchComponent_div_16_Template(rf, ctx) {
@@ -60315,7 +60106,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts
-var _c06 = () => [];
+var _c05 = () => [];
 function HealthSystemBrandDetailsComponent_div_14_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 15);
@@ -60364,7 +60155,7 @@ function HealthSystemBrandDetailsComponent_div_16_span_8_Template(rf, ctx) {
     let tmp_2_0;
     const ctx_r0 = \u0275\u0275nextContext(2);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", (((tmp_2_0 = \u0275\u0275pipeBind1(2, 1, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c06)).length, "");
+    \u0275\u0275textInterpolate1("+ ", (((tmp_2_0 = \u0275\u0275pipeBind1(2, 1, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c05)).length, "");
   }
 }
 function HealthSystemBrandDetailsComponent_div_16_Template(rf, ctx) {
@@ -60388,9 +60179,9 @@ function HealthSystemBrandDetailsComponent_div_16_Template(rf, ctx) {
     let tmp_2_0;
     const ctx_r0 = \u0275\u0275nextContext();
     \u0275\u0275advance(5);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(7, 4, ((tmp_1_0 = \u0275\u0275pipeBind1(6, 2, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c06), 0, 3));
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(7, 4, ((tmp_1_0 = \u0275\u0275pipeBind1(6, 2, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c05), 0, 3));
     \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", (((tmp_2_0 = \u0275\u0275pipeBind1(9, 8, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c06)).length > 4);
+    \u0275\u0275property("ngIf", (((tmp_2_0 = \u0275\u0275pipeBind1(9, 8, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c05)).length > 4);
   }
 }
 function HealthSystemBrandDetailsComponent_ng_container_19_div_1_p_9_Template(rf, ctx) {
@@ -60625,7 +60416,7 @@ function ConnectHelper(connectData) {
 }
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts
-var _c07 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
+var _c06 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
 var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
   constructor(configService, router, messageBus, injector) {
     this.configService = configService;
@@ -60725,7 +60516,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         \u0275\u0275advance(8);
         \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", ctx.brandId, ".png", \u0275\u0275sanitizeUrl);
         \u0275\u0275advance(18);
-        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(9, _c07, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
+        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(9, _c06, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
       }
     }, dependencies: [
       CommonModule,
