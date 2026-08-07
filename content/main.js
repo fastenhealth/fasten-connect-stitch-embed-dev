@@ -58039,6 +58039,37 @@ function VaultProfileSigninCodeComponent_p_13_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r0.errorMsg);
   }
 }
+function VaultProfileSigninCodeComponent_button_21_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r2 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 12);
+    \u0275\u0275listener("click", function VaultProfileSigninCodeComponent_button_21_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r2);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.onResendCode());
+    });
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("disabled", ctx_r0.resendLoading || ctx_r0.loading);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.resendLoading ? "Sending code..." : "Re-send code", " ");
+  }
+}
+function VaultProfileSigninCodeComponent_p_22_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "p", 13);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.resendCodeTooltip, " ");
+  }
+}
 var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
   set codeExpiresAt(value) {
     this.codeExpiresAt$.next(value);
@@ -58108,7 +58139,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     });
   }
   onResendCode() {
-    if (!this.canResendCode || this.resendLoading) {
+    if (!this.canResendCode || this.resendLoading || this.loading) {
       return;
     }
     this.resendLoading = true;
@@ -58131,7 +58162,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail", codeExpiresAt: [2, "codeExpiresAt", "codeExpiresAt", numberAttribute] }, decls: 24, vars: 15, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2"], [3, "codeCompleted", "isCodeHidden", "isPrevFocusableAfterClearing", "codeLength"], ["id", "verification-error", "class", "text-sm text-red-500", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["id", "verification-countdown", 1, "font-semibold", "text-gray-900"], [1, "resend-code-wrapper"], ["type", "button", "id", "resend-code", 1, "verification-button", 3, "click", "disabled"], ["id", "verification-error", 1, "text-sm", "text-red-500"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail", codeExpiresAt: [2, "codeExpiresAt", "codeExpiresAt", numberAttribute] }, decls: 23, vars: 13, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2"], [3, "codeCompleted", "isCodeHidden", "isPrevFocusableAfterClearing", "codeLength"], ["id", "verification-error", "class", "text-sm text-red-500", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["id", "verification-countdown", 1, "font-semibold", "text-gray-900"], ["type", "button", "id", "resend-code", "class", "verification-button", 3, "disabled", "click", 4, "ngIf"], ["id", "resend-code-help", "class", "text-xs text-gray-600", 4, "ngIf"], ["id", "verification-error", 1, "text-sm", "text-red-500"], ["type", "button", "id", "resend-code", 1, "verification-button", 3, "click", "disabled"], ["id", "resend-code-help", 1, "text-xs", "text-gray-600"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -58158,12 +58189,9 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
         \u0275\u0275pipe(18, "async");
         \u0275\u0275pipe(19, "date");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(20, "div", 1)(21, "span", 9)(22, "button", 10);
-        \u0275\u0275listener("click", function VaultProfileSigninCodeComponent_Template_button_click_22_listener() {
-          return ctx.onResendCode();
-        });
-        \u0275\u0275text(23);
-        \u0275\u0275elementEnd()()()();
+        \u0275\u0275elementStart(20, "div", 1);
+        \u0275\u0275template(21, VaultProfileSigninCodeComponent_button_21_Template, 2, 2, "button", 9)(22, VaultProfileSigninCodeComponent_p_22_Template, 2, 1, "p", 10);
+        \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
         \u0275\u0275advance(10);
@@ -58173,14 +58201,11 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.errorMsg);
         \u0275\u0275advance(4);
-        \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 12, \u0275\u0275pipeBind1(18, 10, ctx.timeRemaining$), "mm:ss"));
+        \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 10, \u0275\u0275pipeBind1(18, 8, ctx.timeRemaining$), "mm:ss"));
         \u0275\u0275advance(4);
-        \u0275\u0275attribute("data-tooltip", !ctx.canResendCode ? ctx.resendCodeTooltip : null);
+        \u0275\u0275property("ngIf", ctx.canResendCode);
         \u0275\u0275advance();
-        \u0275\u0275property("disabled", !ctx.canResendCode || ctx.resendLoading || ctx.loading);
-        \u0275\u0275attribute("aria-label", !ctx.canResendCode ? ctx.resendCodeTooltip : "Re-send code");
-        \u0275\u0275advance();
-        \u0275\u0275textInterpolate1(" ", ctx.resendLoading ? "Sending code..." : "Re-send code", " ");
+        \u0275\u0275property("ngIf", !ctx.canResendCode);
       }
     }, dependencies: [
       CommonModule,
@@ -58191,7 +58216,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
       HeaderComponent,
       CodeInputModule,
       CodeInputComponent
-    ], styles: ["\n\ncode-input[_ngcontent-%COMP%] {\n  --item-width: 2.5rem;\n  --item-height: 2.5rem;\n  --item-border: 1px solid #d1d5db;\n  --item-border-radius: 0.5rem;\n  --item-font-size: 1.25rem;\n  --item-font-weight: 600;\n  --item-color: #111827;\n  //--item-border-bottom: none;\n  //--item-border-has-value: none;\n  //--item-border-bottom-has-value: 2px solid #888888;\n  //--item-border-focused: none;\n  //--item-border-bottom-focused: 2px solid #809070;\n  //--item-shadow-focused: none;\n}\n.resend-code-wrapper[_ngcontent-%COMP%] {\n  display: block;\n  position: relative;\n}\n.resend-code-wrapper[data-tooltip][_ngcontent-%COMP%]::after {\n  background-color: #111827;\n  border-radius: 0.375rem;\n  bottom: calc(100% + 0.5rem);\n  color: #ffffff;\n  content: attr(data-tooltip);\n  font-size: 0.75rem;\n  left: 50%;\n  max-width: 18rem;\n  opacity: 0;\n  padding: 0.375rem 0.5rem;\n  pointer-events: none;\n  position: absolute;\n  text-align: center;\n  transform: translateX(-50%);\n  transition: opacity 0.15s ease-in-out;\n  width: max-content;\n  z-index: 10;\n}\n.resend-code-wrapper[data-tooltip][_ngcontent-%COMP%]:hover::after {\n  opacity: 1;\n}\n.verification-button[_ngcontent-%COMP%]:disabled, \n.verification-button[_ngcontent-%COMP%]:disabled:hover {\n  background-color: transparent;\n  color: #9ca3af;\n  cursor: not-allowed;\n}\n/*# sourceMappingURL=vault-profile-signin-code.component.css.map */"] });
+    ], styles: ["\n\ncode-input[_ngcontent-%COMP%] {\n  --item-width: 2.5rem;\n  --item-height: 2.5rem;\n  --item-border: 1px solid #d1d5db;\n  --item-border-radius: 0.5rem;\n  --item-font-size: 1.25rem;\n  --item-font-weight: 600;\n  --item-color: #111827;\n  //--item-border-bottom: none;\n  //--item-border-has-value: none;\n  //--item-border-bottom-has-value: 2px solid #888888;\n  //--item-border-focused: none;\n  //--item-border-bottom-focused: 2px solid #809070;\n  //--item-shadow-focused: none;\n}\n.verification-button[_ngcontent-%COMP%]:disabled, \n.verification-button[_ngcontent-%COMP%]:disabled:hover {\n  background-color: transparent;\n  color: #9ca3af;\n  cursor: not-allowed;\n}\n/*# sourceMappingURL=vault-profile-signin-code.component.css.map */"] });
   }
 };
 (() => {
