@@ -7477,28 +7477,6 @@ var EmptyError = createErrorClass((_super) => function EmptyErrorImpl() {
   this.message = "no elements in sequence";
 });
 
-// node_modules/rxjs/dist/esm/internal/firstValueFrom.js
-function firstValueFrom(source, config2) {
-  const hasConfig = typeof config2 === "object";
-  return new Promise((resolve, reject) => {
-    const subscriber = new SafeSubscriber({
-      next: (value) => {
-        resolve(value);
-        subscriber.unsubscribe();
-      },
-      error: reject,
-      complete: () => {
-        if (hasConfig) {
-          resolve(config2.defaultValue);
-        } else {
-          reject(new EmptyError());
-        }
-      }
-    });
-    source.subscribe(subscriber);
-  });
-}
-
 // node_modules/rxjs/dist/esm/internal/util/isDate.js
 function isValidDate(value) {
   return value instanceof Date && !isNaN(value);
@@ -48605,11 +48583,11 @@ var AuthService = class _AuthService {
   }
   VaultAuthBegin(email, cspPromptForce) {
     return __async(this, null, function* () {
-      let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_begin`, {
+      const resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_begin`, {
         "email": email,
         "csp_prompt_force": cspPromptForce
       }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
-      return resp;
+      return resp && "data" in resp ? resp.data : resp;
     });
   }
   VaultAuthFinish(email, code) {
@@ -48621,6 +48599,14 @@ var AuthService = class _AuthService {
       return resp;
     });
   }
+  VaultAuthResendCode(email) {
+    return __async(this, null, function* () {
+      const resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_resend_code`, {
+        "email": email
+      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+      return resp?.data;
+    });
+  }
   Signout() {
     return __async(this, null, function* () {
       this.publishAuthenticationState(false);
@@ -48628,11 +48614,12 @@ var AuthService = class _AuthService {
     });
   }
   IsVaultAuthCookieSet() {
-    const isSet = this.GetVaultAuthCookieDebugInfo().isSet;
-    if (!isSet) {
-      console.warn("[AuthService] Vault auth cookie is not set");
+    const debugInfo = this.GetVaultAuthCookieDebugInfo();
+    if (!debugInfo.isSet) {
+      console.warn("[AuthServices] Vault auth cookie not set!");
     }
-    return isSet;
+    console.info("[AuthService] Vault auth cookie check", debugInfo);
+    return debugInfo.isSet;
   }
   WaitForVaultAuthCookie() {
     return __async(this, null, function* () {
@@ -48641,18 +48628,6 @@ var AuthService = class _AuthService {
       }
       yield new Promise((resolve) => setTimeout(resolve, VAULT_AUTH_COOKIE_RECHECK_DELAY_MS));
       return this.IsVaultAuthCookieSet();
-    });
-  }
-  CheckCookieSupport() {
-    return __async(this, null, function* () {
-      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_support`, null, {
-        withCredentials: true
-      }));
-      const supported = response.data?.supported;
-      if (typeof supported !== "boolean") {
-        throw new Error(`Invalid cookie support response: ${supported}`);
-      }
-      return supported;
     });
   }
   GetVaultAuthCookieDebugInfo() {
@@ -48712,32 +48687,27 @@ var AuthService = class _AuthService {
   }
 };
 function getCookie(name) {
-  const ca = document.cookie.split(";");
+  const ca = decodeURIComponent(document.cookie).split(";");
   const caLen = ca.length;
   const cookieName = `${name}=`;
   let c;
   for (let i = 0; i < caLen; i += 1) {
     c = ca[i].replace(/^\s+/g, "");
     if (c.indexOf(cookieName) === 0) {
-      const value = c.substring(cookieName.length, c.length);
-      try {
-        return decodeURIComponent(value);
-      } catch {
-        return value;
-      }
+      return c.substring(cookieName.length, c.length);
     }
   }
   return "";
 }
+function setCookie(name, value, expireDays, path = "") {
+  const d = /* @__PURE__ */ new Date();
+  d.setTime(d.getTime() + expireDays * 24 * 60 * 60 * 1e3);
+  const expires = `expires=${d.toUTCString()}`;
+  const cpath = path ? `; path=${path}` : "";
+  document.cookie = `${name}=${value}; ${expires}${cpath}; SameSite=Lax`;
+}
 function deleteCookie(name) {
-  const baseCookie = `${name}=; Max-Age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/`;
-  const domains = ["", `; Domain=${environment.connect_base_domain}`];
-  for (const domain of domains) {
-    document.cookie = `${baseCookie}${domain}; SameSite=Lax`;
-    document.cookie = `${baseCookie}${domain}; SameSite=None; Secure`;
-    document.cookie = `${baseCookie}${domain}; SameSite=None; Secure; Partitioned`;
-  }
-  return Promise.resolve();
+  setCookie(name, "", -99999);
 }
 
 // node_modules/ngx-device-detector/fesm2022/ngx-device-detector.mjs
@@ -49582,7 +49552,7 @@ var FastenService = class _FastenService {
       this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
         this.logger.info("attempt to download org information, and store in config");
-        this.getOrgConfig(systemConfig.publicId).subscribe((org) => {
+        this.getOrgByPublicId(systemConfig.publicId).subscribe((org) => {
           this.logger.debug("org:", org);
           this.configService.systemConfig = { org };
         });
@@ -49656,17 +49626,6 @@ var FastenService = class _FastenService {
       return response.data;
     }));
   }
-  getOrgConfig(publicId) {
-    let queryParams = {};
-    queryParams["public_id"] = publicId;
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/config`, {
-      params: queryParams,
-      withCredentials: true
-    }).pipe(map((response) => {
-      this.logger.info("Organization", response);
-      return response;
-    }));
-  }
   getOrgConnectionById(publicId, orgConnectionId) {
     let queryParams = {};
     queryParams["public_id"] = publicId;
@@ -49695,6 +49654,17 @@ var FastenService = class _FastenService {
       return {};
     }));
   }
+  // public storageApiWithPopup(): Observable<CallbackPayload> {
+  storageApiUserInteractionWithPopup() {
+    const redirectUrl = new URL(`${window.location.origin}/consent`);
+    const isDesktop = this.deviceService.isDesktop();
+    let features = "";
+    if (isDesktop) {
+      features = "popup=true,width=700,height=600";
+    }
+    let openedWindow = window.open(redirectUrl.toString(), "_blank", features);
+    return this.waitForPopupNotification(openedWindow, SDKMode.None);
+  }
   verificationWithWebsocket(cspType) {
     const roomId = v4_default();
     const websocketUrl = this.generateWebsocketURL(roomId);
@@ -49704,9 +49674,20 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
     redirectUrlParts.searchParams.set("room_id", roomId);
     this.logger.debug(redirectUrlParts.toString());
-    const openedWindow = this.openWindowInPopupForIdentityVerification(redirectUrlParts);
+    let openedWindow;
+    if (this.shouldUsePartitionedCookie()) {
+      this.logger.warn("partitioned popup");
+      openedWindow = this.openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts);
+    } else {
+      openedWindow = this.openWindowInPopup(redirectUrlParts);
+    }
     return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(
-      switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))),
+      switchMap((payload) => {
+        if (this.shouldUsePartitionedCookie()) {
+          return from(this.refreshAuthCookie()).pipe(map(() => payload));
+        }
+        return of(payload);
+      }),
       //TODO: this is a flaky way to handle the issue where the websocket response is sent before the cookie is set in the browser
       // wait 2 seconds here -- sometimes the websocket sends the response before the cookie has been recieved by the browser (in the modal popup)
       delay(2500)
@@ -49717,8 +49698,8 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("public_id", this.configService.systemConfig$.publicId);
     redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
-    const openedWindow = this.openWindowInPopupForIdentityVerification(redirectUrlParts);
-    return this.waitForPopupNotification(openedWindow).pipe(switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))));
+    const openedWindow = this.openWindowInPopup(redirectUrlParts);
+    return this.waitForPopupNotification(openedWindow);
   }
   accountConnectWithWebsocket(connectData) {
     const roomId = v4_default();
@@ -49753,9 +49734,7 @@ var FastenService = class _FastenService {
   }
   refreshAuthCookie() {
     return __async(this, null, function* () {
-      return yield this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, { withCredentials: true, params: {
-        "public_id": this.configService.systemConfig$.publicId
-      } }).toPromise();
+      return yield this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
     });
   }
   /// HELPERS
@@ -49767,16 +49746,16 @@ var FastenService = class _FastenService {
     }
     return window.open(redirectUrlParts.toString(), "_blank", features);
   }
-  // SECURITY: identity verification crosses from the embedded context into a
-  // top-level popup. POST the JWT so the popup does not depend on sharing the
-  // iframe's cookie partition. The API determines cookie attributes itself.
-  openWindowInPopupForIdentityVerification(redirectUrlParts) {
+  //SECURITY: this is specifically for the identity verification flow. Some browsers require Partitioned Cookies (since the embed app
+  // is in a third-party context), and those cookies are not accessible in a regular popup window.
+  // We must send the JWT token to the popup via a POST message and then the popup can use that token to set the cookie in its own context.
+  openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts) {
     const isDesktop = this.deviceService.isDesktop();
     let features = "";
     if (isDesktop) {
       features = "popup=true,width=700,height=600";
     }
-    var target = "IdentityVerificationPopupWindow" + Math.random().toString(36).substring(2, 7);
+    var target = "PartitionedPopupWindow" + Math.random().toString(36).substring(2, 7);
     var params = { [FASTEN_AUTH_VAULT_COOKIE_NAME]: getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME) };
     var form = document.createElement("form");
     form.setAttribute("method", "post");
@@ -49798,6 +49777,27 @@ var FastenService = class _FastenService {
     form.submit();
     document.body.removeChild(form);
     return opened;
+  }
+  // NOTE: changes to this function, should also be made to in the fasten-connect-api
+  // https://github.com/fastenhealth/fasten-connect-api/blob/13d537db1111f98be38d82f9fdf1497c4b1c0239/pkg/utils/auth_response/cookie.go#L56 function
+  shouldUsePartitionedCookie() {
+    let browser = this.deviceService.browser;
+    let browser_version_parts = this.deviceService.browser_version.split(".");
+    let browser_version_info = {
+      major: 0,
+      minor: 0,
+      patch: 0
+    };
+    if (browser_version_parts.length > 0) {
+      browser_version_info.major = parseInt(browser_version_parts[0]) || 0;
+      if (browser_version_parts.length > 1) {
+        browser_version_info.minor = parseInt(browser_version_parts[1]) || 0;
+      }
+      if (browser_version_parts.length > 2) {
+        browser_version_info.patch = parseInt(browser_version_parts[2]) || 0;
+      }
+    }
+    return browser == "Safari" && (browser_version_info.major > 26 || browser_version_info.major == 26 && browser_version_info.minor >= 3);
   }
   generateWebsocketURL(roomId) {
     const websocketUrlParts = new URL(`wss://websocket.${environment.connect_base_domain}/v1`);
@@ -50008,12 +50008,11 @@ var AppComponent = class _AppComponent {
       this.searchOnly = true;
     }
   }
-  constructor(activatedRoute, configService, messageBus, fastenService, authService, router, logger) {
+  constructor(activatedRoute, configService, messageBus, fastenService, router, logger) {
     this.activatedRoute = activatedRoute;
     this.configService = configService;
     this.messageBus = messageBus;
     this.fastenService = fastenService;
-    this.authService = authService;
     this.router = router;
     this.logger = logger;
     this.logoText = logoText;
@@ -50200,8 +50199,9 @@ var AppComponent = class _AppComponent {
       return apiMode;
     } else {
       this.errorMessage = "";
-      this.fastenService.getOrgConfig(this.publicId).subscribe((org) => {
+      this.fastenService.getOrgByPublicId(this.publicId).subscribe((org) => {
         this.logger.info("Fasten Connect registration", org);
+        this.loading = false;
         this.configService.systemConfig = {
           org
         };
@@ -50210,19 +50210,6 @@ var AppComponent = class _AppComponent {
           this.loading = false;
           this.errorMessage = "TEFCA mode not enabled for this organization and/or api mode. Please contact your account representative or the developer of this app.";
           this.messageBus.publishWidgetConfigError();
-          return;
-        }
-        if (this.tefcaMode) {
-          this.authService.CheckCookieSupport().then((cookieSupported) => __async(this, null, function* () {
-            if (!cookieSupported) {
-              this.logger.info("[AppComponent] Cookie support was not found!");
-              yield this.router.navigateByUrl("auth/signin/cookies-required");
-              return;
-            }
-            this.logger.info("[AppComponent] Cookie support detected");
-          })).finally(() => this.loading = false);
-        } else {
-          this.loading = false;
         }
       }, (err) => {
         this.loading = false;
@@ -50269,7 +50256,7 @@ var AppComponent = class _AppComponent {
   }
   static {
     this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -50309,7 +50296,7 @@ var AppComponent = class _AppComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 43 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 42 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts
@@ -56892,18 +56879,20 @@ var TEST_IDENTITY_PHONE_NUMBERS = Object.freeze({
 var TEST_IDENTITY_EMAILS = Object.freeze(Object.keys(TEST_IDENTITY_PHONE_NUMBERS));
 
 // projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts
-function VaultProfileSigninComponent_div_45_Template(rf, ctx) {
+var _c0 = (a0, a1) => ({ "space-y-3": a0, "space-y-6": a1 });
+var _c1 = (a0) => ({ "custom-checkbox-checked": a0 });
+function VaultProfileSigninComponent_div_47_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 37)(1, "div", 38);
+    \u0275\u0275elementStart(0, "div", 35)(1, "div", 36);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 39);
-    \u0275\u0275element(3, "path", 40);
+    \u0275\u0275elementStart(2, "svg", 37);
+    \u0275\u0275element(3, "path", 38);
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(4, "div", 41)(5, "p", 42);
+    \u0275\u0275elementStart(4, "div", 39)(5, "p", 40);
     \u0275\u0275text(6, "We couldn't sign you in.");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "p", 43);
+    \u0275\u0275elementStart(7, "p", 41);
     \u0275\u0275text(8);
     \u0275\u0275elementEnd()()()();
   }
@@ -56913,19 +56902,19 @@ function VaultProfileSigninComponent_div_45_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r1.errorMsg);
   }
 }
-function VaultProfileSigninComponent_ng_container_46_datalist_5_option_1_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_48_datalist_5_option_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "option", 50);
+    \u0275\u0275element(0, "option", 48);
   }
   if (rf & 2) {
     const testIdentityEmail_r4 = ctx.$implicit;
     \u0275\u0275property("value", testIdentityEmail_r4);
   }
 }
-function VaultProfileSigninComponent_ng_container_46_datalist_5_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_48_datalist_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "datalist", 48);
-    \u0275\u0275template(1, VaultProfileSigninComponent_ng_container_46_datalist_5_option_1_Template, 1, 1, "option", 49);
+    \u0275\u0275elementStart(0, "datalist", 46);
+    \u0275\u0275template(1, VaultProfileSigninComponent_ng_container_48_datalist_5_option_1_Template, 1, 1, "option", 47);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -56934,31 +56923,31 @@ function VaultProfileSigninComponent_ng_container_46_datalist_5_Template(rf, ctx
     \u0275\u0275property("ngForOf", ctx_r1.testIdentityEmails);
   }
 }
-function VaultProfileSigninComponent_ng_container_46_p_6_span_1_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_48_p_6_span_1_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, " Email is required. ");
     \u0275\u0275elementEnd();
   }
 }
-function VaultProfileSigninComponent_ng_container_46_p_6_span_2_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_48_p_6_span_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, " Email must be at least 4 characters long. ");
     \u0275\u0275elementEnd();
   }
 }
-function VaultProfileSigninComponent_ng_container_46_p_6_span_3_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_48_p_6_span_3_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "span");
     \u0275\u0275text(1, " Email must be a valid email address. ");
     \u0275\u0275elementEnd();
   }
 }
-function VaultProfileSigninComponent_ng_container_46_p_6_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_48_p_6_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 51);
-    \u0275\u0275template(1, VaultProfileSigninComponent_ng_container_46_p_6_span_1_Template, 2, 0, "span", 31)(2, VaultProfileSigninComponent_ng_container_46_p_6_span_2_Template, 2, 0, "span", 31)(3, VaultProfileSigninComponent_ng_container_46_p_6_span_3_Template, 2, 0, "span", 31);
+    \u0275\u0275elementStart(0, "p", 49);
+    \u0275\u0275template(1, VaultProfileSigninComponent_ng_container_48_p_6_span_1_Template, 2, 0, "span", 32)(2, VaultProfileSigninComponent_ng_container_48_p_6_span_2_Template, 2, 0, "span", 32)(3, VaultProfileSigninComponent_ng_container_48_p_6_span_3_Template, 2, 0, "span", 32);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -56972,27 +56961,27 @@ function VaultProfileSigninComponent_ng_container_46_p_6_Template(rf, ctx) {
     \u0275\u0275property("ngIf", email_r5.errors == null ? null : email_r5.errors["email"]);
   }
 }
-function VaultProfileSigninComponent_ng_container_46_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_48_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "label", 44);
+    \u0275\u0275elementStart(1, "label", 42);
     \u0275\u0275text(2, "Email address");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "input", 45, 1);
-    \u0275\u0275twoWayListener("ngModelChange", function VaultProfileSigninComponent_ng_container_46_Template_input_ngModelChange_3_listener($event) {
+    \u0275\u0275elementStart(3, "input", 43, 2);
+    \u0275\u0275twoWayListener("ngModelChange", function VaultProfileSigninComponent_ng_container_48_Template_input_ngModelChange_3_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.existingVaultProfile.email, $event) || (ctx_r1.existingVaultProfile.email = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275listener("ngModelChange", function VaultProfileSigninComponent_ng_container_46_Template_input_ngModelChange_3_listener($event) {
+    \u0275\u0275listener("ngModelChange", function VaultProfileSigninComponent_ng_container_48_Template_input_ngModelChange_3_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.existingVaultProfile.email = $event.toLowerCase().trim());
     });
     \u0275\u0275elementEnd();
-    \u0275\u0275template(5, VaultProfileSigninComponent_ng_container_46_datalist_5_Template, 2, 1, "datalist", 46)(6, VaultProfileSigninComponent_ng_container_46_p_6_Template, 4, 3, "p", 47);
+    \u0275\u0275template(5, VaultProfileSigninComponent_ng_container_48_datalist_5_Template, 2, 1, "datalist", 44)(6, VaultProfileSigninComponent_ng_container_48_p_6_Template, 4, 3, "p", 45);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
@@ -57007,7 +56996,85 @@ function VaultProfileSigninComponent_ng_container_46_Template(rf, ctx) {
     \u0275\u0275property("ngIf", email_r5.invalid && (email_r5.dirty || email_r5.touched));
   }
 }
-function VaultProfileSigninComponent_app_spinner_63_Template(rf, ctx) {
+function VaultProfileSigninComponent_p_49_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "p", 50);
+    \u0275\u0275text(1, " By clicking continue you agree to: ");
+    \u0275\u0275element(2, "br");
+    \u0275\u0275text(3, "Fasten's ");
+    \u0275\u0275elementStart(4, "a", 51);
+    \u0275\u0275text(5, "Privacy Policy");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(6, " and ");
+    \u0275\u0275elementStart(7, "a", 52);
+    \u0275\u0275text(8, "Terms & Conditions");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(9, "br");
+    \u0275\u0275text(10);
+    \u0275\u0275pipe(11, "async");
+    \u0275\u0275elementStart(12, "a", 53);
+    \u0275\u0275pipe(13, "async");
+    \u0275\u0275text(14, "Privacy Policy");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    let tmp_3_0;
+    let tmp_4_0;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(10);
+    \u0275\u0275textInterpolate1("", ((tmp_3_0 = \u0275\u0275pipeBind1(11, 2, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.name) || "Unknown", "'s ");
+    \u0275\u0275advance(2);
+    \u0275\u0275propertyInterpolate("href", (tmp_4_0 = \u0275\u0275pipeBind1(13, 4, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_4_0.org == null ? null : tmp_4_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
+  }
+}
+function VaultProfileSigninComponent_ng_template_51_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "p", 50);
+    \u0275\u0275element(1, "br");
+    \u0275\u0275text(2, "Fasten's ");
+    \u0275\u0275elementStart(3, "span", 54);
+    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_51_Template_span_click_3_listener() {
+      \u0275\u0275restoreView(_r6);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.awaitUserInteractionCompleted());
+    });
+    \u0275\u0275text(4, "Privacy Policy");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(5, " and ");
+    \u0275\u0275elementStart(6, "a", 52);
+    \u0275\u0275text(7, "Terms & Conditions");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(8, "br");
+    \u0275\u0275text(9);
+    \u0275\u0275pipe(10, "async");
+    \u0275\u0275elementStart(11, "a", 53);
+    \u0275\u0275pipe(12, "async");
+    \u0275\u0275text(13, "Privacy Policy");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(14, "div", 55)(15, "span", 56);
+    \u0275\u0275pipe(16, "async");
+    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_51_Template_span_click_15_listener() {
+      \u0275\u0275restoreView(_r6);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.awaitUserInteractionCompleted());
+    });
+    \u0275\u0275text(17, " I agree to Fasten Health's Privacy Policy ");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    let tmp_3_0;
+    let tmp_4_0;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(9);
+    \u0275\u0275textInterpolate1("", ((tmp_3_0 = \u0275\u0275pipeBind1(10, 3, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.name) || "Unknown", "'s ");
+    \u0275\u0275advance(2);
+    \u0275\u0275propertyInterpolate("href", (tmp_4_0 = \u0275\u0275pipeBind1(12, 5, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_4_0.org == null ? null : tmp_4_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
+    \u0275\u0275advance(4);
+    \u0275\u0275property("ngClass", \u0275\u0275pureFunction1(9, _c1, \u0275\u0275pipeBind1(16, 7, ctx_r1.userInteractionCompletedSubject)));
+  }
+}
+function VaultProfileSigninComponent_app_spinner_56_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275element(0, "app-spinner");
   }
@@ -57016,11 +57083,13 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   get isCspRequestUriSignin() {
     return !!(this.configService.systemConfig$?.tefcaMode && this.configService.systemConfig$?.identityRequestUri);
   }
-  constructor(configService, authService, router, logger) {
+  constructor(configService, authService, fastenService, router, logger, deviceDetectorService) {
     this.configService = configService;
     this.authService = authService;
+    this.fastenService = fastenService;
     this.router = router;
     this.logger = logger;
+    this.deviceDetectorService = deviceDetectorService;
     this.loading = false;
     this.showMessage = false;
     this.submitted = false;
@@ -57028,6 +57097,9 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.errorMsg = "";
     this.message = "";
     this.testIdentityEmails = TEST_IDENTITY_EMAILS;
+    this.needStorageAccessPermissionSubject = new BehaviorSubject(false);
+    this.userInteractionWindowOpened = false;
+    this.userInteractionCompletedSubject = new BehaviorSubject(false);
     this.ApiMode = ApiMode;
   }
   ngOnInit() {
@@ -57035,6 +57107,23 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.setMessage(urlParams.get("action") || "");
     if (this.configService.vaultProfileConfig$.email) {
       this.existingVaultProfile.email = this.configService.vaultProfileConfig$.email;
+    }
+    if (this.configService.systemConfig$.sdkMode == SDKMode.ReactNative || this.configService.systemConfig$.sdkMode == SDKMode.Flutter) {
+      this.logger.log(`SDK Mode is ${this.configService.systemConfig$.sdkMode}. Don't attempt to request cookie storage permissions..`);
+      this.needStorageAccessPermissionSubject.next(false);
+      return;
+    }
+    if (!this.checkRequiresStoragePermissions()) {
+      this.logger.log("Not Safari and not Chrome, or storage API not supported (and not necessary). Don't attempt to request cookie storage permissions.");
+      this.needStorageAccessPermissionSubject.next(false);
+    } else {
+      this.hasStorageAccess().then((hasAccess) => {
+        if (hasAccess) {
+          this.needStorageAccessPermissionSubject.next(false);
+        } else {
+          this.needStorageAccessPermissionSubject.next(true);
+        }
+      });
     }
   }
   signinSubmit() {
@@ -57048,24 +57137,55 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.configService.vaultProfileConfig = {
       email: this.existingVaultProfile.email
     };
-    this.authService.Signout().then((result) => {
-      this.logger.info(result);
-      return true;
-    }).then((result) => {
+    this.authService.Signout().then((m) => {
+      this.logger.info(m);
+    });
+    var chainPromise = Promise.resolve(true);
+    if (this.needStorageAccessPermissionSubject) {
+      chainPromise = this.requestStorageAccess();
+    }
+    chainPromise.then((result) => {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
     }).then((resp) => __async(this, null, function* () {
-      if (this.configService.systemConfig$.apiMode === ApiMode.Test && !(yield this.authService.WaitForVaultAuthCookie())) {
+      if (this.configService.systemConfig$.apiMode === ApiMode.Test) {
+        if (!(yield this.authService.WaitForVaultAuthCookie())) {
+          this.loading = false;
+          return this.router.navigateByUrl("auth/signin/cookies-required");
+        }
+        return this.authService.GetJWTPayload().then((payload) => {
+          this.loading = false;
+          if (payload) {
+            if (resp?.has_verified_identity && resp?.verified_identity_csp_type) {
+              this.logger.info("setting verified identity csp_type csp type to", resp.verified_identity_csp_type);
+              this.configService.vaultProfileConfig = {
+                verifiedIdentityCspType: resp.verified_identity_csp_type,
+                verifiedIdentityPatientDemographics: resp.verified_identity_patient_demographics
+              };
+            }
+            return this.router.navigateByUrl("dashboard");
+          } else {
+            return this.navigateToCodePage(resp?.expires);
+          }
+        });
+      } else {
         this.loading = false;
-        return this.router.navigateByUrl("auth/signin/cookies-required");
+        return this.navigateToCodePage(resp?.expires);
       }
-      this.loading = false;
-      return this.router.navigate(["auth/signin/code"], { queryParams: { currentEmail: this.existingVaultProfile.email } });
     })).catch((err) => {
       this.loading = false;
       this.errorMsg = this.deriveSignInErrorMessage(err);
       this.logger.error("Sign-in failed with user message: ", this.errorMsg, "; And error: ", err);
     });
+  }
+  navigateToCodePage(codeExpiresAt) {
+    const queryParams = {
+      currentEmail: this.existingVaultProfile.email
+    };
+    if (codeExpiresAt) {
+      queryParams.codeExpiresAt = codeExpiresAt;
+    }
+    return this.router.navigate(["auth/signin/code"], { queryParams });
   }
   signinWithCspRequestUri() {
     return __async(this, null, function* () {
@@ -57166,114 +57286,179 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       this.message = "Password successfully changed! Please sign in with your new password.";
     }
   }
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  // Safari/Chrome privacy workaround methods because Partitioned cookies are not supported in Safari yet
+  // https://blog.certa.dev/third-party-cookie-restrictions-for-iframes-in-safari
+  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+  //check if the browser is Safari (which requires the Storage Access API for third-party cookies)
+  isSafari() {
+    return this.deviceDetectorService.browser === BROWSERS.SAFARI;
+  }
+  //check if the browser is Chrome (which also requires the Storage Access API for third-party cookies)
+  isChrome() {
+    return this.deviceDetectorService.browser === BROWSERS.CHROME;
+  }
+  //check if the browser supports the Storage Access API (if not, we assume it is not needed)
+  isStorageAccessApiSupportedByBrowser() {
+    return "hasStorageAccess" in document && "requestStorageAccess" in document;
+  }
+  //check if the browser requires storage access permissions, or if we can assume that it is not needed
+  checkRequiresStoragePermissions() {
+    return (this.isSafari() || this.isChrome()) && this.isStorageAccessApiSupportedByBrowser();
+  }
+  //check to see if the browser has storage access permissions granted.
+  //check to see if the browser has the embedFirstPartyCookie cookie set, which indicates that the user has interacted with the page and granted storage access.
+  hasStorageAccess() {
+    if (!this.isStorageAccessApiSupportedByBrowser()) {
+      this.logger.warn("Storage Access API not available in this browser.");
+      return Promise.resolve(true);
+    }
+    return document.hasStorageAccess().then((result) => {
+      this.logger.log("Storage Access API unpartitioned or already granted!", result);
+      if (document.cookie.split("; ").find((row) => row.startsWith("embedFirstPartyCookie="))?.split("=")[1]) {
+        return true;
+      } else {
+        this.logger.log("no embedFirstPartyCookie found, storage access is partitioned or not granted yet.");
+        return false;
+      }
+    }).catch((error2) => {
+      this.logger.error("Storage access is partitioned and has not been granted", error2);
+      return false;
+    });
+  }
+  //assuming that the user has visited the /cookie URL and interacted with the page, lets attempt to request storage access
+  // the user will be promted to allow storage access, and if they do, we can continue.
+  // this function must be called from an event handler (where the user interacted wiht the page) -- ie. a click handler
+  requestStorageAccess() {
+    if (!this.isStorageAccessApiSupportedByBrowser()) {
+      this.logger.warn("Storage Access API not available in this browser.");
+      return Promise.resolve(true);
+    }
+    return document.requestStorageAccess().then(() => {
+      this.logger.log("Storage access granted!");
+      return Promise.resolve(true);
+    }).catch((error2) => {
+      this.logger.log("Storage access denied by user", error2);
+      alert("Cookies are required for the Fasten widget to function. Please allow storage access to continue.");
+      return Promise.reject(false);
+    });
+  }
+  awaitUserInteractionCompleted() {
+    if (!this.needStorageAccessPermissionSubject.getValue()) {
+      this.logger.log("No storage access required, no user interaction needed.");
+      return;
+    }
+    if (this.userInteractionCompletedSubject.getValue()) {
+      this.logger.log("User interaction already completed, no need to wait.");
+      return;
+    }
+    if (this.userInteractionWindowOpened) {
+      this.logger.log("User interaction window already opened, waiting for completion.");
+      return;
+    }
+    this.userInteractionWindowOpened = true;
+    this.fastenService.storageApiUserInteractionWithPopup().subscribe((result) => {
+      this.logger.log("User interaction completed", result);
+      this.userInteractionCompletedSubject.next(result.success);
+      this.userInteractionWindowOpened = false;
+    });
+  }
   static {
     this.\u0275fac = function VaultProfileSigninComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(DeviceDetectorService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], decls: 65, vars: 16, consts: [["vaultProfileForm", "ngForm"], ["email", "ngModel"], ["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [1, "space-y-6", 3, "ngSubmit"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], [4, "ngIf"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "block", "text-sm", "font-medium", "text-gray-700"], ["name", "email", "required", "", "email", "", "minlength", "4", "type", "email", "placeholder", "you@example.com", 1, "block", "w-full", "mt-2", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["id", "test-identity-emails", 4, "ngIf"], ["id", "initialError", "class", "text-sm text-red-500", 4, "ngIf"], ["id", "test-identity-emails"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], ["id", "initialError", 1, "text-sm", "text-red-500"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], decls: 58, vars: 26, consts: [["vaultProfileForm", "ngForm"], ["needStorageAccessPermissionTemplate", ""], ["email", "ngModel"], ["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [3, "ngSubmit", "ngClass"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], [4, "ngIf"], ["class", "text-xs text-gray-400 text-center", 4, "ngIf", "ngIfElse"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "block", "text-sm", "font-medium", "text-gray-700"], ["name", "email", "required", "", "email", "", "minlength", "4", "type", "email", "placeholder", "you@example.com", 1, "block", "w-full", "mt-2", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["id", "test-identity-emails", 4, "ngIf"], ["id", "initialError", "class", "text-sm text-red-500", 4, "ngIf"], ["id", "test-identity-emails"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], ["id", "initialError", 1, "text-sm", "text-red-500"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], [1, "text-gray-500", "hover:text-gray-600", "underline", 3, "click"], [1, "flex", "items-center", "justify-center"], [1, "custom-checkbox", "ml-2", "text-sm", "text-gray-600", 3, "click", "ngClass"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
       if (rf & 1) {
         const _r1 = \u0275\u0275getCurrentView();
-        \u0275\u0275elementStart(0, "div", 2);
+        \u0275\u0275elementStart(0, "div", 3);
         \u0275\u0275element(1, "app-header");
-        \u0275\u0275elementStart(2, "div", 3)(3, "div", 4);
-        \u0275\u0275element(4, "img", 5);
+        \u0275\u0275elementStart(2, "div", 4)(3, "div", 5);
+        \u0275\u0275element(4, "img", 6);
         \u0275\u0275pipe(5, "async");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(6, "div", 6);
-        \u0275\u0275element(7, "div", 7)(8, "div", 8)(9, "div", 9);
+        \u0275\u0275elementStart(6, "div", 7);
+        \u0275\u0275element(7, "div", 8)(8, "div", 9)(9, "div", 10);
         \u0275\u0275elementEnd();
         \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(10, "svg", 10);
-        \u0275\u0275element(11, "path", 11)(12, "path", 12)(13, "path", 13)(14, "path", 14)(15, "path", 15)(16, "path", 16);
+        \u0275\u0275elementStart(10, "svg", 11);
+        \u0275\u0275element(11, "path", 12)(12, "path", 13)(13, "path", 14)(14, "path", 15)(15, "path", 16)(16, "path", 17);
         \u0275\u0275elementEnd()();
         \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(17, "div", 17)(18, "h2", 18);
+        \u0275\u0275elementStart(17, "div", 18)(18, "h2", 19);
         \u0275\u0275text(19, "Connect Your Health Records");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(20, "p", 19);
+        \u0275\u0275elementStart(20, "p", 20);
         \u0275\u0275text(21);
         \u0275\u0275pipe(22, "async");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(23, "div", 20)(24, "div", 21)(25, "div", 22);
+        \u0275\u0275elementStart(23, "div", 21)(24, "div", 22)(25, "div", 23);
         \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(26, "svg", 23);
-        \u0275\u0275element(27, "path", 24);
+        \u0275\u0275elementStart(26, "svg", 24);
+        \u0275\u0275element(27, "path", 25);
         \u0275\u0275elementEnd()();
         \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(28, "div")(29, "h3", 25);
+        \u0275\u0275elementStart(28, "div")(29, "h3", 26);
         \u0275\u0275text(30, "Safe");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(31, "p", 19);
+        \u0275\u0275elementStart(31, "p", 20);
         \u0275\u0275text(32, " Securely connect your medical records with bank-level encryption ");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(33, "div", 21)(34, "div", 22);
+        \u0275\u0275elementStart(33, "div", 22)(34, "div", 23);
         \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(35, "svg", 26);
-        \u0275\u0275element(36, "rect", 27)(37, "path", 28);
+        \u0275\u0275elementStart(35, "svg", 27);
+        \u0275\u0275element(36, "rect", 28)(37, "path", 29);
         \u0275\u0275elementEnd()();
         \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(38, "div")(39, "h3", 25);
+        \u0275\u0275elementStart(38, "div")(39, "h3", 26);
         \u0275\u0275text(40, "Private");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(41, "p", 19);
+        \u0275\u0275elementStart(41, "p", 20);
         \u0275\u0275text(42, " We never sell your personal info and only use it with your permission ");
         \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(43, "form", 29, 0);
+        \u0275\u0275elementStart(43, "form", 30, 0);
+        \u0275\u0275pipe(45, "async");
+        \u0275\u0275pipe(46, "async");
         \u0275\u0275listener("ngSubmit", function VaultProfileSigninComponent_Template_form_ngSubmit_43_listener() {
           \u0275\u0275restoreView(_r1);
           return \u0275\u0275resetView(ctx.signinSubmit());
         });
-        \u0275\u0275template(45, VaultProfileSigninComponent_div_45_Template, 9, 1, "div", 30)(46, VaultProfileSigninComponent_ng_container_46_Template, 7, 4, "ng-container", 31);
-        \u0275\u0275elementStart(47, "p", 32);
-        \u0275\u0275text(48, " By clicking continue you agree to: ");
-        \u0275\u0275element(49, "br");
-        \u0275\u0275text(50, "Fasten's ");
-        \u0275\u0275elementStart(51, "a", 33);
-        \u0275\u0275text(52, "Privacy Policy");
-        \u0275\u0275elementEnd();
-        \u0275\u0275text(53, " and ");
-        \u0275\u0275elementStart(54, "a", 34);
-        \u0275\u0275text(55, "Terms & Conditions");
-        \u0275\u0275elementEnd();
-        \u0275\u0275element(56, "br");
-        \u0275\u0275text(57);
-        \u0275\u0275pipe(58, "async");
-        \u0275\u0275elementStart(59, "a", 35);
-        \u0275\u0275pipe(60, "async");
-        \u0275\u0275text(61, "Privacy Policy");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(62, "button", 36);
-        \u0275\u0275template(63, VaultProfileSigninComponent_app_spinner_63_Template, 1, 0, "app-spinner", 31);
-        \u0275\u0275text(64, " Continue ");
+        \u0275\u0275template(47, VaultProfileSigninComponent_div_47_Template, 9, 1, "div", 31)(48, VaultProfileSigninComponent_ng_container_48_Template, 7, 4, "ng-container", 32)(49, VaultProfileSigninComponent_p_49_Template, 15, 6, "p", 33);
+        \u0275\u0275pipe(50, "async");
+        \u0275\u0275template(51, VaultProfileSigninComponent_ng_template_51_Template, 18, 11, "ng-template", null, 1, \u0275\u0275templateRefExtractor);
+        \u0275\u0275elementStart(53, "button", 34);
+        \u0275\u0275pipe(54, "async");
+        \u0275\u0275pipe(55, "async");
+        \u0275\u0275template(56, VaultProfileSigninComponent_app_spinner_56_Template, 1, 0, "app-spinner", 32);
+        \u0275\u0275text(57, " Continue ");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
-        let tmp_1_0;
         let tmp_2_0;
-        let tmp_5_0;
-        let tmp_6_0;
-        const vaultProfileForm_r6 = \u0275\u0275reference(44);
+        let tmp_3_0;
+        const vaultProfileForm_r7 = \u0275\u0275reference(44);
+        const needStorageAccessPermissionTemplate_r8 = \u0275\u0275reference(52);
         \u0275\u0275advance(4);
-        \u0275\u0275property("src", (tmp_1_0 = \u0275\u0275pipeBind1(5, 8, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.org == null ? null : tmp_1_0.org.logo_uri, \u0275\u0275sanitizeUrl);
+        \u0275\u0275property("src", (tmp_2_0 = \u0275\u0275pipeBind1(5, 9, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.logo_uri, \u0275\u0275sanitizeUrl);
         \u0275\u0275advance(17);
-        \u0275\u0275textInterpolate1(" ", ((tmp_2_0 = \u0275\u0275pipeBind1(22, 10, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.name) || "Unknown", " uses Fasten to securely link your health systems ");
-        \u0275\u0275advance(24);
+        \u0275\u0275textInterpolate1(" ", ((tmp_3_0 = \u0275\u0275pipeBind1(22, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.name) || "Unknown", " uses Fasten to securely link your health systems ");
+        \u0275\u0275advance(22);
+        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(23, _c0, \u0275\u0275pipeBind1(45, 13, ctx.needStorageAccessPermissionSubject), !\u0275\u0275pipeBind1(46, 15, ctx.needStorageAccessPermissionSubject)));
+        \u0275\u0275advance(4);
         \u0275\u0275property("ngIf", ctx.errorMsg);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.isCspRequestUriSignin);
-        \u0275\u0275advance(11);
-        \u0275\u0275textInterpolate1("", ((tmp_5_0 = \u0275\u0275pipeBind1(58, 12, ctx.configService.systemConfigSubject)) == null ? null : tmp_5_0.org == null ? null : tmp_5_0.org.name) || "Unknown", "'s ");
-        \u0275\u0275advance(2);
-        \u0275\u0275propertyInterpolate("href", (tmp_6_0 = \u0275\u0275pipeBind1(60, 14, ctx.configService.systemConfigSubject)) == null ? null : tmp_6_0.org == null ? null : tmp_6_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
-        \u0275\u0275advance(3);
-        \u0275\u0275property("disabled", !ctx.isCspRequestUriSignin && !vaultProfileForm_r6.form.valid || ctx.loading);
         \u0275\u0275advance();
+        \u0275\u0275property("ngIf", !\u0275\u0275pipeBind1(50, 17, ctx.needStorageAccessPermissionSubject))("ngIfElse", needStorageAccessPermissionTemplate_r8);
+        \u0275\u0275advance(4);
+        \u0275\u0275property("disabled", !ctx.isCspRequestUriSignin && !vaultProfileForm_r7.form.valid || ctx.loading || \u0275\u0275pipeBind1(54, 19, ctx.needStorageAccessPermissionSubject) && !\u0275\u0275pipeBind1(55, 21, ctx.userInteractionCompletedSubject));
+        \u0275\u0275advance(3);
         \u0275\u0275property("ngIf", ctx.loading);
       }
     }, dependencies: [
       CommonModule,
+      NgClass,
       NgForOf,
       NgIf,
       AsyncPipe,
@@ -57331,11 +57516,11 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 31 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 34 });
 })();
 
 // node_modules/angular-code-input/fesm2022/angular-code-input.mjs
-var _c0 = ["input"];
+var _c02 = ["input"];
 function CodeInputComponent_span_0_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -57694,7 +57879,7 @@ var CodeInputComponent = class _CodeInputComponent {
       selectors: [["code-input"]],
       viewQuery: function CodeInputComponent_Query(rf, ctx) {
         if (rf & 1) {
-          \u0275\u0275viewQuery(_c0, 5);
+          \u0275\u0275viewQuery(_c02, 5);
         }
         if (rf & 2) {
           let _t;
@@ -57841,166 +58026,10 @@ var CodeInputModule = class _CodeInputModule {
   }], null, null);
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/components/dev-tools/dev-tools.component.ts
-var _c02 = (a0, a1, a2, a3) => ({ "border-gray-400 text-gray-800 hover:bg-gray-50": a0, "border-gray-400 text-gray-600": a1, "border-green-500 text-green-700": a2, "border-red-500 text-red-700 hover:bg-red-50": a3 });
-function DevToolsComponent_div_9__svg_svg_2_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(0, "svg", 15);
-    \u0275\u0275element(1, "path", 16);
-    \u0275\u0275elementEnd();
-  }
-}
-function DevToolsComponent_div_9__svg_svg_3_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(0, "svg", 17);
-    \u0275\u0275element(1, "circle", 18)(2, "path", 19);
-    \u0275\u0275elementEnd();
-  }
-}
-function DevToolsComponent_div_9__svg_svg_4_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(0, "svg", 20);
-    \u0275\u0275element(1, "path", 21)(2, "path", 22)(3, "path", 23);
-    \u0275\u0275elementEnd();
-  }
-}
-function DevToolsComponent_div_9__svg_svg_5_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(0, "svg", 24);
-    \u0275\u0275element(1, "path", 25)(2, "path", 26);
-    \u0275\u0275elementEnd();
-  }
-}
-function DevToolsComponent_div_9_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 8)(1, "button", 9);
-    \u0275\u0275listener("click", function DevToolsComponent_div_9_Template_button_click_1_listener() {
-      \u0275\u0275restoreView(_r1);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.resetConnections.emit());
-    });
-    \u0275\u0275template(2, DevToolsComponent_div_9__svg_svg_2_Template, 2, 0, "svg", 10)(3, DevToolsComponent_div_9__svg_svg_3_Template, 3, 0, "svg", 11)(4, DevToolsComponent_div_9__svg_svg_4_Template, 4, 0, "svg", 12)(5, DevToolsComponent_div_9__svg_svg_5_Template, 3, 0, "svg", 13);
-    \u0275\u0275elementStart(6, "span");
-    \u0275\u0275text(7);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(8, "span", 14);
-    \u0275\u0275text(9);
-    \u0275\u0275elementEnd()();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance();
-    \u0275\u0275property("disabled", ctx_r1.resetState === "loading")("ngClass", \u0275\u0275pureFunction4(10, _c02, ctx_r1.resetState === "idle", ctx_r1.resetState === "loading", ctx_r1.resetState === "success", ctx_r1.resetState === "error"));
-    \u0275\u0275attribute("aria-busy", ctx_r1.resetState === "loading")("title", ctx_r1.resetConnectionsTooltip);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.resetState === "loading");
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.resetState === "success");
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.resetState === "error");
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.resetState === "idle");
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(ctx_r1.resetButtonLabel);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate1(" ", ctx_r1.resetConnectionsTooltip, " ");
-  }
-}
-function DevToolsComponent_div_10_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 8)(1, "button", 27);
-    \u0275\u0275listener("click", function DevToolsComponent_div_10_Template_button_click_1_listener() {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.skip.emit());
-    });
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 28);
-    \u0275\u0275element(3, "polygon", 29)(4, "line", 30);
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(5, "span");
-    \u0275\u0275text(6, "Skip");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(7, "span", 31);
-    \u0275\u0275text(8);
-    \u0275\u0275elementEnd()();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance();
-    \u0275\u0275attribute("title", ctx_r1.skipTooltip);
-    \u0275\u0275advance(7);
-    \u0275\u0275textInterpolate1(" ", ctx_r1.skipTooltip, " ");
-  }
-}
-var DevToolsComponent = class _DevToolsComponent {
-  constructor() {
-    this.showSkip = false;
-    this.showResetConnections = false;
-    this.resetState = "idle";
-    this.skipTooltip = "Continue without completing this step.";
-    this.resetConnectionsTooltip = "Remove the test connections associated with this profile.";
-    this.skip = new EventEmitter();
-    this.resetConnections = new EventEmitter();
-  }
-  get resetButtonLabel() {
-    switch (this.resetState) {
-      case "loading":
-        return "Resetting...";
-      case "success":
-        return "Connections reset";
-      case "error":
-        return "Retry reset";
-      default:
-        return "Reset connections";
-    }
-  }
-  static {
-    this.\u0275fac = function DevToolsComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _DevToolsComponent)();
-    };
-  }
-  static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DevToolsComponent, selectors: [["app-dev-tools"]], inputs: { showSkip: "showSkip", showResetConnections: "showResetConnections", resetState: "resetState", skipTooltip: "skipTooltip", resetConnectionsTooltip: "resetConnectionsTooltip" }, outputs: { skip: "skip", resetConnections: "resetConnections" }, decls: 11, vars: 2, consts: [["id", "dev-tools-banner", "aria-label", "Developer tools", 1, "fixed", "inset-x-0", "bottom-0", "z-50", "w-full", "rounded-b-lg", "border-t", "border-gray-300", "bg-gray-200", "px-3", "py-2", "text-gray-800", "shadow-[0_-2px_8px_rgba(0,0,0,0.12)]"], [1, "flex", "min-h-10", "items-center", "justify-center", "gap-2", "sm:gap-3"], [1, "dev-tools-label", "flex", "shrink-0", "items-center", "gap-1.5", "text-xs", "font-semibold", "uppercase", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-wrench"], ["d", "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"], ["aria-hidden", "true", 1, "h-6", "w-px", "shrink-0", "bg-gray-400"], [1, "flex", "items-center", "justify-center", "gap-2"], ["class", "dev-tool-action-group relative", 4, "ngIf"], [1, "dev-tool-action-group", "relative"], ["type", "button", "id", "dev-tools-reset-connections-button", "aria-describedby", "dev-tools-reset-connections-tooltip", 1, "flex", "h-9", "items-center", "justify-center", "gap-1.5", "whitespace-nowrap", "rounded-md", "border", "bg-white", "px-3", "text-sm", "font-medium", "shadow-sm", "transition-colors", "focus:outline-none", "focus:ring-2", "focus:ring-gray-600", "focus:ring-offset-2", "focus:ring-offset-gray-200", "disabled:cursor-not-allowed", "disabled:opacity-70", 3, "click", "disabled", "ngClass"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-loader-circle animate-spin", 4, "ngIf"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-circle-check", 4, "ngIf"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-triangle-alert", 4, "ngIf"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-rotate-ccw", 4, "ngIf"], ["id", "dev-tools-reset-connections-tooltip", "role", "tooltip", 1, "dev-tool-tooltip"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-loader-circle", "animate-spin"], ["d", "M21 12a9 9 0 1 1-6.219-8.56"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-circle-check"], ["cx", "12", "cy", "12", "r", "10"], ["d", "m9 12 2 2 4-4"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-triangle-alert"], ["d", "m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"], ["d", "M12 9v4"], ["d", "M12 17h.01"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-rotate-ccw"], ["d", "M3 12a9 9 0 1 0 3-6.7L3 8"], ["d", "M3 3v5h5"], ["type", "button", "id", "dev-tools-skip-button", "aria-describedby", "dev-tools-skip-tooltip", 1, "flex", "h-9", "items-center", "justify-center", "gap-1.5", "whitespace-nowrap", "rounded-md", "border", "border-[#5B47FB]", "bg-[#5B47FB]", "px-3", "text-sm", "font-medium", "text-white", "shadow-sm", "transition-colors", "hover:border-[#4936E8]", "hover:bg-[#4936E8]", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-offset-2", "focus:ring-offset-gray-200", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-skip-forward"], ["points", "5 4 15 12 5 20 5 4"], ["x1", "19", "x2", "19", "y1", "5", "y2", "19"], ["id", "dev-tools-skip-tooltip", "role", "tooltip", 1, "dev-tool-tooltip"]], template: function DevToolsComponent_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275elementStart(0, "aside", 0)(1, "div", 1)(2, "div", 2);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(3, "svg", 3);
-        \u0275\u0275element(4, "path", 4);
-        \u0275\u0275elementEnd();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(5, "span");
-        \u0275\u0275text(6, "Dev tools");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275element(7, "span", 5);
-        \u0275\u0275elementStart(8, "div", 6);
-        \u0275\u0275template(9, DevToolsComponent_div_9_Template, 10, 15, "div", 7)(10, DevToolsComponent_div_10_Template, 9, 2, "div", 7);
-        \u0275\u0275elementEnd()()();
-      }
-      if (rf & 2) {
-        \u0275\u0275advance(9);
-        \u0275\u0275property("ngIf", ctx.showResetConnections);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ctx.showSkip);
-      }
-    }, dependencies: [CommonModule, NgClass, NgIf], styles: ["\n\n[_nghost-%COMP%] {\n  display: block;\n  min-height: 3.5rem;\n}\n.dev-tool-tooltip[_ngcontent-%COMP%] {\n  position: fixed;\n  right: 0.5rem;\n  bottom: 3.75rem;\n  left: 0.5rem;\n  width: fit-content;\n  max-width: min(24rem, calc(100vw - 1rem));\n  margin: 0 auto;\n  padding: 0.5rem 0.625rem;\n  border-radius: 0.375rem;\n  background: #111827;\n  color: #ffffff;\n  font-size: 0.75rem;\n  font-weight: 400;\n  line-height: 1rem;\n  text-align: left;\n  white-space: normal;\n  visibility: hidden;\n  opacity: 0;\n  pointer-events: none;\n  transition: opacity 0.15s ease;\n}\n.dev-tool-action-group[_ngcontent-%COMP%]:hover   .dev-tool-tooltip[_ngcontent-%COMP%], \n.dev-tool-action-group[_ngcontent-%COMP%]:focus-within   .dev-tool-tooltip[_ngcontent-%COMP%] {\n  visibility: visible;\n  opacity: 1;\n}\n@media (max-width: 359px) {\n  .dev-tools-label[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n    display: none;\n  }\n}\n/*# sourceMappingURL=dev-tools.component.css.map */"] });
-  }
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DevToolsComponent, { className: "DevToolsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/dev-tools/dev-tools.component.ts", lineNumber: 13 });
-})();
-
 // projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts
 function VaultProfileSigninCodeComponent_p_13_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 12);
+    \u0275\u0275elementStart(0, "p", 11);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -58010,48 +58039,45 @@ function VaultProfileSigninCodeComponent_p_13_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r0.errorMsg);
   }
 }
-function VaultProfileSigninCodeComponent_app_dev_tools_25_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r2 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-dev-tools", 13);
-    \u0275\u0275listener("skip", function VaultProfileSigninCodeComponent_app_dev_tools_25_Template_app_dev_tools_skip_0_listener() {
-      \u0275\u0275restoreView(_r2);
-      const ctx_r0 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r0.skipSignInCode());
-    });
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    \u0275\u0275property("showSkip", true);
-  }
-}
 var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
+  set codeExpiresAt(value) {
+    this.codeExpiresAt$.next(value);
+  }
+  get codeExpiresAt() {
+    return this.codeExpiresAt$.value;
+  }
+  get canResendCode() {
+    return this.codeExpiresAt > 0 && this.resendSecondsRemaining === 0;
+  }
+  get resendSecondsRemaining() {
+    if (this.codeExpiresAt <= 0) {
+      return 0;
+    }
+    return Math.max(this.codeExpiresAt - this.resendEligibilityWindowSeconds - Math.floor(Date.now() / 1e3) + 1, 0);
+  }
+  get resendCodeTooltip() {
+    const unit = this.resendSecondsRemaining === 1 ? "second" : "seconds";
+    return `You must wait ${this.resendSecondsRemaining} ${unit} before you can resend a new code.`;
+  }
   constructor(router, authService, configService, logger) {
     this.router = router;
     this.authService = authService;
     this.configService = configService;
     this.logger = logger;
     this.loading = false;
+    this.resendLoading = false;
     this.errorMsg = "";
-    this.canSkipSignInCode = false;
     this.currentEmail = "test@example.com";
-    this.codeExpirySeconds = 300;
-    this.timeRemaining$ = timer(0, 1e3).pipe(map((n2) => (this.codeExpirySeconds - n2) * 1e3), takeWhile((n2) => n2 >= 0));
+    this.codeExpiresAt$ = new BehaviorSubject(0);
+    this.resendEligibilityWindowSeconds = 4 * 60;
+    this.timeRemaining$ = this.codeExpiresAt$.pipe(distinctUntilChanged(), switchMap((codeExpiresAt) => timer(0, 1e3).pipe(
+      map(() => Math.max(codeExpiresAt * 1e3 - Date.now(), 0)),
+      distinctUntilChanged(),
+      // Emit 0 once for the UI, then dispose of this expiry's interval.
+      takeWhile((timeRemaining) => timeRemaining > 0, true)
+    )));
   }
   ngOnInit() {
-    void this.checkCanSkipSignInCode();
-  }
-  checkCanSkipSignInCode() {
-    return __async(this, null, function* () {
-      this.canSkipSignInCode = false;
-      if (this.configService.systemConfig$.apiMode !== ApiMode.Test) {
-        return;
-      }
-      this.canSkipSignInCode = !!(yield this.authService.GetJWTPayload());
-    });
-  }
-  skipSignInCode() {
-    return this.router.navigateByUrl("dashboard");
   }
   onCodeCompleted(code) {
     this.loading = true;
@@ -58081,13 +58107,31 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
       }
     });
   }
+  onResendCode() {
+    if (!this.canResendCode || this.resendLoading) {
+      return;
+    }
+    this.resendLoading = true;
+    this.errorMsg = "";
+    this.authService.VaultAuthResendCode(this.currentEmail).then((resp) => {
+      if (!resp?.expires) {
+        throw new Error("Vault auth resend response did not include a code expiry");
+      }
+      this.codeExpiresAt = resp.expires;
+      this.resendLoading = false;
+    }).catch((err) => {
+      this.logger.error("Unable to resend vault authentication code", err);
+      this.resendLoading = false;
+      this.errorMsg = "Unable to resend the code. Please try again.";
+    });
+  }
   static {
     this.\u0275fac = function VaultProfileSigninCodeComponent_Factory(__ngFactoryType__) {
       return new (__ngFactoryType__ || _VaultProfileSigninCodeComponent)(\u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail" }, decls: 26, vars: 11, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2"], [3, "codeCompleted", "isCodeHidden", "codeLength"], ["id", "verification-error", "class", "text-sm text-red-500", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["id", "verification-countdown", 1, "font-semibold", "text-gray-900"], ["type", "button", "id", "resend-code", 1, "verification-button"], ["type", "button", "id", "use-other-method", 1, "verification-button", 2, "display", "none"], ["skipTooltip", "Continue without entering the test authentication code.", 3, "showSkip", "skip", 4, "ngIf"], ["id", "verification-error", 1, "text-sm", "text-red-500"], ["skipTooltip", "Continue without entering the test authentication code.", 3, "skip", "showSkip"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail", codeExpiresAt: [2, "codeExpiresAt", "codeExpiresAt", numberAttribute] }, decls: 24, vars: 15, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2"], [3, "codeCompleted", "isCodeHidden", "isPrevFocusableAfterClearing", "codeLength"], ["id", "verification-error", "class", "text-sm text-red-500", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["id", "verification-countdown", 1, "font-semibold", "text-gray-900"], [1, "resend-code-wrapper"], ["type", "button", "id", "resend-code", 1, "verification-button", 3, "click", "disabled"], ["id", "verification-error", 1, "text-sm", "text-red-500"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -58114,26 +58158,29 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
         \u0275\u0275pipe(18, "async");
         \u0275\u0275pipe(19, "date");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(20, "div", 1)(21, "button", 9);
-        \u0275\u0275text(22, " Re-send code ");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(23, "button", 10);
-        \u0275\u0275text(24, " Use another verification method ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275template(25, VaultProfileSigninCodeComponent_app_dev_tools_25_Template, 1, 1, "app-dev-tools", 11);
-        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(20, "div", 1)(21, "span", 9)(22, "button", 10);
+        \u0275\u0275listener("click", function VaultProfileSigninCodeComponent_Template_button_click_22_listener() {
+          return ctx.onResendCode();
+        });
+        \u0275\u0275text(23);
+        \u0275\u0275elementEnd()()()();
       }
       if (rf & 2) {
         \u0275\u0275advance(10);
         \u0275\u0275textInterpolate(ctx.currentEmail);
         \u0275\u0275advance(2);
-        \u0275\u0275property("isCodeHidden", false)("codeLength", 6);
+        \u0275\u0275property("isCodeHidden", false)("isPrevFocusableAfterClearing", false)("codeLength", 6);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.errorMsg);
         \u0275\u0275advance(4);
-        \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 8, \u0275\u0275pipeBind1(18, 6, ctx.timeRemaining$), "mm:ss"));
-        \u0275\u0275advance(8);
-        \u0275\u0275property("ngIf", ctx.canSkipSignInCode);
+        \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 12, \u0275\u0275pipeBind1(18, 10, ctx.timeRemaining$), "mm:ss"));
+        \u0275\u0275advance(4);
+        \u0275\u0275attribute("data-tooltip", !ctx.canResendCode ? ctx.resendCodeTooltip : null);
+        \u0275\u0275advance();
+        \u0275\u0275property("disabled", !ctx.canResendCode || ctx.resendLoading || ctx.loading);
+        \u0275\u0275attribute("aria-label", !ctx.canResendCode ? ctx.resendCodeTooltip : "Re-send code");
+        \u0275\u0275advance();
+        \u0275\u0275textInterpolate1(" ", ctx.resendLoading ? "Sending code..." : "Re-send code", " ");
       }
     }, dependencies: [
       CommonModule,
@@ -58143,16 +58190,16 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
       RouterModule,
       HeaderComponent,
       CodeInputModule,
-      CodeInputComponent,
-      DevToolsComponent
-    ], styles: ["\n\ncode-input[_ngcontent-%COMP%] {\n  --item-width: 2.5rem;\n  --item-height: 2.5rem;\n  --item-border: 1px solid #d1d5db;\n  --item-border-radius: 0.5rem;\n  --item-font-size: 1.25rem;\n  --item-font-weight: 600;\n  --item-color: #111827;\n  //--item-border-bottom: none;\n  //--item-border-has-value: none;\n  //--item-border-bottom-has-value: 2px solid #888888;\n  //--item-border-focused: none;\n  //--item-border-bottom-focused: 2px solid #809070;\n  //--item-shadow-focused: none;\n}\n/*# sourceMappingURL=vault-profile-signin-code.component.css.map */"] });
+      CodeInputComponent
+    ], styles: ["\n\ncode-input[_ngcontent-%COMP%] {\n  --item-width: 2.5rem;\n  --item-height: 2.5rem;\n  --item-border: 1px solid #d1d5db;\n  --item-border-radius: 0.5rem;\n  --item-font-size: 1.25rem;\n  --item-font-weight: 600;\n  --item-color: #111827;\n  //--item-border-bottom: none;\n  //--item-border-has-value: none;\n  //--item-border-bottom-has-value: 2px solid #888888;\n  //--item-border-focused: none;\n  //--item-border-bottom-focused: 2px solid #809070;\n  //--item-shadow-focused: none;\n}\n.resend-code-wrapper[_ngcontent-%COMP%] {\n  display: block;\n  position: relative;\n}\n.resend-code-wrapper[data-tooltip][_ngcontent-%COMP%]::after {\n  background-color: #111827;\n  border-radius: 0.375rem;\n  bottom: calc(100% + 0.5rem);\n  color: #ffffff;\n  content: attr(data-tooltip);\n  font-size: 0.75rem;\n  left: 50%;\n  max-width: 18rem;\n  opacity: 0;\n  padding: 0.375rem 0.5rem;\n  pointer-events: none;\n  position: absolute;\n  text-align: center;\n  transform: translateX(-50%);\n  transition: opacity 0.15s ease-in-out;\n  width: max-content;\n  z-index: 10;\n}\n.resend-code-wrapper[data-tooltip][_ngcontent-%COMP%]:hover::after {\n  opacity: 1;\n}\n.verification-button[_ngcontent-%COMP%]:disabled, \n.verification-button[_ngcontent-%COMP%]:disabled:hover {\n  background-color: transparent;\n  color: #9ca3af;\n  cursor: not-allowed;\n}\n/*# sourceMappingURL=vault-profile-signin-code.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninCodeComponent, { className: "VaultProfileSigninCodeComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts", lineNumber: 25 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninCodeComponent, { className: "VaultProfileSigninCodeComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts", lineNumber: 23 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts
+var _c03 = (a0, a1, a2, a3) => ({ "hover:bg-gray-50 border-gray-200": a0, "cursor-not-allowed opacity-70 border-indigo-200 text-indigo-500": a1, "border-green-400 bg-green-50 text-green-600": a2, "border-red-400 bg-red-50 text-red-600": a3 });
 function IdentityVerificationComponent_div_22_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 14);
@@ -58160,36 +58207,105 @@ function IdentityVerificationComponent_div_22_Template(rf, ctx) {
     \u0275\u0275elementEnd();
   }
 }
-function IdentityVerificationComponent_app_dev_tools_23_Template(rf, ctx) {
+function IdentityVerificationComponent_div_23_div_3_Template(rf, ctx) {
   if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-dev-tools", 15);
-    \u0275\u0275listener("skip", function IdentityVerificationComponent_app_dev_tools_23_Template_app_dev_tools_skip_0_listener() {
-      \u0275\u0275restoreView(_r1);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.skipIdentityVerification());
-    })("resetConnections", function IdentityVerificationComponent_app_dev_tools_23_Template_app_dev_tools_resetConnections_0_listener() {
-      \u0275\u0275restoreView(_r1);
-      const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275elementStart(0, "div", 25);
+    \u0275\u0275element(1, "span", 26);
+    \u0275\u0275elementEnd();
+  }
+}
+function IdentityVerificationComponent_div_23__svg_svg_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 27);
+    \u0275\u0275element(1, "rect", 28)(2, "path", 29);
+    \u0275\u0275elementEnd();
+  }
+}
+function IdentityVerificationComponent_div_23__svg_svg_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 27);
+    \u0275\u0275element(1, "path", 30)(2, "path", 31);
+    \u0275\u0275elementEnd();
+  }
+}
+function IdentityVerificationComponent_div_23__svg_svg_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 32);
+    \u0275\u0275element(1, "path", 33);
+    \u0275\u0275elementEnd();
+  }
+}
+function IdentityVerificationComponent_div_23_div_10_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 34)(1, "button", 35);
+    \u0275\u0275listener("click", function IdentityVerificationComponent_div_23_div_10_Template_button_click_1_listener() {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.onResetConnections());
     });
-    \u0275\u0275elementEnd();
+    \u0275\u0275text(2, " Reset Connections ");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275property("disabled", ctx_r1.resetButtonState === "loading");
+  }
+}
+function IdentityVerificationComponent_div_23_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 15)(1, "div", 16);
+    \u0275\u0275listener("click", function IdentityVerificationComponent_div_23_Template_div_click_1_listener($event) {
+      \u0275\u0275restoreView(_r1);
+      return \u0275\u0275resetView($event.stopPropagation());
+    });
+    \u0275\u0275elementStart(2, "div", 17);
+    \u0275\u0275template(3, IdentityVerificationComponent_div_23_div_3_Template, 2, 0, "div", 18);
+    \u0275\u0275elementStart(4, "button", 19);
+    \u0275\u0275listener("click", function IdentityVerificationComponent_div_23_Template_button_click_4_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.toggleResetMenu());
+    });
+    \u0275\u0275elementStart(5, "div", 20);
+    \u0275\u0275elementContainerStart(6, 21);
+    \u0275\u0275template(7, IdentityVerificationComponent_div_23__svg_svg_7_Template, 3, 0, "svg", 22)(8, IdentityVerificationComponent_div_23__svg_svg_8_Template, 3, 0, "svg", 22)(9, IdentityVerificationComponent_div_23__svg_svg_9_Template, 2, 0, "svg", 23);
+    \u0275\u0275elementContainerEnd();
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275template(10, IdentityVerificationComponent_div_23_div_10_Template, 3, 1, "div", 24);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275property("showSkip", ctx_r1.canSkipIdentityVerification)("showResetConnections", true)("resetState", ctx_r1.resetButtonState);
+    \u0275\u0275advance(3);
+    \u0275\u0275property("ngIf", ctx_r1.resetButtonState === "loading");
+    \u0275\u0275advance();
+    \u0275\u0275property("disabled", ctx_r1.resetButtonState === "loading")("ngClass", \u0275\u0275pureFunction4(9, _c03, ctx_r1.resetButtonState === "idle", ctx_r1.resetButtonState === "loading", ctx_r1.resetButtonState === "success", ctx_r1.resetButtonState === "error"));
+    \u0275\u0275attribute("aria-expanded", ctx_r1.isResetMenuOpen)("aria-busy", ctx_r1.resetButtonState === "loading");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngSwitch", ctx_r1.resetButtonState);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngSwitchCase", "success");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngSwitchCase", "error");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", ctx_r1.isResetMenuOpen);
   }
 }
 var IdentityVerificationComponent = class _IdentityVerificationComponent {
-  constructor(fastenService, authService, configService, router, logger) {
+  constructor(fastenService, configService, router, logger) {
     this.fastenService = fastenService;
-    this.authService = authService;
     this.configService = configService;
     this.router = router;
     this.logger = logger;
     this.loading = false;
     this.errorMessage = "";
-    this.canSkipIdentityVerification = false;
+    this.isResetMenuOpen = false;
     this.resetButtonState = "idle";
     this.labsIconSrc = `data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E`;
     this.CspType = CspType;
@@ -58205,22 +58321,6 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     }
   }
   ngOnInit() {
-    void this.checkCanSkipIdentityVerification();
-  }
-  checkCanSkipIdentityVerification() {
-    return __async(this, null, function* () {
-      this.canSkipIdentityVerification = false;
-      if (this.configService.systemConfig$.apiMode !== ApiMode.Test) {
-        return;
-      }
-      const jwtPayload = yield this.authService.GetJWTPayload();
-      this.canSkipIdentityVerification = jwtPayload?.has_verified_identity === true;
-    });
-  }
-  skipIdentityVerification() {
-    return this.router.navigateByUrl("dashboard", {
-      state: { skipIdentityVerification: true }
-    });
   }
   verifyIdentity(cspType) {
     this.loading = true;
@@ -58244,9 +58344,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
         };
       }
       this.logger.info("verification result", result);
-      this.router.navigateByUrl("dashboard", {
-        state: { identityVerificationSucceeded: true }
-      });
+      this.router.navigateByUrl("dashboard");
     }, (err) => {
       this.loading = false;
       this.logger.error("verification error", err);
@@ -58266,7 +58364,11 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
       return;
     });
   }
+  toggleResetMenu() {
+    this.isResetMenuOpen = !this.isResetMenuOpen;
+  }
   onResetConnections() {
+    this.isResetMenuOpen = false;
     if (this.resetButtonState === "loading") {
       return;
     }
@@ -58294,13 +58396,22 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
       }, 1600);
     }
   }
+  closeResetMenu() {
+    this.isResetMenuOpen = false;
+  }
   static {
     this.\u0275fac = function IdentityVerificationComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _IdentityVerificationComponent)(\u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _IdentityVerificationComponent)(\u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationComponent, selectors: [["app-identity-verification"]], decls: 24, vars: 7, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["src", "https://s3.amazonaws.com/idme-design/brand-assets/Primary-IDme-Logo-RGB.svg", 2, "height", "0.8rem", "display", "inline", "vertical-align", "center"], [1, "space-y-4", "flex", "flex-col", "items-center"], ["type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "clear-button", 3, "click", "disabled"], ["src", "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Generator: Adobe Illustrator 26.3.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 353.2 337.6' style='enable-background:new 0 0 353.2 337.6;' xml:space='preserve'%3E%3Cstyle type='text/css'%3E .st0%7Bdisplay:none;%7D .st1%7Bdisplay:inline;fill:%23192958;%7D .st2%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Cg id='BKGD' class='st0'%3E%3Crect class='st1' width='353.2' height='337.6'/%3E%3C/g%3E%3Cg id='Layer_2'%3E%3Cg%3E%3Cg%3E%3Ccircle class='st2' cx='14' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='77.1' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='227.8' r='14'/%3E%3Ccircle class='st2' cx='99.4' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='45.5' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='108.7' r='14'/%3E%3Ccircle class='st2' cx='98.4' cy='61.7' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='61.1' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='109.7' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='227.9' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='45.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='301.5' r='14'/%3E%3Ccircle class='st2' cx='226.7' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='126.6' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='276.5' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='339.2' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='35.5' r='14'/%3E%3Ccircle class='st2' cx='126.2' cy='14' r='14'/%3E%3Ccircle class='st2' cx='226.8' cy='14' r='14'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E", 1, "px-[8px]", 2, "height", "24px", "display", "inline", "vertical-align", "bottom"], ["data-testid", "idme-button", "type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "gap-2", "clear-button", "idme-button", 3, "click", "disabled"], [1, "text-base", "font-semibold"], ["src", "data:image/svg+xml,%3Csvg%20%20%20%20role%3D%22img%22%20%20%20%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%20%20%20viewBox%3D%220%200%2030%2012%22%20%20%20%20fill%3D%22none%22%20%20%20%20aria-labelledby%3D%22idme-title%22%3E%3Ctitle%20id%3D%22idme-title%22%3EID.me%3C%2Ftitle%3E%3Cg%20fillRule%3D%22nonzero%22%20fill%3D%22none%22%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M1.48515.0384H.96978C.32628.0384%200%20.24588%200%20.6551v10.12096c0%20.40922.32627.6167.96978.6167h.51537c.64332%200%20.96977-.20748.96977-.6167V.6551c0-.40922-.32645-.6167-.96977-.6167M7.67332%209.10802H6.14794V2.31206h1.52538c1.90854%200%202.30924%201.84782%202.30924%203.39798s-.4007%203.39798-2.30924%203.39798zm2.901%201.04522c0-1.20723.73212-2.22915%201.74336-2.58106.11573-.56263.17475-1.18411.17475-1.86214%200-3.65857-1.71147-5.67336-4.81911-5.67336h-3.3127c-.4629%200-.67823.23232-.67823.73114v9.88444c0%20.49882.21532.73114.67824.73114h3.31269c1.18475%200%202.16587-.29364%202.92723-.85876-.01542-.1217-.02623-.24512-.02623-.3714z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M14.24058%2010.15324c0%20.68452-.51484%201.23952-1.14984%201.23952-.63518%200-1.14984-.555-1.14984-1.23952%200-.68453.51466-1.23952%201.14984-1.23952.635%200%201.14984.555%201.14984%201.23952%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M27.26344%205.99604c.00248.0298.00478.05941.00514.0896%200%20.04337-.0016.08769-.0062.13488-.01525.15857-.04236.30625-.08047.43922-.2536.88646-.96747%201.0435-1.58492%201.06604.08383-.38496.20718-.76209.35906-1.09489.30057-.66007.67788-1.07006.98466-1.07025.028%200%20.05547.0044.08347.013.01188.00362.02233.00973.04112.01967l.01276.0063c.00514.0023.01028.00459.01506.00803.01312.00898.02464.02082.0374.03343l.01046.0105c.0039.00383.00797.00765.0117.01204.0085.01032.01559.02236.02268.03401l.00921.0151c.00638.00993.01259.02005.01826.03209.00336.00707.0062.0149.01418.03553.00815.0216.01648.04337.02268.06706l.00567.02751c.00656.02847.01223.0575.01577.08789l.0023.03324zm2.17934%202.4177a.2772.2772%200%2000-.10652-.0256c-.15702-.00553-.26406.06095-.3587.22564-.056.09877-.11112.19926-.1657.29975-.2086.38305-.4241.77871-.73726%201.06223-.42534.38496-1.04102.56512-1.56898.46061-.31404-.06209-.53823-.30701-.67115-.5015-.24386-.35726-.36242-.83832-.34328-1.39274.77713-.0705%203.11951-.4438%203.30578-2.35791.03597-.37102-.06203-.70745-.28356-.97263-.2809-.33624-.72928-.52156-1.26238-.52156-1.56224%200-3.1041%201.76147-3.29958%203.76957-.05334.5508.01028%201.05974.18963%201.5129-.13362.13336-.2598.22946-.3851.29327-.1308.06725-.24422.08081-.32734.03973-.10297-.05158-.14462-.1811-.1611-.28045-.0615-.36777.0179-.79037.11183-1.22691.05547-.256.12477-.5229.18591-.75827.18874-.72618.38422-1.47718.319-2.23584-.05936-.69465-.51164-1.12603-1.18031-1.12603-.93753%200-1.5548.7212-1.95462%201.33943-.0085-.4608-.11041-.79533-.30997-1.01885-.1898-.21283-.46876-.32058-.82888-.32058-.91962%200-1.52928.69274-1.92803%201.29912.00531-.05578.01063-.11271.0163-.16946.02517-.26001.03651-.63256-.15578-.86239-.11466-.13717-.28693-.20652-.51218-.20652-.19885%200-.24847.00115-.46203.03917-.00212.00019-.20877.04394-.28728.1217-.1377.13621-.09393.32401-.06876.43138.00319.01356.00602.02598.00762.03649.01506.10374.01967.22142.01435.35917-.0287.72942-.15436%201.45827-.27363%202.07516-.06433.33243-.137.67058-.2086%201.00434-.15914.7405-.3236%201.50603-.40797%202.27595-.00904.08158.01259.15915.06079.21818.04838.05923.11661.0919.19211.09209l.04963.00038c.50526.00726%201.00185-.01529%201.11882-.32574.1292-.34274.20062-.7596.26389-1.12833l.02782-.16334c.14993-.84787.2809-1.4554.5448-2.23641.13592-.40254.3844-.76515.58537-1.03643.24333-.32822.50562-.64957.80176-.6576.12264-.00687.2024.03249.26265.11865.28764.41362-.07054%201.74866-.2233%202.31875-.03314.12322-.06115.22734-.07887.30376l-.10527.44037c-.15507.64211-.31528%201.306-.39752%201.97754a7.70047%207.70047%200%2000-.0225.20747l-.00692.09362.0647.05368c.13043.10909%201.06192-.04356%201.06955-.04604.34346-.12514.41825-.4736.44288-.58805.06398-.29631.12051-.59893.17492-.89123l.0039-.02178c.10261-.5508.2086-1.1207.36739-1.67053.30961-1.06987.72255-1.79986%201.22728-2.16973.21586-.15857.4374-.17614.53806-.04222.17439.23117.0638.85704.01648%201.12432-.06522.37063-.1487.74814-.2295%201.11285l-.00408.01872c-.05175.2325-.10315.46482-.151.6979-.14763.72235-.26885%201.6178.10846%202.13458.19194.26345.48897.3968.88294.3968.41754%200%20.81045-.15016%201.23632-.47265.11733-.0896.23571-.19372.3743-.3179.4794.58747%201.02401.83908%201.80965.83908%201.77721%200%202.61265-1.27295%203.08655-2.23048.05973-.12132.12654-.26136.16642-.38019.0592-.17652-.01134-.3691-.16021-.43845z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E", 1, "px-[8px]", 2, "height", "22px", "display", "inline", "vertical-align", "center"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["skipTooltip", "Continue to the dashboard without repeating identity verification.", "resetConnectionsTooltip", "Remove all test-mode health system connections for this profile.", 3, "showSkip", "showResetConnections", "resetState", "skip", "resetConnections", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], ["skipTooltip", "Continue to the dashboard without repeating identity verification.", "resetConnectionsTooltip", "Remove all test-mode health system connections for this profile.", 3, "skip", "resetConnections", "showSkip", "showResetConnections", "resetState"]], template: function IdentityVerificationComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationComponent, selectors: [["app-identity-verification"]], hostBindings: function IdentityVerificationComponent_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("click", function IdentityVerificationComponent_click_HostBindingHandler() {
+          return ctx.closeResetMenu();
+        }, false, \u0275\u0275resolveDocument);
+      }
+    }, decls: 24, vars: 7, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["src", "https://s3.amazonaws.com/idme-design/brand-assets/Primary-IDme-Logo-RGB.svg", 2, "height", "0.8rem", "display", "inline", "vertical-align", "center"], [1, "space-y-4", "flex", "flex-col", "items-center"], ["type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "clear-button", 3, "click", "disabled"], ["src", "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Generator: Adobe Illustrator 26.3.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 353.2 337.6' style='enable-background:new 0 0 353.2 337.6;' xml:space='preserve'%3E%3Cstyle type='text/css'%3E .st0%7Bdisplay:none;%7D .st1%7Bdisplay:inline;fill:%23192958;%7D .st2%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Cg id='BKGD' class='st0'%3E%3Crect class='st1' width='353.2' height='337.6'/%3E%3C/g%3E%3Cg id='Layer_2'%3E%3Cg%3E%3Cg%3E%3Ccircle class='st2' cx='14' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='77.1' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='227.8' r='14'/%3E%3Ccircle class='st2' cx='99.4' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='45.5' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='108.7' r='14'/%3E%3Ccircle class='st2' cx='98.4' cy='61.7' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='61.1' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='109.7' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='227.9' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='45.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='301.5' r='14'/%3E%3Ccircle class='st2' cx='226.7' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='126.6' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='276.5' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='339.2' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='35.5' r='14'/%3E%3Ccircle class='st2' cx='126.2' cy='14' r='14'/%3E%3Ccircle class='st2' cx='226.8' cy='14' r='14'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E", 1, "px-[8px]", 2, "height", "24px", "display", "inline", "vertical-align", "bottom"], ["data-testid", "idme-button", "type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "gap-2", "clear-button", "idme-button", 3, "click", "disabled"], [1, "text-base", "font-semibold"], ["src", "data:image/svg+xml,%3Csvg%20%20%20%20role%3D%22img%22%20%20%20%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%20%20%20viewBox%3D%220%200%2030%2012%22%20%20%20%20fill%3D%22none%22%20%20%20%20aria-labelledby%3D%22idme-title%22%3E%3Ctitle%20id%3D%22idme-title%22%3EID.me%3C%2Ftitle%3E%3Cg%20fillRule%3D%22nonzero%22%20fill%3D%22none%22%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M1.48515.0384H.96978C.32628.0384%200%20.24588%200%20.6551v10.12096c0%20.40922.32627.6167.96978.6167h.51537c.64332%200%20.96977-.20748.96977-.6167V.6551c0-.40922-.32645-.6167-.96977-.6167M7.67332%209.10802H6.14794V2.31206h1.52538c1.90854%200%202.30924%201.84782%202.30924%203.39798s-.4007%203.39798-2.30924%203.39798zm2.901%201.04522c0-1.20723.73212-2.22915%201.74336-2.58106.11573-.56263.17475-1.18411.17475-1.86214%200-3.65857-1.71147-5.67336-4.81911-5.67336h-3.3127c-.4629%200-.67823.23232-.67823.73114v9.88444c0%20.49882.21532.73114.67824.73114h3.31269c1.18475%200%202.16587-.29364%202.92723-.85876-.01542-.1217-.02623-.24512-.02623-.3714z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M14.24058%2010.15324c0%20.68452-.51484%201.23952-1.14984%201.23952-.63518%200-1.14984-.555-1.14984-1.23952%200-.68453.51466-1.23952%201.14984-1.23952.635%200%201.14984.555%201.14984%201.23952%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M27.26344%205.99604c.00248.0298.00478.05941.00514.0896%200%20.04337-.0016.08769-.0062.13488-.01525.15857-.04236.30625-.08047.43922-.2536.88646-.96747%201.0435-1.58492%201.06604.08383-.38496.20718-.76209.35906-1.09489.30057-.66007.67788-1.07006.98466-1.07025.028%200%20.05547.0044.08347.013.01188.00362.02233.00973.04112.01967l.01276.0063c.00514.0023.01028.00459.01506.00803.01312.00898.02464.02082.0374.03343l.01046.0105c.0039.00383.00797.00765.0117.01204.0085.01032.01559.02236.02268.03401l.00921.0151c.00638.00993.01259.02005.01826.03209.00336.00707.0062.0149.01418.03553.00815.0216.01648.04337.02268.06706l.00567.02751c.00656.02847.01223.0575.01577.08789l.0023.03324zm2.17934%202.4177a.2772.2772%200%2000-.10652-.0256c-.15702-.00553-.26406.06095-.3587.22564-.056.09877-.11112.19926-.1657.29975-.2086.38305-.4241.77871-.73726%201.06223-.42534.38496-1.04102.56512-1.56898.46061-.31404-.06209-.53823-.30701-.67115-.5015-.24386-.35726-.36242-.83832-.34328-1.39274.77713-.0705%203.11951-.4438%203.30578-2.35791.03597-.37102-.06203-.70745-.28356-.97263-.2809-.33624-.72928-.52156-1.26238-.52156-1.56224%200-3.1041%201.76147-3.29958%203.76957-.05334.5508.01028%201.05974.18963%201.5129-.13362.13336-.2598.22946-.3851.29327-.1308.06725-.24422.08081-.32734.03973-.10297-.05158-.14462-.1811-.1611-.28045-.0615-.36777.0179-.79037.11183-1.22691.05547-.256.12477-.5229.18591-.75827.18874-.72618.38422-1.47718.319-2.23584-.05936-.69465-.51164-1.12603-1.18031-1.12603-.93753%200-1.5548.7212-1.95462%201.33943-.0085-.4608-.11041-.79533-.30997-1.01885-.1898-.21283-.46876-.32058-.82888-.32058-.91962%200-1.52928.69274-1.92803%201.29912.00531-.05578.01063-.11271.0163-.16946.02517-.26001.03651-.63256-.15578-.86239-.11466-.13717-.28693-.20652-.51218-.20652-.19885%200-.24847.00115-.46203.03917-.00212.00019-.20877.04394-.28728.1217-.1377.13621-.09393.32401-.06876.43138.00319.01356.00602.02598.00762.03649.01506.10374.01967.22142.01435.35917-.0287.72942-.15436%201.45827-.27363%202.07516-.06433.33243-.137.67058-.2086%201.00434-.15914.7405-.3236%201.50603-.40797%202.27595-.00904.08158.01259.15915.06079.21818.04838.05923.11661.0919.19211.09209l.04963.00038c.50526.00726%201.00185-.01529%201.11882-.32574.1292-.34274.20062-.7596.26389-1.12833l.02782-.16334c.14993-.84787.2809-1.4554.5448-2.23641.13592-.40254.3844-.76515.58537-1.03643.24333-.32822.50562-.64957.80176-.6576.12264-.00687.2024.03249.26265.11865.28764.41362-.07054%201.74866-.2233%202.31875-.03314.12322-.06115.22734-.07887.30376l-.10527.44037c-.15507.64211-.31528%201.306-.39752%201.97754a7.70047%207.70047%200%2000-.0225.20747l-.00692.09362.0647.05368c.13043.10909%201.06192-.04356%201.06955-.04604.34346-.12514.41825-.4736.44288-.58805.06398-.29631.12051-.59893.17492-.89123l.0039-.02178c.10261-.5508.2086-1.1207.36739-1.67053.30961-1.06987.72255-1.79986%201.22728-2.16973.21586-.15857.4374-.17614.53806-.04222.17439.23117.0638.85704.01648%201.12432-.06522.37063-.1487.74814-.2295%201.11285l-.00408.01872c-.05175.2325-.10315.46482-.151.6979-.14763.72235-.26885%201.6178.10846%202.13458.19194.26345.48897.3968.88294.3968.41754%200%20.81045-.15016%201.23632-.47265.11733-.0896.23571-.19372.3743-.3179.4794.58747%201.02401.83908%201.80965.83908%201.77721%200%202.61265-1.27295%203.08655-2.23048.05973-.12132.12654-.26136.16642-.38019.0592-.17652-.01134-.3691-.16021-.43845z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E", 1, "px-[8px]", 2, "height", "22px", "display", "inline", "vertical-align", "center"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["class", "mt-4 absolute bottom-10", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "mt-4", "absolute", "bottom-10"], [1, "relative", "inline-block", "text-left", 3, "click"], [1, "relative", "inline-flex"], ["class", "pointer-events-none absolute inset-0 flex items-center justify-center", 4, "ngIf"], ["type", "button", "aria-label", "Open tools menu", 1, "relative", "z-10", "flex", "h-10", "w-10", "items-center", "justify-center", "rounded-full", "border", "bg-white", "text-gray-700", "shadow", "transition-colors", "focus:outline-none", "focus:ring-2", "focus:ring-offset-2", "focus:ring-indigo-500", 3, "click", "disabled", "ngClass"], [1, "flex", "items-center", "justify-center"], [3, "ngSwitch"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", "class", "size-6 tools-button-icon tools-button-icon-pop", 4, "ngSwitchCase"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", "class", "size-6 tools-button-icon", 4, "ngSwitchDefault"], ["class", "absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 transform rounded-md border border-gray-200 bg-white text-left shadow-lg", 4, "ngIf"], [1, "pointer-events-none", "absolute", "inset-0", "flex", "items-center", "justify-center"], [1, "absolute", "-inset-1", "rounded-full", "border-2", "border-indigo-300", "border-t-transparent", "animate-spin"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", 1, "size-6", "tools-button-icon", "tools-button-icon-pop"], ["x", "4", "y", "4", "width", "16", "height", "16", "rx", "2", "ry", "2"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M8.5 12.25 11 14.75 15.5 9.75"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 18 18 6"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 6l12 12"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", 1, "size-6", "tools-button-icon"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"], [1, "absolute", "bottom-full", "left-1/2", "mb-2", "w-48", "-translate-x-1/2", "transform", "rounded-md", "border", "border-gray-200", "bg-white", "text-left", "shadow-lg"], ["type", "button", 1, "block", "w-full", "px-3", "py-2", "text-sm", "text-gray-700", "hover:bg-gray-50", "disabled:cursor-not-allowed", "disabled:opacity-60", 3, "click", "disabled"]], template: function IdentityVerificationComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -58331,9 +58442,9 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
         \u0275\u0275elementStart(19, "span", 10);
         \u0275\u0275text(20, "Verify with ");
         \u0275\u0275element(21, "img", 11);
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275template(22, IdentityVerificationComponent_div_22_Template, 2, 0, "div", 12)(23, IdentityVerificationComponent_app_dev_tools_23_Template, 1, 3, "app-dev-tools", 13);
-        \u0275\u0275elementEnd();
+        \u0275\u0275elementEnd()();
+        \u0275\u0275template(22, IdentityVerificationComponent_div_22_Template, 2, 0, "div", 12)(23, IdentityVerificationComponent_div_23_Template, 11, 14, "div", 13);
+        \u0275\u0275elementEnd()();
       }
       if (rf & 2) {
         let tmp_0_0;
@@ -58350,21 +58461,24 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
       }
     }, dependencies: [
       CommonModule,
+      NgClass,
       NgIf,
+      NgSwitch,
+      NgSwitchCase,
+      NgSwitchDefault,
       AsyncPipe,
       RouterModule,
-      HeaderComponent,
-      DevToolsComponent
-    ], styles: ['\n\n.clear-button[_ngcontent-%COMP%] {\n  border-radius: 32px;\n  background-color: #041A55;\n  font-family: "Inter", serif;\n  font-weight: 600;\n  font-size: 16px;\n  line-height: 26px;\n  height: 56px;\n  width: 328px;\n}\n.idme-button[_ngcontent-%COMP%] {\n  background-color: #08833D;\n  font-family: "Open Sans Light", sans-serif;\n}\n/*# sourceMappingURL=identity-verification.component.css.map */'] });
+      HeaderComponent
+    ], styles: ['\n\n.clear-button[_ngcontent-%COMP%] {\n  border-radius: 32px;\n  background-color: #041A55;\n  font-family: "Inter", serif;\n  font-weight: 600;\n  font-size: 16px;\n  line-height: 26px;\n  height: 56px;\n  width: 328px;\n}\n.idme-button[_ngcontent-%COMP%] {\n  background-color: #08833D;\n  font-family: "Open Sans Light", sans-serif;\n}\n.tools-button-icon[_ngcontent-%COMP%] {\n  transition: transform 0.25s ease, opacity 0.25s ease;\n}\n.tools-button-icon-pop[_ngcontent-%COMP%] {\n  animation: _ngcontent-%COMP%_tools-button-pop 0.45s ease;\n}\n@keyframes _ngcontent-%COMP%_tools-button-pop {\n  0% {\n    transform: scale(0.6);\n    opacity: 0;\n  }\n  60% {\n    transform: scale(1.1);\n    opacity: 1;\n  }\n  100% {\n    transform: scale(1);\n    opacity: 1;\n  }\n}\n/*# sourceMappingURL=identity-verification.component.css.map */'] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 28 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 22 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts
-var _c03 = () => [];
-var _c1 = () => ({});
+var _c04 = () => [];
+var _c12 = () => ({});
 var _c2 = (a0) => ({ "rotate-180": a0 });
 function DashboardComponent_div_10_ng_container_4_Template(rf, ctx) {
   if (rf & 1) {
@@ -58878,15 +58992,15 @@ var DashboardComponent = class _DashboardComponent {
         \u0275\u0275advance(8);
         \u0275\u0275property("ngIf", (tmp_1_0 = \u0275\u0275pipeBind1(11, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.tefcaMode);
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(13, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(31, _c03));
+        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(13, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(31, _c04));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(16, 17, ((tmp_3_0 = \u0275\u0275pipeBind1(15, 15, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(32, _c1)));
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(16, 17, ((tmp_3_0 = \u0275\u0275pipeBind1(15, 15, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(32, _c12)));
         \u0275\u0275advance(3);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(19, 21, ((tmp_4_0 = \u0275\u0275pipeBind1(18, 19, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(33, _c1)));
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(19, 21, ((tmp_4_0 = \u0275\u0275pipeBind1(18, 19, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(33, _c12)));
         \u0275\u0275advance(4);
         \u0275\u0275property("routerLink", "/search")("ngClass", ctx.shouldShowMultiConnectHint(\u0275\u0275pipeBind1(22, 23, ctx.configService.vaultProfileConfigSubject)) ? "multi-connect-hint border border-[#5B47FB]/40 bg-[#5B47FB]/5 text-gray-700" : "border bg-gray-50 border-gray-200 hover:border-[#5B47FB] hover:bg-[#5B47FB]/5");
         \u0275\u0275advance(23);
-        \u0275\u0275property("disabled", !(((tmp_7_0 = \u0275\u0275pipeBind1(45, 25, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_7_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(34, _c03)).length || ctx.isCompleting);
+        \u0275\u0275property("disabled", !(((tmp_7_0 = \u0275\u0275pipeBind1(45, 25, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_7_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(34, _c04)).length || ctx.isCompleting);
         \u0275\u0275advance(2);
         \u0275\u0275property("ngIf", ctx.isCompleting);
         \u0275\u0275advance(13);
@@ -59492,7 +59606,7 @@ var InfiniteScrollModule = class _InfiniteScrollModule {
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts
 var import_lodash2 = __toESM(require_lodash());
-var _c04 = () => [];
+var _c05 = () => [];
 function HealthSystemSearchComponent_div_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 16);
@@ -59755,7 +59869,7 @@ function HealthSystemSearchComponent_button_15_span_9_Template(rf, ctx) {
   if (rf & 2) {
     const brand_r8 = \u0275\u0275nextContext().$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(1, _c04)).length, "");
+    \u0275\u0275textInterpolate1("+ ", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(1, _c05)).length, "");
   }
 }
 function HealthSystemSearchComponent_button_15_Template(rf, ctx) {
@@ -59791,11 +59905,11 @@ function HealthSystemSearchComponent_button_15_Template(rf, ctx) {
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate(brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.name);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.searchHighlights) || \u0275\u0275pureFunction0(11, _c04)).length > 0);
+    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.searchHighlights) || \u0275\u0275pureFunction0(11, _c05)).length > 0);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(8, 7, (brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(12, _c04), 0, 3));
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(8, 7, (brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(12, _c05), 0, 3));
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(13, _c04)).length > 4);
+    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(13, _c05)).length > 4);
   }
 }
 function HealthSystemSearchComponent_div_16_Template(rf, ctx) {
@@ -60106,7 +60220,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts
-var _c05 = () => [];
+var _c06 = () => [];
 function HealthSystemBrandDetailsComponent_div_14_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 15);
@@ -60155,7 +60269,7 @@ function HealthSystemBrandDetailsComponent_div_16_span_8_Template(rf, ctx) {
     let tmp_2_0;
     const ctx_r0 = \u0275\u0275nextContext(2);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", (((tmp_2_0 = \u0275\u0275pipeBind1(2, 1, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c05)).length, "");
+    \u0275\u0275textInterpolate1("+ ", (((tmp_2_0 = \u0275\u0275pipeBind1(2, 1, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c06)).length, "");
   }
 }
 function HealthSystemBrandDetailsComponent_div_16_Template(rf, ctx) {
@@ -60179,9 +60293,9 @@ function HealthSystemBrandDetailsComponent_div_16_Template(rf, ctx) {
     let tmp_2_0;
     const ctx_r0 = \u0275\u0275nextContext();
     \u0275\u0275advance(5);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(7, 4, ((tmp_1_0 = \u0275\u0275pipeBind1(6, 2, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c05), 0, 3));
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(7, 4, ((tmp_1_0 = \u0275\u0275pipeBind1(6, 2, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c06), 0, 3));
     \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", (((tmp_2_0 = \u0275\u0275pipeBind1(9, 8, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c05)).length > 4);
+    \u0275\u0275property("ngIf", (((tmp_2_0 = \u0275\u0275pipeBind1(9, 8, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c06)).length > 4);
   }
 }
 function HealthSystemBrandDetailsComponent_ng_container_19_div_1_p_9_Template(rf, ctx) {
@@ -60416,7 +60530,7 @@ function ConnectHelper(connectData) {
 }
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts
-var _c06 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
+var _c07 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
 var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
   constructor(configService, router, messageBus, injector) {
     this.configService = configService;
@@ -60516,7 +60630,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         \u0275\u0275advance(8);
         \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", ctx.brandId, ".png", \u0275\u0275sanitizeUrl);
         \u0275\u0275advance(18);
-        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(9, _c06, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
+        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(9, _c07, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
       }
     }, dependencies: [
       CommonModule,
@@ -61313,8 +61427,6 @@ var IsTefcaModeAuthGuard = class _IsTefcaModeAuthGuard {
       if (!this.configService.systemConfig$.tefcaMode) {
         return Promise.resolve(true);
       }
-      const navigationState = this.router.getCurrentNavigation()?.extras.state;
-      const identityVerificationHandled = navigationState?.["skipIdentityVerification"] === true || navigationState?.["identityVerificationSucceeded"] === true;
       return this.authService.GetJWTPayload().then((jwtPayload) => {
         if (!jwtPayload) {
           if (route.url.toString() === "/auth/signin") {
@@ -61323,7 +61435,7 @@ var IsTefcaModeAuthGuard = class _IsTefcaModeAuthGuard {
             this.logger.info("User is not authenticated, redirecting to login page");
             return this.router.navigate(["/auth/signin"]);
           }
-        } else if (!jwtPayload.has_verified_identity || this.configService.systemConfig$.apiMode === ApiMode.Test && !identityVerificationHandled) {
+        } else if (!jwtPayload.has_verified_identity) {
           if (route.url.toString() === "/auth/identity/verification") {
             return true;
           } else {
