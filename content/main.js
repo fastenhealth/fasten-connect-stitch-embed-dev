@@ -57181,7 +57181,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       this.logger.info(result);
       return true;
     });
-    const storageAccessPromise = this.needStorageAccessPermissionSubject.getValue() ? this.requestStorageAccess() : Promise.resolve(true);
+    const storageAccessPromise = this.checkRequiresStoragePermissions() ? this.requestStorageAccess() : Promise.resolve(true);
     Promise.all([signoutPromise, storageAccessPromise]).then(() => {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
@@ -57319,9 +57319,6 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     }
     return document.hasStorageAccess().then((hasAccess) => {
       this.logger.log("Storage Access API unpartitioned or already granted!", hasAccess);
-      if (hasAccess) {
-        this.authService.UseRegularCookieFallback();
-      }
       return hasAccess;
     }).catch((error2) => {
       this.logger.error("Storage access has not been granted", error2);
