@@ -48651,13 +48651,12 @@ var AuthService = class _AuthService {
       return this.IsVaultAuthCookieSet();
     });
   }
-  CheckCookieSupport() {
+  CheckCookieSupport(expectedProbe) {
     return __async(this, null, function* () {
-      this.cookieSupported = void 0;
-      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_support`, null, {
+      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_support`, null, __spreadValues({
         withCredentials: true
-      }));
-      const supported = response.data?.supported;
+      }, expectedProbe ? { params: { regular_probe: expectedProbe } } : {})));
+      const supported = response?.data?.supported;
       if (typeof supported !== "boolean") {
         throw new Error(`Invalid cookie support response: ${supported}`);
       }
@@ -48665,14 +48664,23 @@ var AuthService = class _AuthService {
       return supported;
     });
   }
+  SetCookieProbe() {
+    return __async(this, null, function* () {
+      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_probe`, null, {
+        withCredentials: true
+      }));
+      const probe = response?.data?.probe;
+      if (typeof probe !== "string" || probe.length === 0) {
+        throw new Error("Invalid cookie probe response");
+      }
+      return probe;
+    });
+  }
   RequiresStorageAccessFallback() {
     return this.cookieSupported === false && this.CanUseStorageAccessFallback();
   }
   CanUseStorageAccessFallback() {
     return this.configService.systemConfig$.sdkMode === SDKMode.None && typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
-  }
-  UseRegularCookieFallback() {
-    this.cookieSupported = true;
   }
   GetVaultAuthCookieDebugInfo() {
     const cookieValue = getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
@@ -57177,11 +57185,11 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.configService.vaultProfileConfig = {
       email: this.existingVaultProfile.email
     };
+    const storageAccessPromise = this.checkRequiresStoragePermissions() ? this.requestStorageAccess() : Promise.resolve(true);
     const signoutPromise = this.authService.Signout().then((result) => {
       this.logger.info(result);
       return true;
     });
-    const storageAccessPromise = this.checkRequiresStoragePermissions() ? this.requestStorageAccess() : Promise.resolve(true);
     Promise.all([signoutPromise, storageAccessPromise]).then(() => {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
@@ -57330,15 +57338,28 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       this.logger.warn("Storage Access API not available in this browser.");
       return Promise.resolve(true);
     }
-    return document.requestStorageAccess().then(() => {
+    return document.requestStorageAccess().then(() => __async(this, null, function* () {
       this.logger.log("Storage access granted!");
-      this.authService.UseRegularCookieFallback();
+      const probe = yield this.authService.SetCookieProbe();
+      const cookieSupported = yield this.authService.CheckCookieSupport(probe);
+      if (!cookieSupported) {
+        const error2 = new Error("Storage access was granted, but cookies are still blocked. Please allow cookies and try again.");
+        this.restoreFirstPartyConsent();
+        this.logger.error("Storage access cookie verification failed", error2);
+        throw error2;
+      }
       return true;
-    }).catch((error2) => {
+    }), (error2) => {
+      this.restoreFirstPartyConsent();
       this.logger.log("Storage access denied by user", error2);
       alert("Cookies are required for the Fasten widget to function. Please allow storage access to continue.");
       return Promise.reject(error2);
     });
+  }
+  restoreFirstPartyConsent() {
+    this.needStorageAccessPermissionSubject.next(true);
+    this.userInteractionCompletedSubject.next(false);
+    this.userInteractionWindowOpened = false;
   }
   awaitUserInteractionCompleted() {
     if (!this.needStorageAccessPermissionSubject.getValue()) {
