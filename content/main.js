@@ -48597,6 +48597,11 @@ function createRemoteJWKSet(url, options) {
 // projects/fasten-connect-stitch-embed/src/app/services/auth.service.ts
 var FASTEN_AUTH_VAULT_COOKIE_NAME = "fasten_connect_auth_vault";
 var VAULT_AUTH_COOKIE_RECHECK_DELAY_MS = 100;
+var CookieProbeScope;
+(function(CookieProbeScope2) {
+  CookieProbeScope2["All"] = "all";
+  CookieProbeScope2["Regular"] = "regular";
+})(CookieProbeScope || (CookieProbeScope = {}));
 var AuthService = class _AuthService {
   constructor(_httpClient, configService) {
     this._httpClient = _httpClient;
@@ -48651,11 +48656,17 @@ var AuthService = class _AuthService {
       return this.IsVaultAuthCookieSet();
     });
   }
-  CheckCookieSupport(expectedProbe) {
-    return __async(this, null, function* () {
-      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_support`, null, __spreadValues({
-        withCredentials: true
-      }, expectedProbe ? { params: { regular_probe: expectedProbe } } : {})));
+  CheckCookieSupport() {
+    return __async(this, arguments, function* (scope = CookieProbeScope.All) {
+      const scopeParams = {};
+      if (scope === CookieProbeScope.Regular) {
+        scopeParams["regular_only"] = "true";
+      }
+      const expectedProbe = yield this.setCookieProbe(scopeParams);
+      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_support`, null, {
+        withCredentials: true,
+        params: __spreadValues({ probe: expectedProbe }, scopeParams)
+      }));
       const supported = response?.data?.supported;
       if (typeof supported !== "boolean") {
         throw new Error(`Invalid cookie support response: ${supported}`);
@@ -48664,10 +48675,11 @@ var AuthService = class _AuthService {
       return supported;
     });
   }
-  SetCookieProbe() {
+  setCookieProbe(params) {
     return __async(this, null, function* () {
       const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_probe`, null, {
-        withCredentials: true
+        withCredentials: true,
+        params
       }));
       const probe = response?.data?.probe;
       if (typeof probe !== "string" || probe.length === 0) {
@@ -57340,8 +57352,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     }
     return document.requestStorageAccess().then(() => __async(this, null, function* () {
       this.logger.log("Storage access granted!");
-      const probe = yield this.authService.SetCookieProbe();
-      const cookieSupported = yield this.authService.CheckCookieSupport(probe);
+      const cookieSupported = yield this.authService.CheckCookieSupport(CookieProbeScope.Regular);
       if (!cookieSupported) {
         const error2 = new Error("Storage access was granted, but cookies are still blocked. Please allow cookies and try again.");
         this.restoreFirstPartyConsent();
