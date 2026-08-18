@@ -49617,7 +49617,6 @@ var FastenService = class _FastenService {
     this.deviceService = deviceService;
     this.configService = configService;
     this.logger = logger;
-    this.orgConfigLoadedSubject = new Subject();
     this.configService.systemConfigSubject.subscribe((systemConfig) => {
       this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
@@ -49704,7 +49703,6 @@ var FastenService = class _FastenService {
       withCredentials: true
     }).pipe(tap((response) => {
       this.logger.info("Organization", response);
-      this.orgConfigLoadedSubject.next(response);
     }));
   }
   getOrgConnectionById(publicId, orgConnectionId) {
@@ -50130,9 +50128,11 @@ var AppComponent = class _AppComponent {
       apiMode,
       publicId: this.publicId,
       externalId: this.externalId,
+      externalState: this.externalState,
       reconnectOrgConnectionId: this.reconnectOrgConnectionId,
       staticBackdrop: this.staticBackdrop,
       searchOnly: this.searchOnly,
+      showSplash: this.showSplash,
       tefcaMode: this.tefcaMode,
       tefcaCspPromptForce: this.tefcaCspPromptForce,
       identityRequestUri: this.tefcaMode ? this.identityRequestUri : "",
@@ -81009,48 +81009,45 @@ function getParameterizedRouteFromSnapshot(route) {
 }
 
 // projects/fasten-connect-stitch-embed/src/app/services/sentry-context.service.ts
-var PUBLIC_ID_TAG = "org.public_id";
+var ORG_FEATURE_FLAGS_TAG = "org.feature_flags";
 var ORG_ID_TAG = "org.id";
 var ORG_NAME_TAG = "org.name";
 var ORG_PLAN_TAG = "org.plan";
-var ORG_FEATURE_FLAGS_TAG = "org.feature_flags";
-var REQUEST_ID_TAG = "request_id";
+var PUBLIC_ID_TAG = "org.public_id";
 var CONNECTION_ID_TAG = "org_connection.id";
-var UI_QUERY_PARAM_NAMES = [
-  "external-id",
-  "external-state",
-  "reconnect-org-connection-id",
-  "search-only",
-  "tefca-mode",
-  "static-backdrop",
-  "show-splash",
-  "sdk-mode",
-  "connect-mode"
-];
+var REQUEST_ID_TAG = "request_id";
+var EXTERNAL_ID_TAG = "external.id";
+var EXTERNAL_STATE_TAG = "external.state";
+var API_MODE_TAG = "api_mode";
+var CONNECT_MODE_TAG = "connect_mode";
+var SDK_MODE_TAG = "sdk_mode";
+var SEARCH_ONLY_TAG = "ui.search_only";
+var SHOW_SPLASH_TAG = "ui.show_splash";
+var STATIC_BACKDROP_TAG = "ui.static_backdrop";
+var TEFCA_MODE_TAG = "ui.tefca_mode";
 var SentryContextService = class _SentryContextService {
-  constructor(configService, messageBusService, fastenService) {
+  constructor(configService, messageBusService) {
     this.configService = configService;
     this.messageBusService = messageBusService;
-    this.fastenService = fastenService;
     this.subscriptions = new Subscription();
-    const urlParams = new URLSearchParams(window.location.search);
-    this.setIdentifier(PUBLIC_ID_TAG, urlParams.get("public-id") || void 0);
-    for (const queryParamName of UI_QUERY_PARAM_NAMES) {
-      const value = urlParams.get(queryParamName);
-      if (value !== null) {
-        this.setIdentifier(`ui.${queryParamName.replaceAll("-", "_")}`, value);
-      }
-    }
+    this.setIdentifier(PUBLIC_ID_TAG, new URLSearchParams(window.location.search).get("public-id") || void 0);
     this.subscriptions.add(this.configService.systemConfigSubject.subscribe((config2) => {
-      if (config2.publicId) {
-        this.setIdentifier(PUBLIC_ID_TAG, config2.publicId);
-      }
-      if (config2.reconnectOrgConnectionId) {
-        this.setIdentifier(CONNECTION_ID_TAG, config2.reconnectOrgConnectionId);
+      this.setConfigTag(PUBLIC_ID_TAG, config2.publicId);
+      this.setConfigTag(EXTERNAL_ID_TAG, config2.externalId);
+      this.setConfigTag(EXTERNAL_STATE_TAG, config2.externalState);
+      this.setConfigTag(CONNECTION_ID_TAG, config2.reconnectOrgConnectionId);
+      this.setConfigTag(API_MODE_TAG, config2.apiMode);
+      this.setConfigTag(SEARCH_ONLY_TAG, config2.searchOnly);
+      this.setConfigTag(TEFCA_MODE_TAG, config2.tefcaMode);
+      this.setConfigTag(STATIC_BACKDROP_TAG, config2.staticBackdrop);
+      this.setConfigTag(SHOW_SPLASH_TAG, config2.showSplash);
+      this.setConfigTag(SDK_MODE_TAG, config2.sdkMode);
+      this.setConfigTag(CONNECT_MODE_TAG, config2.connectMode);
+      if (config2.org) {
+        this.updateOrganizationContext(config2.org);
       }
     }));
     this.subscriptions.add(this.messageBusService.messageBusSubject.subscribe((event) => this.updateConnectionContext(event)));
-    this.subscriptions.add(this.fastenService.orgConfigLoadedSubject.subscribe((org) => this.updateOrganizationContext(org)));
   }
   ngOnDestroy() {
     this.subscriptions.unsubscribe();
@@ -81079,6 +81076,12 @@ var SentryContextService = class _SentryContextService {
       this.setConnectionContext(callbackData.request_id, callbackData.org_connection_id);
     }
   }
+  setConfigTag(tag2, value) {
+    if (value === void 0 || value === null || value === "") {
+      return;
+    }
+    this.setIdentifier(tag2, String(value));
+  }
   setIdentifier(tag2, value) {
     const normalizedValue = value || void 0;
     setTag(tag2, normalizedValue);
@@ -81087,7 +81090,7 @@ var SentryContextService = class _SentryContextService {
   }
   static {
     this.\u0275fac = function SentryContextService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _SentryContextService)(\u0275\u0275inject(ConfigService), \u0275\u0275inject(MessageBusService), \u0275\u0275inject(FastenService));
+      return new (__ngFactoryType__ || _SentryContextService)(\u0275\u0275inject(ConfigService), \u0275\u0275inject(MessageBusService));
     };
   }
   static {
