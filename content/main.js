@@ -40840,7 +40840,7 @@ var SearchFilterSortByOpts = class {
 };
 
 // projects/shared-library/src/lib/utils/post-message.ts
-function waitForPostMessageOrgConnectionOrTimeout(logger, openedWindow, sdkMode) {
+function waitForPostMessageOrgConnectionOrTimeout(logger, openedWindow, sdkMode, onCallbackPayload) {
   logger.info(`waiting for postMessage notification from popup window`);
   return fromEvent(window, "message").pipe(
     //throw an error if we wait more than 2 minutes (this will close the window)
@@ -40868,9 +40868,10 @@ function waitForPostMessageOrgConnectionOrTimeout(logger, openedWindow, sdkMode)
     //after filtering, we should only have one event to handle.
     first(),
     map((event) => {
+      const parsedEventData = JSON.parse(event.data);
+      onCallbackPayload?.(parsedEventData);
       logger.info(`received postMessage notification from popup window & sending acknowledgment`, event.data);
       event?.source?.postMessage(JSON.stringify({ close: true }), event.origin);
-      let parsedEventData = JSON.parse(event.data);
       if (parsedEventData.error) {
         throw new Error(event.data);
       } else {
@@ -41140,7 +41141,7 @@ function waitForForegroundOrRetryDelay() {
   }
   return timer(1e3);
 }
-function waitForWebsocketMessage(logger, websocketUrl) {
+function waitForWebsocketMessage(logger, websocketUrl, onCallbackPayload) {
   return new Observable((observer) => {
     const subject = webSocket(websocketUrl.toString());
     const subjectSubscription = subject.pipe(filter((message2) => {
@@ -41155,6 +41156,7 @@ function waitForWebsocketMessage(logger, websocketUrl) {
       }
       return true;
     }), map((message2) => {
+      onCallbackPayload?.(message2);
       logger.debug("websocket message received", message2);
       if (message2.error) {
         throw new FastenConnectionError(JSON.stringify(message2));
@@ -41174,9 +41176,9 @@ function waitForWebsocketMessage(logger, websocketUrl) {
     };
   });
 }
-function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWindow, sdkMode) {
+function waitForWebsocketOrgConnectionOrTimeout(logger, websocketUrl, openedWindow, sdkMode, onCallbackPayload) {
   logger.info(`waiting for websocket notification from popup window`);
-  return defer(() => waitForWebsocketMessage(logger, websocketUrl)).pipe(retry({
+  return defer(() => waitForWebsocketMessage(logger, websocketUrl, onCallbackPayload)).pipe(retry({
     delay: (err) => {
       if (err instanceof FastenConnectionError) {
         return throwError(() => err);
@@ -49769,7 +49771,7 @@ var FastenService = class _FastenService {
     const openedWindow = this.openWindowInPopupForIdentityVerification(redirectUrlParts);
     return this.waitForPopupNotification(openedWindow).pipe(switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))));
   }
-  accountConnectWithWebsocket(connectData) {
+  accountConnectWithWebsocket(connectData, onCallbackPayload) {
     const roomId = v4_default();
     const websocketUrl = this.generateWebsocketURL(roomId);
     const redirectUrlParts = this.generateConnectURL(connectData);
@@ -49777,14 +49779,14 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("room_id", roomId);
     this.logger.debug(redirectUrlParts.toString());
     const openedWindow = this.openWindowInPopup(redirectUrlParts);
-    return this.waitForWebsocketNotification(websocketUrl, openedWindow);
+    return this.waitForWebsocketNotification(websocketUrl, openedWindow, void 0, onCallbackPayload);
   }
-  accountConnectWithPopup(connectData) {
+  accountConnectWithPopup(connectData, onCallbackPayload) {
     const redirectUrlParts = this.generateConnectURL(connectData);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
     this.logger.debug(redirectUrlParts.toString());
     const openedWindow = this.openWindowInPopup(redirectUrlParts);
-    return this.waitForPopupNotification(openedWindow);
+    return this.waitForPopupNotification(openedWindow, void 0, onCallbackPayload);
   }
   authorizeTefcaDirect(vaultConnectionIds, external_id) {
     const url = `${environment.connect_api_endpoint_base}/bridge/vault_connection/authorize`;
@@ -49879,13 +49881,13 @@ var FastenService = class _FastenService {
     redirectUrlParts.search = redirectParams.toString();
     return redirectUrlParts;
   }
-  waitForPopupNotification(openedWindow, overrideSdkMode) {
+  waitForPopupNotification(openedWindow, overrideSdkMode, onCallbackPayload) {
     const sdkMode = overrideSdkMode ?? this.configService.systemConfig$.sdkMode;
-    return waitForPostMessageOrgConnectionOrTimeout(this.logger, openedWindow, sdkMode);
+    return waitForPostMessageOrgConnectionOrTimeout(this.logger, openedWindow, sdkMode, onCallbackPayload);
   }
-  waitForWebsocketNotification(websocketUrl, openedWindow, overrideSdkMode) {
+  waitForWebsocketNotification(websocketUrl, openedWindow, overrideSdkMode, onCallbackPayload) {
     const sdkMode = overrideSdkMode ?? this.configService.systemConfig$.sdkMode;
-    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, sdkMode);
+    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, sdkMode, onCallbackPayload);
   }
   reverseGeocodePostalCode(latitude, longitude) {
     let queryParams = {};
@@ -81083,10 +81085,13 @@ function ConnectHelper(connectData) {
     onSuccessNavigateByUrl = "dashboard/complete";
   }
   let connectObservable;
+  const setSentryContextFromCallback = (payload) => {
+    sentryContextService.setConnectionContext(payload.request_id, payload.org_connection_id || connectData.org_connection_id);
+  };
   if (connectData.connect_mode == ConnectMode.Websocket) {
-    connectObservable = vaultApi.accountConnectWithWebsocket(connectData);
+    connectObservable = vaultApi.accountConnectWithWebsocket(connectData, setSentryContextFromCallback);
   } else {
-    connectObservable = vaultApi.accountConnectWithPopup(connectData);
+    connectObservable = vaultApi.accountConnectWithPopup(connectData, setSentryContextFromCallback);
   }
   return connectObservable.subscribe((orgConnectionCallbackData) => {
     if (!orgConnectionCallbackData) {
@@ -81105,7 +81110,7 @@ function ConnectHelper(connectData) {
       } else {
         errData = err;
       }
-      sentryContextService.setConnectionContext(errData.request_id, connectData.org_connection_id);
+      sentryContextService.setConnectionContext(errData.request_id, errData.org_connection_id || connectData.org_connection_id);
       console.error("popup error data", err);
       if (errData.error == "timeout") {
         return router.navigateByUrl(onSuccessNavigateByUrl);
