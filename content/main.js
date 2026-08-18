@@ -49617,6 +49617,7 @@ var FastenService = class _FastenService {
     this.deviceService = deviceService;
     this.configService = configService;
     this.logger = logger;
+    this.orgConfigLoadedSubject = new Subject();
     this.configService.systemConfigSubject.subscribe((systemConfig) => {
       this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
@@ -49701,9 +49702,9 @@ var FastenService = class _FastenService {
     return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/config`, {
       params: queryParams,
       withCredentials: true
-    }).pipe(map((response) => {
+    }).pipe(tap((response) => {
       this.logger.info("Organization", response);
-      return response;
+      this.orgConfigLoadedSubject.next(response);
     }));
   }
   getOrgConnectionById(publicId, orgConnectionId) {
@@ -81009,12 +81010,17 @@ function getParameterizedRouteFromSnapshot(route) {
 
 // projects/fasten-connect-stitch-embed/src/app/services/sentry-context.service.ts
 var PUBLIC_ID_TAG = "org.public_id";
+var ORG_ID_TAG = "org.id";
+var ORG_NAME_TAG = "org.name";
+var ORG_PLAN_TAG = "org.plan";
+var ORG_FEATURE_FLAGS_TAG = "org.feature_flags";
 var REQUEST_ID_TAG = "request_id";
 var CONNECTION_ID_TAG = "org_connection.id";
 var SentryContextService = class _SentryContextService {
-  constructor(configService, messageBusService) {
+  constructor(configService, messageBusService, fastenService) {
     this.configService = configService;
     this.messageBusService = messageBusService;
+    this.fastenService = fastenService;
     this.subscriptions = new Subscription();
     this.setIdentifier(PUBLIC_ID_TAG, new URLSearchParams(window.location.search).get("public-id") || void 0);
     this.subscriptions.add(this.configService.systemConfigSubject.subscribe((config2) => {
@@ -81026,6 +81032,7 @@ var SentryContextService = class _SentryContextService {
       }
     }));
     this.subscriptions.add(this.messageBusService.messageBusSubject.subscribe((event) => this.updateConnectionContext(event)));
+    this.subscriptions.add(this.fastenService.orgConfigLoadedSubject.subscribe((org) => this.updateOrganizationContext(org)));
   }
   ngOnDestroy() {
     this.subscriptions.unsubscribe();
@@ -81033,6 +81040,12 @@ var SentryContextService = class _SentryContextService {
   setConnectionContext(requestId, connectionId) {
     this.setIdentifier(REQUEST_ID_TAG, requestId);
     this.setIdentifier(CONNECTION_ID_TAG, connectionId);
+  }
+  updateOrganizationContext(org) {
+    this.setIdentifier(ORG_ID_TAG, org.id);
+    this.setIdentifier(ORG_NAME_TAG, org.name);
+    this.setIdentifier(ORG_PLAN_TAG, org.plan);
+    this.setIdentifier(ORG_FEATURE_FLAGS_TAG, JSON.stringify(org.feature_flags ?? []));
   }
   updateConnectionContext(event) {
     if (!event || Array.isArray(event.data)) {
@@ -81056,7 +81069,7 @@ var SentryContextService = class _SentryContextService {
   }
   static {
     this.\u0275fac = function SentryContextService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _SentryContextService)(\u0275\u0275inject(ConfigService), \u0275\u0275inject(MessageBusService));
+      return new (__ngFactoryType__ || _SentryContextService)(\u0275\u0275inject(ConfigService), \u0275\u0275inject(MessageBusService), \u0275\u0275inject(FastenService));
     };
   }
   static {
