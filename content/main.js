@@ -40469,10 +40469,10 @@ var ConfigService = class _ConfigService {
    */
   //Setter
   set systemConfig(value) {
-    const mergedSettings = (0, import_lodash.merge)({}, this.systemConfigSubject.getValue(), value);
+    const mergedSettings = __spreadValues(__spreadValues({}, this.systemConfigSubject.getValue()), value);
     if (JSON.stringify(mergedSettings) !== JSON.stringify(this.systemConfigSubject.getValue())) {
-      this.logger.info("updating system settings:", mergedSettings);
       this.systemConfigSubject.next(mergedSettings);
+      this.logger.info("updating system settings:", mergedSettings);
     }
   }
   //Getter
@@ -69145,24 +69145,24 @@ var SHOW_SPLASH_TAG = "ui.show_splash";
 var STATIC_BACKDROP_TAG = "ui.static_backdrop";
 var TEFCA_MODE_TAG = "ui.tefca_mode";
 var METRIC_NAMES = {
-  widgetLifecycle: "fasten_connect.embed.widget.lifecycle",
-  widgetInitializationDuration: "fasten_connect.embed.widget.initialization_duration",
-  cookieProbeResult: "fasten_connect.embed.cookie_probe.result",
-  storageAccessResult: "fasten_connect.embed.storage_access.result",
-  authCookieResult: "fasten_connect.embed.auth_cookie.result",
-  popupOpen: "fasten_connect.embed.popup.open",
-  callbackResult: "fasten_connect.embed.callback.result",
-  callbackDuration: "fasten_connect.embed.callback.duration"
+  widgetLifecycle: "embed.widget.lifecycle",
+  widgetInitializationDuration: "embed.widget.initialization_duration",
+  cookieProbeResult: "embed.cookie_probe.result",
+  storageAccessResult: "embed.storage_access.result",
+  authCookieResult: "embed.auth_cookie.result",
+  popupOpen: "embed.popup.open",
+  callbackResult: "embed.callback.result",
+  callbackDuration: "embed.callback.duration"
 };
-var METRIC_CONTEXT_OVERRIDES = {
-  [ORG_FEATURE_FLAGS_TAG]: "not_collected",
-  [ORG_NAME_TAG]: "not_collected",
-  [PUBLIC_ID_TAG]: "not_collected",
-  [CONNECTION_ID_TAG]: "not_collected",
-  [REQUEST_ID_TAG]: "not_collected",
-  [EXTERNAL_ID_TAG]: "not_collected",
-  [EXTERNAL_STATE_TAG]: "not_collected"
-};
+var METRIC_CONTEXT_EXCLUDED_ATTRIBUTES = [
+  ORG_FEATURE_FLAGS_TAG,
+  ORG_NAME_TAG,
+  PUBLIC_ID_TAG,
+  CONNECTION_ID_TAG,
+  REQUEST_ID_TAG,
+  EXTERNAL_ID_TAG,
+  EXTERNAL_STATE_TAG
+];
 var SENTRY_METRIC_SINK = new InjectionToken("Sentry metric sink", {
   providedIn: "root",
   factory: () => public_api_exports2
@@ -69183,8 +69183,14 @@ var SentryContextService = class _SentryContextService {
     this.nextCallbackAttempt = 0;
     this.widgetExperience = "unknown";
     this.widgetFailureRecorded = false;
+    this.configContextInitialized = false;
     this.setIdentifier(PUBLIC_ID_TAG, new URLSearchParams(window.location.search).get("public-id") || void 0);
     this.subscriptions.add(this.configService.systemConfigSubject.subscribe((config2) => {
+      const isPlaceholderConfig = !config2.publicId && config2.searchOnly === void 0 && config2.tefcaMode === void 0 && config2.connectMode === void 0;
+      if (!this.configContextInitialized && isPlaceholderConfig) {
+        return;
+      }
+      this.configContextInitialized = true;
       this.setConfigTag(PUBLIC_ID_TAG, config2.publicId);
       this.setConfigTag(EXTERNAL_ID_TAG, config2.externalId);
       this.setConfigTag(EXTERNAL_STATE_TAG, config2.externalState);
@@ -69196,9 +69202,7 @@ var SentryContextService = class _SentryContextService {
       this.setConfigTag(SHOW_SPLASH_TAG, config2.showSplash);
       this.setConfigTag(SDK_MODE_TAG, config2.sdkMode);
       this.setConfigTag(CONNECT_MODE_TAG, config2.connectMode);
-      if (config2.org) {
-        this.updateOrganizationContext(config2.org);
-      }
+      this.updateOrganizationContext(config2.org);
     }));
     this.subscriptions.add(this.messageBusService.messageBusSubject.subscribe((event) => this.updateEventContext(event)));
   }
@@ -69273,10 +69277,10 @@ var SentryContextService = class _SentryContextService {
     this.finishCallback(flow, attempt, this.classifyCallbackError(error2));
   }
   updateOrganizationContext(org) {
-    this.setIdentifier(ORG_ID_TAG, org.id);
-    this.setIdentifier(ORG_NAME_TAG, org.name);
-    this.setIdentifier(ORG_PLAN_TAG, org.plan);
-    this.setIdentifier(ORG_FEATURE_FLAGS_TAG, JSON.stringify(org.feature_flags ?? []));
+    this.setIdentifier(ORG_ID_TAG, org?.id);
+    this.setIdentifier(ORG_NAME_TAG, org?.name);
+    this.setIdentifier(ORG_PLAN_TAG, org?.plan);
+    this.setIdentifier(ORG_FEATURE_FLAGS_TAG, org ? JSON.stringify(org.feature_flags ?? []) : void 0);
   }
   updateEventContext(event) {
     if (!event) {
@@ -69366,7 +69370,7 @@ var SentryContextService = class _SentryContextService {
     return "received";
   }
   count(name, attributes) {
-    this.metrics.count(name, 1, { attributes: this.metricAttributes(attributes) });
+    this.captureMetric(() => this.metrics.count(name, 1, { attributes }));
   }
   distributionSince(name, startedAt, attributes) {
     if (startedAt === void 0) {
@@ -69376,25 +69380,35 @@ var SentryContextService = class _SentryContextService {
     if (!Number.isFinite(duration)) {
       return;
     }
-    this.metrics.distribution(name, duration, {
+    this.captureMetric(() => this.metrics.distribution(name, duration, {
       unit: "millisecond",
-      attributes: this.metricAttributes(attributes)
+      attributes
+    }));
+  }
+  captureMetric(capture) {
+    withScope2((scope) => {
+      for (const attribute of METRIC_CONTEXT_EXCLUDED_ATTRIBUTES) {
+        scope.setAttribute(attribute, void 0);
+      }
+      capture();
     });
   }
-  metricAttributes(attributes) {
-    return __spreadValues(__spreadValues({}, attributes), METRIC_CONTEXT_OVERRIDES);
-  }
   setConfigTag(tag2, value) {
-    if (value === void 0 || value === null || value === "") {
-      return;
-    }
-    this.setIdentifier(tag2, String(value));
+    const normalizedValue = value === void 0 || value === null || value === "" ? void 0 : String(value);
+    this.setIdentifier(tag2, normalizedValue);
   }
   setIdentifier(tag2, value) {
-    const normalizedValue = value || void 0;
+    const normalizedValue = value === "" ? void 0 : value;
+    const isolationScope = getIsolationScope();
+    const activeSpan = getActiveSpan();
     setTag(tag2, normalizedValue);
-    getIsolationScope().setAttribute(tag2, normalizedValue);
-    getActiveSpan()?.setAttribute(tag2, normalizedValue);
+    if (normalizedValue === void 0) {
+      isolationScope.removeAttribute(tag2);
+      activeSpan?.setAttribute(tag2, void 0);
+      return;
+    }
+    isolationScope.setAttribute(tag2, normalizedValue);
+    activeSpan?.setAttribute(tag2, normalizedValue);
   }
   static {
     this.\u0275fac = function SentryContextService_Factory(__ngFactoryType__) {
@@ -70442,6 +70456,10 @@ var FastenService = class _FastenService {
     this.logger = logger;
     this.sentryContext = sentryContext;
     this.configService.systemConfigSubject.subscribe((systemConfig) => {
+      const isPlaceholderConfig = !systemConfig.publicId && systemConfig.searchOnly === void 0 && systemConfig.tefcaMode === void 0 && systemConfig.connectMode === void 0;
+      if (isPlaceholderConfig) {
+        return;
+      }
       this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
         this.logger.info("attempt to download org information, and store in config");
@@ -70948,15 +70966,14 @@ var AppComponent = class _AppComponent {
     this.loading = true;
   }
   ngOnInit() {
-    this.logger.info("QUERY STRING MAP", new URLSearchParams(window.location.search));
     this.populateInputsFromWindowLocation();
     this.messageBus.messageBusSubject.subscribe((eventPayload) => {
       this.logger.debug("bubbling up client-event", eventPayload);
       this.sendPostMessage(eventPayload);
     });
     if (this.isIdentityCallbackRequest()) {
-      this.logger.info("state: auth/callback", this.idpState, this.idpError, this.idpCode);
       this.restoreIdentityCallbackConfiguration();
+      this.logger.info("state: auth/callback");
       this.loading = false;
       this.errorMessage = "";
       this.router.navigate(["auth/callback"], {
@@ -70970,9 +70987,7 @@ var AppComponent = class _AppComponent {
       });
       return;
     }
-    const inferredApiMode = this.inferApiMode(this.publicId);
-    this.sentryContext.recordWidgetStarted(this.getWidgetExperience(), inferredApiMode);
-    let apiMode = this.getApiModeFromPublicId(this.publicId);
+    const apiMode = this.inferApiMode(this.publicId);
     let eventTypes = [];
     if (this.eventTypes) {
       eventTypes = this.eventTypes.split(",").map((eventType) => {
@@ -70985,6 +71000,7 @@ var AppComponent = class _AppComponent {
     this.configService.systemConfig = {
       apiMode,
       publicId: this.publicId,
+      org: void 0,
       externalId: this.externalId,
       externalState: this.externalState,
       reconnectOrgConnectionId: this.reconnectOrgConnectionId,
@@ -71001,6 +71017,8 @@ var AppComponent = class _AppComponent {
     this.configService.vaultProfileConfig = {
       email: this.email
     };
+    this.sentryContext.recordWidgetStarted(this.getWidgetExperience(), apiMode);
+    this.getApiModeFromPublicId(this.publicId);
     if (this.reconnectOrgConnectionId) {
       this.fastenService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
         this.logger.info("state: dashboard/connecting#reconnectOrgConnectionId", orgConnection);
@@ -82416,7 +82434,9 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
       };
       if ((this.configService.vaultProfileConfig$.identityVerificationFailureCount || 0) >= 2) {
         this.configService.systemConfig = __spreadProps(__spreadValues({}, this.configService.systemConfig$), {
-          searchOnly: true
+          searchOnly: true,
+          tefcaMode: false,
+          identityRequestUri: ""
         });
         this.router.navigateByUrl("search");
       }
