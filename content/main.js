@@ -81016,13 +81016,31 @@ var ORG_PLAN_TAG = "org.plan";
 var ORG_FEATURE_FLAGS_TAG = "org.feature_flags";
 var REQUEST_ID_TAG = "request_id";
 var CONNECTION_ID_TAG = "org_connection.id";
+var UI_QUERY_PARAM_NAMES = [
+  "external-id",
+  "external-state",
+  "reconnect-org-connection-id",
+  "search-only",
+  "tefca-mode",
+  "static-backdrop",
+  "show-splash",
+  "sdk-mode",
+  "connect-mode"
+];
 var SentryContextService = class _SentryContextService {
   constructor(configService, messageBusService, fastenService) {
     this.configService = configService;
     this.messageBusService = messageBusService;
     this.fastenService = fastenService;
     this.subscriptions = new Subscription();
-    this.setIdentifier(PUBLIC_ID_TAG, new URLSearchParams(window.location.search).get("public-id") || void 0);
+    const urlParams = new URLSearchParams(window.location.search);
+    this.setIdentifier(PUBLIC_ID_TAG, urlParams.get("public-id") || void 0);
+    for (const queryParamName of UI_QUERY_PARAM_NAMES) {
+      const value = urlParams.get(queryParamName);
+      if (value !== null) {
+        this.setIdentifier(`ui.${queryParamName.replaceAll("-", "_")}`, value);
+      }
+    }
     this.subscriptions.add(this.configService.systemConfigSubject.subscribe((config2) => {
       if (config2.publicId) {
         this.setIdentifier(PUBLIC_ID_TAG, config2.publicId);
