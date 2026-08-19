@@ -48597,7 +48597,6 @@ function createRemoteJWKSet(url, options) {
 // projects/fasten-connect-stitch-embed/src/app/services/auth.service.ts
 var FASTEN_AUTH_VAULT_COOKIE_NAME = "fasten_connect_auth_vault";
 var VAULT_AUTH_COOKIE_RECHECK_DELAY_MS = 100;
-var COOKIE_SUPPORT_RECHECK_DELAY_MS = 100;
 var CookieProbeScope;
 (function(CookieProbeScope2) {
   CookieProbeScope2["All"] = "all";
@@ -48664,17 +48663,6 @@ var AuthService = class _AuthService {
         scopeParams["regular_only"] = "true";
       }
       const expectedProbe = yield this.setCookieProbe(scopeParams);
-      let supported = yield this.checkCookieSupportForProbe(expectedProbe, scopeParams);
-      if (!supported) {
-        yield new Promise((resolve) => setTimeout(resolve, COOKIE_SUPPORT_RECHECK_DELAY_MS));
-        supported = yield this.checkCookieSupportForProbe(expectedProbe, scopeParams);
-      }
-      this.cookieSupported = supported;
-      return supported;
-    });
-  }
-  checkCookieSupportForProbe(expectedProbe, scopeParams) {
-    return __async(this, null, function* () {
       const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_support`, null, {
         withCredentials: true,
         params: __spreadValues({ probe: expectedProbe }, scopeParams)
@@ -48683,6 +48671,7 @@ var AuthService = class _AuthService {
       if (typeof supported !== "boolean") {
         throw new Error(`Invalid cookie support response: ${supported}`);
       }
+      this.cookieSupported = supported;
       return supported;
     });
   }
