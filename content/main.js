@@ -77690,10 +77690,6 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
     }).then((resp) => __async(this, null, function* () {
-      if (this.configService.systemConfig$.apiMode === ApiMode.Test && !(yield this.authService.WaitForVaultAuthCookie())) {
-        this.loading = false;
-        return this.router.navigateByUrl("auth/signin/cookies-required");
-      }
       this.loading = false;
       return this.navigateToCodePage(resp?.expires);
     })).catch((err) => {
@@ -78834,11 +78830,6 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     this.logger.info("submit finish", this.currentEmail, code);
     this.authService.VaultAuthFinish(this.currentEmail, code).then((resp) => __async(this, null, function* () {
       console.log("VaultAuthFinish result", resp);
-      const isAuthCookieSet = yield this.authService.WaitForVaultAuthCookie();
-      this.loading = false;
-      if (!isAuthCookieSet) {
-        return this.router.navigateByUrl("auth/signin/cookies-required");
-      }
       if (resp?.has_verified_identity && resp?.verified_identity_csp_type) {
         this.logger.info("setting verified identity csp_type csp type to", resp.verified_identity_csp_type);
         this.configService.vaultProfileConfig = {
