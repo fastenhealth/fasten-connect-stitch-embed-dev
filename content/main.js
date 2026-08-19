@@ -69000,6 +69000,7 @@ function getParameterizedRouteFromSnapshot(route) {
 // projects/fasten-connect-stitch-embed/src/app/services/auth.service.ts
 var FASTEN_AUTH_VAULT_COOKIE_NAME = "fasten_connect_auth_vault";
 var VAULT_AUTH_COOKIE_RECHECK_DELAY_MS = 100;
+var VAULT_AUTH_COOKIE_MAX_RECHECK_ATTEMPTS = 10;
 var COOKIE_SUPPORT_RECHECK_DELAY_MS = 100;
 var FASTEN_SEEN_BEFORE_STORAGE_KEY = "fasten_connect_seen_before";
 var CookieProbeScope;
@@ -69054,11 +69055,26 @@ var AuthService = class _AuthService {
   }
   WaitForVaultAuthCookie() {
     return __async(this, null, function* () {
-      if (this.IsVaultAuthCookieSet()) {
-        return true;
+      const diagnosticId = Math.random().toString(36).slice(2, 10);
+      const overallStart = performance.now();
+      for (let attempt = 0; attempt <= VAULT_AUTH_COOKIE_MAX_RECHECK_ATTEMPTS; attempt++) {
+        if (attempt > 0) {
+          yield new Promise((resolve) => setTimeout(resolve, VAULT_AUTH_COOKIE_RECHECK_DELAY_MS));
+        }
+        const isSet = this.IsVaultAuthCookieSet();
+        const elapsedMs = Math.round(performance.now() - overallStart);
+        logCookieDiagnostic(diagnosticId, "vault-auth-cookie-check", { attempt, isSet, elapsedMs }, "vault-auth-cookie");
+        if (isSet) {
+          return true;
+        }
       }
-      yield new Promise((resolve) => setTimeout(resolve, VAULT_AUTH_COOKIE_RECHECK_DELAY_MS));
-      return this.IsVaultAuthCookieSet();
+      const totalElapsedMs = Math.round(performance.now() - overallStart);
+      captureMessage("Vault auth cookie was not detected after repeated checks", {
+        level: "warning",
+        tags: { isLikelyFirstLaunch: String(getIsLikelyFirstLaunch()) },
+        extra: __spreadValues({ diagnosticId, totalElapsedMs, attempts: VAULT_AUTH_COOKIE_MAX_RECHECK_ATTEMPTS + 1 }, getCookieDiagnosticSnapshot())
+      });
+      return false;
     });
   }
   CheckCookieSupport() {
@@ -69211,22 +69227,28 @@ function getCookieDiagnosticSnapshot() {
     userActivationIsActive
   };
 }
+var cachedIsLikelyFirstLaunch;
 function getIsLikelyFirstLaunch() {
+  if (cachedIsLikelyFirstLaunch !== void 0) {
+    return cachedIsLikelyFirstLaunch;
+  }
   try {
     if (!window.localStorage.getItem(FASTEN_SEEN_BEFORE_STORAGE_KEY)) {
       window.localStorage.setItem(FASTEN_SEEN_BEFORE_STORAGE_KEY, "1");
-      return true;
+      cachedIsLikelyFirstLaunch = true;
+    } else {
+      cachedIsLikelyFirstLaunch = false;
     }
-    return false;
   } catch {
-    return false;
+    cachedIsLikelyFirstLaunch = false;
   }
+  return cachedIsLikelyFirstLaunch;
 }
-function logCookieDiagnostic(diagnosticId, step, data) {
+function logCookieDiagnostic(diagnosticId, step, data, category = "cookie-support") {
   const payload = __spreadValues(__spreadValues({ diagnosticId, step }, data), getCookieDiagnosticSnapshot());
-  console.warn("[AuthService][CookieSupport]", payload);
+  console.warn(`[AuthService][${category}]`, payload);
   addBreadcrumb({
-    category: "cookie-support",
+    category,
     message: step,
     level: "info",
     data: payload
@@ -77690,6 +77712,10 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
     }).then((resp) => __async(this, null, function* () {
+      if (this.configService.systemConfig$.apiMode === ApiMode.Test && !(yield this.authService.WaitForVaultAuthCookie())) {
+        this.loading = false;
+        return this.router.navigateByUrl("auth/signin/cookies-required");
+      }
       this.loading = false;
       return this.navigateToCodePage(resp?.expires);
     })).catch((err) => {
@@ -78830,6 +78856,11 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     this.logger.info("submit finish", this.currentEmail, code);
     this.authService.VaultAuthFinish(this.currentEmail, code).then((resp) => __async(this, null, function* () {
       console.log("VaultAuthFinish result", resp);
+      const isAuthCookieSet = yield this.authService.WaitForVaultAuthCookie();
+      this.loading = false;
+      if (!isAuthCookieSet) {
+        return this.router.navigateByUrl("auth/signin/cookies-required");
+      }
       if (resp?.has_verified_identity && resp?.verified_identity_csp_type) {
         this.logger.info("setting verified identity csp_type csp type to", resp.verified_identity_csp_type);
         this.configService.vaultProfileConfig = {
