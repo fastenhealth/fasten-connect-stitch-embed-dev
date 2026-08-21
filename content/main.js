@@ -47158,18 +47158,26 @@ var CookieProbeScope;
 })(CookieProbeScope || (CookieProbeScope = {}));
 var SESSION_REFRESH_WINDOW_MS = 6e4;
 var AuthService = class _AuthService {
-  constructor(_httpClient, configService) {
+  constructor(_httpClient, configService, logger) {
     this._httpClient = _httpClient;
     this.configService = configService;
+    this.logger = logger;
     this.IsAuthenticatedSubject = new BehaviorSubject(false);
     this.sessionGeneration = 0;
+  }
+  /** Shared request options for every vault auth call: attaches the tenant's public_id and any extra query params. */
+  requestOptions(extraParams) {
+    return {
+      withCredentials: true,
+      params: __spreadValues({ "public_id": this.configService.systemConfig$.publicId }, extraParams)
+    };
   }
   VaultAuthBegin(email, cspPromptForce) {
     return __async(this, null, function* () {
       const resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_begin`, {
         "email": email,
         "csp_prompt_force": cspPromptForce
-      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+      }, this.requestOptions()).toPromise();
       this.ClearSession();
       return resp && "data" in resp ? resp.data : resp;
     });
@@ -47179,7 +47187,7 @@ var AuthService = class _AuthService {
       let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_finish`, {
         "email": email,
         "code": code
-      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+      }, this.requestOptions()).toPromise();
       this.ClearSession();
       return resp;
     });
@@ -47188,7 +47196,7 @@ var AuthService = class _AuthService {
     return __async(this, null, function* () {
       const resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_resend_code`, {
         "email": email
-      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+      }, this.requestOptions()).toPromise();
       return resp?.data;
     });
   }
@@ -47202,12 +47210,9 @@ var AuthService = class _AuthService {
       this.publishAuthenticationState(false);
       this.ClearSession();
       try {
-        return yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_signout`, null, {
-          withCredentials: true,
-          params: { "public_id": this.configService.systemConfig$.publicId }
-        }).toPromise();
+        return yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_signout`, null, this.requestOptions()).toPromise();
       } catch (error2) {
-        console.error("error signing out", error2);
+        this.logger.error("error signing out", error2);
         return void 0;
       }
     });
@@ -47230,7 +47235,7 @@ var AuthService = class _AuthService {
     return __async(this, null, function* () {
       const isActive = (yield this.RefreshSession()) !== null;
       if (!isActive) {
-        console.warn("[AuthService] Vault auth session is not active");
+        this.logger.warn("Vault auth session is not active");
       }
       return isActive;
     });
@@ -47298,12 +47303,10 @@ var AuthService = class _AuthService {
    */
   GetIdentityVerificationHandoffToken() {
     return __async(this, null, function* () {
-      const response = yield firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_handoff`, {
-        withCredentials: true,
-        params: { "public_id": this.configService.systemConfig$.publicId }
-      }));
+      const response = yield firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_handoff`, this.requestOptions()));
       const handoffToken = response?.data?.handoff_token;
       if (!handoffToken) {
+        this.logger.error("invalid identity verification handoff response", response);
         throw new Error("Invalid identity verification handoff response");
       }
       return handoffToken;
@@ -47328,7 +47331,7 @@ var AuthService = class _AuthService {
       return this.sessionRequest;
     }
     const requestGeneration = this.sessionGeneration;
-    const request = firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_session`, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } })).then((sessionResponse) => {
+    const request = firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_session`, this.requestOptions())).then((sessionResponse) => {
       if (requestGeneration === this.sessionGeneration) {
         this.storeSession(sessionResponse.data);
       }
@@ -47338,7 +47341,7 @@ var AuthService = class _AuthService {
       if (error2 instanceof HttpErrorResponse && (error2.status === 401 || error2.status === 403)) {
         return null;
       }
-      console.error("error fetching session", error2);
+      this.logger.error("error fetching session", error2);
       throw error2;
     });
     this.sessionRequest = request;
@@ -47360,7 +47363,7 @@ var AuthService = class _AuthService {
   }
   static {
     this.\u0275fac = function AuthService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AuthService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(ConfigService));
+      return new (__ngFactoryType__ || _AuthService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
     };
   }
   static {
@@ -57100,8 +57103,12 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
       if (this.configService.systemConfig$.apiMode !== ApiMode.Test) {
         return;
       }
-      const session = yield this.authService.GetSession();
-      this.canSkipIdentityVerification = session?.has_verified_identity === true;
+      try {
+        const session = yield this.authService.GetSession();
+        this.canSkipIdentityVerification = session?.has_verified_identity === true;
+      } catch (error2) {
+        this.logger.error("error checking whether identity verification can be skipped", error2);
+      }
     });
   }
   skipIdentityVerification() {
