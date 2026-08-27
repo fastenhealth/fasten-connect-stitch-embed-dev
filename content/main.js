@@ -8,7 +8,6 @@ var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __propIsEnum = Object.prototype.propertyIsEnumerable;
-var __knownSymbol = (name, symbol) => (symbol = Symbol[name]) ? symbol : Symbol.for("Symbol." + name);
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __spreadValues = (a, b) => {
   for (var prop in b ||= {})
@@ -72,21 +71,6 @@ var __async = (__this, __arguments, generator) => {
     var step = (x) => x.done ? resolve(x.value) : Promise.resolve(x.value).then(fulfilled, rejected);
     step((generator = generator.apply(__this, __arguments)).next());
   });
-};
-var __await = function(promise, isYieldStar) {
-  this[0] = promise;
-  this[1] = isYieldStar;
-};
-var __asyncGenerator = (__this, __arguments, generator) => {
-  var resume = (k, v, yes, no) => {
-    try {
-      var x = generator[k](v), isAwait = (v = x.value) instanceof __await, done = x.done;
-      Promise.resolve(isAwait ? v[0] : v).then((y) => isAwait ? resume(k === "return" ? k : "next", v[1] ? { done: y.done, value: y.value } : y, yes, no) : yes({ value: y, done })).catch((e2) => resume("throw", e2, yes, no));
-    } catch (e2) {
-      no(e2);
-    }
-  }, method = (k) => it[k] = (x) => new Promise((yes, no) => resume(k, x, yes, no)), it = {};
-  return generator = generator.apply(__this, __arguments), it[__knownSymbol("asyncIterator")] = () => it, method("next"), method("throw"), method("return"), it;
 };
 
 // node_modules/lodash/lodash.js
@@ -376,9 +360,9 @@ var require_lodash = __commonJS({
       var freeProcess = moduleExports && freeGlobal.process;
       var nodeUtil = function() {
         try {
-          var types2 = freeModule && freeModule.require && freeModule.require("util").types;
-          if (types2) {
-            return types2;
+          var types = freeModule && freeModule.require && freeModule.require("util").types;
+          if (types) {
+            return types;
           }
           return freeProcess && freeProcess.binding && freeProcess.binding("util");
         } catch (e2) {
@@ -762,7 +746,7 @@ var require_lodash = __commonJS({
         var dataViewCtorString = toSource(DataView), mapCtorString = toSource(Map2), promiseCtorString = toSource(Promise2), setCtorString = toSource(Set2), weakMapCtorString = toSource(WeakMap2);
         var symbolProto = Symbol2 ? Symbol2.prototype : undefined2, symbolValueOf = symbolProto ? symbolProto.valueOf : undefined2, symbolToString = symbolProto ? symbolProto.toString : undefined2;
         function lodash(value) {
-          if (isObjectLike2(value) && !isArray3(value) && !(value instanceof LazyWrapper)) {
+          if (isObjectLike(value) && !isArray3(value) && !(value instanceof LazyWrapper)) {
             if (value instanceof LodashWrapper) {
               return value;
             }
@@ -776,7 +760,7 @@ var require_lodash = __commonJS({
           function object() {
           }
           return function(proto) {
-            if (!isObject2(proto)) {
+            if (!isObject(proto)) {
               return {};
             }
             if (objectCreate) {
@@ -1177,7 +1161,7 @@ var require_lodash = __commonJS({
           if (result2 !== undefined2) {
             return result2;
           }
-          if (!isObject2(value)) {
+          if (!isObject(value)) {
             return value;
           }
           var isArr = isArray3(value);
@@ -1187,20 +1171,20 @@ var require_lodash = __commonJS({
               return copyArray(value, result2);
             }
           } else {
-            var tag2 = getTag(value), isFunc = tag2 == funcTag || tag2 == genTag;
+            var tag = getTag(value), isFunc = tag == funcTag || tag == genTag;
             if (isBuffer(value)) {
               return cloneBuffer(value, isDeep);
             }
-            if (tag2 == objectTag || tag2 == argsTag || isFunc && !object) {
+            if (tag == objectTag || tag == argsTag || isFunc && !object) {
               result2 = isFlat || isFunc ? {} : initCloneObject(value);
               if (!isDeep) {
                 return isFlat ? copySymbolsIn(value, baseAssignIn(result2, value)) : copySymbols(value, baseAssign(result2, value));
               }
             } else {
-              if (!cloneableTags[tag2]) {
+              if (!cloneableTags[tag]) {
                 return object ? value : {};
               }
-              result2 = initCloneByTag(value, tag2, isDeep);
+              result2 = initCloneByTag(value, tag, isDeep);
             }
           }
           stack || (stack = new Stack());
@@ -1440,19 +1424,19 @@ var require_lodash = __commonJS({
           return func == null ? undefined2 : apply(func, object, args);
         }
         function baseIsArguments(value) {
-          return isObjectLike2(value) && baseGetTag(value) == argsTag;
+          return isObjectLike(value) && baseGetTag(value) == argsTag;
         }
         function baseIsArrayBuffer(value) {
-          return isObjectLike2(value) && baseGetTag(value) == arrayBufferTag;
+          return isObjectLike(value) && baseGetTag(value) == arrayBufferTag;
         }
         function baseIsDate(value) {
-          return isObjectLike2(value) && baseGetTag(value) == dateTag;
+          return isObjectLike(value) && baseGetTag(value) == dateTag;
         }
         function baseIsEqual(value, other, bitmask, customizer, stack) {
           if (value === other) {
             return true;
           }
-          if (value == null || other == null || !isObjectLike2(value) && !isObjectLike2(other)) {
+          if (value == null || other == null || !isObjectLike(value) && !isObjectLike(other)) {
             return value !== value && other !== other;
           }
           return baseIsEqualDeep(value, other, bitmask, customizer, baseIsEqual, stack);
@@ -1488,7 +1472,7 @@ var require_lodash = __commonJS({
           return equalObjects(object, other, bitmask, customizer, equalFunc, stack);
         }
         function baseIsMap(value) {
-          return isObjectLike2(value) && getTag(value) == mapTag;
+          return isObjectLike(value) && getTag(value) == mapTag;
         }
         function baseIsMatch(object, source, matchData, customizer) {
           var index = matchData.length, length = index, noCustomizer = !customizer;
@@ -1522,20 +1506,20 @@ var require_lodash = __commonJS({
           return true;
         }
         function baseIsNative(value) {
-          if (!isObject2(value) || isMasked(value)) {
+          if (!isObject(value) || isMasked(value)) {
             return false;
           }
           var pattern = isFunction3(value) ? reIsNative : reIsHostCtor;
           return pattern.test(toSource(value));
         }
         function baseIsRegExp(value) {
-          return isObjectLike2(value) && baseGetTag(value) == regexpTag;
+          return isObjectLike(value) && baseGetTag(value) == regexpTag;
         }
         function baseIsSet(value) {
-          return isObjectLike2(value) && getTag(value) == setTag2;
+          return isObjectLike(value) && getTag(value) == setTag2;
         }
         function baseIsTypedArray(value) {
-          return isObjectLike2(value) && isLength(value.length) && !!typedArrayTags[baseGetTag(value)];
+          return isObjectLike(value) && isLength(value.length) && !!typedArrayTags[baseGetTag(value)];
         }
         function baseIteratee(value) {
           if (typeof value == "function") {
@@ -1562,7 +1546,7 @@ var require_lodash = __commonJS({
           return result2;
         }
         function baseKeysIn(object) {
-          if (!isObject2(object)) {
+          if (!isObject(object)) {
             return nativeKeysIn(object);
           }
           var isProto = isPrototype(object), result2 = [];
@@ -1607,7 +1591,7 @@ var require_lodash = __commonJS({
           }
           baseFor(source, function(srcValue, key) {
             stack || (stack = new Stack());
-            if (isObject2(srcValue)) {
+            if (isObject(srcValue)) {
               baseMergeDeep(object, source, key, srcIndex, baseMerge, customizer, stack);
             } else {
               var newValue = customizer ? customizer(safeGet(object, key), srcValue, key + "", object, source, stack) : undefined2;
@@ -1647,7 +1631,7 @@ var require_lodash = __commonJS({
               newValue = objValue;
               if (isArguments(objValue)) {
                 newValue = toPlainObject(objValue);
-              } else if (!isObject2(objValue) || isFunction3(objValue)) {
+              } else if (!isObject(objValue) || isFunction3(objValue)) {
                 newValue = initCloneObject(srcValue);
               }
             } else {
@@ -1790,7 +1774,7 @@ var require_lodash = __commonJS({
           return shuffleSelf(array, baseClamp(n2, 0, array.length));
         }
         function baseSet(object, path, value, customizer) {
-          if (!isObject2(object)) {
+          if (!isObject(object)) {
             return object;
           }
           path = castPath(path, object);
@@ -1804,7 +1788,7 @@ var require_lodash = __commonJS({
               var objValue = nested[key];
               newValue = customizer ? customizer(objValue, key, nested) : undefined2;
               if (newValue === undefined2) {
-                newValue = isObject2(objValue) ? objValue : isIndex(path[index + 1]) ? [] : {};
+                newValue = isObject(objValue) ? objValue : isIndex(path[index + 1]) ? [] : {};
               }
             }
             assignValue(nested, key, newValue);
@@ -2253,7 +2237,7 @@ var require_lodash = __commonJS({
                 return new Ctor(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
             }
             var thisBinding = baseCreate(Ctor.prototype), result2 = Ctor.apply(thisBinding, args);
-            return isObject2(result2) ? result2 : thisBinding;
+            return isObject(result2) ? result2 : thisBinding;
           };
         }
         function createCurry(func, bitmask, arity) {
@@ -2485,11 +2469,11 @@ var require_lodash = __commonJS({
         };
         function createToPairs(keysFunc) {
           return function(object) {
-            var tag2 = getTag(object);
-            if (tag2 == mapTag) {
+            var tag = getTag(object);
+            if (tag == mapTag) {
               return mapToArray(object);
             }
-            if (tag2 == setTag2) {
+            if (tag == setTag2) {
               return setToPairs(object);
             }
             return baseToPairs(object, keysFunc(object));
@@ -2545,7 +2529,7 @@ var require_lodash = __commonJS({
           return objValue;
         }
         function customDefaultsMerge(objValue, srcValue, key, object, source, stack) {
-          if (isObject2(objValue) && isObject2(srcValue)) {
+          if (isObject(objValue) && isObject(srcValue)) {
             stack.set(srcValue, objValue);
             baseMerge(objValue, srcValue, undefined2, customDefaultsMerge, stack);
             stack["delete"](srcValue);
@@ -2598,8 +2582,8 @@ var require_lodash = __commonJS({
           stack["delete"](other);
           return result2;
         }
-        function equalByTag(object, other, tag2, bitmask, customizer, equalFunc, stack) {
-          switch (tag2) {
+        function equalByTag(object, other, tag, bitmask, customizer, equalFunc, stack) {
+          switch (tag) {
             case dataViewTag:
               if (object.byteLength != other.byteLength || object.byteOffset != other.byteOffset) {
                 return false;
@@ -2735,7 +2719,7 @@ var require_lodash = __commonJS({
           return baseIsNative(value) ? value : undefined2;
         }
         function getRawTag(value) {
-          var isOwn = hasOwnProperty.call(value, symToStringTag), tag2 = value[symToStringTag];
+          var isOwn = hasOwnProperty.call(value, symToStringTag), tag = value[symToStringTag];
           try {
             value[symToStringTag] = undefined2;
             var unmasked = true;
@@ -2744,7 +2728,7 @@ var require_lodash = __commonJS({
           var result2 = nativeObjectToString.call(value);
           if (unmasked) {
             if (isOwn) {
-              value[symToStringTag] = tag2;
+              value[symToStringTag] = tag;
             } else {
               delete value[symToStringTag];
             }
@@ -2844,9 +2828,9 @@ var require_lodash = __commonJS({
         function initCloneObject(object) {
           return typeof object.constructor == "function" && !isPrototype(object) ? baseCreate(getPrototype(object)) : {};
         }
-        function initCloneByTag(object, tag2, isDeep) {
+        function initCloneByTag(object, tag, isDeep) {
           var Ctor = object.constructor;
-          switch (tag2) {
+          switch (tag) {
             case arrayBufferTag:
               return cloneArrayBuffer(object);
             case boolTag:
@@ -2896,7 +2880,7 @@ var require_lodash = __commonJS({
           return !!length && (type == "number" || type != "symbol" && reIsUint.test(value)) && value > -1 && value % 1 == 0 && value < length;
         }
         function isIterateeCall(value, index, object) {
-          if (!isObject2(object)) {
+          if (!isObject(object)) {
             return false;
           }
           var type = typeof index;
@@ -2939,7 +2923,7 @@ var require_lodash = __commonJS({
           return value === proto;
         }
         function isStrictComparable(value) {
-          return value === value && !isObject2(value);
+          return value === value && !isObject(value);
         }
         function matchesStrictComparable(key, srcValue) {
           return function(object) {
@@ -3153,7 +3137,7 @@ var require_lodash = __commonJS({
           }
           return result2;
         }
-        function concat3() {
+        function concat2() {
           var length = arguments.length;
           if (!length) {
             return [];
@@ -3574,15 +3558,15 @@ var require_lodash = __commonJS({
         function wrapperPlant(value) {
           var result2, parent2 = this;
           while (parent2 instanceof baseLodash) {
-            var clone3 = wrapperClone(parent2);
-            clone3.__index__ = 0;
-            clone3.__values__ = undefined2;
+            var clone2 = wrapperClone(parent2);
+            clone2.__index__ = 0;
+            clone2.__values__ = undefined2;
             if (result2) {
-              previous.__wrapped__ = clone3;
+              previous.__wrapped__ = clone2;
             } else {
-              result2 = clone3;
+              result2 = clone2;
             }
-            var previous = clone3;
+            var previous = clone2;
             parent2 = parent2.__wrapped__;
           }
           previous.__wrapped__ = value;
@@ -3730,8 +3714,8 @@ var require_lodash = __commonJS({
           if (isArrayLike2(collection)) {
             return isString2(collection) ? stringSize(collection) : collection.length;
           }
-          var tag2 = getTag(collection);
-          if (tag2 == mapTag || tag2 == setTag2) {
+          var tag = getTag(collection);
+          if (tag == mapTag || tag == setTag2) {
             return collection.size;
           }
           return baseKeys(collection).length;
@@ -3824,7 +3808,7 @@ var require_lodash = __commonJS({
             throw new TypeError2(FUNC_ERROR_TEXT);
           }
           wait = toNumber(wait) || 0;
-          if (isObject2(options)) {
+          if (isObject(options)) {
             leading = !!options.leading;
             maxing = "maxWait" in options;
             maxWait = maxing ? nativeMax(toNumber(options.maxWait) || 0, wait) : maxWait;
@@ -3994,7 +3978,7 @@ var require_lodash = __commonJS({
           if (typeof func != "function") {
             throw new TypeError2(FUNC_ERROR_TEXT);
           }
-          if (isObject2(options)) {
+          if (isObject(options)) {
             leading = "leading" in options ? !!options.leading : leading;
             trailing = "trailing" in options ? !!options.trailing : trailing;
           }
@@ -4017,7 +4001,7 @@ var require_lodash = __commonJS({
           var value = arguments[0];
           return isArray3(value) ? value : [value];
         }
-        function clone2(value) {
+        function clone(value) {
           return baseClone(value, CLONE_SYMBOLS_FLAG);
         }
         function cloneWith(value, customizer) {
@@ -4044,7 +4028,7 @@ var require_lodash = __commonJS({
         var isArguments = baseIsArguments(/* @__PURE__ */ function() {
           return arguments;
         }()) ? baseIsArguments : function(value) {
-          return isObjectLike2(value) && hasOwnProperty.call(value, "callee") && !propertyIsEnumerable.call(value, "callee");
+          return isObjectLike(value) && hasOwnProperty.call(value, "callee") && !propertyIsEnumerable.call(value, "callee");
         };
         var isArray3 = Array2.isArray;
         var isArrayBuffer2 = nodeIsArrayBuffer ? baseUnary(nodeIsArrayBuffer) : baseIsArrayBuffer;
@@ -4052,15 +4036,15 @@ var require_lodash = __commonJS({
           return value != null && isLength(value.length) && !isFunction3(value);
         }
         function isArrayLikeObject(value) {
-          return isObjectLike2(value) && isArrayLike2(value);
+          return isObjectLike(value) && isArrayLike2(value);
         }
         function isBoolean2(value) {
-          return value === true || value === false || isObjectLike2(value) && baseGetTag(value) == boolTag;
+          return value === true || value === false || isObjectLike(value) && baseGetTag(value) == boolTag;
         }
         var isBuffer = nativeIsBuffer || stubFalse;
         var isDate2 = nodeIsDate ? baseUnary(nodeIsDate) : baseIsDate;
         function isElement4(value) {
-          return isObjectLike2(value) && value.nodeType === 1 && !isPlainObject2(value);
+          return isObjectLike(value) && value.nodeType === 1 && !isPlainObject2(value);
         }
         function isEmpty(value) {
           if (value == null) {
@@ -4069,8 +4053,8 @@ var require_lodash = __commonJS({
           if (isArrayLike2(value) && (isArray3(value) || typeof value == "string" || typeof value.splice == "function" || isBuffer(value) || isTypedArray(value) || isArguments(value))) {
             return !value.length;
           }
-          var tag2 = getTag(value);
-          if (tag2 == mapTag || tag2 == setTag2) {
+          var tag = getTag(value);
+          if (tag == mapTag || tag == setTag2) {
             return !value.size;
           }
           if (isPrototype(value)) {
@@ -4092,21 +4076,21 @@ var require_lodash = __commonJS({
           return result2 === undefined2 ? baseIsEqual(value, other, undefined2, customizer) : !!result2;
         }
         function isError2(value) {
-          if (!isObjectLike2(value)) {
+          if (!isObjectLike(value)) {
             return false;
           }
-          var tag2 = baseGetTag(value);
-          return tag2 == errorTag || tag2 == domExcTag || typeof value.message == "string" && typeof value.name == "string" && !isPlainObject2(value);
+          var tag = baseGetTag(value);
+          return tag == errorTag || tag == domExcTag || typeof value.message == "string" && typeof value.name == "string" && !isPlainObject2(value);
         }
         function isFinite2(value) {
           return typeof value == "number" && nativeIsFinite(value);
         }
         function isFunction3(value) {
-          if (!isObject2(value)) {
+          if (!isObject(value)) {
             return false;
           }
-          var tag2 = baseGetTag(value);
-          return tag2 == funcTag || tag2 == genTag || tag2 == asyncTag || tag2 == proxyTag;
+          var tag = baseGetTag(value);
+          return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
         }
         function isInteger(value) {
           return typeof value == "number" && value == toInteger2(value);
@@ -4114,11 +4098,11 @@ var require_lodash = __commonJS({
         function isLength(value) {
           return typeof value == "number" && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
         }
-        function isObject2(value) {
+        function isObject(value) {
           var type = typeof value;
           return value != null && (type == "object" || type == "function");
         }
-        function isObjectLike2(value) {
+        function isObjectLike(value) {
           return value != null && typeof value == "object";
         }
         var isMap = nodeIsMap ? baseUnary(nodeIsMap) : baseIsMap;
@@ -4145,10 +4129,10 @@ var require_lodash = __commonJS({
           return value == null;
         }
         function isNumber(value) {
-          return typeof value == "number" || isObjectLike2(value) && baseGetTag(value) == numberTag;
+          return typeof value == "number" || isObjectLike(value) && baseGetTag(value) == numberTag;
         }
         function isPlainObject2(value) {
-          if (!isObjectLike2(value) || baseGetTag(value) != objectTag) {
+          if (!isObjectLike(value) || baseGetTag(value) != objectTag) {
             return false;
           }
           var proto = getPrototype(value);
@@ -4164,20 +4148,20 @@ var require_lodash = __commonJS({
         }
         var isSet = nodeIsSet ? baseUnary(nodeIsSet) : baseIsSet;
         function isString2(value) {
-          return typeof value == "string" || !isArray3(value) && isObjectLike2(value) && baseGetTag(value) == stringTag;
+          return typeof value == "string" || !isArray3(value) && isObjectLike(value) && baseGetTag(value) == stringTag;
         }
         function isSymbol(value) {
-          return typeof value == "symbol" || isObjectLike2(value) && baseGetTag(value) == symbolTag;
+          return typeof value == "symbol" || isObjectLike(value) && baseGetTag(value) == symbolTag;
         }
         var isTypedArray = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedArray;
         function isUndefined(value) {
           return value === undefined2;
         }
         function isWeakMap(value) {
-          return isObjectLike2(value) && getTag(value) == weakMapTag;
+          return isObjectLike(value) && getTag(value) == weakMapTag;
         }
         function isWeakSet(value) {
-          return isObjectLike2(value) && baseGetTag(value) == weakSetTag;
+          return isObjectLike(value) && baseGetTag(value) == weakSetTag;
         }
         var lt = createRelationalOperation(baseLt);
         var lte = createRelationalOperation(function(value, other) {
@@ -4193,7 +4177,7 @@ var require_lodash = __commonJS({
           if (symIterator && value[symIterator]) {
             return iteratorToArray(value[symIterator]());
           }
-          var tag2 = getTag(value), func = tag2 == mapTag ? mapToArray : tag2 == setTag2 ? setToArray : values;
+          var tag = getTag(value), func = tag == mapTag ? mapToArray : tag == setTag2 ? setToArray : values;
           return func(value);
         }
         function toFinite(value) {
@@ -4221,9 +4205,9 @@ var require_lodash = __commonJS({
           if (isSymbol(value)) {
             return NAN;
           }
-          if (isObject2(value)) {
+          if (isObject(value)) {
             var other = typeof value.valueOf == "function" ? value.valueOf() : value;
-            value = isObject2(other) ? other + "" : other;
+            value = isObject(other) ? other + "" : other;
           }
           if (typeof value != "string") {
             return value === 0 ? value : +value;
@@ -4444,7 +4428,7 @@ var require_lodash = __commonJS({
             var Ctor = object && object.constructor;
             if (isArrLike) {
               accumulator = isArr ? new Ctor() : [];
-            } else if (isObject2(object)) {
+            } else if (isObject(object)) {
               accumulator = isFunction3(Ctor) ? baseCreate(getPrototype(object)) : {};
             } else {
               accumulator = {};
@@ -4726,7 +4710,7 @@ var require_lodash = __commonJS({
         }
         function truncate2(string, options) {
           var length = DEFAULT_TRUNC_LENGTH, omission = DEFAULT_TRUNC_OMISSION;
-          if (isObject2(options)) {
+          if (isObject(options)) {
             var separator = "separator" in options ? options.separator : separator;
             length = "length" in options ? toInteger2(options.length) : length;
             omission = "omission" in options ? baseToString(options.omission) : omission;
@@ -4856,13 +4840,13 @@ var require_lodash = __commonJS({
         });
         function mixin(object, source, options) {
           var props = keys(source), methodNames = baseFunctions(source, props);
-          if (options == null && !(isObject2(source) && (methodNames.length || !props.length))) {
+          if (options == null && !(isObject(source) && (methodNames.length || !props.length))) {
             options = source;
             source = object;
             object = this;
             methodNames = baseFunctions(source, keys(source));
           }
-          var chain2 = !(isObject2(options) && "chain" in options) || !!options.chain, isFunc = isFunction3(object);
+          var chain2 = !(isObject(options) && "chain" in options) || !!options.chain, isFunc = isFunction3(object);
           arrayEach(methodNames, function(methodName) {
             var func = source[methodName];
             object[methodName] = func;
@@ -5005,7 +4989,7 @@ var require_lodash = __commonJS({
         lodash.chain = chain;
         lodash.chunk = chunk;
         lodash.compact = compact;
-        lodash.concat = concat3;
+        lodash.concat = concat2;
         lodash.cond = cond;
         lodash.conforms = conforms;
         lodash.constant = constant;
@@ -5150,7 +5134,7 @@ var require_lodash = __commonJS({
         lodash.capitalize = capitalize;
         lodash.ceil = ceil;
         lodash.clamp = clamp;
-        lodash.clone = clone2;
+        lodash.clone = clone;
         lodash.cloneDeep = cloneDeep;
         lodash.cloneDeepWith = cloneDeepWith;
         lodash.cloneWith = cloneWith;
@@ -5212,8 +5196,8 @@ var require_lodash = __commonJS({
         lodash.isNil = isNil;
         lodash.isNull = isNull;
         lodash.isNumber = isNumber;
-        lodash.isObject = isObject2;
-        lodash.isObjectLike = isObjectLike2;
+        lodash.isObject = isObject;
+        lodash.isObjectLike = isObjectLike;
         lodash.isPlainObject = isPlainObject2;
         lodash.isRegExp = isRegExp2;
         lodash.isSafeInteger = isSafeInteger;
@@ -7082,10 +7066,10 @@ function __values(o) {
   };
   throw new TypeError(s ? "Object is not iterable." : "Symbol.iterator is not defined.");
 }
-function __await2(v) {
-  return this instanceof __await2 ? (this.v = v, this) : new __await2(v);
+function __await(v) {
+  return this instanceof __await ? (this.v = v, this) : new __await(v);
 }
-function __asyncGenerator2(thisArg, _arguments, generator) {
+function __asyncGenerator(thisArg, _arguments, generator) {
   if (!Symbol.asyncIterator) throw new TypeError("Symbol.asyncIterator is not defined.");
   var g = generator.apply(thisArg, _arguments || []), i, q = [];
   return i = Object.create((typeof AsyncIterator === "function" ? AsyncIterator : Object).prototype), verb("next"), verb("throw"), verb("return", awaitReturn), i[Symbol.asyncIterator] = function() {
@@ -7114,7 +7098,7 @@ function __asyncGenerator2(thisArg, _arguments, generator) {
     }
   }
   function step(r2) {
-    r2.value instanceof __await2 ? Promise.resolve(r2.value.v).then(fulfill, reject) : settle(q[0][2], r2);
+    r2.value instanceof __await ? Promise.resolve(r2.value.v).then(fulfill, reject) : settle(q[0][2], r2);
   }
   function fulfill(value) {
     resume("next", value);
@@ -7188,18 +7172,18 @@ function isIterable(input2) {
 
 // node_modules/rxjs/dist/esm/internal/util/isReadableStreamLike.js
 function readableStreamLikeToAsyncGenerator(readableStream) {
-  return __asyncGenerator2(this, arguments, function* readableStreamLikeToAsyncGenerator_1() {
+  return __asyncGenerator(this, arguments, function* readableStreamLikeToAsyncGenerator_1() {
     const reader = readableStream.getReader();
     try {
       while (true) {
         const {
           value,
           done
-        } = yield __await2(reader.read());
+        } = yield __await(reader.read());
         if (done) {
-          return yield __await2(void 0);
+          return yield __await(void 0);
         }
-        yield yield __await2(value);
+        yield yield __await(value);
       }
     } finally {
       reader.releaseLock();
@@ -7476,6 +7460,28 @@ var EmptyError = createErrorClass((_super) => function EmptyErrorImpl() {
   this.name = "EmptyError";
   this.message = "no elements in sequence";
 });
+
+// node_modules/rxjs/dist/esm/internal/firstValueFrom.js
+function firstValueFrom(source, config2) {
+  const hasConfig = typeof config2 === "object";
+  return new Promise((resolve, reject) => {
+    const subscriber = new SafeSubscriber({
+      next: (value) => {
+        resolve(value);
+        subscriber.unsubscribe();
+      },
+      error: reject,
+      complete: () => {
+        if (hasConfig) {
+          resolve(config2.defaultValue);
+        } else {
+          reject(new EmptyError());
+        }
+      }
+    });
+    source.subscribe(subscriber);
+  });
+}
 
 // node_modules/rxjs/dist/esm/internal/util/isDate.js
 function isValidDate(value) {
@@ -8445,14 +8451,14 @@ var ERROR_DETAILS_PAGE_BASE_URL = "https://angular.dev/errors";
 var XSS_SECURITY_URL = "https://g.co/ng/security#xss";
 var RuntimeError = class extends Error {
   code;
-  constructor(code, message2) {
-    super(formatRuntimeError(code, message2));
+  constructor(code, message) {
+    super(formatRuntimeError(code, message));
     this.code = code;
   }
 };
-function formatRuntimeError(code, message2) {
+function formatRuntimeError(code, message) {
   const fullCode = `NG0${Math.abs(code)}`;
-  let errorMessage = `${fullCode}${message2 ? ": " + message2 : ""}`;
+  let errorMessage = `${fullCode}${message ? ": " + message : ""}`;
   if (ngDevMode && code < 0) {
     const addPeriodSeparator = !errorMessage.match(/[.,;!?\n]$/);
     const separator = addPeriodSeparator ? "." : "";
@@ -9102,10 +9108,10 @@ function convertToBitFlags(flags) {
   return 0 | // comment to force a line break in the formatter
   (flags.optional && 8) | (flags.host && 1) | (flags.self && 2) | (flags.skipSelf && 4);
 }
-function injectArgs(types2) {
+function injectArgs(types) {
   const args = [];
-  for (let i = 0; i < types2.length; i++) {
-    const arg = resolveForwardRef(types2[i]);
+  for (let i = 0; i < types.length; i++) {
+    const arg = resolveForwardRef(types[i]);
     if (Array.isArray(arg)) {
       if (arg.length === 0) {
         throw new RuntimeError(900, ngDevMode && "Arguments array must have arguments.");
@@ -9970,25 +9976,25 @@ function getCompilerFacade(request) {
   }
   if (typeof ngDevMode === "undefined" || ngDevMode) {
     console.error(`JIT compilation failed for ${request.kind}`, request.type);
-    let message2 = `The ${request.kind} '${request.type.name}' needs to be compiled using the JIT compiler, but '@angular/compiler' is not available.
+    let message = `The ${request.kind} '${request.type.name}' needs to be compiled using the JIT compiler, but '@angular/compiler' is not available.
 
 `;
     if (request.usage === 1) {
-      message2 += `The ${request.kind} is part of a library that has been partially compiled.
+      message += `The ${request.kind} is part of a library that has been partially compiled.
 `;
-      message2 += `However, the Angular Linker has not processed the library such that JIT compilation is used as fallback.
+      message += `However, the Angular Linker has not processed the library such that JIT compilation is used as fallback.
 `;
-      message2 += "\n";
-      message2 += `Ideally, the library is processed using the Angular Linker to become fully AOT compiled.
+      message += "\n";
+      message += `Ideally, the library is processed using the Angular Linker to become fully AOT compiled.
 `;
     } else {
-      message2 += `JIT compilation is discouraged for production use-cases! Consider using AOT mode instead.
+      message += `JIT compilation is discouraged for production use-cases! Consider using AOT mode instead.
 `;
     }
-    message2 += `Alternatively, the JIT compiler should be loaded by bootstrapping using '@angular/platform-browser-dynamic' or '@angular/platform-server',
+    message += `Alternatively, the JIT compiler should be loaded by bootstrapping using '@angular/platform-browser-dynamic' or '@angular/platform-server',
 `;
-    message2 += `or manually provide the compiler with 'import "@angular/compiler";' before bootstrapping.`;
-    throw new Error(message2);
+    message += `or manually provide the compiler with 'import "@angular/compiler";' before bootstrapping.`;
+    throw new Error(message);
   } else {
     throw new Error("JIT compiler unavailable");
   }
@@ -11094,10 +11100,10 @@ function hasClassInput(tNode) {
 function hasStyleInput(tNode) {
   return (tNode.flags & 16) !== 0;
 }
-function assertTNodeType(tNode, expectedTypes, message2) {
+function assertTNodeType(tNode, expectedTypes, message) {
   assertDefined(tNode, "should be called with a TNode");
   if ((tNode.type & expectedTypes) === 0) {
-    throwError2(message2 || `Expected [${toTNodeTypeAsString(expectedTypes)}] but got ${toTNodeTypeAsString(tNode.type)}.`);
+    throwError2(message || `Expected [${toTNodeTypeAsString(expectedTypes)}] but got ${toTNodeTypeAsString(tNode.type)}.`);
   }
 }
 function assertPureTNodeType(type) {
@@ -14477,14 +14483,14 @@ function \u0275\u0275trustConstantResourceUrl(url) {
   }
   return trustedScriptURLFromString(url[0]);
 }
-function getUrlSanitizer(tag2, prop) {
-  if (prop === "src" && (tag2 === "embed" || tag2 === "frame" || tag2 === "iframe" || tag2 === "media" || tag2 === "script") || prop === "href" && (tag2 === "base" || tag2 === "link")) {
+function getUrlSanitizer(tag, prop) {
+  if (prop === "src" && (tag === "embed" || tag === "frame" || tag === "iframe" || tag === "media" || tag === "script") || prop === "href" && (tag === "base" || tag === "link")) {
     return \u0275\u0275sanitizeResourceUrl;
   }
   return \u0275\u0275sanitizeUrl;
 }
-function \u0275\u0275sanitizeUrlOrResourceUrl(unsafeUrl, tag2, prop) {
-  return getUrlSanitizer(tag2, prop)(unsafeUrl);
+function \u0275\u0275sanitizeUrlOrResourceUrl(unsafeUrl, tag, prop) {
+  return getUrlSanitizer(tag, prop)(unsafeUrl);
 }
 function validateAgainstEventProperties(name) {
   if (name.toLowerCase().startsWith("on")) {
@@ -14544,19 +14550,19 @@ function validateElementIsKnown(element, lView, tagName, schemas, hasDirectives)
       const isHostStandalone = isHostComponentStandalone(lView);
       const templateLocation = getTemplateLocationDetails(lView);
       const schemas2 = `'${isHostStandalone ? "@Component" : "@NgModule"}.schemas'`;
-      let message2 = `'${tagName}' is not a known element${templateLocation}:
+      let message = `'${tagName}' is not a known element${templateLocation}:
 `;
-      message2 += `1. If '${tagName}' is an Angular component, then verify that it is ${isHostStandalone ? "included in the '@Component.imports' of this component" : "a part of an @NgModule where this component is declared"}.
+      message += `1. If '${tagName}' is an Angular component, then verify that it is ${isHostStandalone ? "included in the '@Component.imports' of this component" : "a part of an @NgModule where this component is declared"}.
 `;
       if (tagName && tagName.indexOf("-") > -1) {
-        message2 += `2. If '${tagName}' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the ${schemas2} of this component to suppress this message.`;
+        message += `2. If '${tagName}' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the ${schemas2} of this component to suppress this message.`;
       } else {
-        message2 += `2. To allow any element add 'NO_ERRORS_SCHEMA' to the ${schemas2} of this component.`;
+        message += `2. To allow any element add 'NO_ERRORS_SCHEMA' to the ${schemas2} of this component.`;
       }
       if (shouldThrowErrorOnUnknownElement) {
-        throw new RuntimeError(304, message2);
+        throw new RuntimeError(304, message);
       } else {
-        console.error(formatRuntimeError(304, message2));
+        console.error(formatRuntimeError(304, message));
       }
     }
   }
@@ -14574,33 +14580,33 @@ function handleUnknownPropertyError(propName, tagName, nodeType, lView) {
   }
   const isHostStandalone = isHostComponentStandalone(lView);
   const templateLocation = getTemplateLocationDetails(lView);
-  let message2 = `Can't bind to '${propName}' since it isn't a known property of '${tagName}'${templateLocation}.`;
+  let message = `Can't bind to '${propName}' since it isn't a known property of '${tagName}'${templateLocation}.`;
   const schemas = `'${isHostStandalone ? "@Component" : "@NgModule"}.schemas'`;
   const importLocation = isHostStandalone ? "included in the '@Component.imports' of this component" : "a part of an @NgModule where this component is declared";
   if (KNOWN_CONTROL_FLOW_DIRECTIVES.has(propName)) {
     const correspondingImport = KNOWN_CONTROL_FLOW_DIRECTIVES.get(propName);
-    message2 += `
+    message += `
 If the '${propName}' is an Angular control flow directive, please make sure that either the '${correspondingImport}' directive or the 'CommonModule' is ${importLocation}.`;
   } else {
-    message2 += `
+    message += `
 1. If '${tagName}' is an Angular component and it has the '${propName}' input, then verify that it is ${importLocation}.`;
     if (tagName && tagName.indexOf("-") > -1) {
-      message2 += `
+      message += `
 2. If '${tagName}' is a Web Component then add 'CUSTOM_ELEMENTS_SCHEMA' to the ${schemas} of this component to suppress this message.`;
-      message2 += `
+      message += `
 3. To allow any property add 'NO_ERRORS_SCHEMA' to the ${schemas} of this component.`;
     } else {
-      message2 += `
+      message += `
 2. To allow any property add 'NO_ERRORS_SCHEMA' to the ${schemas} of this component.`;
     }
   }
-  reportUnknownPropertyError(message2);
+  reportUnknownPropertyError(message);
 }
-function reportUnknownPropertyError(message2) {
+function reportUnknownPropertyError(message) {
   if (shouldThrowErrorOnUnknownProperty) {
-    throw new RuntimeError(303, message2);
+    throw new RuntimeError(303, message);
   } else {
-    console.error(formatRuntimeError(303, message2));
+    console.error(formatRuntimeError(303, message));
   }
 }
 function getDeclarationComponentDef(lView) {
@@ -17030,9 +17036,9 @@ ${describeDomFromNode(node)}
 
 `;
     const footer = getHydrationErrorFooter();
-    const message2 = header + actual + footer;
+    const message = header + actual + footer;
     markRNodeAsHavingHydrationMismatch(node, "", actual);
-    throw new RuntimeError(-501, message2);
+    throw new RuntimeError(-501, message);
   }
 }
 function validateNodeExists(node, lView = null, tNode = null) {
@@ -17081,8 +17087,8 @@ function describeTNode(tNode, innerContent = "\u2026") {
       return `#text${content}`;
     case 2:
       const attrs = stringifyTNodeAttrs(tNode);
-      const tag2 = tNode.value.toLowerCase();
-      return `<${tag2}${attrs ? " " + attrs : ""}>${innerContent}</${tag2}>`;
+      const tag = tNode.value.toLowerCase();
+      return `<${tag}${attrs ? " " + attrs : ""}>${innerContent}</${tag}>`;
     case 8:
       return "<!-- ng-container -->";
     case 4:
@@ -17096,9 +17102,9 @@ function describeRNode(rNode, innerContent = "\u2026") {
   const node = rNode;
   switch (node.nodeType) {
     case Node.ELEMENT_NODE:
-      const tag2 = node.tagName.toLowerCase();
+      const tag = node.tagName.toLowerCase();
       const attrs = stringifyRNodeAttrs(node);
-      return `<${tag2}${attrs ? " " + attrs : ""}>${innerContent}</${tag2}>`;
+      return `<${tag}${attrs ? " " + attrs : ""}>${innerContent}</${tag}>`;
     case Node.TEXT_NODE:
       const content = node.textContent ? shorten(node.textContent) : "";
       return `#text${content ? `(${content})` : ""}`;
@@ -18425,9 +18431,9 @@ var ComponentRef = class extends ComponentRef$1 {
     );
     if (ngDevMode && !hasSetInput) {
       const cmpNameForError = stringifyForError(this.componentType);
-      let message2 = `Can't set value of the '${name}' input on the '${cmpNameForError}' component. `;
-      message2 += `Make sure that the '${name}' property is annotated with @Input() or a mapped @Input('${name}') exists.`;
-      reportUnknownPropertyError(message2);
+      let message = `Can't set value of the '${name}' input on the '${cmpNameForError}' component. `;
+      message += `Make sure that the '${name}' property is annotated with @Input() or a mapped @Input('${name}') exists.`;
+      reportUnknownPropertyError(message);
     }
   }
   get injector() {
@@ -20510,12 +20516,12 @@ function setClassMetadata(type, decorators, ctorParameters, propDecorators) {
   });
 }
 var Console = class _Console {
-  log(message2) {
-    console.log(message2);
+  log(message) {
+    console.log(message);
   }
   // Note: for reporting errors use `DOM.logError()` as it is platform specific
-  warn(message2) {
-    console.warn(message2);
+  warn(message) {
+    console.warn(message);
   }
   static \u0275fac = function Console_Factory(__ngFactoryType__) {
     return new (__ngFactoryType__ || _Console)();
@@ -23814,8 +23820,8 @@ function reconcile(liveCollection, newCollection, trackByFn) {
       }
     }
     if (duplicatedKeysMsg.length > 0) {
-      const message2 = formatRuntimeError(-955, "The provided track expression resulted in duplicated keys for a given collection. Adjust the tracking expression such that it uniquely identifies all the items in the collection. Duplicated keys were: \n" + duplicatedKeysMsg.join(", \n") + ".");
-      console.warn(message2);
+      const message = formatRuntimeError(-955, "The provided track expression resulted in duplicated keys for a given collection. Adjust the tracking expression such that it uniquely identifies all the items in the collection. Duplicated keys were: \n" + duplicatedKeysMsg.join(", \n") + ".");
+      console.warn(message);
     }
   }
 }
@@ -24087,8 +24093,8 @@ function \u0275\u0275repeater(collection) {
     const liveCollection = metadata.liveCollection;
     reconcile(liveCollection, collection, metadata.trackByFn);
     if (ngDevMode && metadata.trackByFn === \u0275\u0275repeaterTrackByIdentity && liveCollection.operationsCounter?.wasReCreated(liveCollection.length) && isViewExpensiveToRecreate(getExistingLViewFromLContainer(lContainer, 0))) {
-      const message2 = formatRuntimeError(-956, `The configured tracking expression (track by identity) caused re-creation of the entire collection of size ${liveCollection.length}. This is an expensive operation requiring destruction and subsequent creation of DOM nodes, directives, components etc. Please review the "track expression" and make sure that it uniquely identifies items in a collection.`);
-      console.warn(message2);
+      const message = formatRuntimeError(-956, `The configured tracking expression (track by identity) caused re-creation of the entire collection of size ${liveCollection.length}. This is an expensive operation requiring destruction and subsequent creation of DOM nodes, directives, components etc. Please review the "track expression" and make sure that it uniquely identifies items in a collection.`);
+      console.warn(message);
     }
     liveCollection.updateIndexes();
     if (metadata.hasEmptyBlock) {
@@ -24837,7 +24843,7 @@ function attachDebugGetter(obj, debugGetter) {
     throw new Error("This method should be guarded with `ngDevMode` so that it can be tree shaken in production!");
   }
 }
-function i18nStartFirstCreatePass(tView, parentTNodeIndex, lView, index, message2, subTemplateIndex) {
+function i18nStartFirstCreatePass(tView, parentTNodeIndex, lView, index, message, subTemplateIndex) {
   const rootTNode = getCurrentParentTNode();
   const createOpCodes = [];
   const updateOpCodes = [];
@@ -24847,8 +24853,8 @@ function i18nStartFirstCreatePass(tView, parentTNodeIndex, lView, index, message
     attachDebugGetter(createOpCodes, i18nCreateOpCodesToString);
     attachDebugGetter(updateOpCodes, i18nUpdateOpCodesToString);
   }
-  message2 = getTranslationForTemplate(message2, subTemplateIndex);
-  const msgParts = replaceNgsp(message2).split(PH_REGEXP);
+  message = getTranslationForTemplate(message, subTemplateIndex);
+  const msgParts = replaceNgsp(message).split(PH_REGEXP);
   for (let i = 0; i < msgParts.length; i++) {
     let value = msgParts[i];
     if ((i & 1) === 0) {
@@ -24864,7 +24870,7 @@ function i18nStartFirstCreatePass(tView, parentTNodeIndex, lView, index, message
         } else {
           const icuExpression = part;
           if (typeof icuExpression !== "object") {
-            throw new Error(`Unable to parse ICU expression in "${message2}" message.`);
+            throw new Error(`Unable to parse ICU expression in "${message}" message.`);
           }
           const icuContainerTNode = createTNodeAndAddOpCode(tView, rootTNode, existingTNodeStack[0], lView, createOpCodes, ngDevMode ? `ICU ${index}:${icuExpression.mainBinding}` : "", true);
           const icuNodeIndex = icuContainerTNode.index;
@@ -24959,12 +24965,12 @@ function i18nAttributesFirstPass(tView, index, values) {
   if (tView.firstCreatePass && tView.data[index] === null) {
     for (let i = 0; i < values.length; i += 2) {
       const attrName = values[i];
-      const message2 = values[i + 1];
-      if (message2 !== "") {
-        if (ICU_REGEXP.test(message2)) {
-          throw new Error(`ICU expressions are not supported in attributes. Message: "${message2}".`);
+      const message = values[i + 1];
+      if (message !== "") {
+        if (ICU_REGEXP.test(message)) {
+          throw new Error(`ICU expressions are not supported in attributes. Message: "${message}".`);
         }
-        generateBindingUpdateOpCodes(updateOpCodes, message2, previousElementIndex, attrName, countBindings(updateOpCodes), null);
+        generateBindingUpdateOpCodes(updateOpCodes, message, previousElementIndex, attrName, countBindings(updateOpCodes), null);
       }
     }
     tView.data[index] = updateOpCodes;
@@ -25012,15 +25018,15 @@ function countBindings(opCodes) {
 function toMaskBit(bindingIndex) {
   return 1 << Math.min(bindingIndex, 31);
 }
-function removeInnerTemplateTranslation(message2) {
+function removeInnerTemplateTranslation(message) {
   let match2;
   let res = "";
   let index = 0;
   let inTemplate = false;
   let tagMatched;
-  while ((match2 = SUBTEMPLATE_REGEXP.exec(message2)) !== null) {
+  while ((match2 = SUBTEMPLATE_REGEXP.exec(message)) !== null) {
     if (!inTemplate) {
-      res += message2.substring(index, match2.index + match2[0].length);
+      res += message.substring(index, match2.index + match2[0].length);
       tagMatched = match2[1];
       inTemplate = true;
     } else {
@@ -25030,17 +25036,17 @@ function removeInnerTemplateTranslation(message2) {
       }
     }
   }
-  ngDevMode && assertEqual(inTemplate, false, `Tag mismatch: unable to find the end of the sub-template in the translation "${message2}"`);
-  res += message2.slice(index);
+  ngDevMode && assertEqual(inTemplate, false, `Tag mismatch: unable to find the end of the sub-template in the translation "${message}"`);
+  res += message.slice(index);
   return res;
 }
-function getTranslationForTemplate(message2, subTemplateIndex) {
+function getTranslationForTemplate(message, subTemplateIndex) {
   if (isRootTemplateMessage(subTemplateIndex)) {
-    return removeInnerTemplateTranslation(message2);
+    return removeInnerTemplateTranslation(message);
   } else {
-    const start = message2.indexOf(`:${subTemplateIndex}${MARKER}`) + 2 + subTemplateIndex.toString().length;
-    const end = message2.search(new RegExp(`${MARKER}\\/\\*\\d+:${subTemplateIndex}${MARKER}`));
-    return removeInnerTemplateTranslation(message2.substring(start, end));
+    const start = message.indexOf(`:${subTemplateIndex}${MARKER}`) + 2 + subTemplateIndex.toString().length;
+    const end = message.search(new RegExp(`${MARKER}\\/\\*\\d+:${subTemplateIndex}${MARKER}`));
+    return removeInnerTemplateTranslation(message.substring(start, end));
   }
 }
 function icuStart(ast, tView, lView, updateOpCodes, parentIdx, icuExpression, anchorIdx) {
@@ -25291,9 +25297,9 @@ var PP_ICU_PLACEHOLDERS_REGEXP = /{([A-Z0-9_]+)}/g;
 var PP_ICUS_REGEXP = /�I18N_EXP_(ICU(_\d+)?)�/g;
 var PP_CLOSE_TEMPLATE_REGEXP = /\/\*/;
 var PP_TEMPLATE_ID_REGEXP = /\d+\:(\d+)/;
-function i18nPostprocess(message2, replacements = {}) {
-  let result = message2;
-  if (PP_MULTI_VALUE_PLACEHOLDERS_REGEXP.test(message2)) {
+function i18nPostprocess(message, replacements = {}) {
+  let result = message;
+  if (PP_MULTI_VALUE_PLACEHOLDERS_REGEXP.test(message)) {
     const matches = {};
     const templateIdsStack = [ROOT_TEMPLATE_ID];
     result = result.replace(PP_PLACEHOLDERS_REGEXP, (m, phs, tmpl) => {
@@ -25355,10 +25361,10 @@ function \u0275\u0275i18nStart(index, messageIndex, subTemplateIndex = -1) {
   const lView = getLView();
   const adjustedIndex = HEADER_OFFSET + index;
   ngDevMode && assertDefined(tView, `tView should be defined`);
-  const message2 = getConstant(tView.consts, messageIndex);
+  const message = getConstant(tView.consts, messageIndex);
   const parentTNode = getCurrentParentTNode();
   if (tView.firstCreatePass) {
-    i18nStartFirstCreatePass(tView, parentTNode === null ? 0 : parentTNode.index, lView, adjustedIndex, message2, subTemplateIndex);
+    i18nStartFirstCreatePass(tView, parentTNode === null ? 0 : parentTNode.index, lView, adjustedIndex, message, subTemplateIndex);
   }
   if (tView.type === 2) {
     const componentLView = lView[DECLARATION_COMPONENT_VIEW];
@@ -25395,8 +25401,8 @@ function \u0275\u0275i18nExp(value) {
 function \u0275\u0275i18nApply(index) {
   applyI18n(getTView(), getLView(), index + HEADER_OFFSET);
 }
-function \u0275\u0275i18nPostprocess(message2, replacements = {}) {
-  return i18nPostprocess(message2, replacements);
+function \u0275\u0275i18nPostprocess(message, replacements = {}) {
+  return i18nPostprocess(message, replacements);
 }
 var stashEventListener = (el, eventName, listenerFn) => {
 };
@@ -26472,25 +26478,25 @@ function \u0275\u0275replaceMetadata(type, applyMetadata, namespaces, locals, im
   }
 }
 function mergeWithExistingDefinition(currentDef, newDef) {
-  const clone2 = __spreadValues({}, currentDef);
+  const clone = __spreadValues({}, currentDef);
   const replacement = Object.assign(currentDef, newDef, {
     // We need to keep the existing directive and pipe defs, because they can get patched on
     // by a call to `setComponentScope` from a module file. That call won't make it into the
     // HMR replacement function, because it lives in an entirely different file.
-    directiveDefs: clone2.directiveDefs,
-    pipeDefs: clone2.pipeDefs,
+    directiveDefs: clone.directiveDefs,
+    pipeDefs: clone.pipeDefs,
     // Preserve the old `setInput` function, because it has some state.
     // This is fine, because the component instance is preserved as well.
-    setInput: clone2.setInput,
+    setInput: clone.setInput,
     // Externally this is redundant since we redeclare the definition using the original type.
     // Internally we may receive a definition with an alternate, but identical, type so we have
     // to ensure that the original one is preserved.
-    type: clone2.type
+    type: clone.type
   });
   ngDevMode && assertEqual(replacement, currentDef, "Expected definition to be merged in place");
   return {
     newDef: replacement,
-    oldDef: clone2
+    oldDef: clone
   };
 }
 function recreateMatchingLViews(importMeta, id, newDef, oldDef, rootLView) {
@@ -30238,10 +30244,7 @@ var environment = {
   // connect_api_endpoint_base: 'https://api.connect.fastenlabs.com/v1',
   // if relative, must start with /
   connect_api_endpoint_base: "https://api.connect.fastenlabs.com/v1",
-  connect_api_jwt_issuer_host: "https://api.connect.fastenlabs.com/v1",
-  identity_api_endpoint_base: "https://identity.fastenlabs.com/v1",
-  //JWKS for JWT verification
-  jwks_uri: "https://cdn.fastenhealth.com/jwks/fasten-connect/dev.json"
+  identity_api_endpoint_base: "https://identity.fastenlabs.com/v1"
 };
 
 // node_modules/@angular/common/fesm2022/common.mjs
@@ -31253,9 +31256,9 @@ function formatDate(value, format, locale, timezone) {
   });
   return text;
 }
-function createDate(year2, month, date) {
+function createDate(year, month, date) {
   const newDate = /* @__PURE__ */ new Date(0);
-  newDate.setFullYear(year2, month, date);
+  newDate.setFullYear(year, month, date);
   newDate.setHours(0, 0, 0);
   return newDate;
 }
@@ -31460,9 +31463,9 @@ function timeZoneGetter(width) {
 }
 var JANUARY = 0;
 var THURSDAY = 4;
-function getFirstThursdayOfYear(year2) {
-  const firstDayOfYear = createDate(year2, JANUARY, 1).getDay();
-  return createDate(year2, 0, 1 + (firstDayOfYear <= THURSDAY ? THURSDAY : THURSDAY + 7) - firstDayOfYear);
+function getFirstThursdayOfYear(year) {
+  const firstDayOfYear = createDate(year, JANUARY, 1).getDay();
+  return createDate(year, 0, 1 + (firstDayOfYear <= THURSDAY ? THURSDAY : THURSDAY + 7) - firstDayOfYear);
 }
 function getThursdayThisIsoWeek(datetime) {
   const currentDay = datetime.getDay();
@@ -35278,10 +35281,10 @@ var HttpHeaders = class _HttpHeaders {
     });
   }
   clone(update) {
-    const clone2 = new _HttpHeaders();
-    clone2.lazyInit = !!this.lazyInit && this.lazyInit instanceof _HttpHeaders ? this.lazyInit : this;
-    clone2.lazyUpdate = (this.lazyUpdate || []).concat([update]);
-    return clone2;
+    const clone = new _HttpHeaders();
+    clone.lazyInit = !!this.lazyInit && this.lazyInit instanceof _HttpHeaders ? this.lazyInit : this;
+    clone.lazyUpdate = (this.lazyUpdate || []).concat([update]);
+    return clone;
   }
   applyUpdate(update) {
     const key = update.name.toLowerCase();
@@ -35557,12 +35560,12 @@ var HttpParams = class _HttpParams {
     }).filter((param) => param !== "").join("&");
   }
   clone(update) {
-    const clone2 = new _HttpParams({
+    const clone = new _HttpParams({
       encoder: this.encoder
     });
-    clone2.cloneFrom = this.cloneFrom || this;
-    clone2.updates = (this.updates || []).concat(update);
-    return clone2;
+    clone.cloneFrom = this.cloneFrom || this;
+    clone.updates = (this.updates || []).concat(update);
+    return clone;
   }
   init() {
     if (this.map === null) {
@@ -36338,7 +36341,7 @@ var FetchBackend = class _FetchBackend {
         const chunks = [];
         const reader = response.body.getReader();
         let receivedLength = 0;
-        let decoder2;
+        let decoder;
         let partialText;
         const reqZone = typeof Zone !== "undefined" && Zone.current;
         yield this.ngZone.runOutsideAngular(() => __async(this, null, function* () {
@@ -36353,7 +36356,7 @@ var FetchBackend = class _FetchBackend {
             chunks.push(value);
             receivedLength += value.length;
             if (request.reportProgress) {
-              partialText = request.responseType === "text" ? (partialText ?? "") + (decoder2 ??= new TextDecoder()).decode(value, {
+              partialText = request.responseType === "text" ? (partialText ?? "") + (decoder ??= new TextDecoder()).decode(value, {
                 stream: true
               }) : void 0;
               const reportProgress = () => observer.next({
@@ -37292,7 +37295,7 @@ var HttpResourceImpl = class extends ResourceImpl {
   headers = computed(() => this.status() === ResourceStatus.Resolved || this.status() === ResourceStatus.Error ? this._headers() : void 0);
   progress = this._progress.asReadonly();
   statusCode = this._statusCode.asReadonly();
-  constructor(injector, request, defaultValue, parse2) {
+  constructor(injector, request, defaultValue, parse) {
     super(request, ({
       request: request2,
       abortSignal
@@ -37318,7 +37321,7 @@ var HttpResourceImpl = class extends ResourceImpl {
               this._statusCode.set(event.status);
               try {
                 send({
-                  value: parse2 ? parse2(event.body) : event.body
+                  value: parse ? parse(event.body) : event.body
                 });
               } catch (error2) {
                 send({
@@ -38519,9 +38522,9 @@ var Meta = class _Meta {
    * @returns The existing element with the same attributes and values if found,
    * the new element if no match is found, or `null` if the tag parameter is not defined.
    */
-  addTag(tag2, forceCreation = false) {
-    if (!tag2) return null;
-    return this._getOrCreateElement(tag2, forceCreation);
+  addTag(tag, forceCreation = false) {
+    if (!tag) return null;
+    return this._getOrCreateElement(tag, forceCreation);
   }
   /**
    * Retrieves or creates a set of `<meta>` tag elements in the current HTML document.
@@ -38533,9 +38536,9 @@ var Meta = class _Meta {
    */
   addTags(tags, forceCreation = false) {
     if (!tags) return [];
-    return tags.reduce((result, tag2) => {
-      if (tag2) {
-        result.push(this._getOrCreateElement(tag2, forceCreation));
+    return tags.reduce((result, tag) => {
+      if (tag) {
+        result.push(this._getOrCreateElement(tag, forceCreation));
       }
       return result;
     }, []);
@@ -38570,14 +38573,14 @@ var Meta = class _Meta {
    * replacement tag.
    * @return The modified element.
    */
-  updateTag(tag2, selector) {
-    if (!tag2) return null;
-    selector = selector || this._parseSelector(tag2);
+  updateTag(tag, selector) {
+    if (!tag) return null;
+    selector = selector || this._parseSelector(tag);
     const meta = this.getTag(selector);
     if (meta) {
-      return this._setMetaElementAttributes(tag2, meta);
+      return this._setMetaElementAttributes(tag, meta);
     }
-    return this._getOrCreateElement(tag2, true);
+    return this._getOrCreateElement(tag, true);
   }
   /**
    * Removes an existing `<meta>` tag element from the current HTML document.
@@ -38608,16 +38611,16 @@ var Meta = class _Meta {
     head.appendChild(element);
     return element;
   }
-  _setMetaElementAttributes(tag2, el) {
-    Object.keys(tag2).forEach((prop) => el.setAttribute(this._getMetaKeyMap(prop), tag2[prop]));
+  _setMetaElementAttributes(tag, el) {
+    Object.keys(tag).forEach((prop) => el.setAttribute(this._getMetaKeyMap(prop), tag[prop]));
     return el;
   }
-  _parseSelector(tag2) {
-    const attr = tag2.name ? "name" : "property";
-    return `${attr}="${tag2[attr]}"`;
+  _parseSelector(tag) {
+    const attr = tag.name ? "name" : "property";
+    return `${attr}="${tag[attr]}"`;
   }
-  _containsAttributes(tag2, elem) {
-    return Object.keys(tag2).every((key) => elem.getAttribute(this._getMetaKeyMap(key)) === tag2[key]);
+  _containsAttributes(tag, elem) {
+    return Object.keys(tag).every((key) => elem.getAttribute(this._getMetaKeyMap(key)) === tag[key]);
   }
   _getMetaKeyMap(prop) {
     return META_KEYS_MAP[prop] || prop;
@@ -39641,15 +39644,15 @@ var NGXLoggerMetadataService = class {
     }
     return defaultTimestamp();
   }
-  getMetadata(level, config2, message2, additional) {
+  getMetadata(level, config2, message, additional) {
     const metadata = {
       level,
       additional
     };
-    if (message2 && typeof message2 === "function") {
-      metadata.message = message2();
+    if (message && typeof message === "function") {
+      metadata.message = message();
     } else {
-      metadata.message = message2;
+      metadata.message = message;
     }
     metadata.timestamp = this.computeTimestamp(config2);
     return metadata;
@@ -39676,14 +39679,14 @@ NGXLoggerMetadataService.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectab
 })();
 var TOKEN_LOGGER_RULES_SERVICE = "TOKEN_LOGGER_RULES_SERVICE";
 var NGXLoggerRulesService = class {
-  shouldCallWriter(level, config2, message2, additional) {
+  shouldCallWriter(level, config2, message, additional) {
     return !config2.disableConsoleLogging && level >= config2.level;
   }
-  shouldCallServer(level, config2, message2, additional) {
+  shouldCallServer(level, config2, message, additional) {
     return !!config2.serverLoggingUrl && level >= config2.serverLogLevel;
   }
-  shouldCallMonitor(level, config2, message2, additional) {
-    return this.shouldCallWriter(level, config2, message2, additional) || this.shouldCallServer(level, config2, message2, additional);
+  shouldCallMonitor(level, config2, message, additional) {
+    return this.shouldCallWriter(level, config2, message, additional) || this.shouldCallServer(level, config2, message, additional);
   }
 };
 NGXLoggerRulesService.\u0275fac = function NGXLoggerRulesService_Factory(__ngFactoryType__) {
@@ -39754,18 +39757,18 @@ var NGXLoggerServerService = class {
    * @param message the message to be sent
    * @returns the message secured
    */
-  secureMessage(message2) {
+  secureMessage(message) {
     try {
-      if (message2 instanceof Error) {
-        return this.secureErrorObject(message2);
+      if (message instanceof Error) {
+        return this.secureErrorObject(message);
       }
-      if (typeof message2 !== "string") {
-        message2 = JSON.stringify(message2, null, 2);
+      if (typeof message !== "string") {
+        message = JSON.stringify(message, null, 2);
       }
     } catch (e2) {
-      message2 = 'The provided "message" value could not be parsed with JSON.stringify().';
+      message = 'The provided "message" value could not be parsed with JSON.stringify().';
     }
-    return message2;
+    return message;
   }
   /**
    * Edits HttpRequest object before sending request to server
@@ -40064,26 +40067,26 @@ var NGXLogger = class {
   get serverLogLevel() {
     return this.configEngine.serverLogLevel;
   }
-  trace(message2, ...additional) {
-    this._log(NgxLoggerLevel.TRACE, message2, additional);
+  trace(message, ...additional) {
+    this._log(NgxLoggerLevel.TRACE, message, additional);
   }
-  debug(message2, ...additional) {
-    this._log(NgxLoggerLevel.DEBUG, message2, additional);
+  debug(message, ...additional) {
+    this._log(NgxLoggerLevel.DEBUG, message, additional);
   }
-  info(message2, ...additional) {
-    this._log(NgxLoggerLevel.INFO, message2, additional);
+  info(message, ...additional) {
+    this._log(NgxLoggerLevel.INFO, message, additional);
   }
-  log(message2, ...additional) {
-    this._log(NgxLoggerLevel.LOG, message2, additional);
+  log(message, ...additional) {
+    this._log(NgxLoggerLevel.LOG, message, additional);
   }
-  warn(message2, ...additional) {
-    this._log(NgxLoggerLevel.WARN, message2, additional);
+  warn(message, ...additional) {
+    this._log(NgxLoggerLevel.WARN, message, additional);
   }
-  error(message2, ...additional) {
-    this._log(NgxLoggerLevel.ERROR, message2, additional);
+  error(message, ...additional) {
+    this._log(NgxLoggerLevel.ERROR, message, additional);
   }
-  fatal(message2, ...additional) {
-    this._log(NgxLoggerLevel.FATAL, message2, additional);
+  fatal(message, ...additional) {
+    this._log(NgxLoggerLevel.FATAL, message, additional);
   }
   /** @deprecated customHttpHeaders is now part of the config, this should be updated via @see updateConfig */
   setCustomHttpHeaders(headers) {
@@ -40132,15 +40135,15 @@ var NGXLogger = class {
   flushServerQueue() {
     this.serverService.flushQueue(this.getConfigSnapshot());
   }
-  _log(level, message2, additional = []) {
+  _log(level, message, additional = []) {
     const config2 = this.configEngine.getConfig();
-    const shouldCallWriter = this.ruleService.shouldCallWriter(level, config2, message2, additional);
-    const shouldCallServer = this.ruleService.shouldCallServer(level, config2, message2, additional);
-    const shouldCallMonitor = this.ruleService.shouldCallMonitor(level, config2, message2, additional);
+    const shouldCallWriter = this.ruleService.shouldCallWriter(level, config2, message, additional);
+    const shouldCallServer = this.ruleService.shouldCallServer(level, config2, message, additional);
+    const shouldCallMonitor = this.ruleService.shouldCallMonitor(level, config2, message, additional);
     if (!shouldCallWriter && !shouldCallServer && !shouldCallMonitor) {
       return;
     }
-    const metadata = this.metadataService.getMetadata(level, config2, message2, additional);
+    const metadata = this.metadataService.getMetadata(level, config2, message, additional);
     this.mapperService.getLogPosition(config2, metadata).pipe(take(1)).subscribe((logPosition) => {
       if (logPosition) {
         metadata.fileName = logPosition.fileName;
@@ -41100,16 +41103,16 @@ function webSocket(urlConfigOrSource) {
 
 // projects/shared-library/src/lib/utils/websocket.ts
 var FastenConnectionError = class extends Error {
-  constructor(message2) {
-    super(message2);
+  constructor(message) {
+    super(message);
     this.name = "FastenConnectionError";
   }
 };
-function isWebsocketKeepaliveMessage(message2) {
-  return message2?.type === WebsocketKeepaliveMessageType;
+function isWebsocketKeepaliveMessage(message) {
+  return message?.type === WebsocketKeepaliveMessageType;
 }
-function getWebsocketMessageId(message2) {
-  const messageId = message2?.[WebsocketMessageIdField];
+function getWebsocketMessageId(message) {
+  const messageId = message?.[WebsocketMessageIdField];
   return typeof messageId === "string" && messageId.length > 0 ? messageId : void 0;
 }
 function waitForForegroundOrRetryDelay() {
@@ -41121,23 +41124,23 @@ function waitForForegroundOrRetryDelay() {
 function waitForWebsocketMessage(logger, websocketUrl) {
   return new Observable((observer) => {
     const subject = webSocket(websocketUrl.toString());
-    const subjectSubscription = subject.pipe(filter((message2) => {
-      if (isWebsocketKeepaliveMessage(message2)) {
+    const subjectSubscription = subject.pipe(filter((message) => {
+      if (isWebsocketKeepaliveMessage(message)) {
         logger.debug("websocket keepalive received");
         return false;
       }
-      const messageId = getWebsocketMessageId(message2);
+      const messageId = getWebsocketMessageId(message);
       if (messageId) {
         logger.debug("websocket acknowledgement sent", messageId);
         subject.next({ type: WebsocketAcknowledgementMessageType, message_id: messageId });
       }
       return true;
-    }), map((message2) => {
-      logger.debug("websocket message received", message2);
-      if (message2.error) {
-        throw new FastenConnectionError(JSON.stringify(message2));
+    }), map((message) => {
+      logger.debug("websocket message received", message);
+      if (message.error) {
+        throw new FastenConnectionError(JSON.stringify(message));
       }
-      return message2;
+      return message;
     }), first()).subscribe(observer);
     logger.debug("websocket keepalive sent");
     subject.next({ type: WebsocketKeepaliveMessageType });
@@ -43494,8 +43497,8 @@ function redirectingNavigationError(urlSerializer, redirect) {
   error2.navigationBehaviorOptions = navigationBehaviorOptions;
   return error2;
 }
-function navigationCancelingError(message2, code) {
-  const error2 = new Error(`NavigationCancelingError: ${message2 || ""}`);
+function navigationCancelingError(message, code) {
+  const error2 = new Error(`NavigationCancelingError: ${message || ""}`);
   error2[NAVIGATION_CANCELING_ERROR] = true;
   error2.cancellationCode = code;
   return error2;
@@ -45186,10 +45189,10 @@ var NavigationTransitions = class _NavigationTransitions {
                 const navigationErrorHandlerResult = runInInjectionContext(this.environmentInjector, () => this.navigationErrorHandler?.(navigationError));
                 if (navigationErrorHandlerResult instanceof RedirectCommand) {
                   const {
-                    message: message2,
+                    message,
                     cancellationCode
                   } = redirectingNavigationError(this.urlSerializer, navigationErrorHandlerResult);
-                  this.events.next(new NavigationCancel(overallTransitionState.id, this.urlSerializer.serialize(overallTransitionState.extractedUrl), message2, cancellationCode));
+                  this.events.next(new NavigationCancel(overallTransitionState.id, this.urlSerializer.serialize(overallTransitionState.extractedUrl), message, cancellationCode));
                   this.events.next(new RedirectRequest(navigationErrorHandlerResult.redirectTo, navigationErrorHandlerResult.navigationBehaviorOptions));
                 } else {
                   this.events.next(navigationError);
@@ -47145,1448 +47148,37 @@ function logoText(environmentName = environment.name) {
   return environmentName === "production" ? "fasten" : `fasten ${environment.short_name}`;
 }
 
-// node_modules/jose/dist/browser/runtime/webcrypto.js
-var webcrypto_default = crypto;
-var isCryptoKey = (key) => key instanceof CryptoKey;
-
-// node_modules/jose/dist/browser/lib/buffer_utils.js
-var encoder = new TextEncoder();
-var decoder = new TextDecoder();
-var MAX_INT32 = 2 ** 32;
-function concat2(...buffers) {
-  const size = buffers.reduce((acc, {
-    length
-  }) => acc + length, 0);
-  const buf = new Uint8Array(size);
-  let i = 0;
-  for (const buffer of buffers) {
-    buf.set(buffer, i);
-    i += buffer.length;
-  }
-  return buf;
-}
-
-// node_modules/jose/dist/browser/runtime/base64url.js
-var decodeBase64 = (encoded) => {
-  const binary = atob(encoded);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  return bytes;
-};
-var decode3 = (input2) => {
-  let encoded = input2;
-  if (encoded instanceof Uint8Array) {
-    encoded = decoder.decode(encoded);
-  }
-  encoded = encoded.replace(/-/g, "+").replace(/_/g, "/").replace(/\s/g, "");
-  try {
-    return decodeBase64(encoded);
-  } catch {
-    throw new TypeError("The input to be decoded is not correctly encoded.");
-  }
-};
-
-// node_modules/jose/dist/browser/util/errors.js
-var JOSEError = class extends Error {
-  constructor(message2, options) {
-    super(message2, options);
-    this.code = "ERR_JOSE_GENERIC";
-    this.name = this.constructor.name;
-    Error.captureStackTrace?.(this, this.constructor);
-  }
-};
-JOSEError.code = "ERR_JOSE_GENERIC";
-var JWTClaimValidationFailed = class extends JOSEError {
-  constructor(message2, payload, claim = "unspecified", reason = "unspecified") {
-    super(message2, {
-      cause: {
-        claim,
-        reason,
-        payload
-      }
-    });
-    this.code = "ERR_JWT_CLAIM_VALIDATION_FAILED";
-    this.claim = claim;
-    this.reason = reason;
-    this.payload = payload;
-  }
-};
-JWTClaimValidationFailed.code = "ERR_JWT_CLAIM_VALIDATION_FAILED";
-var JWTExpired = class extends JOSEError {
-  constructor(message2, payload, claim = "unspecified", reason = "unspecified") {
-    super(message2, {
-      cause: {
-        claim,
-        reason,
-        payload
-      }
-    });
-    this.code = "ERR_JWT_EXPIRED";
-    this.claim = claim;
-    this.reason = reason;
-    this.payload = payload;
-  }
-};
-JWTExpired.code = "ERR_JWT_EXPIRED";
-var JOSEAlgNotAllowed = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JOSE_ALG_NOT_ALLOWED";
-  }
-};
-JOSEAlgNotAllowed.code = "ERR_JOSE_ALG_NOT_ALLOWED";
-var JOSENotSupported = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JOSE_NOT_SUPPORTED";
-  }
-};
-JOSENotSupported.code = "ERR_JOSE_NOT_SUPPORTED";
-var JWEDecryptionFailed = class extends JOSEError {
-  constructor(message2 = "decryption operation failed", options) {
-    super(message2, options);
-    this.code = "ERR_JWE_DECRYPTION_FAILED";
-  }
-};
-JWEDecryptionFailed.code = "ERR_JWE_DECRYPTION_FAILED";
-var JWEInvalid = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JWE_INVALID";
-  }
-};
-JWEInvalid.code = "ERR_JWE_INVALID";
-var JWSInvalid = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JWS_INVALID";
-  }
-};
-JWSInvalid.code = "ERR_JWS_INVALID";
-var JWTInvalid = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JWT_INVALID";
-  }
-};
-JWTInvalid.code = "ERR_JWT_INVALID";
-var JWKInvalid = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JWK_INVALID";
-  }
-};
-JWKInvalid.code = "ERR_JWK_INVALID";
-var JWKSInvalid = class extends JOSEError {
-  constructor() {
-    super(...arguments);
-    this.code = "ERR_JWKS_INVALID";
-  }
-};
-JWKSInvalid.code = "ERR_JWKS_INVALID";
-var JWKSNoMatchingKey = class extends JOSEError {
-  constructor(message2 = "no applicable key found in the JSON Web Key Set", options) {
-    super(message2, options);
-    this.code = "ERR_JWKS_NO_MATCHING_KEY";
-  }
-};
-JWKSNoMatchingKey.code = "ERR_JWKS_NO_MATCHING_KEY";
-var JWKSMultipleMatchingKeys = class extends JOSEError {
-  constructor(message2 = "multiple matching keys found in the JSON Web Key Set", options) {
-    super(message2, options);
-    this.code = "ERR_JWKS_MULTIPLE_MATCHING_KEYS";
-  }
-};
-JWKSMultipleMatchingKeys.code = "ERR_JWKS_MULTIPLE_MATCHING_KEYS";
-var JWKSTimeout = class extends JOSEError {
-  constructor(message2 = "request timed out", options) {
-    super(message2, options);
-    this.code = "ERR_JWKS_TIMEOUT";
-  }
-};
-JWKSTimeout.code = "ERR_JWKS_TIMEOUT";
-var JWSSignatureVerificationFailed = class extends JOSEError {
-  constructor(message2 = "signature verification failed", options) {
-    super(message2, options);
-    this.code = "ERR_JWS_SIGNATURE_VERIFICATION_FAILED";
-  }
-};
-JWSSignatureVerificationFailed.code = "ERR_JWS_SIGNATURE_VERIFICATION_FAILED";
-
-// node_modules/jose/dist/browser/lib/crypto_key.js
-function unusable(name, prop = "algorithm.name") {
-  return new TypeError(`CryptoKey does not support this operation, its ${prop} must be ${name}`);
-}
-function isAlgorithm(algorithm, name) {
-  return algorithm.name === name;
-}
-function getHashLength(hash) {
-  return parseInt(hash.name.slice(4), 10);
-}
-function getNamedCurve(alg) {
-  switch (alg) {
-    case "ES256":
-      return "P-256";
-    case "ES384":
-      return "P-384";
-    case "ES512":
-      return "P-521";
-    default:
-      throw new Error("unreachable");
-  }
-}
-function checkUsage(key, usages) {
-  if (usages.length && !usages.some((expected) => key.usages.includes(expected))) {
-    let msg = "CryptoKey does not support this operation, its usages must include ";
-    if (usages.length > 2) {
-      const last4 = usages.pop();
-      msg += `one of ${usages.join(", ")}, or ${last4}.`;
-    } else if (usages.length === 2) {
-      msg += `one of ${usages[0]} or ${usages[1]}.`;
-    } else {
-      msg += `${usages[0]}.`;
-    }
-    throw new TypeError(msg);
-  }
-}
-function checkSigCryptoKey(key, alg, ...usages) {
-  switch (alg) {
-    case "HS256":
-    case "HS384":
-    case "HS512": {
-      if (!isAlgorithm(key.algorithm, "HMAC")) throw unusable("HMAC");
-      const expected = parseInt(alg.slice(2), 10);
-      const actual = getHashLength(key.algorithm.hash);
-      if (actual !== expected) throw unusable(`SHA-${expected}`, "algorithm.hash");
-      break;
-    }
-    case "RS256":
-    case "RS384":
-    case "RS512": {
-      if (!isAlgorithm(key.algorithm, "RSASSA-PKCS1-v1_5")) throw unusable("RSASSA-PKCS1-v1_5");
-      const expected = parseInt(alg.slice(2), 10);
-      const actual = getHashLength(key.algorithm.hash);
-      if (actual !== expected) throw unusable(`SHA-${expected}`, "algorithm.hash");
-      break;
-    }
-    case "PS256":
-    case "PS384":
-    case "PS512": {
-      if (!isAlgorithm(key.algorithm, "RSA-PSS")) throw unusable("RSA-PSS");
-      const expected = parseInt(alg.slice(2), 10);
-      const actual = getHashLength(key.algorithm.hash);
-      if (actual !== expected) throw unusable(`SHA-${expected}`, "algorithm.hash");
-      break;
-    }
-    case "EdDSA": {
-      if (key.algorithm.name !== "Ed25519" && key.algorithm.name !== "Ed448") {
-        throw unusable("Ed25519 or Ed448");
-      }
-      break;
-    }
-    case "Ed25519": {
-      if (!isAlgorithm(key.algorithm, "Ed25519")) throw unusable("Ed25519");
-      break;
-    }
-    case "ES256":
-    case "ES384":
-    case "ES512": {
-      if (!isAlgorithm(key.algorithm, "ECDSA")) throw unusable("ECDSA");
-      const expected = getNamedCurve(alg);
-      const actual = key.algorithm.namedCurve;
-      if (actual !== expected) throw unusable(expected, "algorithm.namedCurve");
-      break;
-    }
-    default:
-      throw new TypeError("CryptoKey does not support this operation");
-  }
-  checkUsage(key, usages);
-}
-
-// node_modules/jose/dist/browser/lib/invalid_key_input.js
-function message(msg, actual, ...types2) {
-  types2 = types2.filter(Boolean);
-  if (types2.length > 2) {
-    const last4 = types2.pop();
-    msg += `one of type ${types2.join(", ")}, or ${last4}.`;
-  } else if (types2.length === 2) {
-    msg += `one of type ${types2[0]} or ${types2[1]}.`;
-  } else {
-    msg += `of type ${types2[0]}.`;
-  }
-  if (actual == null) {
-    msg += ` Received ${actual}`;
-  } else if (typeof actual === "function" && actual.name) {
-    msg += ` Received function ${actual.name}`;
-  } else if (typeof actual === "object" && actual != null) {
-    if (actual.constructor?.name) {
-      msg += ` Received an instance of ${actual.constructor.name}`;
-    }
-  }
-  return msg;
-}
-var invalid_key_input_default = (actual, ...types2) => {
-  return message("Key must be ", actual, ...types2);
-};
-function withAlg(alg, actual, ...types2) {
-  return message(`Key for the ${alg} algorithm must be `, actual, ...types2);
-}
-
-// node_modules/jose/dist/browser/runtime/is_key_like.js
-var is_key_like_default = (key) => {
-  if (isCryptoKey(key)) {
-    return true;
-  }
-  return key?.[Symbol.toStringTag] === "KeyObject";
-};
-var types = ["CryptoKey"];
-
-// node_modules/jose/dist/browser/lib/is_disjoint.js
-var isDisjoint = (...headers) => {
-  const sources = headers.filter(Boolean);
-  if (sources.length === 0 || sources.length === 1) {
-    return true;
-  }
-  let acc;
-  for (const header of sources) {
-    const parameters = Object.keys(header);
-    if (!acc || acc.size === 0) {
-      acc = new Set(parameters);
-      continue;
-    }
-    for (const parameter of parameters) {
-      if (acc.has(parameter)) {
-        return false;
-      }
-      acc.add(parameter);
-    }
-  }
-  return true;
-};
-var is_disjoint_default = isDisjoint;
-
-// node_modules/jose/dist/browser/lib/is_object.js
-function isObjectLike(value) {
-  return typeof value === "object" && value !== null;
-}
-function isObject(input2) {
-  if (!isObjectLike(input2) || Object.prototype.toString.call(input2) !== "[object Object]") {
-    return false;
-  }
-  if (Object.getPrototypeOf(input2) === null) {
-    return true;
-  }
-  let proto = input2;
-  while (Object.getPrototypeOf(proto) !== null) {
-    proto = Object.getPrototypeOf(proto);
-  }
-  return Object.getPrototypeOf(input2) === proto;
-}
-
-// node_modules/jose/dist/browser/runtime/check_key_length.js
-var check_key_length_default = (alg, key) => {
-  if (alg.startsWith("RS") || alg.startsWith("PS")) {
-    const {
-      modulusLength
-    } = key.algorithm;
-    if (typeof modulusLength !== "number" || modulusLength < 2048) {
-      throw new TypeError(`${alg} requires key modulusLength to be 2048 bits or larger`);
-    }
-  }
-};
-
-// node_modules/jose/dist/browser/lib/is_jwk.js
-function isJWK(key) {
-  return isObject(key) && typeof key.kty === "string";
-}
-function isPrivateJWK(key) {
-  return key.kty !== "oct" && typeof key.d === "string";
-}
-function isPublicJWK(key) {
-  return key.kty !== "oct" && typeof key.d === "undefined";
-}
-function isSecretJWK(key) {
-  return isJWK(key) && key.kty === "oct" && typeof key.k === "string";
-}
-
-// node_modules/jose/dist/browser/runtime/jwk_to_key.js
-function subtleMapping(jwk) {
-  let algorithm;
-  let keyUsages;
-  switch (jwk.kty) {
-    case "RSA": {
-      switch (jwk.alg) {
-        case "PS256":
-        case "PS384":
-        case "PS512":
-          algorithm = {
-            name: "RSA-PSS",
-            hash: `SHA-${jwk.alg.slice(-3)}`
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "RS256":
-        case "RS384":
-        case "RS512":
-          algorithm = {
-            name: "RSASSA-PKCS1-v1_5",
-            hash: `SHA-${jwk.alg.slice(-3)}`
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "RSA-OAEP":
-        case "RSA-OAEP-256":
-        case "RSA-OAEP-384":
-        case "RSA-OAEP-512":
-          algorithm = {
-            name: "RSA-OAEP",
-            hash: `SHA-${parseInt(jwk.alg.slice(-3), 10) || 1}`
-          };
-          keyUsages = jwk.d ? ["decrypt", "unwrapKey"] : ["encrypt", "wrapKey"];
-          break;
-        default:
-          throw new JOSENotSupported('Invalid or unsupported JWK "alg" (Algorithm) Parameter value');
-      }
-      break;
-    }
-    case "EC": {
-      switch (jwk.alg) {
-        case "ES256":
-          algorithm = {
-            name: "ECDSA",
-            namedCurve: "P-256"
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "ES384":
-          algorithm = {
-            name: "ECDSA",
-            namedCurve: "P-384"
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "ES512":
-          algorithm = {
-            name: "ECDSA",
-            namedCurve: "P-521"
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "ECDH-ES":
-        case "ECDH-ES+A128KW":
-        case "ECDH-ES+A192KW":
-        case "ECDH-ES+A256KW":
-          algorithm = {
-            name: "ECDH",
-            namedCurve: jwk.crv
-          };
-          keyUsages = jwk.d ? ["deriveBits"] : [];
-          break;
-        default:
-          throw new JOSENotSupported('Invalid or unsupported JWK "alg" (Algorithm) Parameter value');
-      }
-      break;
-    }
-    case "OKP": {
-      switch (jwk.alg) {
-        case "Ed25519":
-          algorithm = {
-            name: "Ed25519"
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "EdDSA":
-          algorithm = {
-            name: jwk.crv
-          };
-          keyUsages = jwk.d ? ["sign"] : ["verify"];
-          break;
-        case "ECDH-ES":
-        case "ECDH-ES+A128KW":
-        case "ECDH-ES+A192KW":
-        case "ECDH-ES+A256KW":
-          algorithm = {
-            name: jwk.crv
-          };
-          keyUsages = jwk.d ? ["deriveBits"] : [];
-          break;
-        default:
-          throw new JOSENotSupported('Invalid or unsupported JWK "alg" (Algorithm) Parameter value');
-      }
-      break;
-    }
-    default:
-      throw new JOSENotSupported('Invalid or unsupported JWK "kty" (Key Type) Parameter value');
-  }
-  return {
-    algorithm,
-    keyUsages
-  };
-}
-var parse = (jwk) => __async(void 0, null, function* () {
-  if (!jwk.alg) {
-    throw new TypeError('"alg" argument is required when "jwk.alg" is not present');
-  }
-  const {
-    algorithm,
-    keyUsages
-  } = subtleMapping(jwk);
-  const rest = [algorithm, jwk.ext ?? false, jwk.key_ops ?? keyUsages];
-  const keyData = __spreadValues({}, jwk);
-  delete keyData.alg;
-  delete keyData.use;
-  return webcrypto_default.subtle.importKey("jwk", keyData, ...rest);
-});
-var jwk_to_key_default = parse;
-
-// node_modules/jose/dist/browser/runtime/normalize_key.js
-var exportKeyValue = (k) => decode3(k);
-var privCache;
-var pubCache;
-var isKeyObject = (key) => {
-  return key?.[Symbol.toStringTag] === "KeyObject";
-};
-var importAndCache = (cache, key, jwk, alg, freeze = false) => __async(void 0, null, function* () {
-  let cached = cache.get(key);
-  if (cached?.[alg]) {
-    return cached[alg];
-  }
-  const cryptoKey = yield jwk_to_key_default(__spreadProps(__spreadValues({}, jwk), {
-    alg
-  }));
-  if (freeze) Object.freeze(key);
-  if (!cached) {
-    cache.set(key, {
-      [alg]: cryptoKey
-    });
-  } else {
-    cached[alg] = cryptoKey;
-  }
-  return cryptoKey;
-});
-var normalizePublicKey = (key, alg) => {
-  if (isKeyObject(key)) {
-    let jwk = key.export({
-      format: "jwk"
-    });
-    delete jwk.d;
-    delete jwk.dp;
-    delete jwk.dq;
-    delete jwk.p;
-    delete jwk.q;
-    delete jwk.qi;
-    if (jwk.k) {
-      return exportKeyValue(jwk.k);
-    }
-    pubCache || (pubCache = /* @__PURE__ */ new WeakMap());
-    return importAndCache(pubCache, key, jwk, alg);
-  }
-  if (isJWK(key)) {
-    if (key.k) return decode3(key.k);
-    pubCache || (pubCache = /* @__PURE__ */ new WeakMap());
-    const cryptoKey = importAndCache(pubCache, key, key, alg, true);
-    return cryptoKey;
-  }
-  return key;
-};
-var normalizePrivateKey = (key, alg) => {
-  if (isKeyObject(key)) {
-    let jwk = key.export({
-      format: "jwk"
-    });
-    if (jwk.k) {
-      return exportKeyValue(jwk.k);
-    }
-    privCache || (privCache = /* @__PURE__ */ new WeakMap());
-    return importAndCache(privCache, key, jwk, alg);
-  }
-  if (isJWK(key)) {
-    if (key.k) return decode3(key.k);
-    privCache || (privCache = /* @__PURE__ */ new WeakMap());
-    const cryptoKey = importAndCache(privCache, key, key, alg, true);
-    return cryptoKey;
-  }
-  return key;
-};
-var normalize_key_default = {
-  normalizePublicKey,
-  normalizePrivateKey
-};
-
-// node_modules/jose/dist/browser/key/import.js
-function importJWK(jwk, alg) {
-  return __async(this, null, function* () {
-    if (!isObject(jwk)) {
-      throw new TypeError("JWK must be an object");
-    }
-    alg || (alg = jwk.alg);
-    switch (jwk.kty) {
-      case "oct":
-        if (typeof jwk.k !== "string" || !jwk.k) {
-          throw new TypeError('missing "k" (Key Value) Parameter value');
-        }
-        return decode3(jwk.k);
-      case "RSA":
-        if ("oth" in jwk && jwk.oth !== void 0) {
-          throw new JOSENotSupported('RSA JWK "oth" (Other Primes Info) Parameter value is not supported');
-        }
-      case "EC":
-      case "OKP":
-        return jwk_to_key_default(__spreadProps(__spreadValues({}, jwk), {
-          alg
-        }));
-      default:
-        throw new JOSENotSupported('Unsupported "kty" (Key Type) Parameter value');
-    }
-  });
-}
-
-// node_modules/jose/dist/browser/lib/check_key_type.js
-var tag = (key) => key?.[Symbol.toStringTag];
-var jwkMatchesOp = (alg, key, usage) => {
-  if (key.use !== void 0 && key.use !== "sig") {
-    throw new TypeError("Invalid key for this operation, when present its use must be sig");
-  }
-  if (key.key_ops !== void 0 && key.key_ops.includes?.(usage) !== true) {
-    throw new TypeError(`Invalid key for this operation, when present its key_ops must include ${usage}`);
-  }
-  if (key.alg !== void 0 && key.alg !== alg) {
-    throw new TypeError(`Invalid key for this operation, when present its alg must be ${alg}`);
-  }
-  return true;
-};
-var symmetricTypeCheck = (alg, key, usage, allowJwk) => {
-  if (key instanceof Uint8Array) return;
-  if (allowJwk && isJWK(key)) {
-    if (isSecretJWK(key) && jwkMatchesOp(alg, key, usage)) return;
-    throw new TypeError(`JSON Web Key for symmetric algorithms must have JWK "kty" (Key Type) equal to "oct" and the JWK "k" (Key Value) present`);
-  }
-  if (!is_key_like_default(key)) {
-    throw new TypeError(withAlg(alg, key, ...types, "Uint8Array", allowJwk ? "JSON Web Key" : null));
-  }
-  if (key.type !== "secret") {
-    throw new TypeError(`${tag(key)} instances for symmetric algorithms must be of type "secret"`);
-  }
-};
-var asymmetricTypeCheck = (alg, key, usage, allowJwk) => {
-  if (allowJwk && isJWK(key)) {
-    switch (usage) {
-      case "sign":
-        if (isPrivateJWK(key) && jwkMatchesOp(alg, key, usage)) return;
-        throw new TypeError(`JSON Web Key for this operation be a private JWK`);
-      case "verify":
-        if (isPublicJWK(key) && jwkMatchesOp(alg, key, usage)) return;
-        throw new TypeError(`JSON Web Key for this operation be a public JWK`);
-    }
-  }
-  if (!is_key_like_default(key)) {
-    throw new TypeError(withAlg(alg, key, ...types, allowJwk ? "JSON Web Key" : null));
-  }
-  if (key.type === "secret") {
-    throw new TypeError(`${tag(key)} instances for asymmetric algorithms must not be of type "secret"`);
-  }
-  if (usage === "sign" && key.type === "public") {
-    throw new TypeError(`${tag(key)} instances for asymmetric algorithm signing must be of type "private"`);
-  }
-  if (usage === "decrypt" && key.type === "public") {
-    throw new TypeError(`${tag(key)} instances for asymmetric algorithm decryption must be of type "private"`);
-  }
-  if (key.algorithm && usage === "verify" && key.type === "private") {
-    throw new TypeError(`${tag(key)} instances for asymmetric algorithm verifying must be of type "public"`);
-  }
-  if (key.algorithm && usage === "encrypt" && key.type === "private") {
-    throw new TypeError(`${tag(key)} instances for asymmetric algorithm encryption must be of type "public"`);
-  }
-};
-function checkKeyType(allowJwk, alg, key, usage) {
-  const symmetric = alg.startsWith("HS") || alg === "dir" || alg.startsWith("PBES2") || /^A\d{3}(?:GCM)?KW$/.test(alg);
-  if (symmetric) {
-    symmetricTypeCheck(alg, key, usage, allowJwk);
-  } else {
-    asymmetricTypeCheck(alg, key, usage, allowJwk);
-  }
-}
-var check_key_type_default = checkKeyType.bind(void 0, false);
-var checkKeyTypeWithJwk = checkKeyType.bind(void 0, true);
-
-// node_modules/jose/dist/browser/lib/validate_crit.js
-function validateCrit(Err, recognizedDefault, recognizedOption, protectedHeader, joseHeader) {
-  if (joseHeader.crit !== void 0 && protectedHeader?.crit === void 0) {
-    throw new Err('"crit" (Critical) Header Parameter MUST be integrity protected');
-  }
-  if (!protectedHeader || protectedHeader.crit === void 0) {
-    return /* @__PURE__ */ new Set();
-  }
-  if (!Array.isArray(protectedHeader.crit) || protectedHeader.crit.length === 0 || protectedHeader.crit.some((input2) => typeof input2 !== "string" || input2.length === 0)) {
-    throw new Err('"crit" (Critical) Header Parameter MUST be an array of non-empty strings when present');
-  }
-  let recognized;
-  if (recognizedOption !== void 0) {
-    recognized = new Map([...Object.entries(recognizedOption), ...recognizedDefault.entries()]);
-  } else {
-    recognized = recognizedDefault;
-  }
-  for (const parameter of protectedHeader.crit) {
-    if (!recognized.has(parameter)) {
-      throw new JOSENotSupported(`Extension Header Parameter "${parameter}" is not recognized`);
-    }
-    if (joseHeader[parameter] === void 0) {
-      throw new Err(`Extension Header Parameter "${parameter}" is missing`);
-    }
-    if (recognized.get(parameter) && protectedHeader[parameter] === void 0) {
-      throw new Err(`Extension Header Parameter "${parameter}" MUST be integrity protected`);
-    }
-  }
-  return new Set(protectedHeader.crit);
-}
-var validate_crit_default = validateCrit;
-
-// node_modules/jose/dist/browser/lib/validate_algorithms.js
-var validateAlgorithms = (option, algorithms) => {
-  if (algorithms !== void 0 && (!Array.isArray(algorithms) || algorithms.some((s) => typeof s !== "string"))) {
-    throw new TypeError(`"${option}" option must be an array of strings`);
-  }
-  if (!algorithms) {
-    return void 0;
-  }
-  return new Set(algorithms);
-};
-var validate_algorithms_default = validateAlgorithms;
-
-// node_modules/jose/dist/browser/runtime/subtle_dsa.js
-function subtleDsa(alg, algorithm) {
-  const hash = `SHA-${alg.slice(-3)}`;
-  switch (alg) {
-    case "HS256":
-    case "HS384":
-    case "HS512":
-      return {
-        hash,
-        name: "HMAC"
-      };
-    case "PS256":
-    case "PS384":
-    case "PS512":
-      return {
-        hash,
-        name: "RSA-PSS",
-        saltLength: alg.slice(-3) >> 3
-      };
-    case "RS256":
-    case "RS384":
-    case "RS512":
-      return {
-        hash,
-        name: "RSASSA-PKCS1-v1_5"
-      };
-    case "ES256":
-    case "ES384":
-    case "ES512":
-      return {
-        hash,
-        name: "ECDSA",
-        namedCurve: algorithm.namedCurve
-      };
-    case "Ed25519":
-      return {
-        name: "Ed25519"
-      };
-    case "EdDSA":
-      return {
-        name: algorithm.name
-      };
-    default:
-      throw new JOSENotSupported(`alg ${alg} is not supported either by JOSE or your javascript runtime`);
-  }
-}
-
-// node_modules/jose/dist/browser/runtime/get_sign_verify_key.js
-function getCryptoKey(alg, key, usage) {
-  return __async(this, null, function* () {
-    if (usage === "sign") {
-      key = yield normalize_key_default.normalizePrivateKey(key, alg);
-    }
-    if (usage === "verify") {
-      key = yield normalize_key_default.normalizePublicKey(key, alg);
-    }
-    if (isCryptoKey(key)) {
-      checkSigCryptoKey(key, alg, usage);
-      return key;
-    }
-    if (key instanceof Uint8Array) {
-      if (!alg.startsWith("HS")) {
-        throw new TypeError(invalid_key_input_default(key, ...types));
-      }
-      return webcrypto_default.subtle.importKey("raw", key, {
-        hash: `SHA-${alg.slice(-3)}`,
-        name: "HMAC"
-      }, false, [usage]);
-    }
-    throw new TypeError(invalid_key_input_default(key, ...types, "Uint8Array", "JSON Web Key"));
-  });
-}
-
-// node_modules/jose/dist/browser/runtime/verify.js
-var verify = (alg, key, signature, data) => __async(void 0, null, function* () {
-  const cryptoKey = yield getCryptoKey(alg, key, "verify");
-  check_key_length_default(alg, cryptoKey);
-  const algorithm = subtleDsa(alg, cryptoKey.algorithm);
-  try {
-    return yield webcrypto_default.subtle.verify(algorithm, cryptoKey, signature, data);
-  } catch {
-    return false;
-  }
-});
-var verify_default = verify;
-
-// node_modules/jose/dist/browser/jws/flattened/verify.js
-function flattenedVerify(jws, key, options) {
-  return __async(this, null, function* () {
-    if (!isObject(jws)) {
-      throw new JWSInvalid("Flattened JWS must be an object");
-    }
-    if (jws.protected === void 0 && jws.header === void 0) {
-      throw new JWSInvalid('Flattened JWS must have either of the "protected" or "header" members');
-    }
-    if (jws.protected !== void 0 && typeof jws.protected !== "string") {
-      throw new JWSInvalid("JWS Protected Header incorrect type");
-    }
-    if (jws.payload === void 0) {
-      throw new JWSInvalid("JWS Payload missing");
-    }
-    if (typeof jws.signature !== "string") {
-      throw new JWSInvalid("JWS Signature missing or incorrect type");
-    }
-    if (jws.header !== void 0 && !isObject(jws.header)) {
-      throw new JWSInvalid("JWS Unprotected Header incorrect type");
-    }
-    let parsedProt = {};
-    if (jws.protected) {
-      try {
-        const protectedHeader = decode3(jws.protected);
-        parsedProt = JSON.parse(decoder.decode(protectedHeader));
-      } catch {
-        throw new JWSInvalid("JWS Protected Header is invalid");
-      }
-    }
-    if (!is_disjoint_default(parsedProt, jws.header)) {
-      throw new JWSInvalid("JWS Protected and JWS Unprotected Header Parameter names must be disjoint");
-    }
-    const joseHeader = __spreadValues(__spreadValues({}, parsedProt), jws.header);
-    const extensions = validate_crit_default(JWSInvalid, /* @__PURE__ */ new Map([["b64", true]]), options?.crit, parsedProt, joseHeader);
-    let b64 = true;
-    if (extensions.has("b64")) {
-      b64 = parsedProt.b64;
-      if (typeof b64 !== "boolean") {
-        throw new JWSInvalid('The "b64" (base64url-encode payload) Header Parameter must be a boolean');
-      }
-    }
-    const {
-      alg
-    } = joseHeader;
-    if (typeof alg !== "string" || !alg) {
-      throw new JWSInvalid('JWS "alg" (Algorithm) Header Parameter missing or invalid');
-    }
-    const algorithms = options && validate_algorithms_default("algorithms", options.algorithms);
-    if (algorithms && !algorithms.has(alg)) {
-      throw new JOSEAlgNotAllowed('"alg" (Algorithm) Header Parameter value not allowed');
-    }
-    if (b64) {
-      if (typeof jws.payload !== "string") {
-        throw new JWSInvalid("JWS Payload must be a string");
-      }
-    } else if (typeof jws.payload !== "string" && !(jws.payload instanceof Uint8Array)) {
-      throw new JWSInvalid("JWS Payload must be a string or an Uint8Array instance");
-    }
-    let resolvedKey = false;
-    if (typeof key === "function") {
-      key = yield key(parsedProt, jws);
-      resolvedKey = true;
-      checkKeyTypeWithJwk(alg, key, "verify");
-      if (isJWK(key)) {
-        key = yield importJWK(key, alg);
-      }
-    } else {
-      checkKeyTypeWithJwk(alg, key, "verify");
-    }
-    const data = concat2(encoder.encode(jws.protected ?? ""), encoder.encode("."), typeof jws.payload === "string" ? encoder.encode(jws.payload) : jws.payload);
-    let signature;
-    try {
-      signature = decode3(jws.signature);
-    } catch {
-      throw new JWSInvalid("Failed to base64url decode the signature");
-    }
-    const verified = yield verify_default(alg, key, signature, data);
-    if (!verified) {
-      throw new JWSSignatureVerificationFailed();
-    }
-    let payload;
-    if (b64) {
-      try {
-        payload = decode3(jws.payload);
-      } catch {
-        throw new JWSInvalid("Failed to base64url decode the payload");
-      }
-    } else if (typeof jws.payload === "string") {
-      payload = encoder.encode(jws.payload);
-    } else {
-      payload = jws.payload;
-    }
-    const result = {
-      payload
-    };
-    if (jws.protected !== void 0) {
-      result.protectedHeader = parsedProt;
-    }
-    if (jws.header !== void 0) {
-      result.unprotectedHeader = jws.header;
-    }
-    if (resolvedKey) {
-      return __spreadProps(__spreadValues({}, result), {
-        key
-      });
-    }
-    return result;
-  });
-}
-
-// node_modules/jose/dist/browser/jws/compact/verify.js
-function compactVerify(jws, key, options) {
-  return __async(this, null, function* () {
-    if (jws instanceof Uint8Array) {
-      jws = decoder.decode(jws);
-    }
-    if (typeof jws !== "string") {
-      throw new JWSInvalid("Compact JWS must be a string or Uint8Array");
-    }
-    const {
-      0: protectedHeader,
-      1: payload,
-      2: signature,
-      length
-    } = jws.split(".");
-    if (length !== 3) {
-      throw new JWSInvalid("Invalid Compact JWS");
-    }
-    const verified = yield flattenedVerify({
-      payload,
-      protected: protectedHeader,
-      signature
-    }, key, options);
-    const result = {
-      payload: verified.payload,
-      protectedHeader: verified.protectedHeader
-    };
-    if (typeof key === "function") {
-      return __spreadProps(__spreadValues({}, result), {
-        key: verified.key
-      });
-    }
-    return result;
-  });
-}
-
-// node_modules/jose/dist/browser/lib/epoch.js
-var epoch_default = (date) => Math.floor(date.getTime() / 1e3);
-
-// node_modules/jose/dist/browser/lib/secs.js
-var minute = 60;
-var hour = minute * 60;
-var day = hour * 24;
-var week = day * 7;
-var year = day * 365.25;
-var REGEX = /^(\+|\-)? ?(\d+|\d+\.\d+) ?(seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|weeks?|w|years?|yrs?|y)(?: (ago|from now))?$/i;
-var secs_default = (str) => {
-  const matched = REGEX.exec(str);
-  if (!matched || matched[4] && matched[1]) {
-    throw new TypeError("Invalid time period format");
-  }
-  const value = parseFloat(matched[2]);
-  const unit = matched[3].toLowerCase();
-  let numericDate;
-  switch (unit) {
-    case "sec":
-    case "secs":
-    case "second":
-    case "seconds":
-    case "s":
-      numericDate = Math.round(value);
-      break;
-    case "minute":
-    case "minutes":
-    case "min":
-    case "mins":
-    case "m":
-      numericDate = Math.round(value * minute);
-      break;
-    case "hour":
-    case "hours":
-    case "hr":
-    case "hrs":
-    case "h":
-      numericDate = Math.round(value * hour);
-      break;
-    case "day":
-    case "days":
-    case "d":
-      numericDate = Math.round(value * day);
-      break;
-    case "week":
-    case "weeks":
-    case "w":
-      numericDate = Math.round(value * week);
-      break;
-    default:
-      numericDate = Math.round(value * year);
-      break;
-  }
-  if (matched[1] === "-" || matched[4] === "ago") {
-    return -numericDate;
-  }
-  return numericDate;
-};
-
-// node_modules/jose/dist/browser/lib/jwt_claims_set.js
-var normalizeTyp = (value) => value.toLowerCase().replace(/^application\//, "");
-var checkAudiencePresence = (audPayload, audOption) => {
-  if (typeof audPayload === "string") {
-    return audOption.includes(audPayload);
-  }
-  if (Array.isArray(audPayload)) {
-    return audOption.some(Set.prototype.has.bind(new Set(audPayload)));
-  }
-  return false;
-};
-var jwt_claims_set_default = (protectedHeader, encodedPayload, options = {}) => {
-  let payload;
-  try {
-    payload = JSON.parse(decoder.decode(encodedPayload));
-  } catch {
-  }
-  if (!isObject(payload)) {
-    throw new JWTInvalid("JWT Claims Set must be a top-level JSON object");
-  }
-  const {
-    typ
-  } = options;
-  if (typ && (typeof protectedHeader.typ !== "string" || normalizeTyp(protectedHeader.typ) !== normalizeTyp(typ))) {
-    throw new JWTClaimValidationFailed('unexpected "typ" JWT header value', payload, "typ", "check_failed");
-  }
-  const {
-    requiredClaims = [],
-    issuer,
-    subject,
-    audience,
-    maxTokenAge
-  } = options;
-  const presenceCheck = [...requiredClaims];
-  if (maxTokenAge !== void 0) presenceCheck.push("iat");
-  if (audience !== void 0) presenceCheck.push("aud");
-  if (subject !== void 0) presenceCheck.push("sub");
-  if (issuer !== void 0) presenceCheck.push("iss");
-  for (const claim of new Set(presenceCheck.reverse())) {
-    if (!(claim in payload)) {
-      throw new JWTClaimValidationFailed(`missing required "${claim}" claim`, payload, claim, "missing");
-    }
-  }
-  if (issuer && !(Array.isArray(issuer) ? issuer : [issuer]).includes(payload.iss)) {
-    throw new JWTClaimValidationFailed('unexpected "iss" claim value', payload, "iss", "check_failed");
-  }
-  if (subject && payload.sub !== subject) {
-    throw new JWTClaimValidationFailed('unexpected "sub" claim value', payload, "sub", "check_failed");
-  }
-  if (audience && !checkAudiencePresence(payload.aud, typeof audience === "string" ? [audience] : audience)) {
-    throw new JWTClaimValidationFailed('unexpected "aud" claim value', payload, "aud", "check_failed");
-  }
-  let tolerance;
-  switch (typeof options.clockTolerance) {
-    case "string":
-      tolerance = secs_default(options.clockTolerance);
-      break;
-    case "number":
-      tolerance = options.clockTolerance;
-      break;
-    case "undefined":
-      tolerance = 0;
-      break;
-    default:
-      throw new TypeError("Invalid clockTolerance option type");
-  }
-  const {
-    currentDate
-  } = options;
-  const now = epoch_default(currentDate || /* @__PURE__ */ new Date());
-  if ((payload.iat !== void 0 || maxTokenAge) && typeof payload.iat !== "number") {
-    throw new JWTClaimValidationFailed('"iat" claim must be a number', payload, "iat", "invalid");
-  }
-  if (payload.nbf !== void 0) {
-    if (typeof payload.nbf !== "number") {
-      throw new JWTClaimValidationFailed('"nbf" claim must be a number', payload, "nbf", "invalid");
-    }
-    if (payload.nbf > now + tolerance) {
-      throw new JWTClaimValidationFailed('"nbf" claim timestamp check failed', payload, "nbf", "check_failed");
-    }
-  }
-  if (payload.exp !== void 0) {
-    if (typeof payload.exp !== "number") {
-      throw new JWTClaimValidationFailed('"exp" claim must be a number', payload, "exp", "invalid");
-    }
-    if (payload.exp <= now - tolerance) {
-      throw new JWTExpired('"exp" claim timestamp check failed', payload, "exp", "check_failed");
-    }
-  }
-  if (maxTokenAge) {
-    const age = now - payload.iat;
-    const max = typeof maxTokenAge === "number" ? maxTokenAge : secs_default(maxTokenAge);
-    if (age - tolerance > max) {
-      throw new JWTExpired('"iat" claim timestamp check failed (too far in the past)', payload, "iat", "check_failed");
-    }
-    if (age < 0 - tolerance) {
-      throw new JWTClaimValidationFailed('"iat" claim timestamp check failed (it should be in the past)', payload, "iat", "check_failed");
-    }
-  }
-  return payload;
-};
-
-// node_modules/jose/dist/browser/jwt/verify.js
-function jwtVerify(jwt, key, options) {
-  return __async(this, null, function* () {
-    const verified = yield compactVerify(jwt, key, options);
-    if (verified.protectedHeader.crit?.includes("b64") && verified.protectedHeader.b64 === false) {
-      throw new JWTInvalid("JWTs MUST NOT use unencoded payload");
-    }
-    const payload = jwt_claims_set_default(verified.protectedHeader, verified.payload, options);
-    const result = {
-      payload,
-      protectedHeader: verified.protectedHeader
-    };
-    if (typeof key === "function") {
-      return __spreadProps(__spreadValues({}, result), {
-        key: verified.key
-      });
-    }
-    return result;
-  });
-}
-
-// node_modules/jose/dist/browser/jwks/local.js
-function getKtyFromAlg(alg) {
-  switch (typeof alg === "string" && alg.slice(0, 2)) {
-    case "RS":
-    case "PS":
-      return "RSA";
-    case "ES":
-      return "EC";
-    case "Ed":
-      return "OKP";
-    default:
-      throw new JOSENotSupported('Unsupported "alg" value for a JSON Web Key Set');
-  }
-}
-function isJWKSLike(jwks) {
-  return jwks && typeof jwks === "object" && Array.isArray(jwks.keys) && jwks.keys.every(isJWKLike);
-}
-function isJWKLike(key) {
-  return isObject(key);
-}
-function clone(obj) {
-  if (typeof structuredClone === "function") {
-    return structuredClone(obj);
-  }
-  return JSON.parse(JSON.stringify(obj));
-}
-var LocalJWKSet = class {
-  constructor(jwks) {
-    this._cached = /* @__PURE__ */ new WeakMap();
-    if (!isJWKSLike(jwks)) {
-      throw new JWKSInvalid("JSON Web Key Set malformed");
-    }
-    this._jwks = clone(jwks);
-  }
-  getKey(protectedHeader, token) {
-    return __async(this, null, function* () {
-      const {
-        alg,
-        kid
-      } = __spreadValues(__spreadValues({}, protectedHeader), token?.header);
-      const kty = getKtyFromAlg(alg);
-      const candidates = this._jwks.keys.filter((jwk2) => {
-        let candidate = kty === jwk2.kty;
-        if (candidate && typeof kid === "string") {
-          candidate = kid === jwk2.kid;
-        }
-        if (candidate && typeof jwk2.alg === "string") {
-          candidate = alg === jwk2.alg;
-        }
-        if (candidate && typeof jwk2.use === "string") {
-          candidate = jwk2.use === "sig";
-        }
-        if (candidate && Array.isArray(jwk2.key_ops)) {
-          candidate = jwk2.key_ops.includes("verify");
-        }
-        if (candidate) {
-          switch (alg) {
-            case "ES256":
-              candidate = jwk2.crv === "P-256";
-              break;
-            case "ES256K":
-              candidate = jwk2.crv === "secp256k1";
-              break;
-            case "ES384":
-              candidate = jwk2.crv === "P-384";
-              break;
-            case "ES512":
-              candidate = jwk2.crv === "P-521";
-              break;
-            case "Ed25519":
-              candidate = jwk2.crv === "Ed25519";
-              break;
-            case "EdDSA":
-              candidate = jwk2.crv === "Ed25519" || jwk2.crv === "Ed448";
-              break;
-          }
-        }
-        return candidate;
-      });
-      const {
-        0: jwk,
-        length
-      } = candidates;
-      if (length === 0) {
-        throw new JWKSNoMatchingKey();
-      }
-      if (length !== 1) {
-        const error2 = new JWKSMultipleMatchingKeys();
-        const {
-          _cached
-        } = this;
-        error2[Symbol.asyncIterator] = function() {
-          return __asyncGenerator(this, null, function* () {
-            for (const jwk2 of candidates) {
-              try {
-                yield yield new __await(importWithAlgCache(_cached, jwk2, alg));
-              } catch {
-              }
-            }
-          });
-        };
-        throw error2;
-      }
-      return importWithAlgCache(this._cached, jwk, alg);
-    });
-  }
-};
-function importWithAlgCache(cache, jwk, alg) {
-  return __async(this, null, function* () {
-    const cached = cache.get(jwk) || cache.set(jwk, {}).get(jwk);
-    if (cached[alg] === void 0) {
-      const key = yield importJWK(__spreadProps(__spreadValues({}, jwk), {
-        ext: true
-      }), alg);
-      if (key instanceof Uint8Array || key.type !== "public") {
-        throw new JWKSInvalid("JSON Web Key Set members must be public keys");
-      }
-      cached[alg] = key;
-    }
-    return cached[alg];
-  });
-}
-function createLocalJWKSet(jwks) {
-  const set = new LocalJWKSet(jwks);
-  const localJWKSet = (protectedHeader, token) => __async(this, null, function* () {
-    return set.getKey(protectedHeader, token);
-  });
-  Object.defineProperties(localJWKSet, {
-    jwks: {
-      value: () => clone(set._jwks),
-      enumerable: true,
-      configurable: false,
-      writable: false
-    }
-  });
-  return localJWKSet;
-}
-
-// node_modules/jose/dist/browser/runtime/fetch_jwks.js
-var fetchJwks = (url, timeout2, options) => __async(void 0, null, function* () {
-  let controller;
-  let id;
-  let timedOut = false;
-  if (typeof AbortController === "function") {
-    controller = new AbortController();
-    id = setTimeout(() => {
-      timedOut = true;
-      controller.abort();
-    }, timeout2);
-  }
-  const response = yield fetch(url.href, {
-    signal: controller ? controller.signal : void 0,
-    redirect: "manual",
-    headers: options.headers
-  }).catch((err) => {
-    if (timedOut) throw new JWKSTimeout();
-    throw err;
-  });
-  if (id !== void 0) clearTimeout(id);
-  if (response.status !== 200) {
-    throw new JOSEError("Expected 200 OK from the JSON Web Key Set HTTP response");
-  }
-  try {
-    return yield response.json();
-  } catch {
-    throw new JOSEError("Failed to parse the JSON Web Key Set HTTP response as JSON");
-  }
-});
-var fetch_jwks_default = fetchJwks;
-
-// node_modules/jose/dist/browser/jwks/remote.js
-function isCloudflareWorkers() {
-  return typeof WebSocketPair !== "undefined" || typeof navigator !== "undefined" && navigator.userAgent === "Cloudflare-Workers" || typeof EdgeRuntime !== "undefined" && EdgeRuntime === "vercel";
-}
-var USER_AGENT;
-if (typeof navigator === "undefined" || !navigator.userAgent?.startsWith?.("Mozilla/5.0 ")) {
-  const NAME = "jose";
-  const VERSION6 = "v5.10.0";
-  USER_AGENT = `${NAME}/${VERSION6}`;
-}
-var jwksCache = Symbol();
-function isFreshJwksCache(input2, cacheMaxAge) {
-  if (typeof input2 !== "object" || input2 === null) {
-    return false;
-  }
-  if (!("uat" in input2) || typeof input2.uat !== "number" || Date.now() - input2.uat >= cacheMaxAge) {
-    return false;
-  }
-  if (!("jwks" in input2) || !isObject(input2.jwks) || !Array.isArray(input2.jwks.keys) || !Array.prototype.every.call(input2.jwks.keys, isObject)) {
-    return false;
-  }
-  return true;
-}
-var RemoteJWKSet = class {
-  constructor(url, options) {
-    if (!(url instanceof URL)) {
-      throw new TypeError("url must be an instance of URL");
-    }
-    this._url = new URL(url.href);
-    this._options = {
-      agent: options?.agent,
-      headers: options?.headers
-    };
-    this._timeoutDuration = typeof options?.timeoutDuration === "number" ? options?.timeoutDuration : 5e3;
-    this._cooldownDuration = typeof options?.cooldownDuration === "number" ? options?.cooldownDuration : 3e4;
-    this._cacheMaxAge = typeof options?.cacheMaxAge === "number" ? options?.cacheMaxAge : 6e5;
-    if (options?.[jwksCache] !== void 0) {
-      this._cache = options?.[jwksCache];
-      if (isFreshJwksCache(options?.[jwksCache], this._cacheMaxAge)) {
-        this._jwksTimestamp = this._cache.uat;
-        this._local = createLocalJWKSet(this._cache.jwks);
-      }
-    }
-  }
-  coolingDown() {
-    return typeof this._jwksTimestamp === "number" ? Date.now() < this._jwksTimestamp + this._cooldownDuration : false;
-  }
-  fresh() {
-    return typeof this._jwksTimestamp === "number" ? Date.now() < this._jwksTimestamp + this._cacheMaxAge : false;
-  }
-  getKey(protectedHeader, token) {
-    return __async(this, null, function* () {
-      if (!this._local || !this.fresh()) {
-        yield this.reload();
-      }
-      try {
-        return yield this._local(protectedHeader, token);
-      } catch (err) {
-        if (err instanceof JWKSNoMatchingKey) {
-          if (this.coolingDown() === false) {
-            yield this.reload();
-            return this._local(protectedHeader, token);
-          }
-        }
-        throw err;
-      }
-    });
-  }
-  reload() {
-    return __async(this, null, function* () {
-      if (this._pendingFetch && isCloudflareWorkers()) {
-        this._pendingFetch = void 0;
-      }
-      const headers = new Headers(this._options.headers);
-      if (USER_AGENT && !headers.has("User-Agent")) {
-        headers.set("User-Agent", USER_AGENT);
-        this._options.headers = Object.fromEntries(headers.entries());
-      }
-      this._pendingFetch || (this._pendingFetch = fetch_jwks_default(this._url, this._timeoutDuration, this._options).then((json) => {
-        this._local = createLocalJWKSet(json);
-        if (this._cache) {
-          this._cache.uat = Date.now();
-          this._cache.jwks = json;
-        }
-        this._jwksTimestamp = Date.now();
-        this._pendingFetch = void 0;
-      }).catch((err) => {
-        this._pendingFetch = void 0;
-        throw err;
-      }));
-      yield this._pendingFetch;
-    });
-  }
-};
-function createRemoteJWKSet(url, options) {
-  const set = new RemoteJWKSet(url, options);
-  const remoteJWKSet = (protectedHeader, token) => __async(this, null, function* () {
-    return set.getKey(protectedHeader, token);
-  });
-  Object.defineProperties(remoteJWKSet, {
-    coolingDown: {
-      get: () => set.coolingDown(),
-      enumerable: true,
-      configurable: false
-    },
-    fresh: {
-      get: () => set.fresh(),
-      enumerable: true,
-      configurable: false
-    },
-    reload: {
-      value: () => set.reload(),
-      enumerable: true,
-      configurable: false,
-      writable: false
-    },
-    reloading: {
-      get: () => !!set._pendingFetch,
-      enumerable: true,
-      configurable: false
-    },
-    jwks: {
-      value: () => set._local?.jwks(),
-      enumerable: true,
-      configurable: false,
-      writable: false
-    }
-  });
-  return remoteJWKSet;
-}
-
 // projects/fasten-connect-stitch-embed/src/app/services/auth.service.ts
 var FASTEN_AUTH_VAULT_COOKIE_NAME = "fasten_connect_auth_vault";
-var VAULT_AUTH_COOKIE_RECHECK_DELAY_MS = 100;
+var VAULT_AUTH_SESSION_RECHECK_DELAY_MS = 100;
+var CookieProbeScope;
+(function(CookieProbeScope2) {
+  CookieProbeScope2["All"] = "all";
+  CookieProbeScope2["Regular"] = "regular";
+})(CookieProbeScope || (CookieProbeScope = {}));
+var SESSION_REFRESH_WINDOW_MS = 6e4;
 var AuthService = class _AuthService {
-  constructor(_httpClient, configService) {
+  constructor(_httpClient, configService, logger) {
     this._httpClient = _httpClient;
     this.configService = configService;
+    this.logger = logger;
     this.IsAuthenticatedSubject = new BehaviorSubject(false);
+    this.sessionGeneration = 0;
+  }
+  /** Shared request options for every vault auth call: attaches the tenant's public_id and any extra query params. */
+  requestOptions(extraParams) {
+    return {
+      withCredentials: true,
+      params: __spreadValues({ "public_id": this.configService.systemConfig$.publicId }, extraParams)
+    };
   }
   VaultAuthBegin(email, cspPromptForce) {
     return __async(this, null, function* () {
       const resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_begin`, {
         "email": email,
         "csp_prompt_force": cspPromptForce
-      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+      }, this.requestOptions()).toPromise();
+      this.ClearSession();
       return resp && "data" in resp ? resp.data : resp;
     });
   }
@@ -48595,7 +47187,8 @@ var AuthService = class _AuthService {
       let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_finish`, {
         "email": email,
         "code": code
-      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+      }, this.requestOptions()).toPromise();
+      this.ClearSession();
       return resp;
     });
   }
@@ -48603,68 +47196,126 @@ var AuthService = class _AuthService {
     return __async(this, null, function* () {
       const resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_resend_code`, {
         "email": email
-      }, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+      }, this.requestOptions()).toPromise();
       return resp?.data;
     });
   }
+  /**
+   * Clear the server-side (HttpOnly) auth cookie and the locally cached session. The SPA can no longer
+   * clear the cookie itself via document.cookie, so this always goes through the API -- even if the
+   * request fails, the local session cache is cleared so the UI reflects a signed-out state.
+   */
   Signout() {
     return __async(this, null, function* () {
       this.publishAuthenticationState(false);
-      return deleteCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
+      this.ClearSession();
+      try {
+        return yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_signout`, null, this.requestOptions()).toPromise();
+      } catch (error2) {
+        this.logger.error("error signing out", error2);
+        return void 0;
+      }
     });
   }
-  IsVaultAuthCookieSet() {
-    const debugInfo = this.GetVaultAuthCookieDebugInfo();
-    if (!debugInfo.isSet) {
-      console.warn("[AuthServices] Vault auth cookie not set!");
-    }
-    console.info("[AuthService] Vault auth cookie check", debugInfo);
-    return debugInfo.isSet;
+  /** Load the verified session (cached briefly), or null if the visitor is not authenticated. */
+  GetSession() {
+    return this.requestSession(false);
   }
-  WaitForVaultAuthCookie() {
+  /** Force a session check/refresh, bypassing the cache. Concurrent callers share one request. */
+  RefreshSession() {
+    return this.requestSession(true);
+  }
+  /** Drop the cached session, eg. after an action that mutates the auth cookie server-side. */
+  ClearSession() {
+    this.sessionGeneration++;
+    this.session = void 0;
+    this.sessionRequest = void 0;
+  }
+  IsVaultAuthSessionActive() {
     return __async(this, null, function* () {
-      if (this.IsVaultAuthCookieSet()) {
+      const isActive = (yield this.RefreshSession()) !== null;
+      if (!isActive) {
+        this.logger.warn("Vault auth session is not active");
+      }
+      return isActive;
+    });
+  }
+  WaitForVaultAuthSession() {
+    return __async(this, null, function* () {
+      if (yield this.IsVaultAuthSessionActive()) {
         return true;
       }
-      yield new Promise((resolve) => setTimeout(resolve, VAULT_AUTH_COOKIE_RECHECK_DELAY_MS));
-      return this.IsVaultAuthCookieSet();
+      yield new Promise((resolve) => setTimeout(resolve, VAULT_AUTH_SESSION_RECHECK_DELAY_MS));
+      return this.IsVaultAuthSessionActive();
     });
   }
-  GetVaultAuthCookieDebugInfo() {
-    const cookieValue = getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
-    const isSet = !!cookieValue;
-    return {
-      cookieName: FASTEN_AUTH_VAULT_COOKIE_NAME,
-      isSet,
-      value: isSet ? "[REDACTED]" : "",
-      valueLength: cookieValue.length
-    };
+  CheckCookieSupport() {
+    return __async(this, arguments, function* (scope = CookieProbeScope.All) {
+      const scopeParams = {};
+      if (scope === CookieProbeScope.Regular) {
+        scopeParams["regular_only"] = "true";
+      }
+      const expectedProbe = yield this.setCookieProbe(scopeParams);
+      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_support`, null, {
+        withCredentials: true,
+        params: __spreadValues({ probe: expectedProbe }, scopeParams)
+      }));
+      const supported = response?.data?.supported;
+      if (typeof supported !== "boolean") {
+        throw new Error(`Invalid cookie support response: ${supported}`);
+      }
+      this.cookieSupported = supported;
+      return supported;
+    });
   }
-  GetJWTPayload() {
+  setCookieProbe(params) {
     return __async(this, null, function* () {
-      let authToken = getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
-      if (!authToken) {
-        return null;
+      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_probe`, null, {
+        withCredentials: true,
+        params
+      }));
+      const probe = response?.data?.probe;
+      if (typeof probe !== "string" || probe.length === 0) {
+        throw new Error("Invalid cookie probe response");
       }
-      let jwks = createRemoteJWKSet(new URL(environment.jwks_uri));
-      let issuerHost = environment.connect_api_jwt_issuer_host;
-      try {
-        const { payload, protectedHeader } = yield jwtVerify(authToken, jwks, {
-          issuer: issuerHost,
-          audience: issuerHost
-        });
-        this.configService.systemConfig = { user: payload };
-        return payload;
-      } catch (e2) {
-        console.error("failed to verify jwt:", e2, issuerHost);
-        return null;
+      return probe;
+    });
+  }
+  RequiresStorageAccessFallback() {
+    return this.cookieSupported === false && this.CanUseStorageAccessFallback();
+  }
+  CanUseStorageAccessFallback() {
+    return this.configService.systemConfig$.sdkMode === SDKMode.None && typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
+  }
+  /** Debug-only summary of whether the vault auth session is active. The cookie itself is HttpOnly and unreadable. */
+  GetVaultAuthSessionDebugInfo() {
+    return __async(this, null, function* () {
+      const isSet = yield this.IsVaultAuthSessionActive();
+      return {
+        cookieName: FASTEN_AUTH_VAULT_COOKIE_NAME,
+        isSet
+      };
+    });
+  }
+  /**
+   * Fetch a short-lived, purpose-scoped token to hand off to the identity-verification popup, in place of
+   * the session JWT itself (which never leaves the cookie jar). See fasten.service.ts openWindowInPopupForIdentityVerification.
+   */
+  GetIdentityVerificationHandoffToken() {
+    return __async(this, null, function* () {
+      const response = yield firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_handoff`, this.requestOptions()));
+      const handoffToken = response?.data?.handoff_token;
+      if (!handoffToken) {
+        this.logger.error("invalid identity verification handoff response", response);
+        throw new Error("Invalid identity verification handoff response");
       }
+      return handoffToken;
     });
   }
   IsAuthenticated() {
     return __async(this, null, function* () {
-      let payload = yield this.GetJWTPayload();
-      let isAuthenticated = payload != null;
+      const session = yield this.GetSession();
+      const isAuthenticated = session !== null;
       this.publishAuthenticationState(isAuthenticated);
       return isAuthenticated;
     });
@@ -48672,6 +47323,39 @@ var AuthService = class _AuthService {
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //Private Methods
   /////////////////////////////////////////////////////////////////////////////////////////////////
+  requestSession(force) {
+    if (!force && this.session && this.session.session_expires_at * 1e3 > Date.now() + SESSION_REFRESH_WINDOW_MS) {
+      return Promise.resolve(this.session);
+    }
+    if (this.sessionRequest) {
+      return this.sessionRequest;
+    }
+    const requestGeneration = this.sessionGeneration;
+    const request = firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_session`, this.requestOptions())).then((sessionResponse) => {
+      if (requestGeneration === this.sessionGeneration) {
+        this.storeSession(sessionResponse.data);
+      }
+      return sessionResponse.data;
+    }).catch((error2) => {
+      this.ClearSession();
+      if (error2 instanceof HttpErrorResponse && (error2.status === 401 || error2.status === 403)) {
+        return null;
+      }
+      this.logger.error("error fetching session", error2);
+      throw error2;
+    });
+    this.sessionRequest = request;
+    request.finally(() => {
+      if (this.sessionRequest === request) {
+        this.sessionRequest = void 0;
+      }
+    });
+    return request;
+  }
+  storeSession(session) {
+    this.session = session;
+    this.publishAuthenticationState(true);
+  }
   publishAuthenticationState(authenticated) {
     if (this.IsAuthenticatedSubject.value != authenticated) {
       this.IsAuthenticatedSubject.next(authenticated);
@@ -48679,36 +47363,13 @@ var AuthService = class _AuthService {
   }
   static {
     this.\u0275fac = function AuthService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AuthService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(ConfigService));
+      return new (__ngFactoryType__ || _AuthService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
     };
   }
   static {
     this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _AuthService, factory: _AuthService.\u0275fac, providedIn: "root" });
   }
 };
-function getCookie(name) {
-  const ca = decodeURIComponent(document.cookie).split(";");
-  const caLen = ca.length;
-  const cookieName = `${name}=`;
-  let c;
-  for (let i = 0; i < caLen; i += 1) {
-    c = ca[i].replace(/^\s+/g, "");
-    if (c.indexOf(cookieName) === 0) {
-      return c.substring(cookieName.length, c.length);
-    }
-  }
-  return "";
-}
-function setCookie(name, value, expireDays, path = "") {
-  const d = /* @__PURE__ */ new Date();
-  d.setTime(d.getTime() + expireDays * 24 * 60 * 60 * 1e3);
-  const expires = `expires=${d.toUTCString()}`;
-  const cpath = path ? `; path=${path}` : "";
-  document.cookie = `${name}=${value}; ${expires}${cpath}; SameSite=Lax`;
-}
-function deleteCookie(name) {
-  setCookie(name, "", -99999);
-}
 
 // node_modules/ngx-device-detector/fesm2022/ngx-device-detector.mjs
 var GENERAL = {
@@ -49543,16 +48204,17 @@ var DeviceDetectorService = class _DeviceDetectorService {
 
 // projects/fasten-connect-stitch-embed/src/app/services/fasten.service.ts
 var FastenService = class _FastenService {
-  constructor(_httpClient, deviceService, configService, logger) {
+  constructor(_httpClient, deviceService, configService, logger, authService) {
     this._httpClient = _httpClient;
     this.deviceService = deviceService;
     this.configService = configService;
     this.logger = logger;
+    this.authService = authService;
     this.configService.systemConfigSubject.subscribe((systemConfig) => {
       this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
       if (systemConfig.org_id && !systemConfig.org) {
         this.logger.info("attempt to download org information, and store in config");
-        this.getOrgByPublicId(systemConfig.publicId).subscribe((org) => {
+        this.getOrgConfig(systemConfig.publicId).subscribe((org) => {
           this.logger.debug("org:", org);
           this.configService.systemConfig = { org };
         });
@@ -49626,6 +48288,17 @@ var FastenService = class _FastenService {
       return response.data;
     }));
   }
+  getOrgConfig(publicId) {
+    let queryParams = {};
+    queryParams["public_id"] = publicId;
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/config`, {
+      params: queryParams,
+      withCredentials: true
+    }).pipe(map((response) => {
+      this.logger.info("Organization", response);
+      return response;
+    }));
+  }
   getOrgConnectionById(publicId, orgConnectionId) {
     let queryParams = {};
     queryParams["public_id"] = publicId;
@@ -49654,7 +48327,6 @@ var FastenService = class _FastenService {
       return {};
     }));
   }
-  // public storageApiWithPopup(): Observable<CallbackPayload> {
   storageApiUserInteractionWithPopup() {
     const redirectUrl = new URL(`${window.location.origin}/consent`);
     const isDesktop = this.deviceService.isDesktop();
@@ -49662,7 +48334,7 @@ var FastenService = class _FastenService {
     if (isDesktop) {
       features = "popup=true,width=700,height=600";
     }
-    let openedWindow = window.open(redirectUrl.toString(), "_blank", features);
+    const openedWindow = window.open(redirectUrl.toString(), "_blank", features);
     return this.waitForPopupNotification(openedWindow, SDKMode.None);
   }
   verificationWithWebsocket(cspType) {
@@ -49674,20 +48346,9 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
     redirectUrlParts.searchParams.set("room_id", roomId);
     this.logger.debug(redirectUrlParts.toString());
-    let openedWindow;
-    if (this.shouldUsePartitionedCookie()) {
-      this.logger.warn("partitioned popup");
-      openedWindow = this.openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts);
-    } else {
-      openedWindow = this.openWindowInPopup(redirectUrlParts);
-    }
+    const openedWindow = this.openWindowInPopupForIdentityVerification(redirectUrlParts);
     return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(
-      switchMap((payload) => {
-        if (this.shouldUsePartitionedCookie()) {
-          return from(this.refreshAuthCookie()).pipe(map(() => payload));
-        }
-        return of(payload);
-      }),
+      switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))),
       //TODO: this is a flaky way to handle the issue where the websocket response is sent before the cookie is set in the browser
       // wait 2 seconds here -- sometimes the websocket sends the response before the cookie has been recieved by the browser (in the modal popup)
       delay(2500)
@@ -49698,8 +48359,8 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("public_id", this.configService.systemConfig$.publicId);
     redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
-    const openedWindow = this.openWindowInPopup(redirectUrlParts);
-    return this.waitForPopupNotification(openedWindow);
+    const openedWindow = this.openWindowInPopupForIdentityVerification(redirectUrlParts);
+    return this.waitForPopupNotification(openedWindow).pipe(switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))));
   }
   accountConnectWithWebsocket(connectData) {
     const roomId = v4_default();
@@ -49734,7 +48395,11 @@ var FastenService = class _FastenService {
   }
   refreshAuthCookie() {
     return __async(this, null, function* () {
-      return yield this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, { withCredentials: true, params: { "public_id": this.configService.systemConfig$.publicId } }).toPromise();
+      const response = yield this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, { withCredentials: true, params: {
+        "public_id": this.configService.systemConfig$.publicId
+      } }).toPromise();
+      this.authService.ClearSession();
+      return response;
     });
   }
   /// HELPERS
@@ -49746,58 +48411,42 @@ var FastenService = class _FastenService {
     }
     return window.open(redirectUrlParts.toString(), "_blank", features);
   }
-  //SECURITY: this is specifically for the identity verification flow. Some browsers require Partitioned Cookies (since the embed app
-  // is in a third-party context), and those cookies are not accessible in a regular popup window.
-  // We must send the JWT token to the popup via a POST message and then the popup can use that token to set the cookie in its own context.
-  openWindowInPopupForPartitionedIdentityVerification(redirectUrlParts) {
+  // SECURITY: identity verification crosses from the embedded context into a top-level popup, which may not
+  // be able to receive the (possibly partitioned) session cookie. POST a short-lived, purpose-scoped handoff
+  // token fetched from the API instead -- the session JWT itself never leaves the cookie jar. window.open is
+  // still called synchronously (before the token fetch) so browsers don't treat this as a blocked popup.
+  openWindowInPopupForIdentityVerification(redirectUrlParts) {
     const isDesktop = this.deviceService.isDesktop();
     let features = "";
     if (isDesktop) {
       features = "popup=true,width=700,height=600";
     }
-    var target = "PartitionedPopupWindow" + Math.random().toString(36).substring(2, 7);
-    var params = { [FASTEN_AUTH_VAULT_COOKIE_NAME]: getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME) };
-    var form = document.createElement("form");
-    form.setAttribute("method", "post");
-    form.setAttribute("action", redirectUrlParts.toString());
-    form.setAttribute("target", target);
-    form.style.display = "none";
-    for (var i in params) {
-      if (params.hasOwnProperty(i)) {
-        var input2 = document.createElement("input");
-        input2.type = "hidden";
-        input2.name = i;
-        input2.value = params[i];
-        form.appendChild(input2);
+    const target = "IdentityVerificationPopupWindow" + Math.random().toString(36).substring(2, 7);
+    const opened = window.open("", target, features);
+    this.authService.GetIdentityVerificationHandoffToken().then((handoffToken) => {
+      const params = { [FASTEN_AUTH_VAULT_COOKIE_NAME]: handoffToken };
+      const form = document.createElement("form");
+      form.setAttribute("method", "post");
+      form.setAttribute("action", redirectUrlParts.toString());
+      form.setAttribute("target", target);
+      form.style.display = "none";
+      for (const i in params) {
+        if (params.hasOwnProperty(i)) {
+          const input2 = document.createElement("input");
+          input2.type = "hidden";
+          input2.name = i;
+          input2.value = params[i];
+          form.appendChild(input2);
+        }
       }
-    }
-    document.body.appendChild(form);
-    let opened = window.open("", target, features);
-    form.target = target;
-    form.submit();
-    document.body.removeChild(form);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+    }).catch((error2) => {
+      this.logger.error("failed to fetch identity verification handoff token", error2);
+      opened?.close();
+    });
     return opened;
-  }
-  // NOTE: changes to this function, should also be made to in the fasten-connect-api
-  // https://github.com/fastenhealth/fasten-connect-api/blob/13d537db1111f98be38d82f9fdf1497c4b1c0239/pkg/utils/auth_response/cookie.go#L56 function
-  shouldUsePartitionedCookie() {
-    let browser = this.deviceService.browser;
-    let browser_version_parts = this.deviceService.browser_version.split(".");
-    let browser_version_info = {
-      major: 0,
-      minor: 0,
-      patch: 0
-    };
-    if (browser_version_parts.length > 0) {
-      browser_version_info.major = parseInt(browser_version_parts[0]) || 0;
-      if (browser_version_parts.length > 1) {
-        browser_version_info.minor = parseInt(browser_version_parts[1]) || 0;
-      }
-      if (browser_version_parts.length > 2) {
-        browser_version_info.patch = parseInt(browser_version_parts[2]) || 0;
-      }
-    }
-    return browser == "Safari" && (browser_version_info.major > 26 || browser_version_info.major == 26 && browser_version_info.minor >= 3);
   }
   generateWebsocketURL(roomId) {
     const websocketUrlParts = new URL(`wss://websocket.${environment.connect_base_domain}/v1`);
@@ -49847,7 +48496,7 @@ var FastenService = class _FastenService {
   }
   static {
     this.\u0275fac = function FastenService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _FastenService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger));
+      return new (__ngFactoryType__ || _FastenService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger), \u0275\u0275inject(AuthService));
     };
   }
   static {
@@ -50008,11 +48657,12 @@ var AppComponent = class _AppComponent {
       this.searchOnly = true;
     }
   }
-  constructor(activatedRoute, configService, messageBus, fastenService, router, logger) {
+  constructor(activatedRoute, configService, messageBus, fastenService, authService, router, logger) {
     this.activatedRoute = activatedRoute;
     this.configService = configService;
     this.messageBus = messageBus;
     this.fastenService = fastenService;
+    this.authService = authService;
     this.router = router;
     this.logger = logger;
     this.logoText = logoText;
@@ -50199,9 +48849,8 @@ var AppComponent = class _AppComponent {
       return apiMode;
     } else {
       this.errorMessage = "";
-      this.fastenService.getOrgByPublicId(this.publicId).subscribe((org) => {
+      this.fastenService.getOrgConfig(this.publicId).subscribe((org) => {
         this.logger.info("Fasten Connect registration", org);
-        this.loading = false;
         this.configService.systemConfig = {
           org
         };
@@ -50210,6 +48859,27 @@ var AppComponent = class _AppComponent {
           this.loading = false;
           this.errorMessage = "TEFCA mode not enabled for this organization and/or api mode. Please contact your account representative or the developer of this app.";
           this.messageBus.publishWidgetConfigError();
+          return;
+        }
+        if (this.tefcaMode) {
+          this.authService.CheckCookieSupport().then((cookieSupported) => __async(this, null, function* () {
+            if (!cookieSupported) {
+              if (this.authService.CanUseStorageAccessFallback()) {
+                this.logger.info("[AppComponent] Cookie probes were blocked; continuing with the Storage Access API fallback");
+              } else {
+                this.logger.info("[AppComponent] Cookie support was not found!");
+                yield this.router.navigateByUrl("auth/signin/cookies-required");
+              }
+              return;
+            }
+            this.logger.info("[AppComponent] Cookie support detected");
+          })).catch((err) => {
+            this.logger.error("[AppComponent] Failed to check browser cookie support", err);
+            this.errorMessage = "Could not verify browser cookie support. Please try again or contact the developer of this app.";
+            this.messageBus.publishWidgetConfigError();
+          }).finally(() => this.loading = false);
+        } else {
+          this.loading = false;
         }
       }, (err) => {
         this.loading = false;
@@ -50256,7 +48926,7 @@ var AppComponent = class _AppComponent {
   }
   static {
     this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
@@ -50296,7 +48966,7 @@ var AppComponent = class _AppComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 42 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 43 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts
@@ -52868,9 +51538,9 @@ function cleanUpFormContainer(control, dir) {
 function _noControlError(dir) {
   return _throwError(dir, "There is no FormControl instance attached to form control element with");
 }
-function _throwError(dir, message2) {
+function _throwError(dir, message) {
   const messageEnd = _describeControlLocation(dir);
-  throw new Error(`${message2} ${messageEnd}`);
+  throw new Error(`${message} ${messageEnd}`);
 }
 function _describeControlLocation(dir) {
   const path = dir.path;
@@ -57033,8 +55703,8 @@ function VaultProfileSigninComponent_ng_template_51_Template(rf, ctx) {
     \u0275\u0275elementStart(0, "p", 50);
     \u0275\u0275element(1, "br");
     \u0275\u0275text(2, "Fasten's ");
-    \u0275\u0275elementStart(3, "span", 54);
-    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_51_Template_span_click_3_listener() {
+    \u0275\u0275elementStart(3, "button", 54);
+    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_51_Template_button_click_3_listener() {
       \u0275\u0275restoreView(_r6);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.awaitUserInteractionCompleted());
@@ -57052,9 +55722,9 @@ function VaultProfileSigninComponent_ng_template_51_Template(rf, ctx) {
     \u0275\u0275pipe(12, "async");
     \u0275\u0275text(13, "Privacy Policy");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(14, "div", 55)(15, "span", 56);
+    \u0275\u0275elementStart(14, "div", 55)(15, "button", 56);
     \u0275\u0275pipe(16, "async");
-    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_51_Template_span_click_15_listener() {
+    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_51_Template_button_click_15_listener() {
       \u0275\u0275restoreView(_r6);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.awaitUserInteractionCompleted());
@@ -57083,13 +55753,12 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   get isCspRequestUriSignin() {
     return !!(this.configService.systemConfig$?.tefcaMode && this.configService.systemConfig$?.identityRequestUri);
   }
-  constructor(configService, authService, fastenService, router, logger, deviceDetectorService) {
+  constructor(configService, authService, fastenService, router, logger) {
     this.configService = configService;
     this.authService = authService;
     this.fastenService = fastenService;
     this.router = router;
     this.logger = logger;
-    this.deviceDetectorService = deviceDetectorService;
     this.loading = false;
     this.showMessage = false;
     this.submitted = false;
@@ -57108,21 +55777,12 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     if (this.configService.vaultProfileConfig$.email) {
       this.existingVaultProfile.email = this.configService.vaultProfileConfig$.email;
     }
-    if (this.configService.systemConfig$.sdkMode == SDKMode.ReactNative || this.configService.systemConfig$.sdkMode == SDKMode.Flutter) {
-      this.logger.log(`SDK Mode is ${this.configService.systemConfig$.sdkMode}. Don't attempt to request cookie storage permissions..`);
-      this.needStorageAccessPermissionSubject.next(false);
-      return;
-    }
     if (!this.checkRequiresStoragePermissions()) {
-      this.logger.log("Not Safari and not Chrome, or storage API not supported (and not necessary). Don't attempt to request cookie storage permissions.");
+      this.logger.log("Storage Access API fallback is not required or is unavailable.");
       this.needStorageAccessPermissionSubject.next(false);
     } else {
       this.hasStorageAccess().then((hasAccess) => {
-        if (hasAccess) {
-          this.needStorageAccessPermissionSubject.next(false);
-        } else {
-          this.needStorageAccessPermissionSubject.next(true);
-        }
+        this.needStorageAccessPermissionSubject.next(!hasAccess);
       });
     }
   }
@@ -57137,41 +55797,21 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.configService.vaultProfileConfig = {
       email: this.existingVaultProfile.email
     };
-    this.authService.Signout().then((m) => {
-      this.logger.info(m);
+    const storageAccessPromise = this.checkRequiresStoragePermissions() ? this.requestStorageAccess() : Promise.resolve(true);
+    const signoutPromise = this.authService.Signout().then((result) => {
+      this.logger.info(result);
+      return true;
     });
-    var chainPromise = Promise.resolve(true);
-    if (this.needStorageAccessPermissionSubject) {
-      chainPromise = this.requestStorageAccess();
-    }
-    chainPromise.then((result) => {
+    Promise.all([signoutPromise, storageAccessPromise]).then(() => {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
     }).then((resp) => __async(this, null, function* () {
-      if (this.configService.systemConfig$.apiMode === ApiMode.Test) {
-        if (!(yield this.authService.WaitForVaultAuthCookie())) {
-          this.loading = false;
-          return this.router.navigateByUrl("auth/signin/cookies-required");
-        }
-        return this.authService.GetJWTPayload().then((payload) => {
-          this.loading = false;
-          if (payload) {
-            if (resp?.has_verified_identity && resp?.verified_identity_csp_type) {
-              this.logger.info("setting verified identity csp_type csp type to", resp.verified_identity_csp_type);
-              this.configService.vaultProfileConfig = {
-                verifiedIdentityCspType: resp.verified_identity_csp_type,
-                verifiedIdentityPatientDemographics: resp.verified_identity_patient_demographics
-              };
-            }
-            return this.router.navigateByUrl("dashboard");
-          } else {
-            return this.navigateToCodePage(resp?.expires);
-          }
-        });
-      } else {
+      if (this.configService.systemConfig$.apiMode === ApiMode.Test && !(yield this.authService.WaitForVaultAuthSession())) {
         this.loading = false;
-        return this.navigateToCodePage(resp?.expires);
+        return this.router.navigateByUrl("auth/signin/cookies-required");
       }
+      this.loading = false;
+      return this.navigateToCodePage(resp?.expires);
     })).catch((err) => {
       this.loading = false;
       this.errorMsg = this.deriveSignInErrorMessage(err);
@@ -57250,7 +55890,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   }
   deriveSignInErrorMessage(err) {
-    let message2 = "An unknown error occurred during sign-in.";
+    let message = "An unknown error occurred during sign-in.";
     try {
       const status = typeof err?.status === "number" ? err.status : void 0;
       if (status === 401 || status === 403) {
@@ -57275,7 +55915,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       }
     } catch {
     }
-    return message2;
+    return message;
   }
   setMessage(action) {
     if (action === "email-changed") {
@@ -57286,62 +55926,51 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       this.message = "Password successfully changed! Please sign in with your new password.";
     }
   }
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  // Safari/Chrome privacy workaround methods because Partitioned cookies are not supported in Safari yet
-  // https://blog.certa.dev/third-party-cookie-restrictions-for-iframes-in-safari
-  //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-  //check if the browser is Safari (which requires the Storage Access API for third-party cookies)
-  isSafari() {
-    return this.deviceDetectorService.browser === BROWSERS.SAFARI;
-  }
-  //check if the browser is Chrome (which also requires the Storage Access API for third-party cookies)
-  isChrome() {
-    return this.deviceDetectorService.browser === BROWSERS.CHROME;
-  }
-  //check if the browser supports the Storage Access API (if not, we assume it is not needed)
   isStorageAccessApiSupportedByBrowser() {
-    return "hasStorageAccess" in document && "requestStorageAccess" in document;
+    return typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
   }
-  //check if the browser requires storage access permissions, or if we can assume that it is not needed
   checkRequiresStoragePermissions() {
-    return (this.isSafari() || this.isChrome()) && this.isStorageAccessApiSupportedByBrowser();
+    return this.authService.RequiresStorageAccessFallback();
   }
-  //check to see if the browser has storage access permissions granted.
-  //check to see if the browser has the embedFirstPartyCookie cookie set, which indicates that the user has interacted with the page and granted storage access.
   hasStorageAccess() {
     if (!this.isStorageAccessApiSupportedByBrowser()) {
       this.logger.warn("Storage Access API not available in this browser.");
       return Promise.resolve(true);
     }
-    return document.hasStorageAccess().then((result) => {
-      this.logger.log("Storage Access API unpartitioned or already granted!", result);
-      if (document.cookie.split("; ").find((row) => row.startsWith("embedFirstPartyCookie="))?.split("=")[1]) {
-        return true;
-      } else {
-        this.logger.log("no embedFirstPartyCookie found, storage access is partitioned or not granted yet.");
-        return false;
-      }
+    return document.hasStorageAccess().then((hasAccess) => {
+      this.logger.log("Storage Access API unpartitioned or already granted!", hasAccess);
+      return hasAccess;
     }).catch((error2) => {
-      this.logger.error("Storage access is partitioned and has not been granted", error2);
+      this.logger.error("Storage access has not been granted", error2);
       return false;
     });
   }
-  //assuming that the user has visited the /cookie URL and interacted with the page, lets attempt to request storage access
-  // the user will be promted to allow storage access, and if they do, we can continue.
-  // this function must be called from an event handler (where the user interacted wiht the page) -- ie. a click handler
   requestStorageAccess() {
     if (!this.isStorageAccessApiSupportedByBrowser()) {
       this.logger.warn("Storage Access API not available in this browser.");
       return Promise.resolve(true);
     }
-    return document.requestStorageAccess().then(() => {
+    return document.requestStorageAccess().then(() => __async(this, null, function* () {
       this.logger.log("Storage access granted!");
-      return Promise.resolve(true);
-    }).catch((error2) => {
+      const cookieSupported = yield this.authService.CheckCookieSupport(CookieProbeScope.Regular);
+      if (!cookieSupported) {
+        const error2 = new Error("Storage access was granted, but cookies are still blocked. Please allow cookies and try again.");
+        this.restoreFirstPartyConsent();
+        this.logger.error("Storage access cookie verification failed", error2);
+        throw error2;
+      }
+      return true;
+    }), (error2) => {
+      this.restoreFirstPartyConsent();
       this.logger.log("Storage access denied by user", error2);
       alert("Cookies are required for the Fasten widget to function. Please allow storage access to continue.");
-      return Promise.reject(false);
+      return Promise.reject(error2);
     });
+  }
+  restoreFirstPartyConsent() {
+    this.needStorageAccessPermissionSubject.next(true);
+    this.userInteractionCompletedSubject.next(false);
+    this.userInteractionWindowOpened = false;
   }
   awaitUserInteractionCompleted() {
     if (!this.needStorageAccessPermissionSubject.getValue()) {
@@ -57365,11 +55994,11 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
   static {
     this.\u0275fac = function VaultProfileSigninComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(DeviceDetectorService));
+      return new (__ngFactoryType__ || _VaultProfileSigninComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], decls: 58, vars: 26, consts: [["vaultProfileForm", "ngForm"], ["needStorageAccessPermissionTemplate", ""], ["email", "ngModel"], ["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [3, "ngSubmit", "ngClass"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], [4, "ngIf"], ["class", "text-xs text-gray-400 text-center", 4, "ngIf", "ngIfElse"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "block", "text-sm", "font-medium", "text-gray-700"], ["name", "email", "required", "", "email", "", "minlength", "4", "type", "email", "placeholder", "you@example.com", 1, "block", "w-full", "mt-2", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["id", "test-identity-emails", 4, "ngIf"], ["id", "initialError", "class", "text-sm text-red-500", 4, "ngIf"], ["id", "test-identity-emails"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], ["id", "initialError", 1, "text-sm", "text-red-500"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], [1, "text-gray-500", "hover:text-gray-600", "underline", 3, "click"], [1, "flex", "items-center", "justify-center"], [1, "custom-checkbox", "ml-2", "text-sm", "text-gray-600", 3, "click", "ngClass"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], decls: 58, vars: 26, consts: [["vaultProfileForm", "ngForm"], ["needStorageAccessPermissionTemplate", ""], ["email", "ngModel"], ["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [3, "ngSubmit", "ngClass"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], [4, "ngIf"], ["class", "text-xs text-gray-400 text-center", 4, "ngIf", "ngIfElse"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "block", "text-sm", "font-medium", "text-gray-700"], ["name", "email", "required", "", "email", "", "minlength", "4", "type", "email", "placeholder", "you@example.com", 1, "block", "w-full", "mt-2", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["id", "test-identity-emails", 4, "ngIf"], ["id", "initialError", "class", "text-sm text-red-500", 4, "ngIf"], ["id", "test-identity-emails"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], ["id", "initialError", 1, "text-sm", "text-red-500"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], ["type", "button", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "click"], [1, "flex", "items-center", "justify-center"], ["type", "button", 1, "custom-checkbox", "ml-2", "text-sm", "text-gray-600", 3, "click", "ngClass"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
       if (rf & 1) {
         const _r1 = \u0275\u0275getCurrentView();
         \u0275\u0275elementStart(0, "div", 3);
@@ -57516,11 +56145,674 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 34 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 33 });
+})();
+
+// node_modules/angular-code-input/fesm2022/angular-code-input.mjs
+var _c02 = ["input"];
+function CodeInputComponent_span_0_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "span")(1, "input", 2, 0);
+    \u0275\u0275listener("click", function CodeInputComponent_span_0_Template_input_click_1_listener($event) {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onClick($event));
+    })("paste", function CodeInputComponent_span_0_Template_input_paste_1_listener($event) {
+      const i_r3 = \u0275\u0275restoreView(_r1).index;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onPaste($event, i_r3));
+    })("input", function CodeInputComponent_span_0_Template_input_input_1_listener($event) {
+      const i_r3 = \u0275\u0275restoreView(_r1).index;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onInput($event, i_r3));
+    })("keydown", function CodeInputComponent_span_0_Template_input_keydown_1_listener($event) {
+      const i_r3 = \u0275\u0275restoreView(_r1).index;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onKeydown($event, i_r3));
+    });
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275classProp("code-hidden", ctx_r1.isCodeHidden);
+    \u0275\u0275advance();
+    \u0275\u0275property("type", ctx_r1.inputType)("disabled", ctx_r1.disabled);
+    \u0275\u0275attribute("inputmode", ctx_r1.inputMode)("autocapitalize", ctx_r1.autocapitalize);
+  }
+}
+var CodeInputComponentConfigToken = new InjectionToken("CodeInputComponentConfig");
+var defaultComponentConfig = {
+  codeLength: 4,
+  inputType: "tel",
+  inputMode: "numeric",
+  initialFocusField: void 0,
+  isCharsCode: false,
+  isCodeHidden: false,
+  isPrevFocusableAfterClearing: true,
+  isFocusingOnLastByClickIfFilled: false,
+  code: void 0,
+  disabled: false,
+  autocapitalize: void 0
+};
+var InputState;
+(function(InputState2) {
+  InputState2[InputState2["ready"] = 0] = "ready";
+  InputState2[InputState2["reset"] = 1] = "reset";
+})(InputState || (InputState = {}));
+var CodeInputComponent = class _CodeInputComponent {
+  constructor(config2) {
+    this.isNonDigitsCode = false;
+    this.codeChanged = new EventEmitter();
+    this.codeCompleted = new EventEmitter();
+    this.placeholders = [];
+    this.inputs = [];
+    this.inputsStates = [];
+    this.state = {
+      isFocusingAfterAppearingCompleted: false,
+      isInitialFocusFieldEnabled: false
+    };
+    Object.assign(this, defaultComponentConfig);
+    if (!config2) {
+      return;
+    }
+    for (const prop in config2) {
+      if (!config2.hasOwnProperty(prop)) {
+        continue;
+      }
+      if (!defaultComponentConfig.hasOwnProperty(prop)) {
+        continue;
+      }
+      this[prop] = config2[prop];
+    }
+  }
+  /**
+   * Life cycle
+   */
+  ngOnInit() {
+    this.state.isInitialFocusFieldEnabled = !this.isEmpty(this.initialFocusField);
+    this.onCodeLengthChanges();
+  }
+  ngAfterViewInit() {
+    this.inputsListSubscription = this.inputsList.changes.subscribe(this.onInputsListChanges.bind(this));
+    this.onInputsListChanges(this.inputsList);
+  }
+  ngAfterViewChecked() {
+    this.focusOnInputAfterAppearing();
+  }
+  ngOnChanges(changes) {
+    if (changes.code) {
+      this.onInputCodeChanges();
+    }
+    if (changes.codeLength) {
+      this.onCodeLengthChanges();
+    }
+  }
+  ngOnDestroy() {
+    if (this.inputsListSubscription) {
+      this.inputsListSubscription.unsubscribe();
+    }
+  }
+  /**
+   * Methods
+   */
+  reset(isChangesEmitting = false) {
+    this.onInputCodeChanges();
+    if (this.state.isInitialFocusFieldEnabled) {
+      this.focusOnField(this.initialFocusField);
+    }
+    if (isChangesEmitting) {
+      this.emitChanges();
+    }
+  }
+  focusOnField(index) {
+    if (index >= this._codeLength) {
+      throw new Error("The index of the focusing input box should be less than the codeLength.");
+    }
+    this.inputs[index].focus();
+  }
+  onClick(e2) {
+    if (!this.isFocusingOnLastByClickIfFilled) {
+      return;
+    }
+    const target = e2.target;
+    const last4 = this.inputs[this._codeLength - 1];
+    if (target === last4) {
+      return;
+    }
+    const isFilled = this.getCurrentFilledCode().length >= this._codeLength;
+    if (!isFilled) {
+      return;
+    }
+    setTimeout(() => last4.focus());
+  }
+  onInput(e2, i) {
+    const target = e2.target;
+    const value = e2.data || target.value;
+    if (this.isEmpty(value)) {
+      return;
+    }
+    if (!this.canInputValue(value)) {
+      e2.preventDefault();
+      e2.stopPropagation();
+      this.setInputValue(target, null);
+      this.setStateForInput(target, InputState.reset);
+      return;
+    }
+    const values = value.toString().trim().split("");
+    for (let j = 0; j < values.length; j++) {
+      const index = j + i;
+      if (index > this._codeLength - 1) {
+        break;
+      }
+      this.setInputValue(this.inputs[index], values[j]);
+    }
+    this.emitChanges();
+    const next = i + values.length;
+    if (next > this._codeLength - 1) {
+      target.blur();
+      return;
+    }
+    this.inputs[next].focus();
+  }
+  onPaste(e2, i) {
+    e2.preventDefault();
+    e2.stopPropagation();
+    const data = e2.clipboardData ? e2.clipboardData.getData("text").trim() : void 0;
+    if (this.isEmpty(data)) {
+      return;
+    }
+    const values = data.split("");
+    let valIndex = 0;
+    for (let j = i; j < this.inputs.length; j++) {
+      if (valIndex === values.length) {
+        break;
+      }
+      const input2 = this.inputs[j];
+      const val = values[valIndex];
+      if (!this.canInputValue(val)) {
+        this.setInputValue(input2, null);
+        this.setStateForInput(input2, InputState.reset);
+        return;
+      }
+      this.setInputValue(input2, val.toString());
+      valIndex++;
+    }
+    this.inputs[i].blur();
+    this.emitChanges();
+  }
+  onKeydown(e2, i) {
+    return __async(this, null, function* () {
+      const target = e2.target;
+      const isTargetEmpty = this.isEmpty(target.value);
+      const prev = i - 1;
+      const isBackspaceKey = yield this.isBackspaceKey(e2);
+      const isDeleteKey = this.isDeleteKey(e2);
+      if (!isBackspaceKey && !isDeleteKey) {
+        return;
+      }
+      e2.preventDefault();
+      this.setInputValue(target, null);
+      if (!isTargetEmpty) {
+        this.emitChanges();
+      }
+      if (prev < 0 || isDeleteKey) {
+        return;
+      }
+      if (isTargetEmpty || this.isPrevFocusableAfterClearing) {
+        this.inputs[prev].focus();
+      }
+    });
+  }
+  onInputCodeChanges() {
+    if (!this.inputs.length) {
+      return;
+    }
+    if (this.isEmpty(this.code)) {
+      this.inputs.forEach((input2) => {
+        this.setInputValue(input2, null);
+      });
+      return;
+    }
+    const chars2 = this.code.toString().trim().split("");
+    let isAllCharsAreAllowed = true;
+    for (const char of chars2) {
+      if (!this.canInputValue(char)) {
+        isAllCharsAreAllowed = false;
+        break;
+      }
+    }
+    this.inputs.forEach((input2, index) => {
+      const value = isAllCharsAreAllowed ? chars2[index] : null;
+      this.setInputValue(input2, value);
+    });
+  }
+  onCodeLengthChanges() {
+    if (!this.codeLength) {
+      return;
+    }
+    this._codeLength = this.codeLength;
+    if (this._codeLength > this.placeholders.length) {
+      const numbers = Array(this._codeLength - this.placeholders.length).fill(1);
+      this.placeholders.splice(this.placeholders.length - 1, 0, ...numbers);
+    } else if (this._codeLength < this.placeholders.length) {
+      this.placeholders.splice(this._codeLength);
+    }
+  }
+  onInputsListChanges(list) {
+    if (list.length > this.inputs.length) {
+      const inputsToAdd = list.filter((item, index) => index > this.inputs.length - 1);
+      this.inputs.splice(this.inputs.length, 0, ...inputsToAdd.map((item) => item.nativeElement));
+      const states = Array(inputsToAdd.length).fill(InputState.ready);
+      this.inputsStates.splice(this.inputsStates.length, 0, ...states);
+    } else if (list.length < this.inputs.length) {
+      this.inputs.splice(list.length);
+      this.inputsStates.splice(list.length);
+    }
+    this.onInputCodeChanges();
+  }
+  focusOnInputAfterAppearing() {
+    if (!this.state.isInitialFocusFieldEnabled) {
+      return;
+    }
+    if (this.state.isFocusingAfterAppearingCompleted) {
+      return;
+    }
+    this.focusOnField(this.initialFocusField);
+    this.state.isFocusingAfterAppearingCompleted = document.activeElement === this.inputs[this.initialFocusField];
+  }
+  emitChanges() {
+    setTimeout(() => this.emitCode(), 50);
+  }
+  emitCode() {
+    const code = this.getCurrentFilledCode();
+    this.codeChanged.emit(code);
+    if (code.length >= this._codeLength) {
+      this.codeCompleted.emit(code);
+    }
+  }
+  getCurrentFilledCode() {
+    let code = "";
+    for (const input2 of this.inputs) {
+      if (!this.isEmpty(input2.value)) {
+        code += input2.value;
+      }
+    }
+    return code;
+  }
+  isBackspaceKey(e2) {
+    const isBackspace = e2.key && e2.key.toLowerCase() === "backspace" || e2.keyCode && e2.keyCode === 8;
+    if (isBackspace) {
+      return Promise.resolve(true);
+    }
+    if (!e2.keyCode || e2.keyCode !== 229) {
+      return Promise.resolve(false);
+    }
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const input2 = e2.target;
+        const isReset = this.getStateForInput(input2) === InputState.reset;
+        if (isReset) {
+          this.setStateForInput(input2, InputState.ready);
+        }
+        resolve(input2.selectionStart === 0 && !isReset);
+      });
+    });
+  }
+  isDeleteKey(e2) {
+    return e2.key && e2.key.toLowerCase() === "delete" || e2.keyCode && e2.keyCode === 46;
+  }
+  setInputValue(input2, value) {
+    const isEmpty = this.isEmpty(value);
+    const valueClassCSS = "has-value";
+    const emptyClassCSS = "empty";
+    if (isEmpty) {
+      input2.value = "";
+      input2.classList.remove(valueClassCSS);
+      input2.parentElement.classList.add(emptyClassCSS);
+    } else {
+      input2.value = value;
+      input2.classList.add(valueClassCSS);
+      input2.parentElement.classList.remove(emptyClassCSS);
+    }
+  }
+  canInputValue(value) {
+    if (this.isEmpty(value)) {
+      return false;
+    }
+    const isDigitsValue = /^[0-9]+$/.test(value.toString());
+    return isDigitsValue || this.isCharsCode || this.isNonDigitsCode;
+  }
+  setStateForInput(input2, state) {
+    const index = this.inputs.indexOf(input2);
+    if (index < 0) {
+      return;
+    }
+    this.inputsStates[index] = state;
+  }
+  getStateForInput(input2) {
+    const index = this.inputs.indexOf(input2);
+    return this.inputsStates[index];
+  }
+  isEmpty(value) {
+    return value === null || value === void 0 || !value.toString().length;
+  }
+  static {
+    this.\u0275fac = function CodeInputComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _CodeInputComponent)(\u0275\u0275directiveInject(CodeInputComponentConfigToken, 8));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _CodeInputComponent,
+      selectors: [["code-input"]],
+      viewQuery: function CodeInputComponent_Query(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275viewQuery(_c02, 5);
+        }
+        if (rf & 2) {
+          let _t;
+          \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.inputsList = _t);
+        }
+      },
+      inputs: {
+        codeLength: "codeLength",
+        inputType: "inputType",
+        inputMode: "inputMode",
+        initialFocusField: "initialFocusField",
+        isNonDigitsCode: "isNonDigitsCode",
+        isCharsCode: "isCharsCode",
+        isCodeHidden: "isCodeHidden",
+        isPrevFocusableAfterClearing: "isPrevFocusableAfterClearing",
+        isFocusingOnLastByClickIfFilled: "isFocusingOnLastByClickIfFilled",
+        code: "code",
+        disabled: "disabled",
+        autocapitalize: "autocapitalize"
+      },
+      outputs: {
+        codeChanged: "codeChanged",
+        codeCompleted: "codeCompleted"
+      },
+      standalone: false,
+      features: [\u0275\u0275NgOnChangesFeature],
+      decls: 1,
+      vars: 1,
+      consts: [["input", ""], [3, "code-hidden", 4, "ngFor", "ngForOf"], ["autocomplete", "one-time-code", 3, "click", "paste", "input", "keydown", "type", "disabled"]],
+      template: function CodeInputComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275template(0, CodeInputComponent_span_0_Template, 3, 6, "span", 1);
+        }
+        if (rf & 2) {
+          \u0275\u0275property("ngForOf", ctx.placeholders);
+        }
+      },
+      dependencies: [NgForOf],
+      styles: ["[_nghost-%COMP%]{--text-security-type: disc;--item-spacing: 4px;--item-height: 4.375em;--item-border: 1px solid #dddddd;--item-border-bottom: 1px solid #dddddd;--item-border-has-value: 1px solid #dddddd;--item-border-bottom-has-value: 1px solid #dddddd;--item-border-focused: 1px solid #dddddd;--item-border-bottom-focused: 1px solid #dddddd;--item-shadow-focused: 0px 1px 5px rgba(221, 221, 221, 1);--item-border-radius: 5px;--item-background: transparent;--item-font-weight: 300;--color: #171516;display:flex;transform:translateZ(0);font-size:inherit;color:var(--color)}[_nghost-%COMP%]   span[_ngcontent-%COMP%]{display:block;flex:1;padding-right:var(--item-spacing)}[_nghost-%COMP%]   span[_ngcontent-%COMP%]:first-child{padding-left:var(--item-spacing)}[_nghost-%COMP%]   span.code-hidden[_ngcontent-%COMP%]   input[_ngcontent-%COMP%]{text-security:var(--text-security-type);-webkit-text-security:var(--text-security-type);-moz-text-security:var(--text-security-type)}[_nghost-%COMP%]   input[_ngcontent-%COMP%]{width:100%;height:var(--item-height);color:inherit;background:var(--item-background);text-align:center;font-size:inherit;font-weight:var(--item-font-weight);border:var(--item-border);border-bottom:var(--item-border-bottom);border-radius:var(--item-border-radius);-webkit-appearance:none;transform:translateZ(0);-webkit-transform:translate3d(0,0,0);outline:none}[_nghost-%COMP%]   input.has-value[_ngcontent-%COMP%]{border:var(--item-border-has-value);border-bottom:var(--item-border-bottom-has-value)}[_nghost-%COMP%]   input[_ngcontent-%COMP%]:focus{border:var(--item-border-focused);border-bottom:var(--item-border-bottom-focused);box-shadow:var(--item-shadow-focused)}"]
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CodeInputComponent, [{
+    type: Component,
+    args: [{
+      selector: "code-input",
+      template: '<span *ngFor="let holder of placeholders; index as i"\n      [class.code-hidden]="isCodeHidden">\n  <input #input\n         (click)="onClick($event)"\n         (paste)="onPaste($event, i)"\n         (input)="onInput($event, i)"\n         (keydown)="onKeydown($event, i)"\n         [type]="inputType"\n         [disabled]="disabled"\n         [attr.inputmode]="inputMode"\n         [attr.autocapitalize]="autocapitalize"\n         autocomplete="one-time-code"/>\n</span>\n',
+      styles: [":host{--text-security-type: disc;--item-spacing: 4px;--item-height: 4.375em;--item-border: 1px solid #dddddd;--item-border-bottom: 1px solid #dddddd;--item-border-has-value: 1px solid #dddddd;--item-border-bottom-has-value: 1px solid #dddddd;--item-border-focused: 1px solid #dddddd;--item-border-bottom-focused: 1px solid #dddddd;--item-shadow-focused: 0px 1px 5px rgba(221, 221, 221, 1);--item-border-radius: 5px;--item-background: transparent;--item-font-weight: 300;--color: #171516;display:flex;transform:translateZ(0);font-size:inherit;color:var(--color)}:host span{display:block;flex:1;padding-right:var(--item-spacing)}:host span:first-child{padding-left:var(--item-spacing)}:host span.code-hidden input{text-security:var(--text-security-type);-webkit-text-security:var(--text-security-type);-moz-text-security:var(--text-security-type)}:host input{width:100%;height:var(--item-height);color:inherit;background:var(--item-background);text-align:center;font-size:inherit;font-weight:var(--item-font-weight);border:var(--item-border);border-bottom:var(--item-border-bottom);border-radius:var(--item-border-radius);-webkit-appearance:none;transform:translateZ(0);-webkit-transform:translate3d(0,0,0);outline:none}:host input.has-value{border:var(--item-border-has-value);border-bottom:var(--item-border-bottom-has-value)}:host input:focus{border:var(--item-border-focused);border-bottom:var(--item-border-bottom-focused);box-shadow:var(--item-shadow-focused)}\n"]
+    }]
+  }], function() {
+    return [{
+      type: void 0,
+      decorators: [{
+        type: Optional
+      }, {
+        type: Inject,
+        args: [CodeInputComponentConfigToken]
+      }]
+    }];
+  }, {
+    inputsList: [{
+      type: ViewChildren,
+      args: ["input"]
+    }],
+    codeLength: [{
+      type: Input
+    }],
+    inputType: [{
+      type: Input
+    }],
+    inputMode: [{
+      type: Input
+    }],
+    initialFocusField: [{
+      type: Input
+    }],
+    isNonDigitsCode: [{
+      type: Input
+    }],
+    isCharsCode: [{
+      type: Input
+    }],
+    isCodeHidden: [{
+      type: Input
+    }],
+    isPrevFocusableAfterClearing: [{
+      type: Input
+    }],
+    isFocusingOnLastByClickIfFilled: [{
+      type: Input
+    }],
+    code: [{
+      type: Input
+    }],
+    disabled: [{
+      type: Input
+    }],
+    autocapitalize: [{
+      type: Input
+    }],
+    codeChanged: [{
+      type: Output
+    }],
+    codeCompleted: [{
+      type: Output
+    }]
+  });
+})();
+var CodeInputModule = class _CodeInputModule {
+  static forRoot(config2) {
+    return {
+      ngModule: _CodeInputModule,
+      providers: [{
+        provide: CodeInputComponentConfigToken,
+        useValue: config2
+      }]
+    };
+  }
+  static {
+    this.\u0275fac = function CodeInputModule_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _CodeInputModule)();
+    };
+  }
+  static {
+    this.\u0275mod = /* @__PURE__ */ \u0275\u0275defineNgModule({
+      type: _CodeInputModule
+    });
+  }
+  static {
+    this.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
+      imports: [CommonModule]
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(CodeInputModule, [{
+    type: NgModule,
+    args: [{
+      imports: [CommonModule],
+      declarations: [CodeInputComponent],
+      exports: [CodeInputComponent]
+    }]
+  }], null, null);
+})();
+
+// projects/fasten-connect-stitch-embed/src/app/components/dev-tools/dev-tools.component.ts
+var _c03 = (a0, a1, a2, a3) => ({ "border-gray-400 text-gray-800 hover:bg-gray-50": a0, "border-gray-400 text-gray-600": a1, "border-green-500 text-green-700": a2, "border-red-500 text-red-700 hover:bg-red-50": a3 });
+function DevToolsComponent_div_9__svg_svg_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 15);
+    \u0275\u0275element(1, "path", 16);
+    \u0275\u0275elementEnd();
+  }
+}
+function DevToolsComponent_div_9__svg_svg_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 17);
+    \u0275\u0275element(1, "circle", 18)(2, "path", 19);
+    \u0275\u0275elementEnd();
+  }
+}
+function DevToolsComponent_div_9__svg_svg_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 20);
+    \u0275\u0275element(1, "path", 21)(2, "path", 22)(3, "path", 23);
+    \u0275\u0275elementEnd();
+  }
+}
+function DevToolsComponent_div_9__svg_svg_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 24);
+    \u0275\u0275element(1, "path", 25)(2, "path", 26);
+    \u0275\u0275elementEnd();
+  }
+}
+function DevToolsComponent_div_9_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 8)(1, "button", 9);
+    \u0275\u0275listener("click", function DevToolsComponent_div_9_Template_button_click_1_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.resetConnections.emit());
+    });
+    \u0275\u0275template(2, DevToolsComponent_div_9__svg_svg_2_Template, 2, 0, "svg", 10)(3, DevToolsComponent_div_9__svg_svg_3_Template, 3, 0, "svg", 11)(4, DevToolsComponent_div_9__svg_svg_4_Template, 4, 0, "svg", 12)(5, DevToolsComponent_div_9__svg_svg_5_Template, 3, 0, "svg", 13);
+    \u0275\u0275elementStart(6, "span");
+    \u0275\u0275text(7);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(8, "span", 14);
+    \u0275\u0275text(9);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275property("disabled", ctx_r1.resetState === "loading")("ngClass", \u0275\u0275pureFunction4(10, _c03, ctx_r1.resetState === "idle", ctx_r1.resetState === "loading", ctx_r1.resetState === "success", ctx_r1.resetState === "error"));
+    \u0275\u0275attribute("aria-busy", ctx_r1.resetState === "loading")("title", ctx_r1.resetConnectionsTooltip);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.resetState === "loading");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.resetState === "success");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.resetState === "error");
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.resetState === "idle");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r1.resetButtonLabel);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate1(" ", ctx_r1.resetConnectionsTooltip, " ");
+  }
+}
+function DevToolsComponent_div_10_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 8)(1, "button", 27);
+    \u0275\u0275listener("click", function DevToolsComponent_div_10_Template_button_click_1_listener() {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.skip.emit());
+    });
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(2, "svg", 28);
+    \u0275\u0275element(3, "polygon", 29)(4, "line", 30);
+    \u0275\u0275elementEnd();
+    \u0275\u0275namespaceHTML();
+    \u0275\u0275elementStart(5, "span");
+    \u0275\u0275text(6, "Skip");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(7, "span", 31);
+    \u0275\u0275text(8);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275attribute("title", ctx_r1.skipTooltip);
+    \u0275\u0275advance(7);
+    \u0275\u0275textInterpolate1(" ", ctx_r1.skipTooltip, " ");
+  }
+}
+var DevToolsComponent = class _DevToolsComponent {
+  constructor() {
+    this.showSkip = false;
+    this.showResetConnections = false;
+    this.resetState = "idle";
+    this.skipTooltip = "Continue without completing this step.";
+    this.resetConnectionsTooltip = "Remove the test connections associated with this profile.";
+    this.skip = new EventEmitter();
+    this.resetConnections = new EventEmitter();
+  }
+  get resetButtonLabel() {
+    switch (this.resetState) {
+      case "loading":
+        return "Resetting...";
+      case "success":
+        return "Connections reset";
+      case "error":
+        return "Retry reset";
+      default:
+        return "Reset connections";
+    }
+  }
+  static {
+    this.\u0275fac = function DevToolsComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _DevToolsComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DevToolsComponent, selectors: [["app-dev-tools"]], inputs: { showSkip: "showSkip", showResetConnections: "showResetConnections", resetState: "resetState", skipTooltip: "skipTooltip", resetConnectionsTooltip: "resetConnectionsTooltip" }, outputs: { skip: "skip", resetConnections: "resetConnections" }, decls: 11, vars: 2, consts: [["id", "dev-tools-banner", "aria-label", "Developer tools", 1, "fixed", "inset-x-0", "bottom-0", "z-50", "w-full", "rounded-b-lg", "border-t", "border-gray-300", "bg-gray-200", "px-3", "py-2", "text-gray-800", "shadow-[0_-2px_8px_rgba(0,0,0,0.12)]"], [1, "flex", "min-h-10", "items-center", "justify-center", "gap-2", "sm:gap-3"], [1, "dev-tools-label", "flex", "shrink-0", "items-center", "gap-1.5", "text-xs", "font-semibold", "uppercase", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-wrench"], ["d", "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"], ["aria-hidden", "true", 1, "h-6", "w-px", "shrink-0", "bg-gray-400"], [1, "flex", "items-center", "justify-center", "gap-2"], ["class", "dev-tool-action-group relative", 4, "ngIf"], [1, "dev-tool-action-group", "relative"], ["type", "button", "id", "dev-tools-reset-connections-button", "aria-describedby", "dev-tools-reset-connections-tooltip", 1, "flex", "h-9", "items-center", "justify-center", "gap-1.5", "whitespace-nowrap", "rounded-md", "border", "bg-white", "px-3", "text-sm", "font-medium", "shadow-sm", "transition-colors", "focus:outline-none", "focus:ring-2", "focus:ring-gray-600", "focus:ring-offset-2", "focus:ring-offset-gray-200", "disabled:cursor-not-allowed", "disabled:opacity-70", 3, "click", "disabled", "ngClass"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-loader-circle animate-spin", 4, "ngIf"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-circle-check", 4, "ngIf"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-triangle-alert", 4, "ngIf"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-rotate-ccw", 4, "ngIf"], ["id", "dev-tools-reset-connections-tooltip", "role", "tooltip", 1, "dev-tool-tooltip"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-loader-circle", "animate-spin"], ["d", "M21 12a9 9 0 1 1-6.219-8.56"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-circle-check"], ["cx", "12", "cy", "12", "r", "10"], ["d", "m9 12 2 2 4-4"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-triangle-alert"], ["d", "m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"], ["d", "M12 9v4"], ["d", "M12 17h.01"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-rotate-ccw"], ["d", "M3 12a9 9 0 1 0 3-6.7L3 8"], ["d", "M3 3v5h5"], ["type", "button", "id", "dev-tools-skip-button", "aria-describedby", "dev-tools-skip-tooltip", 1, "flex", "h-9", "items-center", "justify-center", "gap-1.5", "whitespace-nowrap", "rounded-md", "border", "border-[#5B47FB]", "bg-[#5B47FB]", "px-3", "text-sm", "font-medium", "text-white", "shadow-sm", "transition-colors", "hover:border-[#4936E8]", "hover:bg-[#4936E8]", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-offset-2", "focus:ring-offset-gray-200", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-skip-forward"], ["points", "5 4 15 12 5 20 5 4"], ["x1", "19", "x2", "19", "y1", "5", "y2", "19"], ["id", "dev-tools-skip-tooltip", "role", "tooltip", 1, "dev-tool-tooltip"]], template: function DevToolsComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "aside", 0)(1, "div", 1)(2, "div", 2);
+        \u0275\u0275namespaceSVG();
+        \u0275\u0275elementStart(3, "svg", 3);
+        \u0275\u0275element(4, "path", 4);
+        \u0275\u0275elementEnd();
+        \u0275\u0275namespaceHTML();
+        \u0275\u0275elementStart(5, "span");
+        \u0275\u0275text(6, "Dev tools");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275element(7, "span", 5);
+        \u0275\u0275elementStart(8, "div", 6);
+        \u0275\u0275template(9, DevToolsComponent_div_9_Template, 10, 15, "div", 7)(10, DevToolsComponent_div_10_Template, 9, 2, "div", 7);
+        \u0275\u0275elementEnd()()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance(9);
+        \u0275\u0275property("ngIf", ctx.showResetConnections);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.showSkip);
+      }
+    }, dependencies: [CommonModule, NgClass, NgIf], styles: ["\n\n[_nghost-%COMP%] {\n  display: block;\n  min-height: 3.5rem;\n}\n.dev-tool-tooltip[_ngcontent-%COMP%] {\n  position: fixed;\n  right: 0.5rem;\n  bottom: 3.75rem;\n  left: 0.5rem;\n  width: fit-content;\n  max-width: min(24rem, calc(100vw - 1rem));\n  margin: 0 auto;\n  padding: 0.5rem 0.625rem;\n  border-radius: 0.375rem;\n  background: #111827;\n  color: #ffffff;\n  font-size: 0.75rem;\n  font-weight: 400;\n  line-height: 1rem;\n  text-align: left;\n  white-space: normal;\n  visibility: hidden;\n  opacity: 0;\n  pointer-events: none;\n  transition: opacity 0.15s ease;\n}\n.dev-tool-action-group[_ngcontent-%COMP%]:hover   .dev-tool-tooltip[_ngcontent-%COMP%], \n.dev-tool-action-group[_ngcontent-%COMP%]:focus-within   .dev-tool-tooltip[_ngcontent-%COMP%] {\n  visibility: visible;\n  opacity: 1;\n}\n@media (max-width: 359px) {\n  .dev-tools-label[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n    display: none;\n  }\n}\n/*# sourceMappingURL=dev-tools.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DevToolsComponent, { className: "DevToolsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/dev-tools/dev-tools.component.ts", lineNumber: 13 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/components/verification-code-input/verification-code-input.component.ts
-var _c02 = ["digitInput"];
+var _c04 = ["digitInput"];
 function VerificationCodeInputComponent_input_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -57640,7 +56932,7 @@ var VerificationCodeInputComponent = class _VerificationCodeInputComponent {
   static {
     this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VerificationCodeInputComponent, selectors: [["app-verification-code-input"]], viewQuery: function VerificationCodeInputComponent_Query(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275viewQuery(_c02, 5);
+        \u0275\u0275viewQuery(_c04, 5);
       }
       if (rf & 2) {
         let _t;
@@ -57666,7 +56958,7 @@ var VerificationCodeInputComponent = class _VerificationCodeInputComponent {
 // projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts
 function VaultProfileSigninCodeComponent_p_13_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 11);
+    \u0275\u0275elementStart(0, "p", 12);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -57679,7 +56971,7 @@ function VaultProfileSigninCodeComponent_p_13_Template(rf, ctx) {
 function VaultProfileSigninCodeComponent_button_21_Template(rf, ctx) {
   if (rf & 1) {
     const _r2 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 12);
+    \u0275\u0275elementStart(0, "button", 13);
     \u0275\u0275listener("click", function VaultProfileSigninCodeComponent_button_21_Template_button_click_0_listener() {
       \u0275\u0275restoreView(_r2);
       const ctx_r0 = \u0275\u0275nextContext();
@@ -57697,7 +56989,7 @@ function VaultProfileSigninCodeComponent_button_21_Template(rf, ctx) {
 }
 function VaultProfileSigninCodeComponent_p_22_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 13);
+    \u0275\u0275elementStart(0, "p", 14);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
@@ -57705,6 +56997,21 @@ function VaultProfileSigninCodeComponent_p_22_Template(rf, ctx) {
     const ctx_r0 = \u0275\u0275nextContext();
     \u0275\u0275advance();
     \u0275\u0275textInterpolate1(" ", ctx_r0.resendCodeTooltip, " ");
+  }
+}
+function VaultProfileSigninCodeComponent_app_dev_tools_23_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "app-dev-tools", 15);
+    \u0275\u0275listener("skip", function VaultProfileSigninCodeComponent_app_dev_tools_23_Template_app_dev_tools_skip_0_listener() {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.skipSignInCode());
+    });
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    \u0275\u0275property("showSkip", true);
   }
 }
 var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
@@ -57735,6 +57042,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     this.loading = false;
     this.resendLoading = false;
     this.errorMsg = "";
+    this.canSkipSignInCode = false;
     this.currentEmail = "test@example.com";
     this.codeExpiresAt$ = new BehaviorSubject(0);
     this.resendEligibilityWindowSeconds = 4 * 60;
@@ -57746,13 +57054,26 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     )));
   }
   ngOnInit() {
+    void this.checkCanSkipSignInCode();
+  }
+  checkCanSkipSignInCode() {
+    return __async(this, null, function* () {
+      this.canSkipSignInCode = false;
+      if (this.configService.systemConfig$.apiMode !== ApiMode.Test) {
+        return;
+      }
+      this.canSkipSignInCode = !!(yield this.authService.GetSession());
+    });
+  }
+  skipSignInCode() {
+    return this.router.navigateByUrl("dashboard");
   }
   onCodeCompleted(code) {
     this.loading = true;
     this.logger.info("submit finish", this.currentEmail, code);
     this.authService.VaultAuthFinish(this.currentEmail, code).then((resp) => __async(this, null, function* () {
       console.log("VaultAuthFinish result", resp);
-      const isAuthCookieSet = yield this.authService.WaitForVaultAuthCookie();
+      const isAuthCookieSet = yield this.authService.WaitForVaultAuthSession();
       this.loading = false;
       if (!isAuthCookieSet) {
         return this.router.navigateByUrl("auth/signin/cookies-required");
@@ -57799,7 +57120,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail", codeExpiresAt: [2, "codeExpiresAt", "codeExpiresAt", numberAttribute] }, decls: 23, vars: 11, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2"], [3, "codeCompleted", "disabled"], ["id", "verification-error", "class", "text-sm text-red-500", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["id", "verification-countdown", 1, "font-semibold", "text-gray-900"], ["type", "button", "id", "resend-code", "class", "verification-button", 3, "disabled", "click", 4, "ngIf"], ["id", "resend-code-help", "class", "text-xs text-gray-600", 4, "ngIf"], ["id", "verification-error", 1, "text-sm", "text-red-500"], ["type", "button", "id", "resend-code", 1, "verification-button", 3, "click", "disabled"], ["id", "resend-code-help", 1, "text-xs", "text-gray-600"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail", codeExpiresAt: [2, "codeExpiresAt", "codeExpiresAt", numberAttribute] }, decls: 24, vars: 12, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2"], [3, "codeCompleted", "disabled"], ["id", "verification-error", "class", "text-sm text-red-500", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["id", "verification-countdown", 1, "font-semibold", "text-gray-900"], ["type", "button", "id", "resend-code", "class", "verification-button", 3, "disabled", "click", 4, "ngIf"], ["id", "resend-code-help", "class", "text-xs text-gray-600", 4, "ngIf"], ["skipTooltip", "Continue without entering the test authentication code.", 3, "showSkip", "skip", 4, "ngIf"], ["id", "verification-error", 1, "text-sm", "text-red-500"], ["type", "button", "id", "resend-code", 1, "verification-button", 3, "click", "disabled"], ["id", "resend-code-help", 1, "text-xs", "text-gray-600"], ["skipTooltip", "Continue without entering the test authentication code.", 3, "skip", "showSkip"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -57828,7 +57149,9 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
         \u0275\u0275elementEnd()();
         \u0275\u0275elementStart(20, "div", 1);
         \u0275\u0275template(21, VaultProfileSigninCodeComponent_button_21_Template, 2, 2, "button", 9)(22, VaultProfileSigninCodeComponent_p_22_Template, 2, 1, "p", 10);
-        \u0275\u0275elementEnd()();
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(23, VaultProfileSigninCodeComponent_app_dev_tools_23_Template, 1, 1, "app-dev-tools", 11);
+        \u0275\u0275elementEnd();
       }
       if (rf & 2) {
         \u0275\u0275advance(10);
@@ -57838,11 +57161,13 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.errorMsg);
         \u0275\u0275advance(4);
-        \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 8, \u0275\u0275pipeBind1(18, 6, ctx.timeRemaining$), "mm:ss"));
+        \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 9, \u0275\u0275pipeBind1(18, 7, ctx.timeRemaining$), "mm:ss"));
         \u0275\u0275advance(4);
         \u0275\u0275property("ngIf", ctx.canResendCode);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.canResendCode);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.canSkipSignInCode);
       }
     }, dependencies: [
       CommonModule,
@@ -57851,16 +57176,17 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
       DatePipe,
       RouterModule,
       HeaderComponent,
+      CodeInputModule,
+      DevToolsComponent,
       VerificationCodeInputComponent
     ], styles: ["\n\n.verification-button[_ngcontent-%COMP%]:disabled, \n.verification-button[_ngcontent-%COMP%]:disabled:hover {\n  background-color: transparent;\n  color: #9ca3af;\n  cursor: not-allowed;\n}\n/*# sourceMappingURL=vault-profile-signin-code.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninCodeComponent, { className: "VaultProfileSigninCodeComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts", lineNumber: 25 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninCodeComponent, { className: "VaultProfileSigninCodeComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts", lineNumber: 29 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts
-var _c03 = (a0, a1, a2, a3) => ({ "hover:bg-gray-50 border-gray-200": a0, "cursor-not-allowed opacity-70 border-indigo-200 text-indigo-500": a1, "border-green-400 bg-green-50 text-green-600": a2, "border-red-400 bg-red-50 text-red-600": a3 });
 function IdentityVerificationComponent_div_22_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 14);
@@ -57868,105 +57194,36 @@ function IdentityVerificationComponent_div_22_Template(rf, ctx) {
     \u0275\u0275elementEnd();
   }
 }
-function IdentityVerificationComponent_div_23_div_3_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 25);
-    \u0275\u0275element(1, "span", 26);
-    \u0275\u0275elementEnd();
-  }
-}
-function IdentityVerificationComponent_div_23__svg_svg_7_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(0, "svg", 27);
-    \u0275\u0275element(1, "rect", 28)(2, "path", 29);
-    \u0275\u0275elementEnd();
-  }
-}
-function IdentityVerificationComponent_div_23__svg_svg_8_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(0, "svg", 27);
-    \u0275\u0275element(1, "path", 30)(2, "path", 31);
-    \u0275\u0275elementEnd();
-  }
-}
-function IdentityVerificationComponent_div_23__svg_svg_9_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(0, "svg", 32);
-    \u0275\u0275element(1, "path", 33);
-    \u0275\u0275elementEnd();
-  }
-}
-function IdentityVerificationComponent_div_23_div_10_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 34)(1, "button", 35);
-    \u0275\u0275listener("click", function IdentityVerificationComponent_div_23_div_10_Template_button_click_1_listener() {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r1 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r1.onResetConnections());
-    });
-    \u0275\u0275text(2, " Reset Connections ");
-    \u0275\u0275elementEnd()();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275advance();
-    \u0275\u0275property("disabled", ctx_r1.resetButtonState === "loading");
-  }
-}
-function IdentityVerificationComponent_div_23_Template(rf, ctx) {
+function IdentityVerificationComponent_app_dev_tools_23_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 15)(1, "div", 16);
-    \u0275\u0275listener("click", function IdentityVerificationComponent_div_23_Template_div_click_1_listener($event) {
-      \u0275\u0275restoreView(_r1);
-      return \u0275\u0275resetView($event.stopPropagation());
-    });
-    \u0275\u0275elementStart(2, "div", 17);
-    \u0275\u0275template(3, IdentityVerificationComponent_div_23_div_3_Template, 2, 0, "div", 18);
-    \u0275\u0275elementStart(4, "button", 19);
-    \u0275\u0275listener("click", function IdentityVerificationComponent_div_23_Template_button_click_4_listener() {
+    \u0275\u0275elementStart(0, "app-dev-tools", 15);
+    \u0275\u0275listener("skip", function IdentityVerificationComponent_app_dev_tools_23_Template_app_dev_tools_skip_0_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.toggleResetMenu());
+      return \u0275\u0275resetView(ctx_r1.skipIdentityVerification());
+    })("resetConnections", function IdentityVerificationComponent_app_dev_tools_23_Template_app_dev_tools_resetConnections_0_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onResetConnections());
     });
-    \u0275\u0275elementStart(5, "div", 20);
-    \u0275\u0275elementContainerStart(6, 21);
-    \u0275\u0275template(7, IdentityVerificationComponent_div_23__svg_svg_7_Template, 3, 0, "svg", 22)(8, IdentityVerificationComponent_div_23__svg_svg_8_Template, 3, 0, "svg", 22)(9, IdentityVerificationComponent_div_23__svg_svg_9_Template, 2, 0, "svg", 23);
-    \u0275\u0275elementContainerEnd();
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275template(10, IdentityVerificationComponent_div_23_div_10_Template, 3, 1, "div", 24);
-    \u0275\u0275elementEnd()();
+    \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", ctx_r1.resetButtonState === "loading");
-    \u0275\u0275advance();
-    \u0275\u0275property("disabled", ctx_r1.resetButtonState === "loading")("ngClass", \u0275\u0275pureFunction4(9, _c03, ctx_r1.resetButtonState === "idle", ctx_r1.resetButtonState === "loading", ctx_r1.resetButtonState === "success", ctx_r1.resetButtonState === "error"));
-    \u0275\u0275attribute("aria-expanded", ctx_r1.isResetMenuOpen)("aria-busy", ctx_r1.resetButtonState === "loading");
-    \u0275\u0275advance(2);
-    \u0275\u0275property("ngSwitch", ctx_r1.resetButtonState);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngSwitchCase", "success");
-    \u0275\u0275advance();
-    \u0275\u0275property("ngSwitchCase", "error");
-    \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ctx_r1.isResetMenuOpen);
+    \u0275\u0275property("showSkip", ctx_r1.canSkipIdentityVerification)("showResetConnections", true)("resetState", ctx_r1.resetButtonState);
   }
 }
 var IdentityVerificationComponent = class _IdentityVerificationComponent {
-  constructor(fastenService, configService, router, logger) {
+  constructor(fastenService, authService, configService, router, logger) {
     this.fastenService = fastenService;
+    this.authService = authService;
     this.configService = configService;
     this.router = router;
     this.logger = logger;
     this.loading = false;
     this.errorMessage = "";
-    this.isResetMenuOpen = false;
+    this.canSkipIdentityVerification = false;
     this.resetButtonState = "idle";
     this.labsIconSrc = `data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E`;
     this.CspType = CspType;
@@ -57982,6 +57239,26 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     }
   }
   ngOnInit() {
+    void this.checkCanSkipIdentityVerification();
+  }
+  checkCanSkipIdentityVerification() {
+    return __async(this, null, function* () {
+      this.canSkipIdentityVerification = false;
+      if (this.configService.systemConfig$.apiMode !== ApiMode.Test) {
+        return;
+      }
+      try {
+        const session = yield this.authService.GetSession();
+        this.canSkipIdentityVerification = session?.has_verified_identity === true;
+      } catch (error2) {
+        this.logger.error("error checking whether identity verification can be skipped", error2);
+      }
+    });
+  }
+  skipIdentityVerification() {
+    return this.router.navigateByUrl("dashboard", {
+      state: { skipIdentityVerification: true }
+    });
   }
   verifyIdentity(cspType) {
     this.loading = true;
@@ -58005,7 +57282,9 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
         };
       }
       this.logger.info("verification result", result);
-      this.router.navigateByUrl("dashboard");
+      this.router.navigateByUrl("dashboard", {
+        state: { identityVerificationSucceeded: true }
+      });
     }, (err) => {
       this.loading = false;
       this.logger.error("verification error", err);
@@ -58025,11 +57304,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
       return;
     });
   }
-  toggleResetMenu() {
-    this.isResetMenuOpen = !this.isResetMenuOpen;
-  }
   onResetConnections() {
-    this.isResetMenuOpen = false;
     if (this.resetButtonState === "loading") {
       return;
     }
@@ -58057,22 +57332,13 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
       }, 1600);
     }
   }
-  closeResetMenu() {
-    this.isResetMenuOpen = false;
-  }
   static {
     this.\u0275fac = function IdentityVerificationComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _IdentityVerificationComponent)(\u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _IdentityVerificationComponent)(\u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationComponent, selectors: [["app-identity-verification"]], hostBindings: function IdentityVerificationComponent_HostBindings(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275listener("click", function IdentityVerificationComponent_click_HostBindingHandler() {
-          return ctx.closeResetMenu();
-        }, false, \u0275\u0275resolveDocument);
-      }
-    }, decls: 24, vars: 7, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["src", "https://s3.amazonaws.com/idme-design/brand-assets/Primary-IDme-Logo-RGB.svg", 2, "height", "0.8rem", "display", "inline", "vertical-align", "center"], [1, "space-y-4", "flex", "flex-col", "items-center"], ["type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "clear-button", 3, "click", "disabled"], ["src", "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Generator: Adobe Illustrator 26.3.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 353.2 337.6' style='enable-background:new 0 0 353.2 337.6;' xml:space='preserve'%3E%3Cstyle type='text/css'%3E .st0%7Bdisplay:none;%7D .st1%7Bdisplay:inline;fill:%23192958;%7D .st2%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Cg id='BKGD' class='st0'%3E%3Crect class='st1' width='353.2' height='337.6'/%3E%3C/g%3E%3Cg id='Layer_2'%3E%3Cg%3E%3Cg%3E%3Ccircle class='st2' cx='14' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='77.1' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='227.8' r='14'/%3E%3Ccircle class='st2' cx='99.4' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='45.5' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='108.7' r='14'/%3E%3Ccircle class='st2' cx='98.4' cy='61.7' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='61.1' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='109.7' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='227.9' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='45.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='301.5' r='14'/%3E%3Ccircle class='st2' cx='226.7' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='126.6' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='276.5' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='339.2' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='35.5' r='14'/%3E%3Ccircle class='st2' cx='126.2' cy='14' r='14'/%3E%3Ccircle class='st2' cx='226.8' cy='14' r='14'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E", 1, "px-[8px]", 2, "height", "24px", "display", "inline", "vertical-align", "bottom"], ["data-testid", "idme-button", "type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "gap-2", "clear-button", "idme-button", 3, "click", "disabled"], [1, "text-base", "font-semibold"], ["src", "data:image/svg+xml,%3Csvg%20%20%20%20role%3D%22img%22%20%20%20%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%20%20%20viewBox%3D%220%200%2030%2012%22%20%20%20%20fill%3D%22none%22%20%20%20%20aria-labelledby%3D%22idme-title%22%3E%3Ctitle%20id%3D%22idme-title%22%3EID.me%3C%2Ftitle%3E%3Cg%20fillRule%3D%22nonzero%22%20fill%3D%22none%22%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M1.48515.0384H.96978C.32628.0384%200%20.24588%200%20.6551v10.12096c0%20.40922.32627.6167.96978.6167h.51537c.64332%200%20.96977-.20748.96977-.6167V.6551c0-.40922-.32645-.6167-.96977-.6167M7.67332%209.10802H6.14794V2.31206h1.52538c1.90854%200%202.30924%201.84782%202.30924%203.39798s-.4007%203.39798-2.30924%203.39798zm2.901%201.04522c0-1.20723.73212-2.22915%201.74336-2.58106.11573-.56263.17475-1.18411.17475-1.86214%200-3.65857-1.71147-5.67336-4.81911-5.67336h-3.3127c-.4629%200-.67823.23232-.67823.73114v9.88444c0%20.49882.21532.73114.67824.73114h3.31269c1.18475%200%202.16587-.29364%202.92723-.85876-.01542-.1217-.02623-.24512-.02623-.3714z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M14.24058%2010.15324c0%20.68452-.51484%201.23952-1.14984%201.23952-.63518%200-1.14984-.555-1.14984-1.23952%200-.68453.51466-1.23952%201.14984-1.23952.635%200%201.14984.555%201.14984%201.23952%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M27.26344%205.99604c.00248.0298.00478.05941.00514.0896%200%20.04337-.0016.08769-.0062.13488-.01525.15857-.04236.30625-.08047.43922-.2536.88646-.96747%201.0435-1.58492%201.06604.08383-.38496.20718-.76209.35906-1.09489.30057-.66007.67788-1.07006.98466-1.07025.028%200%20.05547.0044.08347.013.01188.00362.02233.00973.04112.01967l.01276.0063c.00514.0023.01028.00459.01506.00803.01312.00898.02464.02082.0374.03343l.01046.0105c.0039.00383.00797.00765.0117.01204.0085.01032.01559.02236.02268.03401l.00921.0151c.00638.00993.01259.02005.01826.03209.00336.00707.0062.0149.01418.03553.00815.0216.01648.04337.02268.06706l.00567.02751c.00656.02847.01223.0575.01577.08789l.0023.03324zm2.17934%202.4177a.2772.2772%200%2000-.10652-.0256c-.15702-.00553-.26406.06095-.3587.22564-.056.09877-.11112.19926-.1657.29975-.2086.38305-.4241.77871-.73726%201.06223-.42534.38496-1.04102.56512-1.56898.46061-.31404-.06209-.53823-.30701-.67115-.5015-.24386-.35726-.36242-.83832-.34328-1.39274.77713-.0705%203.11951-.4438%203.30578-2.35791.03597-.37102-.06203-.70745-.28356-.97263-.2809-.33624-.72928-.52156-1.26238-.52156-1.56224%200-3.1041%201.76147-3.29958%203.76957-.05334.5508.01028%201.05974.18963%201.5129-.13362.13336-.2598.22946-.3851.29327-.1308.06725-.24422.08081-.32734.03973-.10297-.05158-.14462-.1811-.1611-.28045-.0615-.36777.0179-.79037.11183-1.22691.05547-.256.12477-.5229.18591-.75827.18874-.72618.38422-1.47718.319-2.23584-.05936-.69465-.51164-1.12603-1.18031-1.12603-.93753%200-1.5548.7212-1.95462%201.33943-.0085-.4608-.11041-.79533-.30997-1.01885-.1898-.21283-.46876-.32058-.82888-.32058-.91962%200-1.52928.69274-1.92803%201.29912.00531-.05578.01063-.11271.0163-.16946.02517-.26001.03651-.63256-.15578-.86239-.11466-.13717-.28693-.20652-.51218-.20652-.19885%200-.24847.00115-.46203.03917-.00212.00019-.20877.04394-.28728.1217-.1377.13621-.09393.32401-.06876.43138.00319.01356.00602.02598.00762.03649.01506.10374.01967.22142.01435.35917-.0287.72942-.15436%201.45827-.27363%202.07516-.06433.33243-.137.67058-.2086%201.00434-.15914.7405-.3236%201.50603-.40797%202.27595-.00904.08158.01259.15915.06079.21818.04838.05923.11661.0919.19211.09209l.04963.00038c.50526.00726%201.00185-.01529%201.11882-.32574.1292-.34274.20062-.7596.26389-1.12833l.02782-.16334c.14993-.84787.2809-1.4554.5448-2.23641.13592-.40254.3844-.76515.58537-1.03643.24333-.32822.50562-.64957.80176-.6576.12264-.00687.2024.03249.26265.11865.28764.41362-.07054%201.74866-.2233%202.31875-.03314.12322-.06115.22734-.07887.30376l-.10527.44037c-.15507.64211-.31528%201.306-.39752%201.97754a7.70047%207.70047%200%2000-.0225.20747l-.00692.09362.0647.05368c.13043.10909%201.06192-.04356%201.06955-.04604.34346-.12514.41825-.4736.44288-.58805.06398-.29631.12051-.59893.17492-.89123l.0039-.02178c.10261-.5508.2086-1.1207.36739-1.67053.30961-1.06987.72255-1.79986%201.22728-2.16973.21586-.15857.4374-.17614.53806-.04222.17439.23117.0638.85704.01648%201.12432-.06522.37063-.1487.74814-.2295%201.11285l-.00408.01872c-.05175.2325-.10315.46482-.151.6979-.14763.72235-.26885%201.6178.10846%202.13458.19194.26345.48897.3968.88294.3968.41754%200%20.81045-.15016%201.23632-.47265.11733-.0896.23571-.19372.3743-.3179.4794.58747%201.02401.83908%201.80965.83908%201.77721%200%202.61265-1.27295%203.08655-2.23048.05973-.12132.12654-.26136.16642-.38019.0592-.17652-.01134-.3691-.16021-.43845z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E", 1, "px-[8px]", 2, "height", "22px", "display", "inline", "vertical-align", "center"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["class", "mt-4 absolute bottom-10", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "mt-4", "absolute", "bottom-10"], [1, "relative", "inline-block", "text-left", 3, "click"], [1, "relative", "inline-flex"], ["class", "pointer-events-none absolute inset-0 flex items-center justify-center", 4, "ngIf"], ["type", "button", "aria-label", "Open tools menu", 1, "relative", "z-10", "flex", "h-10", "w-10", "items-center", "justify-center", "rounded-full", "border", "bg-white", "text-gray-700", "shadow", "transition-colors", "focus:outline-none", "focus:ring-2", "focus:ring-offset-2", "focus:ring-indigo-500", 3, "click", "disabled", "ngClass"], [1, "flex", "items-center", "justify-center"], [3, "ngSwitch"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", "class", "size-6 tools-button-icon tools-button-icon-pop", 4, "ngSwitchCase"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", "class", "size-6 tools-button-icon", 4, "ngSwitchDefault"], ["class", "absolute bottom-full left-1/2 mb-2 w-48 -translate-x-1/2 transform rounded-md border border-gray-200 bg-white text-left shadow-lg", 4, "ngIf"], [1, "pointer-events-none", "absolute", "inset-0", "flex", "items-center", "justify-center"], [1, "absolute", "-inset-1", "rounded-full", "border-2", "border-indigo-300", "border-t-transparent", "animate-spin"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", 1, "size-6", "tools-button-icon", "tools-button-icon-pop"], ["x", "4", "y", "4", "width", "16", "height", "16", "rx", "2", "ry", "2"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M8.5 12.25 11 14.75 15.5 9.75"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 18 18 6"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 6l12 12"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "1.5", "stroke", "currentColor", 1, "size-6", "tools-button-icon"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0 1 12 15a9.065 9.065 0 0 0-6.23-.693L5 14.5m14.8.8 1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0 1 12 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"], [1, "absolute", "bottom-full", "left-1/2", "mb-2", "w-48", "-translate-x-1/2", "transform", "rounded-md", "border", "border-gray-200", "bg-white", "text-left", "shadow-lg"], ["type", "button", 1, "block", "w-full", "px-3", "py-2", "text-sm", "text-gray-700", "hover:bg-gray-50", "disabled:cursor-not-allowed", "disabled:opacity-60", 3, "click", "disabled"]], template: function IdentityVerificationComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationComponent, selectors: [["app-identity-verification"]], decls: 24, vars: 7, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["src", "https://s3.amazonaws.com/idme-design/brand-assets/Primary-IDme-Logo-RGB.svg", 2, "height", "0.8rem", "display", "inline", "vertical-align", "center"], [1, "space-y-4", "flex", "flex-col", "items-center"], ["type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "clear-button", 3, "click", "disabled"], ["src", "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Generator: Adobe Illustrator 26.3.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 353.2 337.6' style='enable-background:new 0 0 353.2 337.6;' xml:space='preserve'%3E%3Cstyle type='text/css'%3E .st0%7Bdisplay:none;%7D .st1%7Bdisplay:inline;fill:%23192958;%7D .st2%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Cg id='BKGD' class='st0'%3E%3Crect class='st1' width='353.2' height='337.6'/%3E%3C/g%3E%3Cg id='Layer_2'%3E%3Cg%3E%3Cg%3E%3Ccircle class='st2' cx='14' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='77.1' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='227.8' r='14'/%3E%3Ccircle class='st2' cx='99.4' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='45.5' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='108.7' r='14'/%3E%3Ccircle class='st2' cx='98.4' cy='61.7' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='61.1' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='109.7' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='227.9' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='45.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='301.5' r='14'/%3E%3Ccircle class='st2' cx='226.7' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='126.6' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='276.5' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='339.2' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='35.5' r='14'/%3E%3Ccircle class='st2' cx='126.2' cy='14' r='14'/%3E%3Ccircle class='st2' cx='226.8' cy='14' r='14'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E", 1, "px-[8px]", 2, "height", "24px", "display", "inline", "vertical-align", "bottom"], ["data-testid", "idme-button", "type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "gap-2", "clear-button", "idme-button", 3, "click", "disabled"], [1, "text-base", "font-semibold"], ["src", "data:image/svg+xml,%3Csvg%20%20%20%20role%3D%22img%22%20%20%20%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%20%20%20viewBox%3D%220%200%2030%2012%22%20%20%20%20fill%3D%22none%22%20%20%20%20aria-labelledby%3D%22idme-title%22%3E%3Ctitle%20id%3D%22idme-title%22%3EID.me%3C%2Ftitle%3E%3Cg%20fillRule%3D%22nonzero%22%20fill%3D%22none%22%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M1.48515.0384H.96978C.32628.0384%200%20.24588%200%20.6551v10.12096c0%20.40922.32627.6167.96978.6167h.51537c.64332%200%20.96977-.20748.96977-.6167V.6551c0-.40922-.32645-.6167-.96977-.6167M7.67332%209.10802H6.14794V2.31206h1.52538c1.90854%200%202.30924%201.84782%202.30924%203.39798s-.4007%203.39798-2.30924%203.39798zm2.901%201.04522c0-1.20723.73212-2.22915%201.74336-2.58106.11573-.56263.17475-1.18411.17475-1.86214%200-3.65857-1.71147-5.67336-4.81911-5.67336h-3.3127c-.4629%200-.67823.23232-.67823.73114v9.88444c0%20.49882.21532.73114.67824.73114h3.31269c1.18475%200%202.16587-.29364%202.92723-.85876-.01542-.1217-.02623-.24512-.02623-.3714z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M14.24058%2010.15324c0%20.68452-.51484%201.23952-1.14984%201.23952-.63518%200-1.14984-.555-1.14984-1.23952%200-.68453.51466-1.23952%201.14984-1.23952.635%200%201.14984.555%201.14984%201.23952%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M27.26344%205.99604c.00248.0298.00478.05941.00514.0896%200%20.04337-.0016.08769-.0062.13488-.01525.15857-.04236.30625-.08047.43922-.2536.88646-.96747%201.0435-1.58492%201.06604.08383-.38496.20718-.76209.35906-1.09489.30057-.66007.67788-1.07006.98466-1.07025.028%200%20.05547.0044.08347.013.01188.00362.02233.00973.04112.01967l.01276.0063c.00514.0023.01028.00459.01506.00803.01312.00898.02464.02082.0374.03343l.01046.0105c.0039.00383.00797.00765.0117.01204.0085.01032.01559.02236.02268.03401l.00921.0151c.00638.00993.01259.02005.01826.03209.00336.00707.0062.0149.01418.03553.00815.0216.01648.04337.02268.06706l.00567.02751c.00656.02847.01223.0575.01577.08789l.0023.03324zm2.17934%202.4177a.2772.2772%200%2000-.10652-.0256c-.15702-.00553-.26406.06095-.3587.22564-.056.09877-.11112.19926-.1657.29975-.2086.38305-.4241.77871-.73726%201.06223-.42534.38496-1.04102.56512-1.56898.46061-.31404-.06209-.53823-.30701-.67115-.5015-.24386-.35726-.36242-.83832-.34328-1.39274.77713-.0705%203.11951-.4438%203.30578-2.35791.03597-.37102-.06203-.70745-.28356-.97263-.2809-.33624-.72928-.52156-1.26238-.52156-1.56224%200-3.1041%201.76147-3.29958%203.76957-.05334.5508.01028%201.05974.18963%201.5129-.13362.13336-.2598.22946-.3851.29327-.1308.06725-.24422.08081-.32734.03973-.10297-.05158-.14462-.1811-.1611-.28045-.0615-.36777.0179-.79037.11183-1.22691.05547-.256.12477-.5229.18591-.75827.18874-.72618.38422-1.47718.319-2.23584-.05936-.69465-.51164-1.12603-1.18031-1.12603-.93753%200-1.5548.7212-1.95462%201.33943-.0085-.4608-.11041-.79533-.30997-1.01885-.1898-.21283-.46876-.32058-.82888-.32058-.91962%200-1.52928.69274-1.92803%201.29912.00531-.05578.01063-.11271.0163-.16946.02517-.26001.03651-.63256-.15578-.86239-.11466-.13717-.28693-.20652-.51218-.20652-.19885%200-.24847.00115-.46203.03917-.00212.00019-.20877.04394-.28728.1217-.1377.13621-.09393.32401-.06876.43138.00319.01356.00602.02598.00762.03649.01506.10374.01967.22142.01435.35917-.0287.72942-.15436%201.45827-.27363%202.07516-.06433.33243-.137.67058-.2086%201.00434-.15914.7405-.3236%201.50603-.40797%202.27595-.00904.08158.01259.15915.06079.21818.04838.05923.11661.0919.19211.09209l.04963.00038c.50526.00726%201.00185-.01529%201.11882-.32574.1292-.34274.20062-.7596.26389-1.12833l.02782-.16334c.14993-.84787.2809-1.4554.5448-2.23641.13592-.40254.3844-.76515.58537-1.03643.24333-.32822.50562-.64957.80176-.6576.12264-.00687.2024.03249.26265.11865.28764.41362-.07054%201.74866-.2233%202.31875-.03314.12322-.06115.22734-.07887.30376l-.10527.44037c-.15507.64211-.31528%201.306-.39752%201.97754a7.70047%207.70047%200%2000-.0225.20747l-.00692.09362.0647.05368c.13043.10909%201.06192-.04356%201.06955-.04604.34346-.12514.41825-.4736.44288-.58805.06398-.29631.12051-.59893.17492-.89123l.0039-.02178c.10261-.5508.2086-1.1207.36739-1.67053.30961-1.06987.72255-1.79986%201.22728-2.16973.21586-.15857.4374-.17614.53806-.04222.17439.23117.0638.85704.01648%201.12432-.06522.37063-.1487.74814-.2295%201.11285l-.00408.01872c-.05175.2325-.10315.46482-.151.6979-.14763.72235-.26885%201.6178.10846%202.13458.19194.26345.48897.3968.88294.3968.41754%200%20.81045-.15016%201.23632-.47265.11733-.0896.23571-.19372.3743-.3179.4794.58747%201.02401.83908%201.80965.83908%201.77721%200%202.61265-1.27295%203.08655-2.23048.05973-.12132.12654-.26136.16642-.38019.0592-.17652-.01134-.3691-.16021-.43845z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E", 1, "px-[8px]", 2, "height", "22px", "display", "inline", "vertical-align", "center"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["skipTooltip", "Continue to the dashboard without repeating identity verification.", "resetConnectionsTooltip", "Remove all test-mode health system connections for this profile.", 3, "showSkip", "showResetConnections", "resetState", "skip", "resetConnections", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], ["skipTooltip", "Continue to the dashboard without repeating identity verification.", "resetConnectionsTooltip", "Remove all test-mode health system connections for this profile.", 3, "skip", "resetConnections", "showSkip", "showResetConnections", "resetState"]], template: function IdentityVerificationComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -58103,9 +57369,9 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
         \u0275\u0275elementStart(19, "span", 10);
         \u0275\u0275text(20, "Verify with ");
         \u0275\u0275element(21, "img", 11);
-        \u0275\u0275elementEnd()();
-        \u0275\u0275template(22, IdentityVerificationComponent_div_22_Template, 2, 0, "div", 12)(23, IdentityVerificationComponent_div_23_Template, 11, 14, "div", 13);
-        \u0275\u0275elementEnd()();
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275template(22, IdentityVerificationComponent_div_22_Template, 2, 0, "div", 12)(23, IdentityVerificationComponent_app_dev_tools_23_Template, 1, 3, "app-dev-tools", 13);
+        \u0275\u0275elementEnd();
       }
       if (rf & 2) {
         let tmp_0_0;
@@ -58122,23 +57388,20 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
       }
     }, dependencies: [
       CommonModule,
-      NgClass,
       NgIf,
-      NgSwitch,
-      NgSwitchCase,
-      NgSwitchDefault,
       AsyncPipe,
       RouterModule,
-      HeaderComponent
-    ], styles: ['\n\n.clear-button[_ngcontent-%COMP%] {\n  border-radius: 32px;\n  background-color: #041A55;\n  font-family: "Inter", serif;\n  font-weight: 600;\n  font-size: 16px;\n  line-height: 26px;\n  height: 56px;\n  width: 328px;\n}\n.idme-button[_ngcontent-%COMP%] {\n  background-color: #08833D;\n  font-family: "Open Sans Light", sans-serif;\n}\n.tools-button-icon[_ngcontent-%COMP%] {\n  transition: transform 0.25s ease, opacity 0.25s ease;\n}\n.tools-button-icon-pop[_ngcontent-%COMP%] {\n  animation: _ngcontent-%COMP%_tools-button-pop 0.45s ease;\n}\n@keyframes _ngcontent-%COMP%_tools-button-pop {\n  0% {\n    transform: scale(0.6);\n    opacity: 0;\n  }\n  60% {\n    transform: scale(1.1);\n    opacity: 1;\n  }\n  100% {\n    transform: scale(1);\n    opacity: 1;\n  }\n}\n/*# sourceMappingURL=identity-verification.component.css.map */'] });
+      HeaderComponent,
+      DevToolsComponent
+    ], styles: ['\n\n.clear-button[_ngcontent-%COMP%] {\n  border-radius: 32px;\n  background-color: #041A55;\n  font-family: "Inter", serif;\n  font-weight: 600;\n  font-size: 16px;\n  line-height: 26px;\n  height: 56px;\n  width: 328px;\n}\n.idme-button[_ngcontent-%COMP%] {\n  background-color: #08833D;\n  font-family: "Open Sans Light", sans-serif;\n}\n/*# sourceMappingURL=identity-verification.component.css.map */'] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 22 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 28 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts
-var _c04 = () => [];
+var _c05 = () => [];
 var _c12 = () => ({});
 var _c2 = (a0) => ({ "rotate-180": a0 });
 function DashboardComponent_div_10_ng_container_4_Template(rf, ctx) {
@@ -58653,7 +57916,7 @@ var DashboardComponent = class _DashboardComponent {
         \u0275\u0275advance(8);
         \u0275\u0275property("ngIf", (tmp_1_0 = \u0275\u0275pipeBind1(11, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.tefcaMode);
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(13, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(31, _c04));
+        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(13, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(31, _c05));
         \u0275\u0275advance(2);
         \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(16, 17, ((tmp_3_0 = \u0275\u0275pipeBind1(15, 15, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(32, _c12)));
         \u0275\u0275advance(3);
@@ -58661,7 +57924,7 @@ var DashboardComponent = class _DashboardComponent {
         \u0275\u0275advance(4);
         \u0275\u0275property("routerLink", "/search")("ngClass", ctx.shouldShowMultiConnectHint(\u0275\u0275pipeBind1(22, 23, ctx.configService.vaultProfileConfigSubject)) ? "multi-connect-hint border border-[#5B47FB]/40 bg-[#5B47FB]/5 text-gray-700" : "border bg-gray-50 border-gray-200 hover:border-[#5B47FB] hover:bg-[#5B47FB]/5");
         \u0275\u0275advance(23);
-        \u0275\u0275property("disabled", !(((tmp_7_0 = \u0275\u0275pipeBind1(45, 25, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_7_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(34, _c04)).length || ctx.isCompleting);
+        \u0275\u0275property("disabled", !(((tmp_7_0 = \u0275\u0275pipeBind1(45, 25, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_7_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(34, _c05)).length || ctx.isCompleting);
         \u0275\u0275advance(2);
         \u0275\u0275property("ngIf", ctx.isCompleting);
         \u0275\u0275advance(13);
@@ -59267,7 +58530,7 @@ var InfiniteScrollModule = class _InfiniteScrollModule {
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts
 var import_lodash2 = __toESM(require_lodash());
-var _c05 = () => [];
+var _c06 = () => [];
 function HealthSystemSearchComponent_div_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 16);
@@ -59530,7 +58793,7 @@ function HealthSystemSearchComponent_button_15_span_9_Template(rf, ctx) {
   if (rf & 2) {
     const brand_r8 = \u0275\u0275nextContext().$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(1, _c05)).length, "");
+    \u0275\u0275textInterpolate1("+ ", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(1, _c06)).length, "");
   }
 }
 function HealthSystemSearchComponent_button_15_Template(rf, ctx) {
@@ -59566,11 +58829,11 @@ function HealthSystemSearchComponent_button_15_Template(rf, ctx) {
     \u0275\u0275advance(3);
     \u0275\u0275textInterpolate(brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.name);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.searchHighlights) || \u0275\u0275pureFunction0(11, _c05)).length > 0);
+    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.searchHighlights) || \u0275\u0275pureFunction0(11, _c06)).length > 0);
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(8, 7, (brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(12, _c05), 0, 3));
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(8, 7, (brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(12, _c06), 0, 3));
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(13, _c05)).length > 4);
+    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(13, _c06)).length > 4);
   }
 }
 function HealthSystemSearchComponent_div_16_Template(rf, ctx) {
@@ -59881,7 +59144,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts
-var _c06 = () => [];
+var _c07 = () => [];
 function HealthSystemBrandDetailsComponent_div_14_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 15);
@@ -59930,7 +59193,7 @@ function HealthSystemBrandDetailsComponent_div_16_span_8_Template(rf, ctx) {
     let tmp_2_0;
     const ctx_r0 = \u0275\u0275nextContext(2);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", (((tmp_2_0 = \u0275\u0275pipeBind1(2, 1, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c06)).length, "");
+    \u0275\u0275textInterpolate1("+ ", (((tmp_2_0 = \u0275\u0275pipeBind1(2, 1, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c07)).length, "");
   }
 }
 function HealthSystemBrandDetailsComponent_div_16_Template(rf, ctx) {
@@ -59954,9 +59217,9 @@ function HealthSystemBrandDetailsComponent_div_16_Template(rf, ctx) {
     let tmp_2_0;
     const ctx_r0 = \u0275\u0275nextContext();
     \u0275\u0275advance(5);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(7, 4, ((tmp_1_0 = \u0275\u0275pipeBind1(6, 2, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c06), 0, 3));
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(7, 4, ((tmp_1_0 = \u0275\u0275pipeBind1(6, 2, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c07), 0, 3));
     \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", (((tmp_2_0 = \u0275\u0275pipeBind1(9, 8, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c06)).length > 4);
+    \u0275\u0275property("ngIf", (((tmp_2_0 = \u0275\u0275pipeBind1(9, 8, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c07)).length > 4);
   }
 }
 function HealthSystemBrandDetailsComponent_ng_container_19_div_1_p_9_Template(rf, ctx) {
@@ -60191,7 +59454,7 @@ function ConnectHelper(connectData) {
 }
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts
-var _c07 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
+var _c08 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
 var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
   constructor(configService, router, messageBus, injector) {
     this.configService = configService;
@@ -60291,7 +59554,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
         \u0275\u0275advance(8);
         \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", ctx.brandId, ".png", \u0275\u0275sanitizeUrl);
         \u0275\u0275advance(18);
-        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(9, _c07, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
+        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(9, _c08, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
       }
     }, dependencies: [
       CommonModule,
@@ -60893,22 +60156,22 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
     }, (err) => {
       this.loading = false;
       console.error("an error occurred during issue submission", err);
-      let message2 = "An error occurred while submitting your issue. Please try again later.";
+      let message = "An error occurred while submitting your issue. Please try again later.";
       try {
         if (err?.error) {
           if (typeof err.error === "string") {
-            message2 = err.error;
+            message = err.error;
           } else if (typeof err.error?.message === "string") {
-            message2 = err.error.message;
+            message = err.error.message;
           } else if (typeof err.message === "string") {
-            message2 = err.message;
+            message = err.message;
           }
         } else if (typeof err?.message === "string") {
-          message2 = err.message;
+          message = err.message;
         }
       } catch {
       }
-      this.errorMsg = message2;
+      this.errorMsg = message;
     });
   }
   dismiss() {
@@ -60969,8 +60232,8 @@ var IsAuthenticatedAuthGuard = class _IsAuthenticatedAuthGuard {
       if (this.configService.systemConfig$.searchOnly) {
         return Promise.resolve(true);
       }
-      return this.authService.GetJWTPayload().then((jwtPayload) => {
-        if (!jwtPayload) {
+      return this.authService.GetSession().then((session) => {
+        if (!session) {
           if (route.url.toString() === "/auth/signin") {
             return true;
           } else {
@@ -61088,19 +60351,21 @@ var IsTefcaModeAuthGuard = class _IsTefcaModeAuthGuard {
       if (!this.configService.systemConfig$.tefcaMode) {
         return Promise.resolve(true);
       }
-      return this.authService.GetJWTPayload().then((jwtPayload) => {
-        if (!jwtPayload) {
+      const navigationState = this.router.getCurrentNavigation()?.extras.state;
+      const identityVerificationHandled = navigationState?.["skipIdentityVerification"] === true || navigationState?.["identityVerificationSucceeded"] === true;
+      return this.authService.GetSession().then((session) => {
+        if (!session) {
           if (route.url.toString() === "/auth/signin") {
             return true;
           } else {
             this.logger.info("User is not authenticated, redirecting to login page");
             return this.router.navigate(["/auth/signin"]);
           }
-        } else if (!jwtPayload.has_verified_identity) {
+        } else if (!session.has_verified_identity || this.configService.systemConfig$.apiMode === ApiMode.Test && !identityVerificationHandled) {
           if (route.url.toString() === "/auth/identity/verification") {
             return true;
           } else {
-            this.logger.info("Profile does not have a verified identity, redirecting to id verification step", jwtPayload);
+            this.logger.info("Profile does not have a verified identity, redirecting to id verification step", session);
             return this.router.navigate(["/auth/identity/verification"]);
           }
         }
@@ -61519,7 +60784,7 @@ function ThirdPartyCookiesErrorComponent_div_11_Template(rf, ctx) {
 function ThirdPartyCookiesErrorComponent_div_17_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 22)(1, "h3", 13);
-    \u0275\u0275text(2, "Cookie debug information (test mode)");
+    \u0275\u0275text(2, "Session debug information (test mode)");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(3, "dl", 23)(4, "dt", 24);
     \u0275\u0275text(5, "Cookie name");
@@ -61528,23 +60793,14 @@ function ThirdPartyCookiesErrorComponent_div_17_Template(rf, ctx) {
     \u0275\u0275text(7);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(8, "dt", 24);
-    \u0275\u0275text(9, "Is set");
+    \u0275\u0275text(9, "Session active");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(10, "dd", 26);
     \u0275\u0275text(11);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(12, "dt", 24);
-    \u0275\u0275text(13, "Value");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "dd", 25);
-    \u0275\u0275text(15);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "dt", 24);
-    \u0275\u0275text(17, "Value length");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "dd", 26);
-    \u0275\u0275text(19);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(12, "p", 27);
+    \u0275\u0275text(13, "The auth cookie is HttpOnly and its value cannot be inspected from the browser; this reflects whether a server-side session check succeeded.");
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const debugInfo_r3 = ctx.ngIf;
@@ -61552,10 +60808,6 @@ function ThirdPartyCookiesErrorComponent_div_17_Template(rf, ctx) {
     \u0275\u0275textInterpolate(debugInfo_r3.cookieName);
     \u0275\u0275advance(4);
     \u0275\u0275textInterpolate(debugInfo_r3.isSet ? "Yes" : "No");
-    \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate(debugInfo_r3.value || "(empty)");
-    \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate(debugInfo_r3.valueLength);
   }
 }
 var GENERIC_DOCUMENTATION = "generic";
@@ -61614,16 +60866,18 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
     this.requiresSafariOnIos = false;
   }
   ngOnInit() {
-    this.requiresSafariOnIos = this.isUnsupportedIosBrowser();
-    if (this.requiresSafariOnIos) {
-      this.safariDeepLink = this.getSafariDeepLink(document.referrer || window.location.href);
-    } else {
-      this.thirdPartyCookieDocumentationLink = this.getThirdPartyCookieDocumentationLink();
-    }
-    this.showCookieDebugInfo = this.isCookieDebugEnabled();
-    if (this.showCookieDebugInfo) {
-      this.cookieDebugInfo = this.authService.GetVaultAuthCookieDebugInfo();
-    }
+    return __async(this, null, function* () {
+      this.requiresSafariOnIos = this.isUnsupportedIosBrowser();
+      if (this.requiresSafariOnIos) {
+        this.safariDeepLink = this.getSafariDeepLink(document.referrer || window.location.href);
+      } else {
+        this.thirdPartyCookieDocumentationLink = this.getThirdPartyCookieDocumentationLink();
+      }
+      this.showCookieDebugInfo = this.isCookieDebugEnabled();
+      if (this.showCookieDebugInfo) {
+        this.cookieDebugInfo = yield this.authService.GetVaultAuthSessionDebugInfo();
+      }
+    });
   }
   isUnsupportedIosBrowser() {
     return this.deviceDetectorService.os === OS.IOS && this.deviceDetectorService.browser !== BROWSERS.SAFARI;
@@ -61653,7 +60907,7 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ThirdPartyCookiesErrorComponent, selectors: [["app-third-party-cookies-error"]], decls: 20, vars: 5, consts: [["id", "third-party-cookies-error", "aria-labelledby", "cookies-required-title", 1, "space-y-6", "text-center"], [1, "w-16", "h-16", "mx-auto", "bg-red-50", "rounded-full", "flex", "items-center", "justify-center"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", "aria-hidden", "true", 1, "w-8", "h-8", "text-red-600"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 4.5h.008v.008H12V16.5Z"], [1, "space-y-2"], ["id", "cookies-required-title", 1, "text-xl", "font-semibold", "text-red-600"], [1, "text-sm", "text-gray-600"], ["id", "browser-cookie-instructions", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["id", "ios-safari-required", "class", "rounded-md border border-amber-200 bg-amber-50 p-4 text-left", 4, "ngIf"], ["id", "cookie-support-link", 1, "font-medium", "text-[#5B47FB]", "hover:underline", 3, "routerLink"], ["id", "cookie-debug-info", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"], ["id", "browser-cookie-instructions", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "text-base", "font-medium", "text-gray-900"], [1, "mt-1", "text-sm", "text-gray-600"], ["id", "third-party-cookie-documentation-link", "class", "mt-3 inline-block text-sm font-medium text-[#5B47FB] hover:underline", "target", "_blank", "rel", "noopener noreferrer", 3, "href", 4, "ngIf"], ["id", "third-party-cookie-documentation-link", "target", "_blank", "rel", "noopener noreferrer", 1, "mt-3", "inline-block", "text-sm", "font-medium", "text-[#5B47FB]", "hover:underline", 3, "href"], ["id", "ios-safari-required", 1, "rounded-md", "border", "border-amber-200", "bg-amber-50", "p-4", "text-left"], [1, "mt-1", "text-sm", "text-gray-700"], ["id", "open-in-safari-link", "target", "_top", "class", "mt-3 flex w-full items-center justify-center rounded-md border border-[#5B47FB] bg-white px-4 py-2.5 text-sm font-medium text-[#5B47FB] hover:bg-[#5B47FB] hover:text-white", 3, "href", 4, "ngIf"], [1, "mt-2", "text-xs", "text-gray-600"], ["id", "open-in-safari-link", "target", "_top", 1, "mt-3", "flex", "w-full", "items-center", "justify-center", "rounded-md", "border", "border-[#5B47FB]", "bg-white", "px-4", "py-2.5", "text-sm", "font-medium", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", 3, "href"], ["id", "cookie-debug-info", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "mt-3", "grid", "grid-cols-[auto,minmax(0,1fr)]", "gap-x-4", "gap-y-2", "text-sm"], [1, "font-medium", "text-gray-600"], [1, "break-all", "font-mono", "text-xs", "text-gray-900"], [1, "font-mono", "text-xs", "text-gray-900"]], template: function ThirdPartyCookiesErrorComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ThirdPartyCookiesErrorComponent, selectors: [["app-third-party-cookies-error"]], decls: 20, vars: 5, consts: [["id", "third-party-cookies-error", "aria-labelledby", "cookies-required-title", 1, "space-y-6", "text-center"], [1, "w-16", "h-16", "mx-auto", "bg-red-50", "rounded-full", "flex", "items-center", "justify-center"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", "aria-hidden", "true", 1, "w-8", "h-8", "text-red-600"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 4.5h.008v.008H12V16.5Z"], [1, "space-y-2"], ["id", "cookies-required-title", 1, "text-xl", "font-semibold", "text-red-600"], [1, "text-sm", "text-gray-600"], ["id", "browser-cookie-instructions", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["id", "ios-safari-required", "class", "rounded-md border border-amber-200 bg-amber-50 p-4 text-left", 4, "ngIf"], ["id", "cookie-support-link", 1, "font-medium", "text-[#5B47FB]", "hover:underline", 3, "routerLink"], ["id", "cookie-debug-info", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"], ["id", "browser-cookie-instructions", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "text-base", "font-medium", "text-gray-900"], [1, "mt-1", "text-sm", "text-gray-600"], ["id", "third-party-cookie-documentation-link", "class", "mt-3 inline-block text-sm font-medium text-[#5B47FB] hover:underline", "target", "_blank", "rel", "noopener noreferrer", 3, "href", 4, "ngIf"], ["id", "third-party-cookie-documentation-link", "target", "_blank", "rel", "noopener noreferrer", 1, "mt-3", "inline-block", "text-sm", "font-medium", "text-[#5B47FB]", "hover:underline", 3, "href"], ["id", "ios-safari-required", 1, "rounded-md", "border", "border-amber-200", "bg-amber-50", "p-4", "text-left"], [1, "mt-1", "text-sm", "text-gray-700"], ["id", "open-in-safari-link", "target", "_top", "class", "mt-3 flex w-full items-center justify-center rounded-md border border-[#5B47FB] bg-white px-4 py-2.5 text-sm font-medium text-[#5B47FB] hover:bg-[#5B47FB] hover:text-white", 3, "href", 4, "ngIf"], [1, "mt-2", "text-xs", "text-gray-600"], ["id", "open-in-safari-link", "target", "_top", 1, "mt-3", "flex", "w-full", "items-center", "justify-center", "rounded-md", "border", "border-[#5B47FB]", "bg-white", "px-4", "py-2.5", "text-sm", "font-medium", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", 3, "href"], ["id", "cookie-debug-info", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "mt-3", "grid", "grid-cols-[auto,minmax(0,1fr)]", "gap-x-4", "gap-y-2", "text-sm"], [1, "font-medium", "text-gray-600"], [1, "break-all", "font-mono", "text-xs", "text-gray-900"], [1, "font-mono", "text-xs", "text-gray-900"], [1, "mt-2", "text-xs", "text-gray-500"]], template: function ThirdPartyCookiesErrorComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header");
@@ -61677,7 +60931,7 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
         \u0275\u0275elementEnd();
         \u0275\u0275text(16, ". ");
         \u0275\u0275elementEnd();
-        \u0275\u0275template(17, ThirdPartyCookiesErrorComponent_div_17_Template, 20, 4, "div", 10);
+        \u0275\u0275template(17, ThirdPartyCookiesErrorComponent_div_17_Template, 14, 2, "div", 10);
         \u0275\u0275elementStart(18, "button", 11);
         \u0275\u0275text(19, " Back to Sign In ");
         \u0275\u0275elementEnd()();
@@ -61738,6 +60992,12 @@ var AuthInterceptorService = class _AuthInterceptorService {
     this.router = router;
     this.logger = logger;
   }
+  static {
+    this.AUTO_SIGNOUT_EXEMPT_PATH_SUFFIXES = [
+      "/bridge/vault_auth_session",
+      "/bridge/vault_auth_signout"
+    ];
+  }
   handleAuthError(err) {
     if (err.status === 401 || err.status === 403) {
       this.authService.Signout();
@@ -61755,6 +61015,10 @@ var AuthInterceptorService = class _AuthInterceptorService {
       return next.handle(req);
     }
     const authReq = req.clone({ withCredentials: true });
+    const isExemptFromAutoSignout = _AuthInterceptorService.AUTO_SIGNOUT_EXEMPT_PATH_SUFFIXES.some((pathSuffix) => reqUrl.pathname.endsWith(pathSuffix));
+    if (isExemptFromAutoSignout) {
+      return next.handle(authReq);
+    }
     return next.handle(authReq).pipe(catchError((x) => this.handleAuthError(x)));
   }
   static {
@@ -66977,11 +66241,11 @@ function getFirstException(event) {
 }
 function getEventDescription(event) {
   const {
-    message: message2,
+    message,
     event_id: eventId
   } = event;
-  if (message2) {
-    return message2;
+  if (message) {
+    return message;
   }
   const firstException = getFirstException(event);
   if (firstException) {
@@ -67747,15 +67011,15 @@ var Scope = class _Scope {
    *
    * @returns {string} The id of the captured message.
    */
-  captureMessage(message2, level, hint) {
+  captureMessage(message, level, hint) {
     const eventId = hint?.event_id || uuid4();
     if (!this._client) {
       DEBUG_BUILD && debug.warn("No client configured on scope - will not capture message!");
       return eventId;
     }
-    const syntheticException = hint?.syntheticException ?? new Error(message2);
-    this._client.captureMessage(message2, level, __spreadProps(__spreadValues({
-      originalException: message2,
+    const syntheticException = hint?.syntheticException ?? new Error(message);
+    this._client.captureMessage(message, level, __spreadProps(__spreadValues({
+      originalException: message,
       syntheticException
     }, hint), {
       event_id: eventId
@@ -68799,11 +68063,11 @@ function registerSpanErrorInstrumentation() {
     const activeSpan = getActiveSpan();
     const rootSpan = activeSpan && getRootSpan(activeSpan);
     if (rootSpan) {
-      const message2 = "internal_error";
-      DEBUG_BUILD && debug.log(`[Tracing] Root span: ${message2} -> Global error occurred`);
+      const message = "internal_error";
+      DEBUG_BUILD && debug.log(`[Tracing] Root span: ${message} -> Global error occurred`);
       rootSpan.setStatus({
         code: SPAN_STATUS_ERROR,
-        message: message2
+        message
       });
     }
   }
@@ -69033,8 +68297,8 @@ function forEachEnvelopeItem(envelope, callback) {
   }
   return false;
 }
-function envelopeContainsItemType(envelope, types2) {
-  return forEachEnvelopeItem(envelope, (_2, type) => types2.includes(type));
+function envelopeContainsItemType(envelope, types) {
+  return forEachEnvelopeItem(envelope, (_2, type) => types.includes(type));
 }
 function encodeUTF8(input2) {
   const carrier = getSentryCarrier(GLOBAL_OBJ);
@@ -71141,7 +70405,7 @@ function _INTERNAL_captureLog(beforeLog, currentScope = getCurrentScope(), captu
   }
   const {
     level,
-    message: message2,
+    message,
     attributes: logAttributes = {},
     severityNumber
   } = log2;
@@ -71150,7 +70414,7 @@ function _INTERNAL_captureLog(beforeLog, currentScope = getCurrentScope(), captu
   const serializedLog = {
     timestamp,
     level,
-    body: _removeLoneSurrogates(String(message2)),
+    body: _removeLoneSurrogates(String(message)),
     trace_id: traceContext?.trace_id,
     severity_number: severityNumber ?? SEVERITY_TEXT_TO_SEVERITY_NUMBER[level],
     attributes: sanitizeLogAttributes(__spreadProps(__spreadValues(__spreadValues({}, serializeAttributes(scopeAttributes)), serializeAttributes(logAttributes, true)), {
@@ -71643,15 +70907,15 @@ var MISSING_RELEASE_FOR_SESSION_ERROR = "Discarded session because of missing or
 var INTERNAL_ERROR_SYMBOL = /* @__PURE__ */ Symbol.for("SentryInternalError");
 var DO_NOT_SEND_EVENT_SYMBOL = /* @__PURE__ */ Symbol.for("SentryDoNotSendEventError");
 var DEFAULT_FLUSH_INTERVAL = 5e3;
-function _makeInternalError(message2) {
+function _makeInternalError(message) {
   return {
-    message: message2,
+    message,
     [INTERNAL_ERROR_SYMBOL]: true
   };
 }
-function _makeDoNotSendEventError(message2) {
+function _makeDoNotSendEventError(message) {
   return {
-    message: message2,
+    message,
     [DO_NOT_SEND_EVENT_SYMBOL]: true
   };
 }
@@ -71748,13 +71012,13 @@ var Client = class {
    *
    * Unlike `captureMessage` exported from every SDK, this method requires that you pass it the current scope.
    */
-  captureMessage(message2, level, hint, currentScope) {
+  captureMessage(message, level, hint, currentScope) {
     const hintWithEventId = __spreadValues({
       event_id: uuid4()
     }, hint);
-    const eventMessage = isParameterizedString(message2) ? message2 : String(message2);
-    const isMessage = isPrimitive(message2);
-    const promisedEvent = isMessage ? this.eventFromMessage(eventMessage, level, hintWithEventId) : this.eventFromException(message2, hintWithEventId);
+    const eventMessage = isParameterizedString(message) ? message : String(message);
+    const isMessage = isPrimitive(message);
+    const promisedEvent = isMessage ? this.eventFromMessage(eventMessage, level, hintWithEventId) : this.eventFromException(message, hintWithEventId);
     this._process(() => promisedEvent.then((event) => this._captureEvent(event, hintWithEventId, currentScope)), isMessage ? "unknown" : "error");
     return hintWithEventId.event_id;
   }
@@ -72741,7 +72005,7 @@ function _isIgnoredError(event, ignoreErrors) {
   if (!ignoreErrors?.length) {
     return false;
   }
-  return getPossibleEventMessages(event).some((message2) => stringMatchesSomePattern(message2, ignoreErrors));
+  return getPossibleEventMessages(event).some((message) => stringMatchesSomePattern(message, ignoreErrors));
 }
 function _isIgnoredTransaction(event, ignoreTransactions) {
   if (!ignoreTransactions?.length) {
@@ -73811,18 +73075,18 @@ function extractType(ex) {
   return name;
 }
 function extractMessage(ex) {
-  const message2 = ex?.message;
+  const message = ex?.message;
   if (isWebAssemblyException(ex)) {
     if (Array.isArray(ex.message) && ex.message.length == 2) {
       return ex.message[1];
     }
     return "wasm exception";
   }
-  if (!message2) {
+  if (!message) {
     return "No error message";
   }
-  if (message2.error && typeof message2.error.message === "string") {
-    return _enhanceErrorWithSentryInfo(message2.error);
+  if (message.error && typeof message.error.message === "string") {
+    return _enhanceErrorWithSentryInfo(message.error);
   }
   return _enhanceErrorWithSentryInfo(ex);
 }
@@ -73836,9 +73100,9 @@ function eventFromException(stackParser, exception, hint, attachStacktrace) {
   }
   return resolvedSyncPromise(event);
 }
-function eventFromMessage2(stackParser, message2, level = "info", hint, attachStacktrace) {
+function eventFromMessage2(stackParser, message, level = "info", hint, attachStacktrace) {
   const syntheticException = hint?.syntheticException || void 0;
-  const event = eventFromString(stackParser, message2, syntheticException, attachStacktrace);
+  const event = eventFromString(stackParser, message, syntheticException, attachStacktrace);
   event.level = level;
   if (hint?.event_id) {
     event.event_id = hint.event_id;
@@ -73869,9 +73133,9 @@ function eventFromUnknownInput2(stackParser, exception, syntheticException, atta
       }
     } else {
       const name = domException.name || (isDOMError(domException) ? "DOMError" : "DOMException");
-      const message2 = domException.message ? `${name}: ${domException.message}` : name;
-      event = eventFromString(stackParser, message2, syntheticException, attachStacktrace);
-      addExceptionTypeValue(event, message2);
+      const message = domException.message ? `${name}: ${domException.message}` : name;
+      event = eventFromString(stackParser, message, syntheticException, attachStacktrace);
+      addExceptionTypeValue(event, message);
     }
     if ("code" in domException) {
       event.tags = __spreadProps(__spreadValues({}, event.tags), {
@@ -73898,14 +73162,14 @@ function eventFromUnknownInput2(stackParser, exception, syntheticException, atta
   });
   return event;
 }
-function eventFromString(stackParser, message2, syntheticException, attachStacktrace) {
+function eventFromString(stackParser, message, syntheticException, attachStacktrace) {
   const event = {};
   if (attachStacktrace && syntheticException) {
     const frames = parseStackFrames2(stackParser, syntheticException);
     if (frames.length) {
       event.exception = {
         values: [{
-          value: message2,
+          value: message,
           stacktrace: {
             frames
           }
@@ -73916,18 +73180,18 @@ function eventFromString(stackParser, message2, syntheticException, attachStackt
       synthetic: true
     });
   }
-  if (isParameterizedString(message2)) {
+  if (isParameterizedString(message)) {
     const {
       __sentry_template_string__,
       __sentry_template_values__
-    } = message2;
+    } = message;
     event.logentry = {
       message: __sentry_template_string__,
       params: __sentry_template_values__
     };
     return event;
   }
-  event.message = message2;
+  event.message = message;
   return event;
 }
 function getNonErrorObjectExceptionValue(exception, {
@@ -74011,8 +73275,8 @@ var BrowserClient = class extends Client {
   /**
    * @inheritDoc
    */
-  eventFromMessage(message2, level = "info", hint) {
-    return eventFromMessage2(this._options.stackParser, message2, level, hint, this._options.attachStacktrace);
+  eventFromMessage(message, level = "info", hint) {
+    return eventFromMessage2(this._options.stackParser, message, level, hint, this._options.attachStacktrace);
   }
   /**
    * @inheritDoc
@@ -80703,13 +79967,13 @@ var IframeManager = class {
     const iframeDoc = getIFrameContentDocument(iframeEl);
     if (iframeDoc && iframeDoc.adoptedStyleSheets && iframeDoc.adoptedStyleSheets.length > 0) this.stylesheetManager.adoptStyleSheets(iframeDoc.adoptedStyleSheets, this.mirror.getId(iframeDoc));
   }
-  handleMessage(message2) {
-    const crossOriginMessageEvent = message2;
+  handleMessage(message) {
+    const crossOriginMessageEvent = message;
     if (crossOriginMessageEvent.data.type !== "rrweb" || // To filter out the rrweb messages which are forwarded by some sites.
     crossOriginMessageEvent.origin !== crossOriginMessageEvent.data.origin) return;
-    const iframeSourceWindow = message2.source;
+    const iframeSourceWindow = message.source;
     if (!iframeSourceWindow) return;
-    const iframeEl = this.crossOriginIframeMap.get(message2.source);
+    const iframeEl = this.crossOriginIframeMap.get(message.source);
     if (!iframeEl) return;
     const transformedEvent = this.transformCrossOriginEvent(iframeEl, crossOriginMessageEvent.data.event);
     if (transformedEvent) this.wrappedEmit(transformedEvent, crossOriginMessageEvent.data.isCheckout);
@@ -81150,13 +80414,13 @@ function record(options = {}) {
     if (inEmittingFrame) {
       emit?.(eventProcessor(e2), isCheckout);
     } else if (passEmitsToParent) {
-      const message2 = {
+      const message = {
         type: "rrweb",
         event: eventProcessor(e2),
         origin: window.location.origin,
         isCheckout
       };
-      window.parent.postMessage(message2, "*");
+      window.parent.postMessage(message, "*");
     }
     if (e2.type === EventType2.FullSnapshot) {
       lastFullSnapshotEvent = e2;
@@ -81884,13 +81148,13 @@ var handleDomListener = (replay) => {
     addBreadcrumbEvent(replay, result);
   };
 };
-function getBaseDomBreadcrumb(target, message2) {
+function getBaseDomBreadcrumb(target, message) {
   const nodeId = record.mirror.getId(target);
   const node = nodeId && record.mirror.getNode(nodeId);
   const meta = node && record.mirror.getMeta(node);
   const element = meta && isElement3(meta) ? meta : null;
   return {
-    message: message2,
+    message,
     data: element ? {
       nodeId,
       node: {
@@ -81905,27 +81169,27 @@ function getBaseDomBreadcrumb(target, message2) {
 function handleDom(handlerData) {
   const {
     target,
-    message: message2
+    message
   } = getDomTarget(handlerData);
   return createBreadcrumb(__spreadValues({
     category: `ui.${handlerData.name}`
-  }, getBaseDomBreadcrumb(target, message2)));
+  }, getBaseDomBreadcrumb(target, message)));
 }
 function getDomTarget(handlerData) {
   const isClick = handlerData.name === "click";
-  let message2;
+  let message;
   let target = null;
   try {
     target = isClick ? getClickTargetNode(handlerData.event) : getTargetNode(handlerData.event);
-    message2 = htmlTreeAsString2(target, {
+    message = htmlTreeAsString2(target, {
       maxStringLength: 200
     }) || "<unknown>";
   } catch {
-    message2 = "<unknown>";
+    message = "<unknown>";
   }
   return {
     target,
-    message: message2
+    message
   };
 }
 function isElement3(node) {
@@ -81959,13 +81223,13 @@ function getKeyboardBreadcrumb(event) {
   if (!hasModifierKey && isCharacterKey) {
     return null;
   }
-  const message2 = htmlTreeAsString2(target, {
+  const message = htmlTreeAsString2(target, {
     maxStringLength: 200
   }) || "<unknown>";
-  const baseBreadcrumb = getBaseDomBreadcrumb(target, message2);
+  const baseBreadcrumb = getBaseDomBreadcrumb(target, message);
   return createBreadcrumb({
     category: "ui.keyDown",
-    message: message2,
+    message,
     data: __spreadProps(__spreadValues({}, baseBreadcrumb.data), {
       metaKey,
       shiftKey,
@@ -82170,14 +81434,14 @@ function e() {
 }
 var CONSOLE_LEVELS2 = ["log", "warn", "error"];
 var PREFIX2 = "[Replay] ";
-function _addBreadcrumb(message2, level = "info") {
+function _addBreadcrumb(message, level = "info") {
   addBreadcrumb({
     category: "console",
     data: {
       logger: "replay"
     },
     level,
-    message: `${PREFIX2}${message2}`
+    message: `${PREFIX2}${message}`
   }, {
     level
   });
@@ -82202,9 +81466,9 @@ function makeReplayDebugLogger() {
         }
       };
     });
-    _debug.exception = (error2, ...message2) => {
-      if (message2.length && _debug.error) {
-        _debug.error(...message2);
+    _debug.exception = (error2, ...message) => {
+      if (message.length && _debug.error) {
+        _debug.error(...message);
       }
       debug.error(PREFIX2, error2);
       if (_capture) {
