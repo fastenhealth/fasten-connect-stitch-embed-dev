@@ -48645,15 +48645,15 @@ var AuthService = class _AuthService {
       return resp?.data;
     });
   }
-  /**
-   * Clear the server-side (HttpOnly) auth cookie and the locally cached session. The SPA can no longer
-   * clear the cookie itself via document.cookie, so this always goes through the API -- even if the
-   * request fails, the local session cache is cleared so the UI reflects a signed-out state.
-   */
+  /** Clear either a legacy frontend-readable cookie or a new server-managed HttpOnly cookie. */
   Signout() {
     return __async(this, null, function* () {
       this.publishAuthenticationState(false);
       this.ClearSession();
+      if (getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME)) {
+        deleteCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
+        return void 0;
+      }
       try {
         return yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_signout`, null, this.requestOptions()).toPromise();
       } catch (error2) {
@@ -48698,30 +48698,21 @@ var AuthService = class _AuthService {
   }
   CheckCookieSupport() {
     return __async(this, arguments, function* (scope = CookieProbeScope.All) {
-      try {
-        const scopeParams = {};
-        if (scope === CookieProbeScope.Regular) {
-          scopeParams["regular_only"] = "true";
-        }
-        const expectedProbe = yield this.setCookieProbe(scopeParams);
-        const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_support`, null, {
-          withCredentials: true,
-          params: __spreadValues({ probe: expectedProbe }, scopeParams)
-        }));
-        const supported = response?.data?.supported;
-        if (typeof supported !== "boolean") {
-          throw new Error(`Invalid cookie support response: ${supported}`);
-        }
-        this.cookieSupported = supported;
-        return supported;
-      } catch (error2) {
-        if (!this.isNotFound(error2)) {
-          throw error2;
-        }
-        const supported = this.checkLegacyCookieSupport();
-        this.cookieSupported = supported;
-        return supported;
+      const scopeParams = {};
+      if (scope === CookieProbeScope.Regular) {
+        scopeParams["regular_only"] = "true";
       }
+      const expectedProbe = yield this.setCookieProbe(scopeParams);
+      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/cookie_support`, null, {
+        withCredentials: true,
+        params: __spreadValues({ probe: expectedProbe }, scopeParams)
+      }));
+      const supported = response?.data?.supported;
+      if (typeof supported !== "boolean") {
+        throw new Error(`Invalid cookie support response: ${supported}`);
+      }
+      this.cookieSupported = supported;
+      return supported;
     });
   }
   setCookieProbe(params) {
@@ -48743,7 +48734,7 @@ var AuthService = class _AuthService {
   CanUseStorageAccessFallback() {
     return this.configService.systemConfig$.sdkMode === SDKMode.None && typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
   }
-  /** Debug-only summary of whether the vault auth session is active. The cookie itself is HttpOnly and unreadable. */
+  /** Debug-only summary of whether either supported vault auth session is active. */
   GetVaultAuthSessionDebugInfo() {
     return __async(this, null, function* () {
       const isSet = yield this.IsVaultAuthSessionActive();
@@ -48753,12 +48744,13 @@ var AuthService = class _AuthService {
       };
     });
   }
-  /**
-   * Fetch a short-lived, purpose-scoped token to hand off to the identity-verification popup, in place of
-   * the session JWT itself (which never leaves the cookie jar). See fasten.service.ts openWindowInPopupForIdentityVerification.
-   */
+  /** Return the legacy readable session JWT or fetch the new purpose-scoped popup handoff token. */
   GetIdentityVerificationHandoffToken() {
     return __async(this, null, function* () {
+      const legacyToken = getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
+      if (legacyToken && (yield this.getLegacyCookieSession())) {
+        return legacyToken;
+      }
       try {
         const response = yield firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_handoff`, this.requestOptions()));
         const handoffToken = response?.data?.handoff_token;
@@ -48771,11 +48763,11 @@ var AuthService = class _AuthService {
         if (!this.isNotFound(error2)) {
           throw error2;
         }
-        const legacyToken = getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
-        if (!legacyToken) {
+        const legacyToken2 = getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
+        if (!legacyToken2) {
           throw new Error("Legacy vault auth cookie is not available");
         }
-        return legacyToken;
+        return legacyToken2;
       }
     });
   }
@@ -48798,11 +48790,13 @@ var AuthService = class _AuthService {
       return this.sessionRequest;
     }
     const requestGeneration = this.sessionGeneration;
-    const request = firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_session`, this.requestOptions())).then((sessionResponse) => {
+    const readableLegacyToken = getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
+    const sessionLoader = readableLegacyToken ? this.getLegacyCookieSession().then((legacySession) => legacySession ?? this.fetchHttpOnlySession()) : this.fetchHttpOnlySession();
+    const request = sessionLoader.then((sessionResponse) => {
       if (requestGeneration === this.sessionGeneration) {
-        this.storeSession(sessionResponse.data);
+        this.storeSession(sessionResponse);
       }
-      return sessionResponse.data;
+      return sessionResponse;
     }).catch((error2) => {
       if (this.isNotFound(error2)) {
         return this.getLegacyCookieSession().then((legacySession) => {
@@ -48831,6 +48825,9 @@ var AuthService = class _AuthService {
     this.session = session;
     this.publishAuthenticationState(true);
   }
+  fetchHttpOnlySession() {
+    return firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_session`, this.requestOptions())).then((sessionResponse) => sessionResponse.data);
+  }
   publishAuthenticationState(authenticated) {
     if (this.IsAuthenticatedSubject.value != authenticated) {
       this.IsAuthenticatedSubject.next(authenticated);
@@ -48848,32 +48845,28 @@ var AuthService = class _AuthService {
           issuer: environment.connect_api_jwt_issuer_host,
           audience: environment.connect_api_jwt_issuer_host
         });
-        const expiresAt = Number(payload["session_expires_at"] ?? payload.exp);
-        if (!Number.isFinite(expiresAt)) {
-          this.logger.error("legacy vault auth JWT is missing its expiration");
-          return null;
-        }
-        return {
-          vault_profile_id: String(payload["vault_profile_id"] ?? ""),
-          email: String(payload["email"] ?? ""),
-          api_mode: payload["api_mode"],
-          has_verified_identity: Boolean(payload["has_verified_identity"]),
-          verified_identity_csp_type: payload["verified_identity_csp_type"],
-          session_issued_at: Number(payload["session_issued_at"] ?? payload.iat ?? 0),
-          session_expires_at: expiresAt
-        };
+        return this.legacyPayloadToSession(payload);
       } catch (error2) {
         this.logger.error("failed to verify legacy vault auth JWT", error2);
         return null;
       }
     });
   }
-  checkLegacyCookieSupport() {
-    const probeName = `fasten_cookie_probe_${Math.random().toString(36).slice(2)}`;
-    setCookie(probeName, "1", 1);
-    const supported = getCookie(probeName) === "1";
-    deleteCookie(probeName);
-    return supported;
+  legacyPayloadToSession(payload) {
+    const expiresAt = Number(payload.exp);
+    if (!payload.sub || !Number.isFinite(expiresAt)) {
+      this.logger.error("legacy vault auth JWT is missing its subject or expiration");
+      return null;
+    }
+    return {
+      vault_profile_id: payload.sub,
+      email: String(payload["email"] ?? ""),
+      api_mode: payload["api_mode"],
+      has_verified_identity: Boolean(payload["has_verified_identity"]),
+      verified_identity_csp_type: payload["verified_identity_csp_type"],
+      session_issued_at: Number(payload.iat ?? 0),
+      session_expires_at: expiresAt
+    };
   }
   isNotFound(error2) {
     return error2 instanceof HttpErrorResponse && error2.status === 404;
@@ -48897,15 +48890,19 @@ function getCookie(name) {
   }
   return "";
 }
-function setCookie(name, value, expireDays, path = "") {
+function setCookie(name, value, expireDays, path = "", domain = "", partitioned = false) {
   const expiresAt = /* @__PURE__ */ new Date();
   expiresAt.setTime(expiresAt.getTime() + expireDays * 24 * 60 * 60 * 1e3);
   const cookiePath = path ? `; path=${path}` : "";
-  document.cookie = `${name}=${value}; expires=${expiresAt.toUTCString()}${cookiePath}; SameSite=Lax`;
+  const cookieDomain = domain ? `; domain=${domain}` : "";
+  const cookieSecurity = partitioned ? "; SameSite=None; Secure; Partitioned" : "; SameSite=Lax";
+  document.cookie = `${name}=${value}; expires=${expiresAt.toUTCString()}${cookiePath}${cookieDomain}${cookieSecurity}`;
 }
 function deleteCookie(name) {
   setCookie(name, "", -99999);
   setCookie(name, "", -99999, "/");
+  setCookie(name, "", -99999, "/", environment.connect_base_domain);
+  setCookie(name, "", -99999, "/", environment.connect_base_domain, true);
 }
 
 // node_modules/ngx-device-detector/fesm2022/ngx-device-detector.mjs
@@ -49948,10 +49945,9 @@ var FastenService = class _FastenService {
     }
     return window.open(redirectUrlParts.toString(), "_blank", features);
   }
-  // SECURITY: identity verification crosses from the embedded context into a top-level popup, which may not
-  // be able to receive the (possibly partitioned) session cookie. POST a short-lived, purpose-scoped handoff
-  // token fetched from the API instead -- the session JWT itself never leaves the cookie jar. window.open is
-  // still called synchronously (before the token fetch) so browsers don't treat this as a blocked popup.
+  // Identity verification crosses from the embedded context into a top-level popup, which may not receive a
+  // partitioned cookie. New backends provide a short-lived purpose-scoped handoff token; main-branch backends
+  // still require their frontend-readable session JWT. window.open stays synchronous so it is not blocked.
   openWindowInPopupForIdentityVerification(redirectUrlParts) {
     const isDesktop = this.deviceService.isDesktop();
     let features = "";
