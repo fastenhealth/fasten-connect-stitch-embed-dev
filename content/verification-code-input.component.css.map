@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["projects/fasten-connect-stitch-embed/src/app/components/verification-code-input/verification-code-input.component.css"],
-  "sourcesContent": [".verification-code-digit {\n  width: 2.5rem;\n  height: 2.5rem;\n  border: 1px solid #d1d5db;\n  border-radius: 0.5rem;\n  color: #111827;\n  font-size: 1.25rem;\n  font-weight: 400;\n  line-height: 2.5rem;\n  text-align: center;\n}\n\n.verification-code-digit:focus {\n  border-color: #6b7280;\n  outline: 2px solid transparent;\n  outline-offset: 2px;\n}\n\n.verification-code-digit:disabled {\n  cursor: not-allowed;\n  opacity: 0.6;\n}\n"],
-  "mappings": ";AAAA,CAAC;AACC,SAAO;AACP,UAAQ;AACR,UAAQ,IAAI,MAAM;AAClB,iBAAe;AACf,SAAO;AACP,aAAW;AACX,eAAa;AACb,eAAa;AACb,cAAY;AACd;AAEA,CAZC,uBAYuB;AACtB,gBAAc;AACd,WAAS,IAAI,MAAM;AACnB,kBAAgB;AAClB;AAEA,CAlBC,uBAkBuB;AACtB,UAAQ;AACR,WAAS;AACX;",
-  "names": []
-}
