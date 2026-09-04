@@ -48634,53 +48634,46 @@ var AuthService = class _AuthService {
   ngOnDestroy() {
     window.removeEventListener("storage", this.storageListener);
   }
-  /** Shared request options for every vault auth call: attaches the tenant's public_id and any extra query params. */
+  /** Attach the tenant public ID to vault auth requests. */
   requestOptions(extraParams) {
+    const params = __spreadValues({ public_id: this.configService.systemConfig$.publicId }, extraParams);
     return {
       withCredentials: true,
-      params: __spreadValues({ "public_id": this.configService.systemConfig$.publicId }, extraParams)
+      params
     };
   }
   VaultAuthBegin(email, cspPromptForce) {
     return __async(this, null, function* () {
-      const resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_begin`, {
-        "email": email,
-        "csp_prompt_force": cspPromptForce
-      }, this.requestOptions()).toPromise();
+      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_begin`, { email, csp_prompt_force: cspPromptForce }, this.requestOptions()));
       this.ClearSession();
-      return resp && "data" in resp ? resp.data : resp;
+      return "data" in response ? response.data : response;
     });
   }
   VaultAuthFinish(email, code) {
     return __async(this, null, function* () {
-      let resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_finish`, {
-        "email": email,
-        "code": code
-      }, this.requestOptions()).toPromise();
+      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_finish`, { email, code }, this.requestOptions()));
       this.ClearSession();
-      return resp;
+      return response;
     });
   }
   VaultAuthResendCode(email) {
     return __async(this, null, function* () {
-      const resp = yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_resend_code`, {
-        "email": email
-      }, this.requestOptions()).toPromise();
-      return resp?.data;
+      const response = yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_resend_code`, { email }, this.requestOptions()));
+      return response.data;
     });
   }
-  /** Clear either a legacy frontend-readable cookie or a new server-managed HttpOnly cookie. */
+  /** Clear a legacy or server-managed auth cookie. */
   Signout() {
     return __async(this, null, function* () {
       this.publishAuthenticationState(false);
       this.ClearSession();
       this.notifyOtherTabsOfSignout();
-      if (!this.usesHttpOnlyCookieMode()) {
+      if (!this.usesHttpOnlyCookie) {
         deleteCookie(FASTEN_AUTH_VAULT_COOKIE_NAME);
         return void 0;
       }
       try {
-        return yield this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_signout`, null, this.requestOptions()).toPromise();
+        return yield firstValueFrom(this._httpClient.post(`${environment.connect_api_endpoint_base}/bridge/vault_auth_signout`, null, this.requestOptions()));
       } catch (error2) {
         this.logger.error("error signing out", error2);
         return void 0;
@@ -48689,15 +48682,52 @@ var AuthService = class _AuthService {
       }
     });
   }
-  /** Load the verified session (cached briefly), or null if the visitor is not authenticated. */
-  GetSession() {
-    return this.requestSession(false);
+  /** Load the cached verified session when possible. */
+  /** Pass true to force a refresh; concurrent callers share the request. */
+  GetSession(forceRefresh = false) {
+    const cachedSession = this.session;
+    if (!forceRefresh && cachedSession && this.isCachedSessionUsable()) {
+      return Promise.resolve(cachedSession);
+    }
+    if (this.sessionRequest) {
+      return this.sessionRequest;
+    }
+    const requestGeneration = this.sessionGeneration;
+    const sessionLoader = this.usesHttpOnlyCookie ? this.fetchHttpOnlySession() : this.getLegacyCookieSession();
+    const request = sessionLoader.then((sessionResponse) => {
+      if (!sessionResponse) {
+        this.publishAuthenticationState(false);
+        return null;
+      }
+      if (sessionResponse.api_mode !== this.configService.systemConfig$.apiMode) {
+        this.logger.warn("vault auth session API mode does not match the configured API mode");
+        this.ClearSession();
+        this.publishAuthenticationState(false);
+        return null;
+      }
+      if (requestGeneration === this.sessionGeneration) {
+        this.storeSession(sessionResponse);
+      }
+      return sessionResponse;
+    }).catch((error2) => {
+      this.ClearSession();
+      if (error2 instanceof HttpErrorResponse && (error2.status === 401 || error2.status === 403)) {
+        this.publishAuthenticationState(false);
+        return null;
+      }
+      this.logger.error("error fetching session", error2);
+      throw error2;
+    });
+    this.sessionRequest = request;
+    const clearRequest = () => {
+      if (this.sessionRequest === request) {
+        this.sessionRequest = void 0;
+      }
+    };
+    void request.then(clearRequest, clearRequest);
+    return request;
   }
-  /** Force a session check/refresh, bypassing the cache. Concurrent callers share one request. */
-  RefreshSession() {
-    return this.requestSession(true);
-  }
-  /** Drop the cached session, eg. after an action that mutates the auth cookie server-side. */
+  /** Drop cached session state after the cookie changes. */
   ClearSession() {
     this.sessionGeneration++;
     this.session = void 0;
@@ -48706,7 +48736,7 @@ var AuthService = class _AuthService {
   }
   IsVaultAuthSessionActive() {
     return __async(this, null, function* () {
-      const isActive = (yield this.RefreshSession()) !== null;
+      const isActive = (yield this.GetSession(true)) !== null;
       if (!isActive) {
         this.logger.warn("Vault auth session is not active");
       }
@@ -48755,12 +48785,15 @@ var AuthService = class _AuthService {
     });
   }
   RequiresStorageAccessFallback() {
-    return this.cookieSupported === false && this.CanUseStorageAccessFallback();
+    const cookieIsBlocked = this.cookieSupported === false;
+    return cookieIsBlocked && this.CanUseStorageAccessFallback();
   }
   CanUseStorageAccessFallback() {
-    return this.configService.systemConfig$.sdkMode === SDKMode.None && typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
+    const usesBrowserSdk = this.configService.systemConfig$.sdkMode === SDKMode.None;
+    const storageAccessApiAvailable = typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
+    return usesBrowserSdk && storageAccessApiAvailable;
   }
-  /** Debug-only summary of whether either supported vault auth session is active. */
+  /** Summarize the auth session without exposing its value. */
   GetVaultAuthSessionDebugInfo() {
     return __async(this, null, function* () {
       const isSet = yield this.IsVaultAuthSessionActive();
@@ -48770,10 +48803,10 @@ var AuthService = class _AuthService {
       };
     });
   }
-  /** Return the legacy readable session JWT or fetch the new purpose-scoped popup handoff token. */
+  /** Get a legacy session JWT or a scoped popup handoff token. */
   GetIdentityVerificationHandoffToken() {
     return __async(this, null, function* () {
-      if (this.usesHttpOnlyCookieMode()) {
+      if (this.usesHttpOnlyCookie) {
         const response = yield firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_handoff`, this.requestOptions()));
         const handoffToken = response?.data?.handoff_token;
         if (!handoffToken) {
@@ -48800,46 +48833,15 @@ var AuthService = class _AuthService {
   /////////////////////////////////////////////////////////////////////////////////////////////////
   //Private Methods
   /////////////////////////////////////////////////////////////////////////////////////////////////
-  requestSession(force) {
-    if (!force && this.session && this.sessionCachedAt !== void 0 && Date.now() - this.sessionCachedAt < SESSION_CACHE_TTL_MS && (this.usesHttpOnlyCookieMode() || Boolean(getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME))) && this.session.session_expires_at * 1e3 > Date.now() + SESSION_REFRESH_WINDOW_MS) {
-      return Promise.resolve(this.session);
+  isCachedSessionUsable() {
+    if (!this.session || this.sessionCachedAt === void 0) {
+      return false;
     }
-    if (this.sessionRequest) {
-      return this.sessionRequest;
-    }
-    const requestGeneration = this.sessionGeneration;
-    const sessionLoader = this.usesHttpOnlyCookieMode() ? this.fetchHttpOnlySession() : this.getLegacyCookieSession();
-    const request = sessionLoader.then((sessionResponse) => {
-      if (!sessionResponse) {
-        this.publishAuthenticationState(false);
-        return null;
-      }
-      if (sessionResponse.api_mode !== this.configService.systemConfig$.apiMode) {
-        this.logger.warn("vault auth session API mode does not match the configured API mode");
-        this.ClearSession();
-        this.publishAuthenticationState(false);
-        return null;
-      }
-      if (requestGeneration === this.sessionGeneration) {
-        this.storeSession(sessionResponse);
-      }
-      return sessionResponse;
-    }).catch((error2) => {
-      this.ClearSession();
-      if (error2 instanceof HttpErrorResponse && (error2.status === 401 || error2.status === 403)) {
-        this.publishAuthenticationState(false);
-        return null;
-      }
-      this.logger.error("error fetching session", error2);
-      throw error2;
-    });
-    this.sessionRequest = request;
-    request.finally(() => {
-      if (this.sessionRequest === request) {
-        this.sessionRequest = void 0;
-      }
-    });
-    return request;
+    const now = Date.now();
+    const cacheIsFresh = now - this.sessionCachedAt < SESSION_CACHE_TTL_MS;
+    const cookieIsAvailable = this.usesHttpOnlyCookie || Boolean(getCookie(FASTEN_AUTH_VAULT_COOKIE_NAME));
+    const sessionIsFresh = this.session.session_expires_at * 1e3 > now + SESSION_REFRESH_WINDOW_MS;
+    return cacheIsFresh && cookieIsAvailable && sessionIsFresh;
   }
   storeSession(session) {
     this.session = session;
@@ -48847,10 +48849,14 @@ var AuthService = class _AuthService {
     this.publishAuthenticationState(true);
   }
   fetchHttpOnlySession() {
-    return firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_session`, this.requestOptions())).then((sessionResponse) => sessionResponse.data);
+    return __async(this, null, function* () {
+      const response = yield firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_session`, this.requestOptions()));
+      return response.data;
+    });
   }
-  usesHttpOnlyCookieMode() {
-    return this.configService.systemConfig$.org?.vault_auth_cookie_httponly === true;
+  get usesHttpOnlyCookie() {
+    const organization = this.configService.systemConfig$.org;
+    return organization?.vault_auth_cookie_httponly === true;
   }
   notifyOtherTabsOfSignout() {
     try {
@@ -49864,14 +49870,12 @@ var FastenService = class _FastenService {
     }));
   }
   getOrgConfig(publicId) {
-    let queryParams = {};
-    queryParams["public_id"] = publicId;
-    queryParams["client_auth_contract"] = "http-only-v1";
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/config`, {
-      params: queryParams
-    }).pipe(map((response) => {
+    const params = {
+      public_id: publicId,
+      client_auth_contract: "http-only-v1"
+    };
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/config`, { params }).pipe(tap((response) => {
       this.logger.info("Organization", response);
-      return response;
     }));
   }
   getOrgConnectionById(publicId, orgConnectionId) {
@@ -49970,9 +49974,10 @@ var FastenService = class _FastenService {
   }
   refreshAuthCookie() {
     return __async(this, null, function* () {
-      const response = yield this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, { withCredentials: true, params: {
-        "public_id": this.configService.systemConfig$.publicId
-      } }).toPromise();
+      const response = yield firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, {
+        withCredentials: true,
+        params: { public_id: this.configService.systemConfig$.publicId }
+      }));
       this.authService.ClearSession();
       return response;
     });
@@ -49986,39 +49991,35 @@ var FastenService = class _FastenService {
     }
     return window.open(redirectUrlParts.toString(), "_blank", features);
   }
-  // Identity verification crosses from the embedded context into a top-level popup, which may not receive a
-  // partitioned cookie. New backends provide a short-lived purpose-scoped handoff token; main-branch backends
-  // still require their frontend-readable session JWT. window.open stays synchronous so it is not blocked.
+  // Open synchronously, then POST a scoped token into the identity popup.
   openWindowInPopupForIdentityVerification(redirectUrlParts) {
     const isDesktop = this.deviceService.isDesktop();
     let features = "";
     if (isDesktop) {
       features = "popup=true,width=700,height=600";
     }
-    const target = "IdentityVerificationPopupWindow" + Math.random().toString(36).substring(2, 7);
+    const target = `IdentityVerificationPopupWindow-${v4_default()}`;
     const opened = window.open("", target, features);
+    if (!opened) {
+      return null;
+    }
     this.authService.GetIdentityVerificationHandoffToken().then((handoffToken) => {
-      const params = { [FASTEN_AUTH_VAULT_COOKIE_NAME]: handoffToken };
       const form = document.createElement("form");
       form.setAttribute("method", "post");
       form.setAttribute("action", redirectUrlParts.toString());
       form.setAttribute("target", target);
       form.style.display = "none";
-      for (const i in params) {
-        if (params.hasOwnProperty(i)) {
-          const input2 = document.createElement("input");
-          input2.type = "hidden";
-          input2.name = i;
-          input2.value = params[i];
-          form.appendChild(input2);
-        }
-      }
+      const input2 = document.createElement("input");
+      input2.type = "hidden";
+      input2.name = FASTEN_AUTH_VAULT_COOKIE_NAME;
+      input2.value = handoffToken;
+      form.appendChild(input2);
       document.body.appendChild(form);
       form.submit();
       document.body.removeChild(form);
     }).catch((error2) => {
       this.logger.error("failed to fetch identity verification handoff token", error2);
-      opened?.close();
+      opened.close();
     });
     return opened;
   }
@@ -50436,24 +50437,7 @@ var AppComponent = class _AppComponent {
           return;
         }
         if (this.tefcaMode) {
-          this.authService.CheckCookieSupport().then((cookieSupported) => __async(this, null, function* () {
-            if (!cookieSupported) {
-              if (this.canSkipCookieErrorForFlutterHttpOnly()) {
-                this.logger.info("[AppComponent] Cookie probes were blocked in Flutter HttpOnly cookie mode; continuing because the native WebView manages the cookie");
-              } else if (this.authService.CanUseStorageAccessFallback()) {
-                this.logger.info("[AppComponent] Cookie probes were blocked; continuing with the Storage Access API fallback");
-              } else {
-                this.logger.info("[AppComponent] Cookie support was not found!");
-                yield this.router.navigateByUrl("auth/signin/cookies-required");
-              }
-              return;
-            }
-            this.logger.info("[AppComponent] Cookie support detected");
-          })).catch((err) => {
-            this.logger.error("[AppComponent] Failed to check browser cookie support", err);
-            this.errorMessage = "Could not verify browser cookie support. Please try again or contact the developer of this app.";
-            this.messageBus.publishWidgetConfigError();
-          }).finally(() => this.loading = false);
+          void this.validateCookieSupport();
         } else {
           this.loading = false;
         }
@@ -50466,8 +50450,31 @@ var AppComponent = class _AppComponent {
       return apiMode;
     }
   }
-  canSkipCookieErrorForFlutterHttpOnly() {
-    return this.sdkMode === SDKMode.Flutter && this.configService.systemConfig$.org?.vault_auth_cookie_httponly === true;
+  validateCookieSupport() {
+    return __async(this, null, function* () {
+      try {
+        const cookieSupported = yield this.authService.CheckCookieSupport();
+        if (cookieSupported) {
+          this.logger.info("[AppComponent] Cookie support detected");
+          return;
+        }
+        const usesFlutterHttpOnlyCookie = this.sdkMode === SDKMode.Flutter && this.configService.systemConfig$.org?.vault_auth_cookie_httponly === true;
+        if (usesFlutterHttpOnlyCookie) {
+          this.logger.info("[AppComponent] Cookie probes were blocked; continuing with the native Flutter cookie manager");
+        } else if (this.authService.CanUseStorageAccessFallback()) {
+          this.logger.info("[AppComponent] Cookie probes were blocked; continuing with the Storage Access API fallback");
+        } else {
+          this.logger.info("[AppComponent] Cookie support was not found!");
+          yield this.router.navigateByUrl("auth/signin/cookies-required");
+        }
+      } catch (error2) {
+        this.logger.error("[AppComponent] Failed to check browser cookie support", error2);
+        this.errorMessage = "Could not verify browser cookie support. Please try again or contact the developer of this app.";
+        this.messageBus.publishWidgetConfigError();
+      } finally {
+        this.loading = false;
+      }
+    });
   }
   // these functions can be called externally to hide the widget via javascript
   modalClose() {
@@ -57377,10 +57384,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       email: this.existingVaultProfile.email
     };
     const storageAccessPromise = this.checkRequiresStoragePermissions() ? this.requestStorageAccess() : Promise.resolve(true);
-    const signoutPromise = this.authService.Signout().then((result) => {
-      this.logger.info(result);
-      return true;
-    });
+    const signoutPromise = this.authService.Signout();
     Promise.all([signoutPromise, storageAccessPromise]).then(() => {
       this.logger.info("Signin", this.existingVaultProfile.email);
       return this.authService.VaultAuthBegin(this.existingVaultProfile.email, this.configService.systemConfig$.tefcaCspPromptForce);
@@ -57469,32 +57473,26 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   }
   deriveSignInErrorMessage(err) {
-    let message2 = "An unknown error occurred during sign-in.";
-    try {
-      const status = typeof err?.status === "number" ? err.status : void 0;
-      if (status === 401 || status === 403) {
-        return "email or password is incorrect";
-      }
-      if (status === 0 || status !== void 0 && status >= 500) {
-        return "An internal server error occurred. Please try again.";
-      }
-      if (err?.error) {
-        if (typeof err.error === "string") {
-          return err.error;
-        }
-        if (typeof err.error?.message === "string") {
-          return err.error.message;
-        }
-        if (typeof err.error?.error === "string") {
-          return err.error.error;
-        }
-      }
-      if (typeof err?.message === "string") {
-        return err.message;
-      }
-    } catch {
+    const status = typeof err?.status === "number" ? err.status : void 0;
+    if (status === 401 || status === 403) {
+      return "email or password is incorrect";
     }
-    return message2;
+    if (status === 0 || status !== void 0 && status >= 500) {
+      return "An internal server error occurred. Please try again.";
+    }
+    if (typeof err?.error === "string") {
+      return err.error;
+    }
+    if (typeof err?.error?.message === "string") {
+      return err.error.message;
+    }
+    if (typeof err?.error?.error === "string") {
+      return err.error.error;
+    }
+    if (typeof err?.message === "string") {
+      return err.message;
+    }
+    return "An unknown error occurred during sign-in.";
   }
   setMessage(action) {
     if (action === "email-changed") {
@@ -57506,10 +57504,13 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     }
   }
   isStorageAccessApiSupportedByBrowser() {
-    return typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
+    const canCheckStorageAccess = typeof document.hasStorageAccess === "function";
+    const canRequestStorageAccess = typeof document.requestStorageAccess === "function";
+    return canCheckStorageAccess && canRequestStorageAccess;
   }
   checkRequiresStoragePermissions() {
-    return this.authService.RequiresStorageAccessFallback();
+    const requiresStorageAccess = this.authService.RequiresStorageAccessFallback();
+    return requiresStorageAccess;
   }
   hasStorageAccess() {
     if (!this.isStorageAccessApiSupportedByBrowser()) {
@@ -58504,11 +58505,11 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
       if (this.configService.systemConfig$.apiMode !== ApiMode.Test) {
         return;
       }
-      this.canSkipSignInCode = !!(yield this.authService.GetSession());
+      this.canSkipSignInCode = (yield this.authService.GetSession()) !== null;
     });
   }
   skipSignInCode() {
-    return this.router.navigateByUrl("dashboard");
+    void this.router.navigateByUrl("dashboard");
   }
   onCodeCompleted(code) {
     this.loading = true;
@@ -58698,7 +58699,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     });
   }
   skipIdentityVerification() {
-    return this.router.navigateByUrl("dashboard", {
+    void this.router.navigateByUrl("dashboard", {
       state: { skipIdentityVerification: true }
     });
   }

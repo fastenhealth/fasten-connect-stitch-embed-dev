@@ -72,18 +72,10 @@
   ];
   let userInteraction = false;
 
-  function openerOrigin() {
-    return window.location.origin;
-  }
-
   function notifyOpener(success) {
     if (window.opener) {
-      window.opener.postMessage(JSON.stringify({success}), openerOrigin());
+      window.opener.postMessage(JSON.stringify({success}), window.location.origin);
     }
-  }
-
-  function sharedCookieDomain(hostname) {
-    return sharedCookieDomains.find((domain) => hostname === `embed.${domain}`);
   }
 
   function setFirstPartyCookie() {
@@ -93,7 +85,9 @@
       "Secure",
       "Path=/"
     ];
-    const cookieDomain = sharedCookieDomain(window.location.hostname);
+    const cookieDomain = sharedCookieDomains.find(
+      (domain) => window.location.hostname === `embed.${domain}`
+    );
 
     if (cookieDomain) {
       cookieAttributes.push(`Domain=${cookieDomain}`);
@@ -112,9 +106,7 @@
 
 
   function userInteractionCompleted() {
-    // Seed the parent Connect domain on deployed hosts so the API sibling can
-    // participate in Safari's first-party cookie relationship. Localhost stays
-    // host-only because it has no shared parent domain.
+    // Share the consent cookie with the deployed API sibling.
     setFirstPartyCookie();
     userInteraction = true
     // Notify the opener window
