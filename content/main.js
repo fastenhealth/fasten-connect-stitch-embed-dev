@@ -48776,8 +48776,10 @@ var AuthService = class _AuthService {
   }
   CheckCookieSupport() {
     return __async(this, arguments, function* (scope = CookieProbeScope.All) {
+      const sdkMode = this.configService.systemConfig$.sdkMode;
+      const usesNativeSdk = sdkMode === SDKMode.ReactNative || sdkMode === SDKMode.Flutter;
       const scopeParams = {};
-      if (scope === CookieProbeScope.Regular) {
+      if (usesNativeSdk || scope === CookieProbeScope.Regular) {
         scopeParams["regular_only"] = "true";
       }
       const expectedProbe = yield this.setCookieProbe(scopeParams);
@@ -50515,7 +50517,7 @@ var AppComponent = class _AppComponent {
           this.logger.info("[AppComponent] Cookie support detected");
           return;
         }
-        const nativeSDK = this.sdkMode !== SDKMode.None;
+        const nativeSDK = this.sdkMode === SDKMode.ReactNative || this.sdkMode === SDKMode.Flutter;
         if (nativeSDK) {
           this.logger.info("[AppComponent] Cookie probes were blocked; continuing with the native SDK cookie manager");
         } else if (this.authService.CanUseStorageAccessFallback()) {
