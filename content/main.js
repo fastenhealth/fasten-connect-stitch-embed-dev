@@ -41377,6 +41377,11 @@ function buildSupportRequestZendeskTicket(request, context2) {
   };
 }
 
+// projects/shared-library/src/lib/utils/sdk-mode.ts
+function isNativeSdkMode(sdkMode) {
+  return sdkMode === SDKMode.ReactNative || sdkMode === SDKMode.Flutter;
+}
+
 // projects/shared-library/src/lib/shared-library.service.ts
 var SharedLibraryService = class _SharedLibraryService {
   constructor() {
@@ -48776,10 +48781,8 @@ var AuthService = class _AuthService {
   }
   CheckCookieSupport() {
     return __async(this, arguments, function* (scope = CookieProbeScope.All) {
-      const sdkMode = this.configService.systemConfig$.sdkMode;
-      const usesNativeSdk = sdkMode === SDKMode.ReactNative || sdkMode === SDKMode.Flutter;
       const scopeParams = {};
-      if (usesNativeSdk || scope === CookieProbeScope.Regular) {
+      if (scope === CookieProbeScope.Regular) {
         scopeParams["regular_only"] = "true";
       }
       const expectedProbe = yield this.setCookieProbe(scopeParams);
@@ -50512,15 +50515,13 @@ var AppComponent = class _AppComponent {
   validateCookieSupport() {
     return __async(this, null, function* () {
       try {
-        const cookieSupported = yield this.authService.CheckCookieSupport();
+        const cookieProbe = isNativeSdkMode(this.sdkMode) ? CookieProbeScope.Regular : CookieProbeScope.All;
+        const cookieSupported = yield this.authService.CheckCookieSupport(cookieProbe);
         if (cookieSupported) {
           this.logger.info("[AppComponent] Cookie support detected");
           return;
         }
-        const nativeSDK = this.sdkMode === SDKMode.ReactNative || this.sdkMode === SDKMode.Flutter;
-        if (nativeSDK) {
-          this.logger.info("[AppComponent] Cookie probes were blocked; continuing with the native SDK cookie manager");
-        } else if (this.authService.CanUseStorageAccessFallback()) {
+        if (this.authService.CanUseStorageAccessFallback()) {
           this.logger.info("[AppComponent] Cookie probes were blocked; continuing with the Storage Access API fallback");
         } else {
           this.logger.info("[AppComponent] Cookie support was not found!");
@@ -50611,7 +50612,7 @@ var AppComponent = class _AppComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 43 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 42 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts
