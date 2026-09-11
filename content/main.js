@@ -50053,8 +50053,12 @@ var FastenService = class _FastenService {
     }
     return window.open(redirectUrlParts.toString(), "_blank", features);
   }
-  // Open synchronously, then POST a scoped token into the identity popup.
+  // Native SDK WebViews need the final URL in window.open; browser embeds use a scoped-token POST
+  // so the popup does not depend on access to the iframe's partitioned cookie.
   openWindowInPopupForIdentityVerification(redirectUrlParts) {
+    if (isNativeSdkMode(this.configService.systemConfig$.sdkMode)) {
+      return this.openWindowInPopup(redirectUrlParts);
+    }
     const isDesktop = this.deviceService.isDesktop();
     let features = "";
     if (isDesktop) {
