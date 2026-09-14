@@ -48634,6 +48634,11 @@ var CookieProbeScope;
   CookieProbeScope2["All"] = "all";
   CookieProbeScope2["Regular"] = "regular";
 })(CookieProbeScope || (CookieProbeScope = {}));
+var VaultAuthHandoffPurpose;
+(function(VaultAuthHandoffPurpose2) {
+  VaultAuthHandoffPurpose2["IdentityVerification"] = "identity_verification_handoff";
+  VaultAuthHandoffPurpose2["BridgeConnect"] = "bridge_connect_handoff";
+})(VaultAuthHandoffPurpose || (VaultAuthHandoffPurpose = {}));
 var SESSION_REFRESH_WINDOW_MS = 6e4;
 var SESSION_CACHE_TTL_MS = 3e4;
 var AUTH_STATE_STORAGE_KEY = "fasten_connect_vault_auth_event";
@@ -48830,15 +48835,18 @@ var AuthService = class _AuthService {
       };
     });
   }
-  /** Get a legacy session JWT or a scoped popup handoff token. */
-  GetIdentityVerificationHandoffToken() {
+  /** Get a legacy session JWT or a handoff token scoped to the required purpose. */
+  GetVaultAuthHandoffToken(purpose) {
     return __async(this, null, function* () {
+      if (!Object.values(VaultAuthHandoffPurpose).includes(purpose)) {
+        throw new Error(`Unsupported vault auth handoff purpose: ${purpose}`);
+      }
       if (this.usesHttpOnlyCookie) {
-        const response = yield firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_handoff`, this.requestOptions()));
+        const response = yield firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_handoff`, this.requestOptions({ purpose })));
         const handoffToken = response?.data?.handoff_token;
         if (!handoffToken) {
-          this.logger.error("invalid identity verification handoff response", response);
-          throw new Error("Invalid identity verification handoff response");
+          this.logger.error("invalid vault auth handoff response", { purpose, response });
+          throw new Error("Invalid vault auth handoff response");
         }
         return handoffToken;
       }
@@ -49987,7 +49995,7 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
     redirectUrlParts.searchParams.set("room_id", roomId);
     this.logger.debug(redirectUrlParts.toString());
-    const openedWindow = this.openWindowInPopupForIdentityVerification(redirectUrlParts);
+    const openedWindow = this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.IdentityVerification);
     return this.waitForWebsocketNotification(websocketUrl, openedWindow).pipe(
       switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))),
       //TODO: this is a flaky way to handle the issue where the websocket response is sent before the cookie is set in the browser
@@ -50000,7 +50008,7 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("public_id", this.configService.systemConfig$.publicId);
     redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
-    const openedWindow = this.openWindowInPopupForIdentityVerification(redirectUrlParts);
+    const openedWindow = this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.IdentityVerification);
     return this.waitForPopupNotification(openedWindow).pipe(switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))));
   }
   accountConnectWithWebsocket(connectData) {
@@ -50010,14 +50018,14 @@ var FastenService = class _FastenService {
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
     redirectUrlParts.searchParams.set("room_id", roomId);
     this.logger.debug(redirectUrlParts.toString());
-    const openedWindow = this.openWindowInPopup(redirectUrlParts);
+    const openedWindow = connectData.vault_profile_connection_id ? this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.BridgeConnect) : this.openWindowInPopup(redirectUrlParts);
     return this.waitForWebsocketNotification(websocketUrl, openedWindow);
   }
   accountConnectWithPopup(connectData) {
     const redirectUrlParts = this.generateConnectURL(connectData);
     redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
     this.logger.debug(redirectUrlParts.toString());
-    const openedWindow = this.openWindowInPopup(redirectUrlParts);
+    const openedWindow = connectData.vault_profile_connection_id ? this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.BridgeConnect) : this.openWindowInPopup(redirectUrlParts);
     return this.waitForPopupNotification(openedWindow);
   }
   authorizeTefcaDirect(vaultConnectionIds, external_id) {
@@ -50055,7 +50063,7 @@ var FastenService = class _FastenService {
   }
   // Native SDK WebViews need the final URL in window.open; browser embeds use a scoped-token POST
   // so the popup does not depend on access to the iframe's partitioned cookie.
-  openWindowInPopupForIdentityVerification(redirectUrlParts) {
+  openWindowInPopupWithAuthHandoff(redirectUrlParts, purpose) {
     if (isNativeSdkMode(this.configService.systemConfig$.sdkMode)) {
       return this.openWindowInPopup(redirectUrlParts);
     }
@@ -50064,12 +50072,12 @@ var FastenService = class _FastenService {
     if (isDesktop) {
       features = "popup=true,width=700,height=600";
     }
-    const target = `IdentityVerificationPopupWindow-${v4_default()}`;
+    const target = `VaultAuthHandoffPopupWindow-${v4_default()}`;
     const opened = window.open("", target, features);
     if (!opened) {
       return null;
     }
-    this.authService.GetIdentityVerificationHandoffToken().then((handoffToken) => {
+    this.authService.GetVaultAuthHandoffToken(purpose).then((handoffToken) => {
       const form = document.createElement("form");
       form.setAttribute("method", "post");
       form.setAttribute("action", redirectUrlParts.toString());
@@ -50084,7 +50092,7 @@ var FastenService = class _FastenService {
       form.submit();
       document.body.removeChild(form);
     }).catch((error2) => {
-      this.logger.error("failed to fetch identity verification handoff token", error2);
+      this.logger.error("failed to fetch vault auth handoff token", { purpose, error: error2 });
       opened.close();
     });
     return opened;
