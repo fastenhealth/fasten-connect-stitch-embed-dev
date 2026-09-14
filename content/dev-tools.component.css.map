@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["projects/fasten-connect-stitch-embed/src/app/components/dev-tools/dev-tools.component.css"],
-  "sourcesContent": [":host {\n  display: block;\n  min-height: 3.5rem;\n}\n\n.dev-tool-tooltip {\n  position: fixed;\n  right: 0.5rem;\n  bottom: 3.75rem;\n  left: 0.5rem;\n  width: fit-content;\n  max-width: min(24rem, calc(100vw - 1rem));\n  margin: 0 auto;\n  padding: 0.5rem 0.625rem;\n  border-radius: 0.375rem;\n  background: #111827;\n  color: #ffffff;\n  font-size: 0.75rem;\n  font-weight: 400;\n  line-height: 1rem;\n  text-align: left;\n  white-space: normal;\n  visibility: hidden;\n  opacity: 0;\n  pointer-events: none;\n  transition: opacity 0.15s ease;\n}\n\n.dev-tool-action-group:hover .dev-tool-tooltip,\n.dev-tool-action-group:focus-within .dev-tool-tooltip {\n  visibility: visible;\n  opacity: 1;\n}\n\n@media (max-width: 359px) {\n  .dev-tools-label span {\n    display: none;\n  }\n}\n"],
-  "mappings": ";AAAA;AACE,WAAS;AACT,cAAY;AACd;AAEA,CAAC;AACC,YAAU;AACV,SAAO;AACP,UAAQ;AACR,QAAM;AACN,SAAO;AACP,aAAW,IAAI,KAAK,EAAE,KAAK,MAAM,EAAE;AACnC,UAAQ,EAAE;AACV,WAAS,OAAO;AAChB,iBAAe;AACf,cAAY;AACZ,SAAO;AACP,aAAW;AACX,eAAa;AACb,eAAa;AACb,cAAY;AACZ,eAAa;AACb,cAAY;AACZ,WAAS;AACT,kBAAgB;AAChB,cAAY,QAAQ,MAAM;AAC5B;AAEA,CAAC,qBAAqB,OAAO,CAvB5B;AAwBD,CADC,qBACqB,cAAc,CAxBnC;AAyBC,cAAY;AACZ,WAAS;AACX;AAEA,OAAO,CAAC,SAAS,EAAE;AACjB,GAAC,gBAAgB;AACf,aAAS;AACX;AACF;",
-  "names": []
-}
