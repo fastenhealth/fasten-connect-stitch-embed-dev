@@ -50645,7 +50645,7 @@ function HeaderComponent_button_1_Template(rf, ctx) {
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275property("routerLink", ctx_r1.backButtonLink);
+    \u0275\u0275property("routerLink", ctx_r1.backButtonLink)("replaceUrl", ctx_r1.backButtonReplaceUrl);
   }
 }
 function HeaderComponent_button_2_Template(rf, ctx) {
@@ -50667,6 +50667,7 @@ var HeaderComponent = class _HeaderComponent {
   constructor() {
     this.logoText = logoText;
     this.backButtonLink = "";
+    this.backButtonReplaceUrl = false;
     this.backButtonEvent = new EventEmitter();
     this.showClose = false;
     this.closeButtonEvent = new EventEmitter();
@@ -50687,10 +50688,10 @@ var HeaderComponent = class _HeaderComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HeaderComponent, selectors: [["app-header"]], inputs: { backButtonLink: "backButtonLink", showClose: "showClose" }, outputs: { backButtonEvent: "backButtonEvent", closeButtonEvent: "closeButtonEvent" }, decls: 5, vars: 3, consts: [[1, "relative", "flex", "justify-center", "items-center"], ["id", "stitch-back", "type", "button", "class", "absolute left-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "routerLink", "click", 4, "ngIf"], ["id", "stitch-close", "type", "button", "class", "absolute right-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "click", 4, "ngIf"], [1, "az-logo"], ["id", "stitch-back", "type", "button", 1, "absolute", "left-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click", "routerLink"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", 1, "w-5", "h-5"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M15 19l-7-7 7-7"], ["id", "stitch-close", "type", "button", 1, "absolute", "right-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 18L18 6M6 6l12 12"]], template: function HeaderComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HeaderComponent, selectors: [["app-header"]], inputs: { backButtonLink: "backButtonLink", backButtonReplaceUrl: "backButtonReplaceUrl", showClose: "showClose" }, outputs: { backButtonEvent: "backButtonEvent", closeButtonEvent: "closeButtonEvent" }, decls: 5, vars: 3, consts: [[1, "relative", "flex", "justify-center", "items-center"], ["id", "stitch-back", "type", "button", "class", "absolute left-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "routerLink", "replaceUrl", "click", 4, "ngIf"], ["id", "stitch-close", "type", "button", "class", "absolute right-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "click", 4, "ngIf"], [1, "az-logo"], ["id", "stitch-back", "type", "button", 1, "absolute", "left-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click", "routerLink", "replaceUrl"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", 1, "w-5", "h-5"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M15 19l-7-7 7-7"], ["id", "stitch-close", "type", "button", 1, "absolute", "right-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 18L18 6M6 6l12 12"]], template: function HeaderComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275template(1, HeaderComponent_button_1_Template, 3, 1, "button", 1)(2, HeaderComponent_button_2_Template, 3, 0, "button", 2);
+        \u0275\u0275template(1, HeaderComponent_button_1_Template, 3, 2, "button", 1)(2, HeaderComponent_button_2_Template, 3, 0, "button", 2);
         \u0275\u0275elementStart(3, "h1", 3);
         \u0275\u0275text(4);
         \u0275\u0275elementEnd()();
@@ -50707,7 +50708,7 @@ var HeaderComponent = class _HeaderComponent {
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HeaderComponent, { className: "HeaderComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts", lineNumber: 17 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HeaderComponent, { className: "HeaderComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts", lineNumber: 14 });
 })();
 
 // node_modules/@angular/forms/fesm2022/forms.mjs
@@ -60806,7 +60807,7 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
   addPendingAccount(brand, portal, endpoint) {
     this.logger.debug("addPendingAccount", brand, portal, endpoint);
     this.configService.vaultProfileAddPendingAccount(brand, portal, endpoint);
-    this.router.navigateByUrl("dashboard");
+    this.router.navigateByUrl("dashboard", { replaceUrl: true });
   }
   static {
     this.\u0275fac = function HealthSystemBrandDetailsComponent_Factory(__ngFactoryType__) {
@@ -60814,7 +60815,7 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], decls: 21, vars: 17, consts: [["id", "step-health-system-details", 1, "space-y-6"], [3, "backButtonLink"], [1, "space-y-6"], [1, "border", "rounded-2xl", "p-6"], [1, "flex", "items-start", "space-x-4", "mb-4"], [1, "flex-shrink-0"], ["imageFallback", "", 1, "w-12", "max-h-12", "rounded-lg", "object-contain", 3, "src"], [1, "flex-1", "min-w-0"], ["id", "hsd-name", 1, "text-xl", "font-semibold"], ["id", "hsd-description", 1, "text-gray-600", "text-base", "mb-4"], [1, "space-y-2"], ["class", "flex items-center gap-2 text-gray-600", "id", "hsd-website-container", 4, "ngIf"], ["class", "flex items-center gap-2 text-gray-600", 4, "ngIf"], ["id", "hsd-institutions-list", 1, "space-y-2"], [4, "ngFor", "ngForOf"], ["id", "hsd-website-container", 1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-globe", "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"], ["d", "M2 12h20"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 1, "text-base", "hover:underline", 3, "href"], [1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-map-pin", "w-5", "h-5"], ["d", "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"], ["cx", "12", "cy", "10", "r", "3"], ["id", "hsd-location", 1, "text-base"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "comma"], ["class", "p-4 pt-6 pb-6 border rounded-lg hover:border-gray-400 transition-colors relative", 4, "ngFor", "ngForOf"], [1, "p-4", "pt-6", "pb-6", "border", "rounded-lg", "hover:border-gray-400", "transition-colors", "relative"], ["id", "platform-tag", 1, "absolute", "top-0", "left-0", "bg-gray-200", "text-gray-600", "text-xs", "font-medium", "px-2", "py-1", "rounded-tl-lg", "rounded-br-lg"], [1, "text-xs", "text-gray-500"], [1, "flex", "items-center", "justify-between"], [1, "font-medium", "text-base", "tracking-tight"], ["type", "button", 1, "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "w-8", "h-8", "rounded-lg", "text-lg", "font-medium", "transition-colors", "flex", "items-center", "justify-center", 3, "click"], ["class", "text-xs text-gray-500 mt-2", 4, "ngIf"], [1, "text-xs", "text-gray-500", "mt-2"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], decls: 21, vars: 18, consts: [["id", "step-health-system-details", 1, "space-y-6"], [3, "backButtonLink", "backButtonReplaceUrl"], [1, "space-y-6"], [1, "border", "rounded-2xl", "p-6"], [1, "flex", "items-start", "space-x-4", "mb-4"], [1, "flex-shrink-0"], ["imageFallback", "", 1, "w-12", "max-h-12", "rounded-lg", "object-contain", 3, "src"], [1, "flex-1", "min-w-0"], ["id", "hsd-name", 1, "text-xl", "font-semibold"], ["id", "hsd-description", 1, "text-gray-600", "text-base", "mb-4"], [1, "space-y-2"], ["class", "flex items-center gap-2 text-gray-600", "id", "hsd-website-container", 4, "ngIf"], ["class", "flex items-center gap-2 text-gray-600", 4, "ngIf"], ["id", "hsd-institutions-list", 1, "space-y-2"], [4, "ngFor", "ngForOf"], ["id", "hsd-website-container", 1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-globe", "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"], ["d", "M2 12h20"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 1, "text-base", "hover:underline", 3, "href"], [1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-map-pin", "w-5", "h-5"], ["d", "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"], ["cx", "12", "cy", "10", "r", "3"], ["id", "hsd-location", 1, "text-base"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "comma"], ["class", "p-4 pt-6 pb-6 border rounded-lg hover:border-gray-400 transition-colors relative", 4, "ngFor", "ngForOf"], [1, "p-4", "pt-6", "pb-6", "border", "rounded-lg", "hover:border-gray-400", "transition-colors", "relative"], ["id", "platform-tag", 1, "absolute", "top-0", "left-0", "bg-gray-200", "text-gray-600", "text-xs", "font-medium", "px-2", "py-1", "rounded-tl-lg", "rounded-br-lg"], [1, "text-xs", "text-gray-500"], [1, "flex", "items-center", "justify-between"], [1, "font-medium", "text-base", "tracking-tight"], ["type", "button", 1, "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "w-8", "h-8", "rounded-lg", "text-lg", "font-medium", "transition-colors", "flex", "items-center", "justify-center", 3, "click"], ["class", "text-xs text-gray-500 mt-2", 4, "ngIf"], [1, "text-xs", "text-gray-500", "mt-2"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275element(1, "app-header", 1);
@@ -60839,23 +60840,23 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
-        let tmp_1_0;
         let tmp_2_0;
         let tmp_3_0;
         let tmp_4_0;
         let tmp_5_0;
+        let tmp_6_0;
         \u0275\u0275advance();
-        \u0275\u0275property("backButtonLink", "/search");
+        \u0275\u0275property("backButtonLink", "/search")("backButtonReplaceUrl", true);
         \u0275\u0275advance(5);
-        \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", (tmp_1_0 = \u0275\u0275pipeBind1(7, 7, ctx.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.id, ".png", \u0275\u0275sanitizeUrl);
+        \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", (tmp_2_0 = \u0275\u0275pipeBind1(7, 8, ctx.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.id, ".png", \u0275\u0275sanitizeUrl);
         \u0275\u0275advance(4);
-        \u0275\u0275textInterpolate((tmp_2_0 = \u0275\u0275pipeBind1(11, 9, ctx.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.name);
+        \u0275\u0275textInterpolate((tmp_3_0 = \u0275\u0275pipeBind1(11, 10, ctx.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.name);
         \u0275\u0275advance(4);
-        \u0275\u0275property("ngIf", (tmp_3_0 = \u0275\u0275pipeBind1(15, 11, ctx.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.brand_website);
+        \u0275\u0275property("ngIf", (tmp_4_0 = \u0275\u0275pipeBind1(15, 12, ctx.configService.searchConfigSubject)) == null ? null : tmp_4_0.selectedBrand == null ? null : tmp_4_0.selectedBrand.brand_website);
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngIf", (tmp_4_0 = \u0275\u0275pipeBind1(17, 13, ctx.configService.searchConfigSubject)) == null ? null : tmp_4_0.selectedBrand == null ? null : tmp_4_0.selectedBrand.locations);
+        \u0275\u0275property("ngIf", (tmp_5_0 = \u0275\u0275pipeBind1(17, 14, ctx.configService.searchConfigSubject)) == null ? null : tmp_5_0.selectedBrand == null ? null : tmp_5_0.selectedBrand.locations);
         \u0275\u0275advance(3);
-        \u0275\u0275property("ngForOf", (tmp_5_0 = \u0275\u0275pipeBind1(20, 15, ctx.configService.searchConfigSubject)) == null ? null : tmp_5_0.selectedBrand == null ? null : tmp_5_0.selectedBrand.portals);
+        \u0275\u0275property("ngForOf", (tmp_6_0 = \u0275\u0275pipeBind1(20, 16, ctx.configService.searchConfigSubject)) == null ? null : tmp_6_0.selectedBrand == null ? null : tmp_6_0.selectedBrand.portals);
       }
     }, dependencies: [
       CommonModule,
