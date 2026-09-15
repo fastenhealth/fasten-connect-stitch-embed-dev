@@ -62478,22 +62478,63 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ThirdPartyCookiesErrorComponent, { className: "ThirdPartyCookiesErrorComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/third-party-cookies-error/third-party-cookies-error.component.ts", lineNumber: 78 });
 })();
 
+// projects/fasten-connect-stitch-embed/src/app/auth-guards/prevent-browser-history-navigation-guard.ts
+var PreventBrowserHistoryNavigationGuard = class _PreventBrowserHistoryNavigationGuard {
+  constructor(router) {
+    this.router = router;
+  }
+  canActivate(_route, _state) {
+    return this.router.getCurrentNavigation()?.trigger !== "popstate";
+  }
+  static {
+    this.\u0275fac = function PreventBrowserHistoryNavigationGuard_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _PreventBrowserHistoryNavigationGuard)(\u0275\u0275inject(Router));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _PreventBrowserHistoryNavigationGuard, factory: _PreventBrowserHistoryNavigationGuard.\u0275fac });
+  }
+};
+
+// projects/fasten-connect-stitch-embed/src/app/auth-guards/prevent-tefca-pre-dashboard-history-navigation-guard.ts
+var PreventTefcaPreDashboardHistoryNavigationGuard = class _PreventTefcaPreDashboardHistoryNavigationGuard {
+  constructor(router, configService) {
+    this.router = router;
+    this.configService = configService;
+  }
+  canActivate(_route, _state) {
+    const identityVerificationHandled = this.configService.vaultProfileConfig$.identityVerificationHandledForSession === true;
+    if (!this.configService.systemConfig$.tefcaMode || !identityVerificationHandled) {
+      return true;
+    }
+    return this.router.getCurrentNavigation()?.trigger !== "popstate";
+  }
+  static {
+    this.\u0275fac = function PreventTefcaPreDashboardHistoryNavigationGuard_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _PreventTefcaPreDashboardHistoryNavigationGuard)(\u0275\u0275inject(Router), \u0275\u0275inject(ConfigService));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _PreventTefcaPreDashboardHistoryNavigationGuard, factory: _PreventTefcaPreDashboardHistoryNavigationGuard.\u0275fac });
+  }
+};
+
 // projects/fasten-connect-stitch-embed/src/app/app.routes.ts
 var routes = [
-  { path: "auth/signin", component: VaultProfileSigninComponent },
-  { path: "auth/signin/code", component: VaultProfileSigninCodeComponent },
-  { path: "auth/signin/cookies-required", component: ThirdPartyCookiesErrorComponent },
-  { path: "auth/callback", component: AuthCallbackComponent },
-  { path: "auth/identity/verification", component: IdentityVerificationComponent },
+  { path: "auth/signin", component: VaultProfileSigninComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
+  { path: "auth/signin/code", component: VaultProfileSigninCodeComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
+  { path: "auth/signin/cookies-required", component: ThirdPartyCookiesErrorComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
+  { path: "auth/callback", component: AuthCallbackComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
+  { path: "auth/identity/verification", component: IdentityVerificationComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
   //canActivate: [IsAuthenticatedAuthGuard] },
-  { path: "auth/identity/verification/error", component: IdentityVerificationErrorComponent },
+  { path: "auth/identity/verification/error", component: IdentityVerificationErrorComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
   //canActivate: [IsAuthenticatedAuthGuard] },
-  { path: "splash", component: SplashComponent, canActivate: [IsAuthenticatedAuthGuard] },
+  { path: "splash", component: SplashComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard, IsAuthenticatedAuthGuard] },
   { path: "dashboard", component: DashboardComponent, canActivate: [IsAuthenticatedAuthGuard, IsTefcaModeAuthGuard] },
   { path: "search", component: HealthSystemSearchComponent, canActivate: [IsAuthenticatedAuthGuard] },
   { path: "brand/details", component: HealthSystemBrandDetailsComponent, canActivate: [IsAuthenticatedAuthGuard] },
   //cannot be authenticated, must be publically accessible for reconnecting
-  { path: "dashboard/connecting", component: HealthSystemConnectingComponent },
+  { path: "dashboard/connecting", component: HealthSystemConnectingComponent, canActivate: [PreventBrowserHistoryNavigationGuard] },
   { path: "dashboard/complete", component: CompleteComponent },
   { path: "form/healthsystem", component: FormHealthSystemRequestComponent },
   { path: "form/support", component: FormSupportRequestComponent },
@@ -87527,6 +87568,8 @@ var appConfig = {
     },
     IsAuthenticatedAuthGuard,
     IsTefcaModeAuthGuard,
+    PreventBrowserHistoryNavigationGuard,
+    PreventTefcaPreDashboardHistoryNavigationGuard,
     provideHttpClient(withInterceptorsFromDi()),
     provideAnimations(),
     // <- required for animations to work
