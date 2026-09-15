@@ -57436,7 +57436,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     if (this.configService.vaultProfileConfig$.email) {
       this.existingVaultProfile.email = this.configService.vaultProfileConfig$.email;
     }
-    if (!this.checkRequiresStoragePermissions()) {
+    if (!this.authService.RequiresStorageAccessFallback()) {
       this.logger.log("Storage Access API fallback is not required or is unavailable.");
       this.needStorageAccessPermissionSubject.next(false);
     } else {
@@ -57449,6 +57449,9 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.submitted = true;
     this.loading = true;
     this.errorMsg = "";
+    this.configService.vaultProfileConfig = {
+      identityVerificationHandledForSession: false
+    };
     if (this.isCspRequestUriSignin) {
       this.signinWithCspRequestUri();
       return;
@@ -57456,7 +57459,7 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     this.configService.vaultProfileConfig = {
       email: this.existingVaultProfile.email
     };
-    const storageAccessPromise = this.checkRequiresStoragePermissions() ? this.requestStorageAccess() : Promise.resolve(true);
+    const storageAccessPromise = this.authService.RequiresStorageAccessFallback() ? this.requestStorageAccess() : Promise.resolve(true);
     const signoutPromise = this.authService.Signout();
     Promise.all([signoutPromise, storageAccessPromise]).then(() => {
       this.logger.info("Signin", this.existingVaultProfile.email);
@@ -57580,10 +57583,6 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     const canCheckStorageAccess = typeof document.hasStorageAccess === "function";
     const canRequestStorageAccess = typeof document.requestStorageAccess === "function";
     return canCheckStorageAccess && canRequestStorageAccess;
-  }
-  checkRequiresStoragePermissions() {
-    const requiresStorageAccess = this.authService.RequiresStorageAccessFallback();
-    return requiresStorageAccess;
   }
   hasStorageAccess() {
     if (!this.isStorageAccessApiSupportedByBrowser()) {
@@ -58772,9 +58771,10 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     });
   }
   skipIdentityVerification() {
-    void this.router.navigateByUrl("dashboard", {
-      state: { skipIdentityVerification: true }
-    });
+    this.configService.vaultProfileConfig = {
+      identityVerificationHandledForSession: true
+    };
+    void this.router.navigateByUrl("dashboard");
   }
   verifyIdentity(cspType) {
     this.loading = true;
@@ -58797,10 +58797,11 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
           verifiedIdentityCspType: cspType
         };
       }
+      this.configService.vaultProfileConfig = {
+        identityVerificationHandledForSession: true
+      };
       this.logger.info("verification result", result);
-      this.router.navigateByUrl("dashboard", {
-        state: { identityVerificationSucceeded: true }
-      });
+      this.router.navigateByUrl("dashboard");
     }, (err) => {
       this.loading = false;
       this.logger.error("verification error", err);
@@ -61790,7 +61791,8 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
       };
       if ((this.configService.vaultProfileConfig$.identityVerificationFailureCount || 0) >= 2) {
         this.configService.systemConfig = __spreadProps(__spreadValues({}, this.configService.systemConfig$), {
-          searchOnly: true
+          searchOnly: true,
+          tefcaMode: false
         });
         this.router.navigateByUrl("search");
       }
@@ -61867,8 +61869,7 @@ var IsTefcaModeAuthGuard = class _IsTefcaModeAuthGuard {
       if (!this.configService.systemConfig$.tefcaMode) {
         return Promise.resolve(true);
       }
-      const navigationState = this.router.getCurrentNavigation()?.extras.state;
-      const identityVerificationHandled = navigationState?.["skipIdentityVerification"] === true || navigationState?.["identityVerificationSucceeded"] === true;
+      const identityVerificationHandled = this.configService.vaultProfileConfig$.identityVerificationHandledForSession === true;
       return this.authService.GetSession().then((session) => {
         if (!session) {
           if (route.url.toString() === "/auth/signin") {
