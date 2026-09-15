@@ -62484,6 +62484,12 @@ var PreventBrowserHistoryNavigationGuard = class _PreventBrowserHistoryNavigatio
     this.router = router;
   }
   canActivate(_route, _state) {
+    return this.isNavigationAllowed();
+  }
+  canDeactivate(_component, _currentRoute, _currentState, _nextState) {
+    return this.isNavigationAllowed();
+  }
+  isNavigationAllowed() {
     return this.router.getCurrentNavigation()?.trigger !== "popstate";
   }
   static {
@@ -62535,7 +62541,7 @@ var routes = [
   { path: "brand/details", component: HealthSystemBrandDetailsComponent, canActivate: [IsAuthenticatedAuthGuard] },
   //cannot be authenticated, must be publically accessible for reconnecting
   { path: "dashboard/connecting", component: HealthSystemConnectingComponent, canActivate: [PreventBrowserHistoryNavigationGuard] },
-  { path: "dashboard/complete", component: CompleteComponent },
+  { path: "dashboard/complete", component: CompleteComponent, canDeactivate: [PreventBrowserHistoryNavigationGuard] },
   { path: "form/healthsystem", component: FormHealthSystemRequestComponent },
   { path: "form/support", component: FormSupportRequestComponent },
   { path: "", redirectTo: "/auth/signin", pathMatch: "full" },
