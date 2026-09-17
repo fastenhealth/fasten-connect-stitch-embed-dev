@@ -69160,7 +69160,6 @@ var ORG_NAME_TAG = "org.name";
 var ORG_PLAN_TAG = "org.plan";
 var PUBLIC_ID_TAG = "org.public_id";
 var CONNECTION_ID_TAG = "org_connection.id";
-var REQUEST_ID_TAG = "request_id";
 var EXTERNAL_ID_TAG = "external.id";
 var EXTERNAL_STATE_TAG = "external.state";
 var API_MODE_TAG = "api_mode";
@@ -69185,7 +69184,6 @@ var METRIC_CONTEXT_EXCLUDED_ATTRIBUTES = [
   ORG_NAME_TAG,
   PUBLIC_ID_TAG,
   CONNECTION_ID_TAG,
-  REQUEST_ID_TAG,
   EXTERNAL_ID_TAG,
   EXTERNAL_STATE_TAG
 ];
@@ -69235,8 +69233,7 @@ var SentryContextService = class _SentryContextService {
   ngOnDestroy() {
     this.subscriptions.unsubscribe();
   }
-  setConnectionContext(requestId, connectionId) {
-    this.setIdentifier(REQUEST_ID_TAG, requestId);
+  setConnectionContext(connectionId) {
     this.setIdentifier(CONNECTION_ID_TAG, connectionId);
   }
   recordWidgetStarted(experience, apiMode) {
@@ -69325,12 +69322,12 @@ var SentryContextService = class _SentryContextService {
     }
     if (event.event_type === EventTypes.EventTypeConnectionPending) {
       const connectData = event.data;
-      this.setConnectionContext(void 0, connectData.org_connection_id);
+      this.setConnectionContext(connectData.org_connection_id);
       return;
     }
     if (event.event_type === EventTypes.EventTypeConnectionSuccess || event.event_type === EventTypes.EventTypeConnectionFailed) {
       const callbackData = event.data;
-      this.setConnectionContext(callbackData.request_id, callbackData.org_connection_id);
+      this.setConnectionContext(callbackData.org_connection_id);
     }
   }
   recordWidgetFailure(stage, reason) {
@@ -81816,7 +81813,7 @@ function ConnectHelper(connectData) {
       } else {
         errData = err;
       }
-      sentryContextService.setConnectionContext(errData.request_id, connectData.org_connection_id);
+      sentryContextService.setConnectionContext(connectData.org_connection_id);
       console.error("popup error data", err);
       if (errData.error == "timeout") {
         return router.navigateByUrl(onSuccessNavigateByUrl);
