@@ -80165,7 +80165,7 @@ var DashboardComponent = class _DashboardComponent {
   completeAccounts() {
     const connectedAccounts = this.configService.vaultProfileConfig$.connectedPatientAccounts || [];
     const tefcaDirectAccounts = connectedAccounts.filter((acc) => {
-      return !acc.org_connection_id && (acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect || acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeMedicareDirect);
+      return acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect || acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeMedicareDirect;
     });
     this.logger.debug(`Direct connected accounts to complete:`, tefcaDirectAccounts);
     const vaultConnectionIds = tefcaDirectAccounts.map((a) => a.vault_profile_connection_id).filter((id) => !!id);
