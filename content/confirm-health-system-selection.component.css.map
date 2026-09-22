@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["projects/fasten-connect-stitch-embed/src/app/pages/confirm-health-system-selection/confirm-health-system-selection.component.css"],
+  "sourcesContent": [":host {\n  display: flex;\n  flex-direction: column;\n  flex: 1 1 auto;\n  height: min(100%, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n\n.no-scrollbar {\n  scrollbar-width: none;\n  -ms-overflow-style: none;\n}\n\n.no-scrollbar::-webkit-scrollbar {\n  display: none;\n}\n"],
+  "mappings": ";AAAA;AACE,WAAS;AACT,kBAAgB;AAChB,QAAM,EAAE,EAAE;AACV,UAAQ,IAAI,IAAI,EAAE;AAClB,cAAY;AACZ,cAAY;AACZ,YAAU;AACZ;AAEA,CAAC;AACC,mBAAiB;AACjB,sBAAoB;AACtB;AAEA,CALC,YAKY;AACX,WAAS;AACX;",
+  "names": []
+}

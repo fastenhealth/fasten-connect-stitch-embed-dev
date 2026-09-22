@@ -12584,6 +12584,10 @@ var OutputEmitterRef = class {
     }
   }
 };
+function output(opts) {
+  ngDevMode && assertInInjectionContext(output);
+  return new OutputEmitterRef();
+}
 function inputFunction(initialValue, opts) {
   ngDevMode && assertInInjectionContext(input);
   return createInputSignal(initialValue, opts);
@@ -25518,11 +25522,11 @@ function listenToOutput(tNode, tView, lView, index, lookupName, eventName, liste
   const instance = lView[index];
   const def = tView.data[index];
   const propertyName = def.outputs[lookupName];
-  const output = instance[propertyName];
-  if (ngDevMode && !isOutputSubscribable(output)) {
+  const output2 = instance[propertyName];
+  if (ngDevMode && !isOutputSubscribable(output2)) {
     throw new Error(`@Output ${propertyName} not initialized in '${instance.constructor.name}'.`);
   }
-  const subscription = output.subscribe(listenerFn);
+  const subscription = output2.subscribe(listenerFn);
   const idx = lCleanup.length;
   lCleanup.push(listenerFn, subscription);
   tCleanup && tCleanup.push(eventName, tNode.index, idx, -(idx + 1));
@@ -39108,6 +39112,11 @@ var ApiMode;
   ApiMode2["Live"] = "live";
   ApiMode2["Test"] = "test";
 })(ApiMode || (ApiMode = {}));
+var FdkTheme;
+(function(FdkTheme2) {
+  FdkTheme2["Light"] = "light";
+  FdkTheme2["Dark"] = "dark";
+})(FdkTheme || (FdkTheme = {}));
 var WidgetMode;
 (function(WidgetMode2) {
   WidgetMode2["SearchOnly"] = "search-only";
@@ -40451,7 +40460,8 @@ LoggerModule.\u0275inj = /* @__PURE__ */ \u0275\u0275defineInjector({
 var defaultSystemConfig = {
   publicId: "",
   apiMode: ApiMode.Test,
-  sdkMode: SDKMode.None
+  sdkMode: SDKMode.None,
+  theme: FdkTheme.Light
 };
 var ConfigService = class _ConfigService {
   constructor(logger) {
@@ -40524,6 +40534,15 @@ var ConfigService = class _ConfigService {
   vaultProfileRevokeTefcaDirectConnectedAccount(vaultProfileConnectionId) {
     let updatedVaultProfile = this.vaultProfileConfig$;
     let isUpdated = updatedVaultProfile.revokeTefcaDirectConnectedAccount(vaultProfileConnectionId);
+    if (!isUpdated) {
+      this.logger.warn("Could not find TEFCA Direct account by connection id:", vaultProfileConnectionId);
+      return;
+    }
+    this.vaultProfileConfig = updatedVaultProfile;
+  }
+  vaultProfileDeselectTefcaDirectConnectedAccount(vaultProfileConnectionId) {
+    let updatedVaultProfile = this.vaultProfileConfig$;
+    let isUpdated = updatedVaultProfile.deselectTefcaDirectConnectedAccount(vaultProfileConnectionId);
     if (!isUpdated) {
       this.logger.warn("Could not find TEFCA Direct account by connection id:", vaultProfileConnectionId);
       return;
@@ -40771,6 +40790,19 @@ var VaultProfileConfig = class {
       return false;
     }
     this.connectedPatientAccounts.splice(ndx, 1);
+    return true;
+  }
+  deselectTefcaDirectConnectedAccount(vaultProfileConnectionId) {
+    const accountIndex = this.connectedPatientAccounts?.findIndex((account2) => account2.vault_profile_connection_id === vaultProfileConnectionId);
+    if (accountIndex === void 0 || accountIndex < 0) {
+      return false;
+    }
+    const account = this.connectedPatientAccounts[accountIndex];
+    if (!account.brand || !account.portal || !account.endpoint) {
+      return false;
+    }
+    this.addDiscoveredAccount(account.brand, account.portal, account.endpoint, vaultProfileConnectionId, account.patient_auth_type);
+    this.connectedPatientAccounts.splice(accountIndex, 1);
     return true;
   }
   upsertConnectedAccount(account) {
@@ -41243,6 +41275,20 @@ function StoreRecordLocatorResultsInVaultProfile(configService, rlsResponse) {
     numPending,
     numConnected
   };
+}
+function FetchAndStoreRecordLocatorResultsInVaultProfile(configService, recordLocatorRegisterAndPollForStatus, recordLocatorResults) {
+  return recordLocatorRegisterAndPollForStatus().pipe(switchMap((rlsStatusResponse) => {
+    if (rlsStatusResponse.data.status === "success") {
+      return recordLocatorResults(rlsStatusResponse.data.task_id);
+    }
+    return of(new RecordLocatorResponse());
+  }), map((rlsResponse) => {
+    const totals = StoreRecordLocatorResultsInVaultProfile(configService, rlsResponse);
+    configService.vaultProfileConfig = {
+      rlsQueryComplete: true
+    };
+    return totals;
+  }));
 }
 function ProcessTefcaDirectAuthorizationResults(vaultConnectionIds, resp) {
   const configService = inject(ConfigService);
@@ -49208,18 +49254,18 @@ function safeJoin(input2, delimiter) {
   if (!Array.isArray(input2)) {
     return "";
   }
-  const output = [];
+  const output2 = [];
   for (let i = 0; i < input2.length; i++) {
     const value = input2[i];
     if (isPrimitive(value)) {
-      output.push(String(value));
+      output2.push(String(value));
     } else if (value instanceof Error) {
-      output.push(value.message ? `${value.name}: ${value.message}` : value.name);
+      output2.push(value.message ? `${value.name}: ${value.message}` : value.name);
     } else {
-      output.push(stringifyValue(void 0, value));
+      output2.push(stringifyValue(void 0, value));
     }
   }
-  return output.join(delimiter);
+  return output2.join(delimiter);
 }
 function isMatchingPattern(value, pattern, requireExactStringMatch = false) {
   if (!isString(value)) {
@@ -49505,13 +49551,13 @@ function merge3(initialObj, mergeObj, levels = 2) {
   if (initialObj && Object.keys(mergeObj).length === 0) {
     return initialObj;
   }
-  const output = __spreadValues({}, initialObj);
+  const output2 = __spreadValues({}, initialObj);
   for (const key in mergeObj) {
     if (Object.prototype.hasOwnProperty.call(mergeObj, key)) {
-      output[key] = merge3(output[key], mergeObj[key], levels - 1);
+      output2[key] = merge3(output2[key], mergeObj[key], levels - 1);
     }
   }
-  return output;
+  return output2;
 }
 
 // node_modules/@sentry/core/build/esm/utils/propagationContext.js
@@ -55957,18 +56003,18 @@ function streamHandler(response) {
 function hasProp(obj, prop) {
   return !!obj && typeof obj === "object" && !!obj[prop];
 }
-function getUrlFromResource(resource) {
-  if (typeof resource === "string") {
-    return resource;
+function getUrlFromResource(resource2) {
+  if (typeof resource2 === "string") {
+    return resource2;
   }
-  if (!resource) {
+  if (!resource2) {
     return "";
   }
-  if (hasProp(resource, "url")) {
-    return resource.url;
+  if (hasProp(resource2, "url")) {
+    return resource2.url;
   }
-  if (resource.toString) {
-    return resource.toString();
+  if (resource2.toString) {
+    return resource2.toString();
   }
   return "";
 }
@@ -55980,12 +56026,12 @@ function parseFetchArgs(fetchArgs) {
     };
   }
   if (fetchArgs.length === 2) {
-    const [resource, options] = fetchArgs;
+    const [resource2, options] = fetchArgs;
     return {
-      url: getUrlFromResource(resource),
+      url: getUrlFromResource(resource2),
       method: hasProp(options, "method") ? String(options.method).toUpperCase() : (
         // Request object as first argument
-        isRequest(resource) && hasProp(resource, "method") ? String(resource.method).toUpperCase() : "GET"
+        isRequest(resource2) && hasProp(resource2, "method") ? String(resource2.method).toUpperCase() : "GET"
       )
     };
   }
@@ -60204,7 +60250,7 @@ function getAbsoluteSrcsetString(doc, attributeValue) {
     }
     return "";
   }
-  const output = [];
+  const output2 = [];
   while (true) {
     collectCharacters(SRCSET_COMMAS_OR_SPACES);
     if (pos >= attributeValue.length) {
@@ -60213,7 +60259,7 @@ function getAbsoluteSrcsetString(doc, attributeValue) {
     let url = collectCharacters(SRCSET_NOT_SPACES);
     if (url.slice(-1) === ",") {
       url = absoluteToDoc(doc, url.substring(0, url.length - 1));
-      output.push(url);
+      output2.push(url);
     } else {
       let descriptorsStr = "";
       url = absoluteToDoc(doc, url);
@@ -60221,12 +60267,12 @@ function getAbsoluteSrcsetString(doc, attributeValue) {
       while (true) {
         const c = attributeValue.charAt(pos);
         if (c === "") {
-          output.push((url + descriptorsStr).trim());
+          output2.push((url + descriptorsStr).trim());
           break;
         } else if (!inParens) {
           if (c === ",") {
             pos += 1;
-            output.push((url + descriptorsStr).trim());
+            output2.push((url + descriptorsStr).trim());
             break;
           } else if (c === "(") {
             inParens = true;
@@ -60241,7 +60287,7 @@ function getAbsoluteSrcsetString(doc, attributeValue) {
       }
     }
   }
-  return output.join(", ");
+  return output2.join(", ");
 }
 var cachedDocument = /* @__PURE__ */ new WeakMap();
 function absoluteToDoc(doc, attributeValue) {
@@ -69850,1754 +69896,6 @@ function deleteCookie(name) {
   setCookie(name, "", -99999, "/", environment.connect_base_domain, true);
 }
 
-// node_modules/ngx-device-detector/fesm2022/ngx-device-detector.mjs
-var GENERAL = {
-  UKNOWN: "Unknown"
-};
-var BROWSERS = {
-  CHROME: "Chrome",
-  FIREFOX: "Firefox",
-  SAFARI: "Safari",
-  OPERA: "Opera",
-  IE: "IE",
-  MS_EDGE: "MS-Edge",
-  MS_EDGE_CHROMIUM: "MS-Edge-Chromium",
-  FB_MESSANGER: "FB-Messanger",
-  SAMSUNG: "Samsung",
-  UCBROWSER: "UC-Browser",
-  UNKNOWN: GENERAL.UKNOWN
-};
-var MOBILES_RE = {
-  // tslint:disable-next-line:max-line-length
-  HTC: /HTC|HTC.*(Sensation|Evo|Vision|Explorer|6800|8100|8900|A7272|S510e|C110e|Legend|Desire|T8282)|APX515CKT|Qtek9090|APA9292KT|HD_mini|Sensation.*Z710e|PG86100|Z715e|Desire.*(A8181|HD)|ADR6200|ADR6400L|ADR6425|001HT|Inspire 4G|Android.*\bEVO\b|T-Mobile G1|Z520m|Android [0-9.]+; Pixel/,
-  NEXUS_PHONE: /Nexus One|Nexus S|Galaxy.*Nexus|Android.*Nexus.*Mobile|Nexus 4|Nexus 5|Nexus 6/,
-  DELL: /Dell[;]? (Streak|Aero|Venue|Venue Pro|Flash|Smoke|Mini 3iX)|XCD28|XCD35|\b001DL\b|\b101DL\b|\bGS01\b/,
-  MOTOROLA: new RegExp(`Motorola|DROIDX|DROID BIONIC|\\bDroid\\b.*Build|Android.*Xoom|HRI39|MOT-|A1260|A1680|A555|A853|
-      A855|A953|A955|A956|Motorola.*ELECTRIFY|Motorola.*i1|i867|i940|MB200|MB300|MB501|MB502|MB508|MB511|
-      MB520|MB525|MB526|MB611|MB612|MB632|MB810|MB855|MB860|MB861|MB865|MB870|ME501|ME502|ME511|ME525|ME600|
-      ME632|ME722|ME811|ME860|ME863|ME865|MT620|MT710|MT716|MT720|MT810|MT870|MT917|Motorola.*TITANIUM|WX435|
-      WX445|XT300|XT301|XT311|XT316|XT317|XT319|XT320|XT390|XT502|XT530|XT531|XT532|XT535|XT603|XT610|XT611|
-      XT615|XT681|XT701|XT702|XT711|XT720|XT800|XT806|XT860|XT862|XT875|XT882|XT883|XT894|XT901|XT907|XT909|
-      XT910|XT912|XT928|XT926|XT915|XT919|XT925|XT1021|\\bMoto E\\b|XT1068|XT1092|XT1052`),
-  SAMSUNG: new RegExp(`\\bSamsung\\b|SM-G950F|SM-G955F|SM-G9250|GT-19300|SGH-I337|BGT-S5230|GT-B2100|GT-B2700|GT-B2710|
-      GT-B3210|GT-B3310|GT-B3410|GT-B3730|GT-B3740|GT-B5510|GT-B5512|GT-B5722|GT-B6520|GT-B7300|GT-B7320|
-      GT-B7330|GT-B7350|GT-B7510|GT-B7722|GT-B7800|GT-C3010|GT-C3011|GT-C3060|GT-C3200|GT-C3212|GT-C3212I|
-      GT-C3262|GT-C3222|GT-C3300|GT-C3300K|GT-C3303|GT-C3303K|GT-C3310|GT-C3322|GT-C3330|GT-C3350|GT-C3500|
-      GT-C3510|GT-C3530|GT-C3630|GT-C3780|GT-C5010|GT-C5212|GT-C6620|GT-C6625|GT-C6712|GT-E1050|GT-E1070|
-      GT-E1075|GT-E1080|GT-E1081|GT-E1085|GT-E1087|GT-E1100|GT-E1107|GT-E1110|GT-E1120|GT-E1125|GT-E1130|
-      GT-E1160|GT-E1170|GT-E1175|GT-E1180|GT-E1182|GT-E1200|GT-E1210|GT-E1225|GT-E1230|GT-E1390|GT-E2100|
-      GT-E2120|GT-E2121|GT-E2152|GT-E2220|GT-E2222|GT-E2230|GT-E2232|GT-E2250|GT-E2370|GT-E2550|GT-E2652|
-      GT-E3210|GT-E3213|GT-I5500|GT-I5503|GT-I5700|GT-I5800|GT-I5801|GT-I6410|GT-I6420|GT-I7110|GT-I7410|
-      GT-I7500|GT-I8000|GT-I8150|GT-I8160|GT-I8190|GT-I8320|GT-I8330|GT-I8350|GT-I8530|GT-I8700|GT-I8703|
-      GT-I8910|GT-I9000|GT-I9001|GT-I9003|GT-I9010|GT-I9020|GT-I9023|GT-I9070|GT-I9082|GT-I9100|GT-I9103|
-      GT-I9220|GT-I9250|GT-I9300|GT-I9305|GT-I9500|GT-I9505|GT-M3510|GT-M5650|GT-M7500|GT-M7600|GT-M7603|
-      GT-M8800|GT-M8910|GT-N7000|GT-S3110|GT-S3310|GT-S3350|GT-S3353|GT-S3370|GT-S3650|GT-S3653|GT-S3770|
-      GT-S3850|GT-S5210|GT-S5220|GT-S5229|GT-S5230|GT-S5233|GT-S5250|GT-S5253|GT-S5260|GT-S5263|GT-S5270|
-      GT-S5300|GT-S5330|GT-S5350|GT-S5360|GT-S5363|GT-S5369|GT-S5380|GT-S5380D|GT-S5560|GT-S5570|GT-S5600|
-      GT-S5603|GT-S5610|GT-S5620|GT-S5660|GT-S5670|GT-S5690|GT-S5750|GT-S5780|GT-S5830|GT-S5839|GT-S6102|
-      GT-S6500|GT-S7070|GT-S7200|GT-S7220|GT-S7230|GT-S7233|GT-S7250|GT-S7500|GT-S7530|GT-S7550|GT-S7562|
-      GT-S7710|GT-S8000|GT-S8003|GT-S8500|GT-S8530|GT-S8600|SCH-A310|SCH-A530|SCH-A570|SCH-A610|SCH-A630|
-      SCH-A650|SCH-A790|SCH-A795|SCH-A850|SCH-A870|SCH-A890|SCH-A930|SCH-A950|SCH-A970|SCH-A990|SCH-I100|
-      SCH-I110|SCH-I400|SCH-I405|SCH-I500|SCH-I510|SCH-I515|SCH-I600|SCH-I730|SCH-I760|SCH-I770|SCH-I830|
-      SCH-I910|SCH-I920|SCH-I959|SCH-LC11|SCH-N150|SCH-N300|SCH-R100|SCH-R300|SCH-R351|SCH-R400|SCH-R410|
-      SCH-T300|SCH-U310|SCH-U320|SCH-U350|SCH-U360|SCH-U365|SCH-U370|SCH-U380|SCH-U410|SCH-U430|SCH-U450|
-      SCH-U460|SCH-U470|SCH-U490|SCH-U540|SCH-U550|SCH-U620|SCH-U640|SCH-U650|SCH-U660|SCH-U700|SCH-U740|
-      SCH-U750|SCH-U810|SCH-U820|SCH-U900|SCH-U940|SCH-U960|SCS-26UC|SGH-A107|SGH-A117|SGH-A127|SGH-A137|
-      SGH-A157|SGH-A167|SGH-A177|SGH-A187|SGH-A197|SGH-A227|SGH-A237|SGH-A257|SGH-A437|SGH-A517|SGH-A597|
-      SGH-A637|SGH-A657|SGH-A667|SGH-A687|SGH-A697|SGH-A707|SGH-A717|SGH-A727|SGH-A737|SGH-A747|SGH-A767|
-      SGH-A777|SGH-A797|SGH-A817|SGH-A827|SGH-A837|SGH-A847|SGH-A867|SGH-A877|SGH-A887|SGH-A897|SGH-A927|
-      SGH-B100|SGH-B130|SGH-B200|SGH-B220|SGH-C100|SGH-C110|SGH-C120|SGH-C130|SGH-C140|SGH-C160|SGH-C170|
-      SGH-C180|SGH-C200|SGH-C207|SGH-C210|SGH-C225|SGH-C230|SGH-C417|SGH-C450|SGH-D307|SGH-D347|SGH-D357|
-      SGH-D407|SGH-D415|SGH-D780|SGH-D807|SGH-D980|SGH-E105|SGH-E200|SGH-E315|SGH-E316|SGH-E317|SGH-E335|
-      SGH-E590|SGH-E635|SGH-E715|SGH-E890|SGH-F300|SGH-F480|SGH-I200|SGH-I300|SGH-I320|SGH-I550|SGH-I577|
-      SGH-I600|SGH-I607|SGH-I617|SGH-I627|SGH-I637|SGH-I677|SGH-I700|SGH-I717|SGH-I727|SGH-i747M|SGH-I777|
-      SGH-I780|SGH-I827|SGH-I847|SGH-I857|SGH-I896|SGH-I897|SGH-I900|SGH-I907|SGH-I917|SGH-I927|SGH-I937|
-      SGH-I997|SGH-J150|SGH-J200|SGH-L170|SGH-L700|SGH-M110|SGH-M150|SGH-M200|SGH-N105|SGH-N500|SGH-N600|
-      SGH-N620|SGH-N625|SGH-N700|SGH-N710|SGH-P107|SGH-P207|SGH-P300|SGH-P310|SGH-P520|SGH-P735|SGH-P777|
-      SGH-Q105|SGH-R210|SGH-R220|SGH-R225|SGH-S105|SGH-S307|SGH-T109|SGH-T119|SGH-T139|SGH-T209|SGH-T219|
-      SGH-T229|SGH-T239|SGH-T249|SGH-T259|SGH-T309|SGH-T319|SGH-T329|SGH-T339|SGH-T349|SGH-T359|SGH-T369|
-      SGH-T379|SGH-T409|SGH-T429|SGH-T439|SGH-T459|SGH-T469|SGH-T479|SGH-T499|SGH-T509|SGH-T519|SGH-T539|
-      SGH-T559|SGH-T589|SGH-T609|SGH-T619|SGH-T629|SGH-T639|SGH-T659|SGH-T669|SGH-T679|SGH-T709|SGH-T719|
-      SGH-T729|SGH-T739|SGH-T746|SGH-T749|SGH-T759|SGH-T769|SGH-T809|SGH-T819|SGH-T839|SGH-T919|SGH-T929|
-      SGH-T939|SGH-T959|SGH-T989|SGH-U100|SGH-U200|SGH-U800|SGH-V205|SGH-V206|SGH-X100|SGH-X105|SGH-X120|
-      SGH-X140|SGH-X426|SGH-X427|SGH-X475|SGH-X495|SGH-X497|SGH-X507|SGH-X600|SGH-X610|SGH-X620|SGH-X630|
-      SGH-X700|SGH-X820|SGH-X890|SGH-Z130|SGH-Z150|SGH-Z170|SGH-ZX10|SGH-ZX20|SHW-M110|SPH-A120|SPH-A400|
-      SPH-A420|SPH-A460|SPH-A500|SPH-A560|SPH-A600|SPH-A620|SPH-A660|SPH-A700|SPH-A740|SPH-A760|SPH-A790|
-      SPH-A800|SPH-A820|SPH-A840|SPH-A880|SPH-A900|SPH-A940|SPH-A960|SPH-D600|SPH-D700|SPH-D710|SPH-D720|
-      SPH-I300|SPH-I325|SPH-I330|SPH-I350|SPH-I500|SPH-I600|SPH-I700|SPH-L700|SPH-M100|SPH-M220|SPH-M240|
-      SPH-M300|SPH-M305|SPH-M320|SPH-M330|SPH-M350|SPH-M360|SPH-M370|SPH-M380|SPH-M510|SPH-M540|SPH-M550|
-      SPH-M560|SPH-M570|SPH-M580|SPH-M610|SPH-M620|SPH-M630|SPH-M800|SPH-M810|SPH-M850|SPH-M900|SPH-M910|
-      SPH-M920|SPH-M930|SPH-N100|SPH-N200|SPH-N240|SPH-N300|SPH-N400|SPH-Z400|SWC-E100|SCH-i909|GT-N7100|
-      GT-N7105|SCH-I535|SM-N900A|SM-N900T|SGH-I317|SGH-T999L|GT-S5360B|GT-I8262|GT-S6802|GT-S6312|GT-S6310|GT-S5312|
-      GT-S5310|GT-I9105|GT-I8510|GT-S6790N|SM-G7105|SM-N9005|GT-S5301|GT-I9295|GT-I9195|SM-C101|GT-S7392|GT-S7560|
-      GT-B7610|GT-I5510|GT-S7582|GT-S7530E|GT-I8750|SM-G9006V|SM-G9008V|SM-G9009D|SM-G900A|SM-G900D|SM-G900F|
-      SM-G900H|SM-G900I|SM-G900J|SM-G900K|SM-G900L|SM-G900M|SM-G900P|SM-G900R4|SM-G900S|SM-G900T|SM-G900V|
-      SM-G900W8|SHV-E160K|SCH-P709|SCH-P729|SM-T2558|GT-I9205|SM-G9350|SM-J120F|SM-G920F|SM-G920V|SM-G930F|
-      SM-N910C|SM-A310F|GT-I9190|SM-J500FN|SM-G903F|SM-J330F`),
-  LG: new RegExp(`\\bLG\\b;|LG[- ]?(C800|C900|E400|E610|E900|E-900|F160|F180K|F180L|F180S|730|855|L160|LS740|LS840|LS970|
-      LU6200|MS690|MS695|MS770|MS840|MS870|MS910|P500|P700|P705|VM696|AS680|AS695|AX840|C729|E970|GS505|272|
-      C395|E739BK|E960|L55C|L75C|LS696|LS860|P769BK|P350|P500|P509|P870|UN272|US730|VS840|VS950|LN272|LN510|
-      LS670|LS855|LW690|MN270|MN510|P509|P769|P930|UN200|UN270|UN510|UN610|US670|US740|US760|UX265|UX840|VN271|
-      VN530|VS660|VS700|VS740|VS750|VS910|VS920|VS930|VX9200|VX11000|AX840A|LW770|P506|P925|P999|E612|D955|D802|
-      MS323|M257)`),
-  SONY: /SonyST|SonyLT|SonyEricsson|SonyEricssonLT15iv|LT18i|E10i|LT28h|LT26w|SonyEricssonMT27i|C5303|C6902|C6903|C6906|C6943|D2533/,
-  ASUS: /Asus.*Galaxy|PadFone.*Mobile/,
-  NOKIA_LUMIA: /Lumia [0-9]{3,4}/,
-  MICROMAX: /Micromax.*\b(A210|A92|A88|A72|A111|A110Q|A115|A116|A110|A90S|A26|A51|A35|A54|A25|A27|A89|A68|A65|A57|A90)\b/,
-  PALM: /PalmSource|Palm/,
-  VERTU: /Vertu|Vertu.*Ltd|Vertu.*Ascent|Vertu.*Ayxta|Vertu.*Constellation(F|Quest)?|Vertu.*Monika|Vertu.*Signature/,
-  PANTECH: new RegExp(`PANTECH|IM-A850S|IM-A840S|IM-A830L|IM-A830K|IM-A830S|IM-A820L|IM-A810K|IM-A810S|IM-A800S|IM-T100K|
-        IM-A725L|IM-A780L|IM-A775C|IM-A770K|IM-A760S|IM-A750K|IM-A740S|IM-A730S|IM-A720L|IM-A710K|IM-A690L|
-        IM-A690S|IM-A650S|IM-A630K|IM-A600S|VEGA PTL21|PT003|P8010|ADR910L|P6030|P6020|P9070|P4100|P9060|P5000|
-        CDM8992|TXT8045|ADR8995|IS11PT|P2030|P6010|P8000|PT002|IS06|CDM8999|P9050|PT001|TXT8040|P2020|P9020|
-        P2000|P7040|P7000|C790`),
-  FLY: /IQ230|IQ444|IQ450|IQ440|IQ442|IQ441|IQ245|IQ256|IQ236|IQ255|IQ235|IQ245|IQ275|IQ240|IQ285|IQ280|IQ270|IQ260|IQ250/,
-  WIKO: new RegExp(`KITE 4G|HIGHWAY|GETAWAY|STAIRWAY|DARKSIDE|DARKFULL|DARKNIGHT|DARKMOON|SLIDE|WAX 4G|RAINBOW|BLOOM|
-        SUNSET|GOA(?!nna)|LENNY|BARRY|IGGY|OZZY|CINK FIVE|CINK PEAX|CINK PEAX 2|CINK SLIM|CINK SLIM 2|CINK +|
-        CINK KING|CINK PEAX|CINK SLIM|SUBLIM`),
-  I_MOBILE: /i-mobile (IQ|i-STYLE|idea|ZAA|Hitz)/,
-  SIMVALLEY: /\b(SP-80|XT-930|SX-340|XT-930|SX-310|SP-360|SP60|SPT-800|SP-120|SPT-800|SP-140|SPX-5|SPX-8|SP-100|SPX-8|SPX-12)\b/,
-  WOLFGANG: /AT-B24D|AT-AS50HD|AT-AS40W|AT-AS55HD|AT-AS45q2|AT-B26D|AT-AS50Q/,
-  ALCATEL: /Alcatel|Mobile; rv:49.0|Mobile; ALCATEL 4052R; rv:48.0/,
-  NINTENDO: /Nintendo (3DS|Switch)/,
-  AMOI: /Amoi/,
-  INQ: /INQ/,
-  VITA: /\bVita\b/,
-  BLACKBERRY: /\bBlackBerry\b|\bBB10\b|rim[0-9]+/,
-  FIREFOX_OS: /\bFirefox-OS\b/,
-  IPHONE: /\biPhone\b/,
-  iPod: /\biPod\b/,
-  ANDROID: /\bAndroid\b/,
-  WINDOWS_PHONE: /\bWindows-Phone\b/,
-  GENERIC_PHONE: new RegExp(`Tapatalk|PDA;|SAGEM|\\bmmp\\b|pocket|\\bpsp\\b|symbian|Smartphone|smartfon|treo|up.browser|
-        up.link|vodafone|\\bwap\\b|nokia|Nokia|Series40|Series60|S60|SonyEricsson|N900|MAUI.*WAP.*Browser`)
-};
-var TABLETS_RE = {
-  iPad: /iPad|iPad.*Mobile/,
-  NexusTablet: /Android.*Nexus[\s]+(7|9|10)/,
-  GoogleTablet: /Android.*Pixel C/,
-  SamsungTablet: new RegExp(`SAMSUNG.*Tablet|Galaxy.*Tab|SC-01C|GT-P1000|GT-P1003|GT-P1010|GT-P3105|GT-P6210|
-        GT-P6800|GT-P6810|GT-P7100|GT-P7300|GT-P7310|GT-P7500|GT-P7510|SCH-I800|SCH-I815|SCH-I905|
-        SGH-I957|SGH-I987|SGH-T849|SGH-T859|SGH-T869|SPH-P100|GT-P3100|GT-P3108|GT-P3110|GT-P5100|
-        GT-P5110|GT-P6200|GT-P7320|GT-P7511|GT-N8000|GT-P8510|SGH-I497|SPH-P500|SGH-T779|SCH-I705|
-        SCH-I915|GT-N8013|GT-P3113|GT-P5113|GT-P8110|GT-N8010|GT-N8005|GT-N8020|GT-P1013|GT-P6201|
-        GT-P7501|GT-N5100|GT-N5105|GT-N5110|SHV-E140K|SHV-E140L|SHV-E140S|SHV-E150S|SHV-E230K|SHV-E230L|
-        SHV-E230S|SHW-M180K|SHW-M180L|SM-T865|SM-T290|SHW-M180S|SHW-M180W|SHW-M300W|SHW-M305W|SHW-M380K|SHW-M380S|SHW-M380W|
-        SHW-M430W|SHW-M480K|SHW-M480S|SHW-M480W|SHW-M485W|SHW-M486W|SHW-M500W|GT-I9228|SCH-P739|SCH-I925|
-        GT-I9200|GT-P5200|GT-P5210|GT-P5210X|SM-T385M|SM-P585M|SM-T311|SM-T310|SM-T310X|SM-T210|SM-T210R|SM-T211|SM-P600|
-        SM-P601|SM-P605|SM-P615|SM-P900|SM-P901|SM-T217|SM-T217A|SM-T217S|SM-P6000|SM-T3100|SGH-I467|XE500|SM-T110|
-        GT-P5220|GT-I9200X|GT-N5110X|GT-N5120|SM-P905|SM-T111|SM-T2105|SM-T315|SM-T320|SM-T320X|SM-T321|
-        SM-T510|SM-T520|SM-T525|SM-T530NU|SM-T230NU|SM-T330NU|SM-T900|XE500T1C|SM-P605V|SM-P905V|SM-T337V|SM-T537V|
-        SM-T707V|SM-T807V|SM-P600X|SM-P900X|SM-T210X|SM-T230|SM-T230X|SM-T325|GT-P7503|SM-T531|SM-T500|SM-T330|
-        SM-T530|SM-T705|SM-T705C|SM-T535|SM-T331|SM-T800|SM-T700|SM-T537|SM-T807|SM-P907A|SM-T337A|SM-T537A|
-        SM-T707A|SM-T807A|SM-T237|SM-T807P|SM-P607T|SM-T217T|SM-T337T|SM-T807T|SM-T116NQ|SM-T116BU|SM-P550|
-        SM-T350|SM-T550|SM-T9000|SM-P9000|SM-T705Y|SM-T805|GT-P3113|SM-T710|SM-T810|SM-T815|SM-T360|SM-T533|
-        SM-T113|SM-T335|SM-T715|SM-T560|SM-T670|SM-T677|SM-T377|SM-T567|SM-T357T|SM-T555|SM-T561|SM-T713|
-        SM-T719|SM-T725|SM-T813|SM-T819|SM-T580|SM-T590|SM-T355Y?|SM-T280|SM-T817A|SM-T820|SM-W700|SM-P580|SM-T587|SM-P350|
-        SM-P555M|SM-P355M|SM-T113NU|SM-T815Y|SM-T585|SM-T285|SM-T825|SM-W708|SM-T835|SM-P585Y|SM-X200|SM-T970`),
-  Kindle: new RegExp(`Kindle|Silk.*Accelerated|Android.*\\b(KFOT|KFTT|KFJWI|KFJWA|KFOTE|KFSOWI|KFTHWI|KFTHWA|KFAPWI|
-        KFAPWA|WFJWAE|KFSAWA|KFSAWI|KFASWI|KFARWI|KFFOWI|KFGIWI|KFMEWI)\\b|Android.*Silk/[0-9.]+ like Chrome        /[0-9.]+ (?!Mobile)`),
-  SurfaceTablet: /Windows NT [0-9.]+; ARM;.*(Tablet|ARMBJS)/,
-  HPTablet: /HP Slate (7|8|10)|HP ElitePad 900|hp-tablet|EliteBook.*Touch|HP 8|Slate 21|HP SlateBook 10/,
-  AsusTablet: new RegExp(`^.*PadFone((?!Mobile).)*$|Transformer|TF101|TF101G|TF300T|TF300TG|TF300TL|TF700T|TF700KL|
-        TF701T|TF810C|ME171|ME301T|ME302C|ME371MG|ME370T|ME372MG|ME172V|ME173X|ME400C|
-        Slider SL101|\\bK00F\\b|\\bK00C\\b|\\bK00E\\b|\\bK00L\\b|TX201LA|ME176C|ME102A|\\bM80TA\\b|ME372CL|
-        ME560CG|ME372CG|ME302KL| K010 | K011 | K017 | K01E |ME572C|ME103K|ME170C|ME171C|\\bME70C\\b|ME581C|
-        ME581CL|ME8510C|ME181C|P01Y|PO1MA|P01Z|\\bP027\\b|\\bP024\\b|\\bP00C\\b`),
-  BlackBerryTablet: /PlayBook|RIM Tablet/,
-  HTCtablet: /HTC_Flyer_P512|HTC Flyer|HTC Jetstream|HTC-P715a|HTC EVO View 4G|PG41200|PG09410/,
-  MotorolaTablet: /xoom|sholest|MZ615|MZ605|MZ505|MZ601|MZ602|MZ603|MZ604|MZ606|MZ607|MZ608|MZ609|MZ615|MZ616|MZ617/,
-  NookTablet: /Android.*Nook|NookColor|nook browser|BNRV200|BNRV200A|BNTV250|BNTV250A|BNTV400|BNTV600|LogicPD Zoom2/,
-  AcerTablet: new RegExp(`Android.*; \\b(A100|A101|A110|A200|A210|A211|A500|A501|A510|A511|A700|A701|W500|W500P|W501|
-        W501P|W510|W511|W700|G100|G100W|B1-A71|B1-710|B1-711|A1-810|A1-811|A1-830)\\b|W3-810|\\bA3-A10\\b|\\bA3-A11\\b|
-        \\bA3-A20\\b|\\bA3-A30`),
-  ToshibaTablet: /Android.*(AT100|AT105|AT200|AT205|AT270|AT275|AT300|AT305|AT1S5|AT500|AT570|AT700|AT830)|TOSHIBA.*FOLIO/,
-  LGTablet: /\bL-06C|LG-V909|LG-V900|LG-V700|LG-V510|LG-V500|LG-V410|LG-V400|LG-VK810\b/,
-  FujitsuTablet: /Android.*\b(F-01D|F-02F|F-05E|F-10D|M532|Q572)\b/,
-  PrestigioTablet: new RegExp(`PMP3170B|PMP3270B|PMP3470B|PMP7170B|PMP3370B|PMP3570C|PMP5870C|PMP3670B|PMP5570C|
-        PMP5770D|PMP3970B|PMP3870C|PMP5580C|PMP5880D|PMP5780D|PMP5588C|PMP7280C|PMP7280C3G|PMP7280|PMP7880D|
-        PMP5597D|PMP5597|PMP7100D|PER3464|PER3274|PER3574|PER3884|PER5274|PER5474|PMP5097CPRO|PMP5097|PMP7380D|
-        PMP5297C|PMP5297C_QUAD|PMP812E|PMP812E3G|PMP812F|PMP810E|PMP880TD|PMT3017|PMT3037|PMT3047|PMT3057|PMT7008|
-        PMT5887|PMT5001|PMT5002`),
-  LenovoTablet: new RegExp(`Lenovo TAB|Idea(Tab|Pad)( A1|A10| K1|)|ThinkPad([ ]+)?Tablet|YT3-850M|YT3-X90L|YT3-X90F|
-        YT3-X90X|Lenovo.*(S2109|S2110|S5000|S6000|K3011|A3000|A3500|A1000|A2107|A2109|A1107|A5500|A7600|B6000|
-        B8000|B8080)(-|)(FL|F|HV|H|)|TB-X606F|TB-X103F|TB-X304F|TB-X304L|TB-X704F|TB-8703F|Tab2A7-10F|TB2-X30L|TB-8504F`),
-  DellTablet: /Venue 11|Venue 8|Venue 7|Dell Streak 10|Dell Streak 7/,
-  YarvikTablet: new RegExp(`Android.*\\b(TAB210|TAB211|TAB224|TAB250|TAB260|TAB264|TAB310|TAB360|TAB364|TAB410|TAB411|
-        TAB420|TAB424|TAB450|TAB460|TAB461|TAB464|TAB465|TAB467|TAB468|TAB07-100|TAB07-101|TAB07-150|TAB07-151|
-        TAB07-152|TAB07-200|TAB07-201-3G|TAB07-210|TAB07-211|TAB07-212|TAB07-214|TAB07-220|TAB07-400|TAB07-485|
-        TAB08-150|TAB08-200|TAB08-201-3G|TAB08-201-30|TAB09-100|TAB09-211|TAB09-410|TAB10-150|TAB10-201|TAB10-211|
-        TAB10-400|TAB10-410|TAB13-201|TAB274EUK|TAB275EUK|TAB374EUK|TAB462EUK|TAB474EUK|TAB9-200)\\b`),
-  MedionTablet: /Android.*\bOYO\b|LIFE.*(P9212|P9514|P9516|S9512)|LIFETAB/,
-  ArnovaTablet: /97G4|AN10G2|AN7bG3|AN7fG3|AN8G3|AN8cG3|AN7G3|AN9G3|AN7dG3|AN7dG3ST|AN7dG3ChildPad|AN10bG3|AN10bG3DT|AN9G2/,
-  IntensoTablet: /INM8002KP|INM1010FP|INM805ND|Intenso Tab|TAB1004/,
-  IRUTablet: /M702pro/,
-  MegafonTablet: /MegaFon V9|\bZTE V9\b|Android.*\bMT7A\b/,
-  EbodaTablet: /E-Boda (Supreme|Impresspeed|Izzycomm|Essential)/,
-  AllViewTablet: /Allview.*(Viva|Alldro|City|Speed|All TV|Frenzy|Quasar|Shine|TX1|AX1|AX2)/,
-  ArchosTablet: new RegExp(`\\b(101G9|80G9|A101IT)\\b|Qilive 97R|Archos5|\\bARCHOS (70|79|80|90|97|101|FAMILYPAD|)(b|c|)(G10|
-         Cobalt| TITANIUM(HD|)| Xenon| Neon|XSK| 2| XS 2| PLATINUM| CARBON|GAMEPAD)\\b`),
-  AinolTablet: /NOVO7|NOVO8|NOVO10|Novo7Aurora|Novo7Basic|NOVO7PALADIN|novo9-Spark/,
-  NokiaLumiaTablet: /Lumia 2520/,
-  SonyTablet: new RegExp(`Sony.*Tablet|Xperia Tablet|Sony Tablet S|SO-03E|SGPT12|SGPT13|SGPT114|SGPT121|SGPT122|SGPT123|
-        SGPT111|SGPT112|SGPT113|SGPT131|SGPT132|SGPT133|SGPT211|SGPT212|SGPT213|SGP311|SGP312|SGP321|EBRD1101|
-        EBRD1102|EBRD1201|SGP351|SGP341|SGP511|SGP512|SGP521|SGP541|SGP551|SGP621|SGP641|SGP612|SOT31|SGP771|SGP611|
-        SGP612|SGP712`),
-  PhilipsTablet: /\b(PI2010|PI3000|PI3100|PI3105|PI3110|PI3205|PI3210|PI3900|PI4010|PI7000|PI7100)\b/,
-  CubeTablet: /Android.*(K8GT|U9GT|U10GT|U16GT|U17GT|U18GT|U19GT|U20GT|U23GT|U30GT)|CUBE U8GT/,
-  CobyTablet: new RegExp(`MID1042|MID1045|MID1125|MID1126|MID7012|MID7014|MID7015|MID7034|MID7035|MID7036|MID7042|MID7048|
-        MID7127|MID8042|MID8048|MID8127|MID9042|MID9740|MID9742|MID7022|MID7010`),
-  MIDTablet: new RegExp(`M9701|M9000|M9100|M806|M1052|M806|T703|MID701|MID713|MID710|MID727|MID760|MID830|MID728|MID933|
-        MID125|MID810|MID732|MID120|MID930|MID800|MID731|MID900|MID100|MID820|MID735|MID980|MID130|MID833|MID737|
-        MID960|MID135|MID860|MID736|MID140|MID930|MID835|MID733|MID4X10`),
-  MSITablet: new RegExp(`MSI \\b(Primo 73K|Primo 73L|Primo 81L|Primo 77|Primo 93|Primo 75|Primo 76|Primo 73|Primo 81|
-        Primo 91|Primo 90|Enjoy 71|Enjoy 7|Enjoy 10)\\b`),
-  SMiTTablet: /Android.*(\bMID\b|MID-560|MTV-T1200|MTV-PND531|MTV-P1101|MTV-PND530)/,
-  RockChipTablet: /Android.*(RK2818|RK2808A|RK2918|RK3066)|RK2738|RK2808A/,
-  FlyTablet: /IQ310|Fly Vision/,
-  bqTablet: new RegExp(`Android.*(bq)?.*(Elcano|Curie|Edison|Maxwell|Kepler|Pascal|Tesla|Hypatia|Platon|Newton|
-        Livingstone|Cervantes|Avant|Aquaris ([E|M]10|M8))|Maxwell.*Lite|Maxwell.*Plus`),
-  HuaweiTablet: new RegExp(`MediaPad|MediaPad 7 Youth|MediaPad T3 10|IDEOS S7|S7-201c|S7-202u|S7-101|S7-103|S7-104|S7-105|S7-106|
-        S7-201|S7-Slim|M2-A01L|BAH-L09|BAH-W09|AGS-W09|AGS-L09`),
-  NecTablet: /\bN-06D|\bN-08D/,
-  PantechTablet: /Pantech.*P4100/,
-  BronchoTablet: /Broncho.*(N701|N708|N802|a710)/,
-  VersusTablet: /TOUCHPAD.*[78910]|\bTOUCHTAB\b/,
-  ZyncTablet: /z1000|Z99 2G|z99|z930|z999|z990|z909|Z919|z900/,
-  PositivoTablet: /TB07STA|TB10STA|TB07FTA|TB10FTA/,
-  NabiTablet: /Android.*\bNabi/,
-  KoboTablet: /Kobo Touch|\bK080\b|\bVox\b Build|\bArc\b Build/,
-  DanewTablet: /DSlide.*\b(700|701R|702|703R|704|802|970|971|972|973|974|1010|1012)\b/,
-  TexetTablet: new RegExp(`NaviPad|TB-772A|TM-7045|TM-7055|TM-9750|TM-7016|TM-7024|TM-7026|TM-7041|TM-7043|TM-7047|
-        TM-8041|TM-9741|TM-9747|TM-9748|TM-9751|TM-7022|TM-7021|TM-7020|TM-7011|TM-7010|TM-7023|TM-7025|
-        TM-7037W|TM-7038W|TM-7027W|TM-9720|TM-9725|TM-9737W|TM-1020|TM-9738W|TM-9740|TM-9743W|TB-807A|TB-771A|
-        TB-727A|TB-725A|TB-719A|TB-823A|TB-805A|TB-723A|TB-715A|TB-707A|TB-705A|TB-709A|TB-711A|TB-890HD|
-        TB-880HD|TB-790HD|TB-780HD|TB-770HD|TB-721HD|TB-710HD|TB-434HD|TB-860HD|TB-840HD|TB-760HD|TB-750HD|
-        TB-740HD|TB-730HD|TB-722HD|TB-720HD|TB-700HD|TB-500HD|TB-470HD|TB-431HD|TB-430HD|TB-506|TB-504|TB-446|
-        TB-436|TB-416|TB-146SE|TB-126SE`),
-  PlaystationTablet: /Playstation.*(Portable|Vita)/,
-  TrekstorTablet: /ST10416-1|VT10416-1|ST70408-1|ST702xx-1|ST702xx-2|ST80208|ST97216|ST70104-2|VT10416-2|ST10216-2A|SurfTab/,
-  PyleAudioTablet: /\b(PTBL10CEU|PTBL10C|PTBL72BC|PTBL72BCEU|PTBL7CEU|PTBL7C|PTBL92BC|PTBL92BCEU|PTBL9CEU|PTBL9CUK|PTBL9C)\b/,
-  AdvanTablet: new RegExp(`Android.* \\b(E3A|T3X|T5C|T5B|T3E|T3C|T3B|T1J|T1F|T2A|T1H|T1i|E1C|T1-E|T5-A|T4|E1-B|T2Ci|
-        T1-B|T1-D|O1-A|E1-A|T1-A|T3A|T4i)\\b`),
-  DanyTechTablet: `Genius Tab G3|Genius Tab S2|Genius Tab Q3|Genius Tab G4|Genius Tab Q4|Genius Tab G-II|
-        Genius TAB GII|Genius TAB GIII|Genius Tab S1`,
-  GalapadTablet: /Android.*\bG1\b(?!\))/,
-  MicromaxTablet: /Funbook|Micromax.*\b(P250|P560|P360|P362|P600|P300|P350|P500|P275)\b/,
-  KarbonnTablet: /Android.*\b(A39|A37|A34|ST8|ST10|ST7|Smart Tab3|Smart Tab2)\b/,
-  AllFineTablet: /Fine7 Genius|Fine7 Shine|Fine7 Air|Fine8 Style|Fine9 More|Fine10 Joy|Fine11 Wide/,
-  PROSCANTablet: new RegExp(`\\b(PEM63|PLT1023G|PLT1041|PLT1044|PLT1044G|PLT1091|PLT4311|PLT4311PL|PLT4315|PLT7030|
-        PLT7033|PLT7033D|PLT7035|PLT7035D|PLT7044K|PLT7045K|PLT7045KB|PLT7071KG|PLT7072|PLT7223G|PLT7225G|
-        PLT7777G|PLT7810K|PLT7849G|PLT7851G|PLT7852G|PLT8015|PLT8031|PLT8034|PLT8036|PLT8080K|PLT8082|PLT8088|
-        PLT8223G|PLT8234G|PLT8235G|PLT8816K|PLT9011|PLT9045K|PLT9233G|PLT9735|PLT9760G|PLT9770G)\\b`),
-  YONESTablet: /BQ1078|BC1003|BC1077|RK9702|BC9730|BC9001|IT9001|BC7008|BC7010|BC708|BC728|BC7012|BC7030|BC7027|BC7026/,
-  ChangJiaTablet: new RegExp(`TPC7102|TPC7103|TPC7105|TPC7106|TPC7107|TPC7201|TPC7203|TPC7205|TPC7210|TPC7708|TPC7709|
-        TPC7712|TPC7110|TPC8101|TPC8103|TPC8105|TPC8106|TPC8203|TPC8205|TPC8503|TPC9106|TPC9701|TPC97101|TPC97103|
-        TPC97105|TPC97106|TPC97111|TPC97113|TPC97203|TPC97603|TPC97809|TPC97205|TPC10101|TPC10103|TPC10106|
-        TPC10111|TPC10203|TPC10205|TPC10503`),
-  GUTablet: /TX-A1301|TX-M9002|Q702|kf026/,
-  PointOfViewTablet: new RegExp(`TAB-P506|TAB-navi-7-3G-M|TAB-P517|TAB-P-527|TAB-P701|TAB-P703|TAB-P721|TAB-P731N|
-        TAB-P741|TAB-P825|TAB-P905|TAB-P925|TAB-PR945|TAB-PL1015|TAB-P1025|TAB-PI1045|TAB-P1325|TAB-PROTAB[0-9]+|
-        TAB-PROTAB25|TAB-PROTAB26|TAB-PROTAB27|TAB-PROTAB26XL|TAB-PROTAB2-IPS9|TAB-PROTAB30-IPS9|TAB-PROTAB25XXL|
-        TAB-PROTAB26-IPS10|TAB-PROTAB30-IPS10`),
-  OvermaxTablet: new RegExp(`OV-(SteelCore|NewBase|Basecore|Baseone|Exellen|Quattor|EduTab|Solution|ACTION|BasicTab|TeddyTab|
-        MagicTab|Stream|TB-08|TB-09)|Qualcore 1027`),
-  HCLTablet: /HCL.*Tablet|Connect-3G-2.0|Connect-2G-2.0|ME Tablet U1|ME Tablet U2|ME Tablet G1|ME Tablet X1|ME Tablet Y2|ME Tablet Sync/,
-  DPSTablet: /DPS Dream 9|DPS Dual 7/,
-  VistureTablet: /V97 HD|i75 3G|Visture V4( HD)?|Visture V5( HD)?|Visture V10/,
-  CrestaTablet: /CTP(-)?810|CTP(-)?818|CTP(-)?828|CTP(-)?838|CTP(-)?888|CTP(-)?978|CTP(-)?980|CTP(-)?987|CTP(-)?988|CTP(-)?989/,
-  MediatekTablet: /\bMT8125|MT8389|MT8135|MT8377\b/,
-  ConcordeTablet: /Concorde([ ]+)?Tab|ConCorde ReadMan/,
-  GoCleverTablet: new RegExp(`GOCLEVER TAB|A7GOCLEVER|M1042|M7841|M742|R1042BK|R1041|TAB A975|TAB A7842|TAB A741|TAB A741L|TAB M723G|
-        TAB M721|TAB A1021|TAB I921|TAB R721|TAB I720|TAB T76|TAB R70|TAB R76.2|TAB R106|TAB R83.2|TAB M813G|TAB I721|
-        GCTA722|TAB I70|TAB I71|TAB S73|TAB R73|TAB R74|TAB R93|TAB R75|TAB R76.1|TAB A73|TAB A93|TAB A93.2|TAB T72|
-        TAB R83|TAB R974|TAB R973|TAB A101|TAB A103|TAB A104|TAB A104.2|R105BK|M713G|A972BK|TAB A971|TAB R974.2|
-        TAB R104|TAB R83.3|TAB A1042`),
-  ModecomTablet: new RegExp(`FreeTAB 9000|FreeTAB 7.4|FreeTAB 7004|FreeTAB 7800|FreeTAB 2096|FreeTAB 7.5|FreeTAB 1014|
-        FreeTAB 1001 |FreeTAB 8001|FreeTAB 9706|FreeTAB 9702|FreeTAB 7003|FreeTAB 7002|FreeTAB 1002|FreeTAB 7801|
-        FreeTAB 1331|FreeTAB 1004|FreeTAB 8002|FreeTAB 8014|FreeTAB 9704|FreeTAB 1003`),
-  VoninoTablet: new RegExp(`\\b(Argus[ _]?S|Diamond[ _]?79HD|Emerald[ _]?78E|Luna[ _]?70C|Onyx[ _]?S|Onyx[ _]?Z|
-        Orin[ _]?HD|Orin[ _]?S|Otis[ _]?S|SpeedStar[ _]?S|Magnet[ _]?M9|Primus[ _]?94[ _]?3G|Primus[ _]?94HD|
-        Primus[ _]?QS|Android.*\\bQ8\\b|Sirius[ _]?EVO[ _]?QS|Sirius[ _]?QS|Spirit[ _]?S)\\b`),
-  ECSTablet: /V07OT2|TM105A|S10OT1|TR10CS1/,
-  StorexTablet: /eZee[_']?(Tab|Go)[0-9]+|TabLC7|Looney Tunes Tab/,
-  VodafoneTablet: /SmartTab([ ]+)?[0-9]+|SmartTabII10|SmartTabII7|VF-1497/,
-  EssentielBTablet: /Smart[ ']?TAB[ ]+?[0-9]+|Family[ ']?TAB2/,
-  RossMoorTablet: /RM-790|RM-997|RMD-878G|RMD-974R|RMT-705A|RMT-701|RME-601|RMT-501|RMT-711/,
-  iMobileTablet: /i-mobile i-note/,
-  TolinoTablet: /tolino tab [0-9.]+|tolino shine/,
-  AudioSonicTablet: /\bC-22Q|T7-QC|T-17B|T-17P\b/,
-  AMPETablet: /Android.* A78 /,
-  SkkTablet: /Android.* (SKYPAD|PHOENIX|CYCLOPS)/,
-  TecnoTablet: /TECNO P9|TECNO DP8D/,
-  JXDTablet: new RegExp(`Android.* \\b(F3000|A3300|JXD5000|JXD3000|JXD2000|JXD300B|JXD300|S5800|S7800|S602b|S5110b|S7300|
-        S5300|S602|S603|S5100|S5110|S601|S7100a|P3000F|P3000s|P101|P200s|P1000m|P200m|P9100|P1000s|S6600b|S908|
-        P1000|P300|S18|S6600|S9100)\\b`),
-  iJoyTablet: new RegExp(`Tablet (Spirit 7|Essentia|Galatea|Fusion|Onix 7|Landa|Titan|Scooby|Deox|Stella|Themis|Argon|
-        Unique 7|Sygnus|Hexen|Finity 7|Cream|Cream X2|Jade|Neon 7|Neron 7|Kandy|Scape|Saphyr 7|Rebel|Biox|Rebel|
-        Rebel 8GB|Myst|Draco 7|Myst|Tab7-004|Myst|Tadeo Jones|Tablet Boing|Arrow|Draco Dual Cam|Aurix|Mint|Amity|
-        Revolution|Finity 9|Neon 9|T9w|Amity 4GB Dual Cam|Stone 4GB|Stone 8GB|Andromeda|Silken|X2|Andromeda II|
-        Halley|Flame|Saphyr 9,7|Touch 8|Planet|Triton|Unique 10|Hexen 10|Memphis 4GB|Memphis 8GB|Onix 10)`),
-  FX2Tablet: /FX2 PAD7|FX2 PAD10/,
-  XoroTablet: new RegExp(`KidsPAD 701|PAD[ ]?712|PAD[ ]?714|PAD[ ]?716|PAD[ ]?717|PAD[ ]?718|PAD[ ]?720|PAD[ ]?721|
-        PAD[ ]?722|PAD[ ]?790|PAD[ ]?792|PAD[ ]?900|PAD[ ]?9715D|PAD[ ]?9716DR|PAD[ ]?9718DR|PAD[ ]?9719QR|
-        PAD[ ]?9720QR|TelePAD1030|Telepad1032|TelePAD730|TelePAD731|TelePAD732|TelePAD735Q|TelePAD830|TelePAD9730|
-        TelePAD795|MegaPAD 1331|MegaPAD 1851|MegaPAD 2151`),
-  ViewsonicTablet: /ViewPad 10pi|ViewPad 10e|ViewPad 10s|ViewPad E72|ViewPad7|ViewPad E100|ViewPad 7e|ViewSonic VB733|VB100a/,
-  VerizonTablet: /QTAQZ3|QTAIR7|QTAQTZ3|QTASUN1|QTASUN2|QTAXIA1/,
-  OdysTablet: /LOOX|XENO10|ODYS[ -](Space|EVO|Xpress|NOON)|\bXELIO\b|Xelio10Pro|XELIO7PHONETAB|XELIO10EXTREME|XELIOPT2|NEO_QUAD10/,
-  CaptivaTablet: /CAPTIVA PAD/,
-  IconbitTablet: new RegExp(`NetTAB|NT-3702|NT-3702S|NT-3702S|NT-3603P|NT-3603P|NT-0704S|NT-0704S|NT-3805C|NT-3805C|
-        NT-0806C|NT-0806C|NT-0909T|NT-0909T|NT-0907S|NT-0907S|NT-0902S|NT-0902S`),
-  TeclastTablet: new RegExp(`T98 4G|\\bP80\\b|\\bX90HD\\b|X98 Air|X98 Air 3G|\\bX89\\b|P80 3G|\\bX80h\\b|P98 Air|
-        \\bX89HD\\b|P98 3G|\\bP90HD\\b|P89 3G|X98 3G|\\bP70h\\b|P79HD 3G|G18d 3G|\\bP79HD\\b|\\bP89s\\b|\\bA88\\b|
-        \\bP10HD\\b|\\bP19HD\\b|G18 3G|\\bP78HD\\b|\\bA78\\b|\\bP75\\b|G17s 3G|G17h 3G|\\bP85t\\b|\\bP90\\b|
-        \\bP11\\b|\\bP98t\\b|\\bP98HD\\b|\\bG18d\\b|\\bP85s\\b|\\bP11HD\\b|\\bP88s\\b|\\bA80HD\\b|\\bA80se\\b|
-        \\bA10h\\b|\\bP89\\b|\\bP78s\\b|\\bG18\\b|\\bP85\\b|\\bA70h\\b|\\bA70\\b|\\bG17\\b|\\bP18\\b|\\bA80s\\b|
-        \\bA11s\\b|\\bP88HD\\b|\\bA80h\\b|\\bP76s\\b|\\bP76h\\b|\\bP98\\b|\\bA10HD\\b|\\bP78\\b|\\bP88\\b|\\bA11\\b|
-        \\bA10t\\b|\\bP76a\\b|\\bP76t\\b|\\bP76e\\b|\\bP85HD\\b|\\bP85a\\b|\\bP86\\b|\\bP75HD\\b|\\bP76v\\b|\\bA12\\b|
-        \\bP75a\\b|\\bA15\\b|\\bP76Ti\\b|\\bP81HD\\b|\\bA10\\b|\\bT760VE\\b|\\bT720HD\\b|\\bP76\\b|\\bP73\\b|\\bP71\\b|
-        \\bP72\\b|\\bT720SE\\b|\\bC520Ti\\b|\\bT760\\b|\\bT720VE\\b|T720-3GE|T720-WiFi`),
-  OndaTablet: new RegExp(`\\b(V975i|Vi30|VX530|V701|Vi60|V701s|Vi50|V801s|V719|Vx610w|VX610W|V819i|Vi10|VX580W|Vi10|
-        V711s|V813|V811|V820w|V820|Vi20|V711|VI30W|V712|V891w|V972|V819w|V820w|Vi60|V820w|V711|V813s|V801|V819|
-        V975s|V801|V819|V819|V818|V811|V712|V975m|V101w|V961w|V812|V818|V971|V971s|V919|V989|V116w|V102w|V973|
-        Vi40)\\b[s]+|V10 \\b4G\\b`),
-  JaytechTablet: /TPC-PA762/,
-  BlaupunktTablet: /Endeavour 800NG|Endeavour 1010/,
-  DigmaTablet: /\b(iDx10|iDx9|iDx8|iDx7|iDxD7|iDxD8|iDsQ8|iDsQ7|iDsQ8|iDsD10|iDnD7|3TS804H|iDsQ11|iDj7|iDs10)\b/,
-  EvolioTablet: /ARIA_Mini_wifi|Aria[ _]Mini|Evolio X10|Evolio X7|Evolio X8|\bEvotab\b|\bNeura\b/,
-  LavaTablet: /QPAD E704|\bIvoryS\b|E-TAB IVORY|\bE-TAB\b/,
-  AocTablet: /MW0811|MW0812|MW0922|MTK8382|MW1031|MW0831|MW0821|MW0931|MW0712/,
-  MpmanTablet: new RegExp(`MP11 OCTA|MP10 OCTA|MPQC1114|MPQC1004|MPQC994|MPQC974|MPQC973|MPQC804|MPQC784|MPQC780|
-        \\bMPG7\\b|MPDCG75|MPDCG71|MPDC1006|MP101DC|MPDC9000|MPDC905|MPDC706HD|MPDC706|MPDC705|MPDC110|
-        MPDC100|MPDC99|MPDC97|MPDC88|MPDC8|MPDC77|MP709|MID701|MID711|MID170|MPDC703|MPQC1010`),
-  CelkonTablet: /CT695|CT888|CT[\s]?910|CT7 Tab|CT9 Tab|CT3 Tab|CT2 Tab|CT1 Tab|C820|C720|\bCT-1\b/,
-  WolderTablet: new RegExp(`miTab \\b(DIAMOND|SPACE|BROOKLYN|NEO|FLY|MANHATTAN|FUNK|EVOLUTION|SKY|GOCAR|IRON|GENIUS|
-        POP|MINT|EPSILON|BROADWAY|JUMP|HOP|LEGEND|NEW AGE|LINE|ADVANCE|FEEL|FOLLOW|LIKE|LINK|LIVE|THINK|
-        FREEDOM|CHICAGO|CLEVELAND|BALTIMORE-GH|IOWA|BOSTON|SEATTLE|PHOENIX|DALLAS|IN 101|MasterChef)\\b`),
-  MediacomTablet: "M-MPI10C3G|M-SP10EG|M-SP10EGP|M-SP10HXAH|M-SP7HXAH|M-SP10HXBH|M-SP8HXAH|M-SP8MXA",
-  MiTablet: /\bMI PAD\b|\bHM NOTE 1W\b/,
-  NibiruTablet: /Nibiru M1|Nibiru Jupiter One/,
-  NexoTablet: /NEXO NOVA|NEXO 10|NEXO AVIO|NEXO FREE|NEXO GO|NEXO EVO|NEXO 3G|NEXO SMART|NEXO KIDDO|NEXO MOBI/,
-  LeaderTablet: new RegExp(`TBLT10Q|TBLT10I|TBL-10WDKB|TBL-10WDKBO2013|TBL-W230V2|TBL-W450|TBL-W500|SV572|TBLT7I|
-        TBA-AC7-8G|TBLT79|TBL-8W16|TBL-10W32|TBL-10WKB|TBL-W100`),
-  UbislateTablet: /UbiSlate[\s]?7C/,
-  PocketBookTablet: /Pocketbook/,
-  KocasoTablet: /\b(TB-1207)\b/,
-  HisenseTablet: /\b(F5281|E2371)\b/,
-  Hudl: /Hudl HT7S3|Hudl 2/,
-  TelstraTablet: /T-Hub2/,
-  Honeywell: /RT10A/,
-  GenericTablet: new RegExp(`Android.*\\b97D\\b|Tablet(?!.*PC)|BNTV250A|MID-WCDMA|LogicPD Zoom2|\\bA7EB\\b|CatNova8|
-        A1_07|CT704|CT1002|\\bM721\\b|rk30sdk|\\bEVOTAB\\b|M758A|ET904|ALUMIUM10|Smartfren Tab|Endeavour 1010|
-        Tablet-PC-4|Tagi Tab|\\bM6pro\\b|CT1020W|arc 10HD|\\bTP750\\b|\\bQTAQZ3\\b|WVT101|TM1088|KT107`)
-};
-var DEVICES = {
-  BLACKBERRY: "Blackberry",
-  FIREFOX_OS: "Firefox-OS",
-  CHROME_BOOK: "Chrome-Book",
-  WINDOWS_PHONE: "Windows-Phone",
-  VITA: "Vita",
-  PS4: "PS4",
-  MAC: "Macintosh",
-  CHROMECAST: "Chromecast",
-  APPLE_TV: "Apple-TV",
-  GOOGLE_TV: "Google-TV",
-  ANDROID: "Android",
-  Tesla: "Tesla",
-  iPad: "iPad",
-  IPHONE: "iPhone",
-  iPod: "iPod",
-  UNKNOWN: GENERAL.UKNOWN,
-  HTC: "HTC",
-  NEXUS_PHONE: "Nexus Phone",
-  NexusTablet: "Nexus Tablet",
-  DELL: "Dell",
-  MOTOROLA: "Motorola",
-  SAMSUNG: "Samsung",
-  LG: "LG",
-  SONY: "Sony",
-  ASUS: "Asus",
-  NOKIA_LUMIA: "Nokia Lumia",
-  MICROMAX: "Micromax",
-  PALM: "Palm",
-  VERTU: "Vertu",
-  PANTECH: "PANTECH",
-  FLY: "Fly",
-  WIKO: `WIKO`,
-  I_MOBILE: "i-mobile",
-  SIMVALLEY: "Simvalley",
-  WOLFGANG: "Wolfgang",
-  ALCATEL: "Alcatel",
-  HONEYWELL: "Honeywell",
-  NINTENDO: "Nintendo",
-  AMOI: "Amoi",
-  INQ: "INQ",
-  GENERIC_PHONE: "Generic Phone",
-  MI_SE_9: "Mi SE 9"
-};
-var DESKTOP_DEVICES = [DEVICES.PS4, DEVICES.CHROME_BOOK, DEVICES.MAC, DEVICES.DELL, DEVICES.ASUS, DEVICES.UNKNOWN];
-var OS = {
-  WINDOWS: "Windows",
-  MAC: "Mac",
-  IOS: "iOS",
-  ANDROID: "Android",
-  LINUX: "Linux",
-  UNIX: "Unix",
-  FIREFOX_OS: "Firefox-OS",
-  CHROME_OS: "Chrome-OS",
-  WINDOWS_PHONE: "Windows-Phone",
-  UNKNOWN: GENERAL.UKNOWN
-};
-var OS_VERSIONS = {
-  WINDOWS_3_11: "windows-3-11",
-  WINDOWS_95: "windows-95",
-  WINDOWS_ME: "windows-me",
-  WINDOWS_98: "windows-98",
-  WINDOWS_CE: "windows-ce",
-  WINDOWS_2000: "windows-2000",
-  WINDOWS_XP: "windows-xp",
-  WINDOWS_SERVER_2003: "windows-server-2003",
-  WINDOWS_VISTA: "windows-vista",
-  WINDOWS_7: "windows-7",
-  WINDOWS_8_1: "windows-8-1",
-  WINDOWS_8: "windows-8",
-  WINDOWS_10: "windows-10",
-  WINDOWS_PHONE_7_5: "windows-phone-7-5",
-  WINDOWS_PHONE_8_1: "windows-phone-8-1",
-  WINDOWS_PHONE_10: "windows-phone-10",
-  WINDOWS_NT_4_0: "windows-nt-4-0",
-  MACOSX_11_0: "mac-os-x-11-0",
-  MACOSX_16: "mac-os-x-16",
-  MACOSX_15: "mac-os-x-15",
-  MACOSX_14: "mac-os-x-14",
-  MACOSX_13: "mac-os-x-13",
-  MACOSX_12: "mac-os-x-12",
-  MACOSX_11: "mac-os-x-11",
-  MACOSX_10: "mac-os-x-10",
-  MACOSX_9: "mac-os-x-9",
-  MACOSX_8: "mac-os-x-8",
-  MACOSX_7: "mac-os-x-7",
-  MACOSX_6: "mac-os-x-6",
-  MACOSX_5: "mac-os-x-5",
-  MACOSX_4: "mac-os-x-4",
-  MACOSX_3: "mac-os-x-3",
-  MACOSX_2: "mac-os-x-2",
-  MACOSX: "mac-os-x",
-  iOS: "iOS",
-  ANDROID_9: "android-9",
-  UNKNOWN: GENERAL.UKNOWN.toLowerCase()
-};
-var OS_RE = {
-  WINDOWS: {
-    and: [{
-      or: [/\bWindows|(Win\d\d)\b/, /\bWin 9x\b/]
-    }, {
-      not: /\bWindows Phone\b/
-    }]
-  },
-  MAC: {
-    and: [/\bMac OS\b/, {
-      not: {
-        or: [/\biPhone\b/, /\biPad\b/, /\biPod\b/, /\bWindows Phone\b/]
-      }
-    }]
-  },
-  IOS: {
-    and: [{
-      or: [/\biPad\b/, /\biPhone\b/, /\biPod\b/]
-    }, {
-      not: /\bWindows Phone\b/
-    }]
-  },
-  ANDROID: {
-    and: [/\bAndroid\b/, {
-      not: /\bWindows Phone\b/
-    }]
-  },
-  LINUX: /\bLinux\b/,
-  UNIX: /\bUNIX\b/,
-  FIREFOX_OS: {
-    and: [/\bFirefox\b/, /Mobile\b/]
-  },
-  CHROME_OS: /\bCrOS\b/,
-  WINDOWS_PHONE: {
-    or: [/\bIEMobile\b/, /\bWindows Phone\b/]
-  },
-  PS4: /\bMozilla\/5.0 \(PlayStation 4\b/,
-  VITA: /\bMozilla\/5.0 \(Play(S|s)tation Vita\b/
-};
-var BROWSERS_RE = {
-  CHROME: {
-    and: [{
-      or: [/\bChrome\b/, /\bCriOS\b/, /\bHeadlessChrome\b/]
-    }, {
-      not: {
-        or: [/\bOPR\b/, /\bEdg(e|A|iOS)\b/, /\bEdg\/\b/, /\bSamsungBrowser\b/, /\bUCBrowser\b/]
-      }
-    }]
-  },
-  FIREFOX: {
-    or: [/\bFirefox\b/, /\bFxiOS\b/]
-  },
-  SAFARI: {
-    and: [/^((?!CriOS).)*\Safari\b.*$/, {
-      not: {
-        or: [/\bOPR\b/, /\bEdg(e|A|iOS)\b/, /\bEdg\/\b/, /\bWindows Phone\b/, /\bSamsungBrowser\b/, /\bUCBrowser\b/]
-      }
-    }]
-  },
-  OPERA: {
-    or: [/Opera\b/, /\bOPR\b/]
-  },
-  IE: {
-    or: [/\bMSIE\b/, /\bTrident\b/, /^Mozilla\/5\.0 \(Windows NT 10\.0; Win64; x64\)$/]
-  },
-  MS_EDGE: {
-    or: [/\bEdg(e|A|iOS)\b/]
-  },
-  MS_EDGE_CHROMIUM: /\bEdg\/\b/,
-  PS4: /\bMozilla\/5.0 \(PlayStation 4\b/,
-  VITA: /\bMozilla\/5.0 \(Play(S|s)tation Vita\b/,
-  FB_MESSANGER: /\bFBAN\/MessengerForiOS\b/,
-  SAMSUNG: /\bSamsungBrowser\b/,
-  UCBROWSER: /\bUCBrowser\b/
-};
-var DEVICES_RE = __spreadProps(__spreadValues(__spreadValues(__spreadValues({}, MOBILES_RE), TABLETS_RE), OS_RE), {
-  FIREFOX_OS: {
-    and: [/\bFirefox\b/, /\bMobile\b/]
-  },
-  CHROME_BOOK: /\bCrOS\b/,
-  PS4: /\bMozilla\/5.0 \(PlayStation 4\b/,
-  CHROMECAST: /\bCrKey\b/,
-  APPLE_TV: /^iTunes-AppleTV\/4.1$/,
-  GOOGLE_TV: /\bGoogleTV\b/,
-  Tesla: /Tesla\/([0-9]{4}.[0-9]{1,2}.?[0-9]{0,2}.?[0-9]{0,2})-(.{7})/,
-  MI_SE_9: /\bXiaomi\b/,
-  MAC: {
-    and: [/\bMac OS\b/, {
-      not: {
-        or: [/\biPhone\b/, /\biPad\b/, /\biPod\b/, /\bWindows Phone\b/]
-      }
-    }]
-  }
-});
-var OS_VERSIONS_RE_MAP = {
-  WINDOWS_3_11: /Win16/,
-  WINDOWS_95: /(Windows 95|Win95|Windows_95)/,
-  WINDOWS_ME: /(Win 9x 4.90|Windows ME)/,
-  WINDOWS_98: /(Windows 98|Win98)/,
-  WINDOWS_CE: /Windows CE/,
-  WINDOWS_2000: /(Windows NT 5.0|Windows 2000)/,
-  WINDOWS_XP: /(Windows NT 5.1|Windows XP)/,
-  WINDOWS_SERVER_2003: /Windows NT 5.2/,
-  WINDOWS_VISTA: /Windows NT 6.0/,
-  WINDOWS_7: /(Windows 7|Windows NT 6.1)/,
-  WINDOWS_8_1: /(Windows 8.1|Windows NT 6.3)/,
-  WINDOWS_8: /(Windows 8|Windows NT 6.2)/,
-  WINDOWS_10: /(Windows NT 10.0)/,
-  WINDOWS_PHONE_7_5: /(Windows Phone OS 7.5)/,
-  WINDOWS_PHONE_8_1: /(Windows Phone 8.1)/,
-  WINDOWS_PHONE_10: /(Windows Phone 10)/,
-  WINDOWS_NT_4_0: {
-    and: [/(Windows NT 4.0|WinNT4.0|WinNT|Windows NT)/, {
-      not: /Windows NT 10.0/
-    }]
-  },
-  MACOSX: /(MAC OS X\s*[^ 0-9])/,
-  MACOSX_3: /(Darwin 10.3|Mac OS X 10.3)/,
-  MACOSX_4: /(Darwin 10.4|Mac OS X 10.4)/,
-  MACOSX_5: /(Mac OS X 10.5)/,
-  MACOSX_6: /(Mac OS X 10.6)/,
-  MACOSX_7: /(Mac OS X 10.7)/,
-  MACOSX_8: /(Mac OS X 10.8)/,
-  MACOSX_9: /(Mac OS X 10.9)/,
-  MACOSX_10: /(Mac OS X 10.10)/,
-  MACOSX_11: /(Mac OS X 10.11)/,
-  MACOSX_12: /(Mac OS X 10.12)/,
-  MACOSX_13: /(Mac OS X 10.13)/,
-  MACOSX_14: /(Mac OS X 10.14)/,
-  MACOSX_15: /(Mac OS X 10.15)/,
-  MACOSX_16: /(Mac OS X 10.16)/,
-  MACOSX_11_0: {
-    or: [/11_0 like Mac OS X/, /Mac OS X 11/]
-  },
-  iOS: /(iPhone OS\s*[0-9_]+)/,
-  ANDROID_9: /(Android 9)/
-};
-var BROWSER_VERSIONS_RE_MAP = {
-  CHROME: [/\bChrome\/([\d\.]+)\b/, /\bCriOS\/([\d\.]+)\b/, /\bHeadlessChrome\/([\d\.]+)\b/],
-  FIREFOX: [/\bFirefox\/([\d\.]+)\b/, /\bFxiOS\/([\d\.]+)\b/],
-  SAFARI: [/\bVersion\/([\d\.]+)\b/, /\bSafari\/([\d\.]+)\b/],
-  OPERA: [/\bVersion\/([\d\.]+)\b/, /\bOPR\/([\d\.]+)\b/],
-  IE: [/\bMSIE ([\d\.]+\w?)\b/, /\brv:([\d\.]+\w?)\b/],
-  MS_EDGE: /\bEdg(?:e|A|iOS)\/([\d\.]+)\b/,
-  MS_EDGE_CHROMIUM: /\bEdg\/([\d\.]+)\b/,
-  SAMSUNG: /\bSamsungBrowser\/([\d\.]+)\b/,
-  UCBROWSER: /\bUCBrowser\/([\d\.]+)\b/
-};
-var OS_VERSIONS_RE = Object.keys(OS_VERSIONS_RE_MAP).reduce((obj, key) => {
-  obj[key] = OS_VERSIONS_RE_MAP[key];
-  return obj;
-}, {});
-var BROWSER_VERSIONS_RE = Object.keys(BROWSER_VERSIONS_RE_MAP).reduce((obj, key) => {
-  obj[BROWSERS[key]] = BROWSER_VERSIONS_RE_MAP[key];
-  return obj;
-}, {});
-var Constants = /* @__PURE__ */ Object.freeze({
-  __proto__: null,
-  BROWSERS,
-  BROWSERS_RE,
-  BROWSER_VERSIONS_RE,
-  BROWSER_VERSIONS_RE_MAP,
-  DESKTOP_DEVICES,
-  DEVICES,
-  DEVICES_RE,
-  GENERAL,
-  MOBILES_RE,
-  OS,
-  OS_RE,
-  OS_VERSIONS,
-  OS_VERSIONS_RE,
-  OS_VERSIONS_RE_MAP,
-  TABLETS_RE
-});
-var ReTree = class {
-  constructor() {
-  }
-  test(str, regex) {
-    if (typeof regex === "string") {
-      regex = new RegExp(regex);
-    }
-    if (regex instanceof RegExp) {
-      return regex.test(str);
-    } else if (regex && Array.isArray(regex.and)) {
-      return regex.and.every((item) => {
-        return this.test(str, item);
-      });
-    } else if (regex && Array.isArray(regex.or)) {
-      return regex.or.some((item) => {
-        return this.test(str, item);
-      });
-    } else if (regex && regex.not) {
-      return !this.test(str, regex.not);
-    } else {
-      return false;
-    }
-  }
-  exec(str, regex) {
-    if (typeof regex === "string") {
-      regex = new RegExp(regex);
-    }
-    if (regex instanceof RegExp) {
-      return regex.exec(str);
-    } else if (regex && Array.isArray(regex)) {
-      return regex.reduce((res, item) => {
-        return !!res ? res : this.exec(str, item);
-      }, null);
-    } else {
-      return null;
-    }
-  }
-};
-var DeviceType;
-(function(DeviceType2) {
-  DeviceType2["Mobile"] = "mobile";
-  DeviceType2["Tablet"] = "tablet";
-  DeviceType2["Desktop"] = "desktop";
-  DeviceType2["Unknown"] = "unknown";
-})(DeviceType || (DeviceType = {}));
-var OrientationType;
-(function(OrientationType2) {
-  OrientationType2["Portrait"] = "portrait";
-  OrientationType2["Landscape"] = "landscape";
-})(OrientationType || (OrientationType = {}));
-var iPad = "iPad";
-var DeviceDetectorService = class _DeviceDetectorService {
-  constructor(platformId) {
-    this.platformId = platformId;
-    this.ua = "";
-    this.userAgent = "";
-    this.os = "";
-    this.browser = "";
-    this.device = "";
-    this.os_version = "";
-    this.browser_version = "";
-    this.reTree = new ReTree();
-    this.deviceType = "";
-    this.orientation = "";
-    if (isPlatformBrowser(this.platformId) && typeof window !== "undefined") {
-      this.userAgent = window.navigator.userAgent;
-    }
-    this.setDeviceInfo(this.userAgent);
-  }
-  /**
-   * @author Ahsan Ayaz
-   * @desc Sets the initial value of the device when the service is initiated.
-   * This value is later accessible for usage
-   */
-  setDeviceInfo(ua = this.userAgent) {
-    if (ua !== this.userAgent) {
-      this.userAgent = ua;
-    }
-    const mappings = [{
-      const: "OS",
-      prop: "os"
-    }, {
-      const: "BROWSERS",
-      prop: "browser"
-    }, {
-      const: "DEVICES",
-      prop: "device"
-    }, {
-      const: "OS_VERSIONS",
-      prop: "os_version"
-    }];
-    mappings.forEach((mapping) => {
-      this[mapping.prop] = Object.keys(Constants[mapping.const]).reduce((obj, item) => {
-        if (Constants[mapping.const][item] === "device") {
-          if (isPlatformBrowser(this.platformId) && (!!this.reTree.test(this.userAgent, TABLETS_RE[iPad]) || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
-            obj[Constants[mapping.const][item]] = iPad;
-            return Object;
-          }
-        }
-        obj[Constants[mapping.const][item]] = this.reTree.test(ua, Constants[`${mapping.const}_RE`][item]);
-        return obj;
-      }, {});
-    });
-    mappings.forEach((mapping) => {
-      this[mapping.prop] = Object.keys(Constants[mapping.const]).map((key) => {
-        return Constants[mapping.const][key];
-      }).reduce((previousValue, currentValue) => {
-        if (mapping.prop === "device" && previousValue === Constants[mapping.const].ANDROID) {
-          return this[mapping.prop][currentValue] ? currentValue : previousValue;
-        } else {
-          return previousValue === Constants[mapping.const].UNKNOWN && this[mapping.prop][currentValue] ? currentValue : previousValue;
-        }
-      }, Constants[mapping.const].UNKNOWN);
-    });
-    this.browser_version = "0";
-    if (this.browser !== BROWSERS.UNKNOWN) {
-      const re = BROWSER_VERSIONS_RE[this.browser];
-      const res = this.reTree.exec(ua, re);
-      if (!!res) {
-        this.browser_version = res[1];
-      }
-    }
-    if (typeof window !== "undefined" && window.matchMedia) {
-      this.orientation = window.matchMedia("(orientation: landscape)").matches ? OrientationType.Landscape : OrientationType.Portrait;
-    } else {
-      this.orientation = GENERAL.UKNOWN;
-    }
-    this.deviceType = this.isTablet() ? DeviceType.Tablet : this.isMobile(this.userAgent) ? DeviceType.Mobile : this.isDesktop(this.userAgent) ? DeviceType.Desktop : DeviceType.Unknown;
-  }
-  /**
-   * @author Ahsan Ayaz
-   * @desc Returns the device information
-   * @returns the device information object.
-   */
-  getDeviceInfo() {
-    const deviceInfo = {
-      userAgent: this.userAgent,
-      os: this.os,
-      browser: this.browser,
-      device: this.device,
-      os_version: this.os_version,
-      browser_version: this.browser_version,
-      deviceType: this.deviceType,
-      orientation: this.orientation
-    };
-    return deviceInfo;
-  }
-  /**
-   * @author Ahsan Ayaz
-   * @desc Compares the current device info with the mobile devices to check
-   * if the current device is a mobile and also check current device is tablet so it will return false.
-   * @returns whether the current device is a mobile
-   */
-  isMobile(userAgent = this.userAgent) {
-    if (this.isTablet(userAgent)) {
-      return false;
-    }
-    const match2 = Object.keys(MOBILES_RE).find((mobile) => {
-      return this.reTree.test(userAgent, MOBILES_RE[mobile]);
-    });
-    return !!match2;
-  }
-  /**
-   * @author Ahsan Ayaz
-   * @desc Compares the current device info with the tablet devices to check
-   * if the current device is a tablet.
-   * @returns whether the current device is a tablet
-   */
-  isTablet(userAgent = this.userAgent) {
-    if (isPlatformBrowser(this.platformId) && (!!this.reTree.test(this.userAgent, TABLETS_RE[iPad]) || typeof navigator !== "undefined" && navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
-      return true;
-    }
-    const match2 = Object.keys(TABLETS_RE).find((mobile) => {
-      return !!this.reTree.test(userAgent, TABLETS_RE[mobile]);
-    });
-    return !!match2;
-  }
-  /**
-   * @author Ahsan Ayaz
-   * @desc Compares the current device info with the desktop devices to check
-   * if the current device is a desktop device.
-   * @returns whether the current device is a desktop device
-   */
-  isDesktop(userAgent = this.userAgent) {
-    if (this.device === DEVICES.UNKNOWN) {
-      if (this.isMobile(userAgent) || this.isTablet(userAgent)) {
-        return false;
-      }
-    }
-    return DESKTOP_DEVICES.indexOf(this.device) > -1;
-  }
-  static {
-    this.\u0275fac = function DeviceDetectorService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _DeviceDetectorService)(\u0275\u0275inject(PLATFORM_ID));
-    };
-  }
-  static {
-    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
-      token: _DeviceDetectorService,
-      factory: _DeviceDetectorService.\u0275fac,
-      providedIn: "root"
-    });
-  }
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DeviceDetectorService, [{
-    type: Injectable,
-    args: [{
-      providedIn: "root"
-    }]
-  }], () => [{
-    type: void 0,
-    decorators: [{
-      type: Inject,
-      args: [PLATFORM_ID]
-    }]
-  }], null);
-})();
-
-// projects/fasten-connect-stitch-embed/src/app/services/fasten.service.ts
-var FastenService = class _FastenService {
-  constructor(_httpClient, deviceService, configService, logger, sentryContext, authService) {
-    this._httpClient = _httpClient;
-    this.deviceService = deviceService;
-    this.configService = configService;
-    this.logger = logger;
-    this.sentryContext = sentryContext;
-    this.authService = authService;
-    this.configService.systemConfigSubject.subscribe((systemConfig) => {
-      const isPlaceholderConfig = !systemConfig.publicId && systemConfig.searchOnly === void 0 && systemConfig.tefcaMode === void 0 && systemConfig.connectMode === void 0;
-      if (isPlaceholderConfig) {
-        return;
-      }
-      this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
-      if (systemConfig.org_id && !systemConfig.org) {
-        this.logger.info("attempt to download org information, and store in config");
-        this.getOrgConfig(systemConfig.publicId).subscribe((org) => {
-          this.logger.debug("org:", org);
-          this.configService.systemConfig = { org };
-        });
-      }
-    });
-  }
-  recordLocatorRegisterAndPollForStatus() {
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(switchMap((registerResponse) => {
-      if (registerResponse.data.status == "failed") {
-        console.error("record locator registration failed", registerResponse.data);
-        return throwError(() => new Error("Record locator registration failed"));
-      } else if (registerResponse.data.status == "success") {
-        console.info("record locator already successful, no need to poll");
-        return of(registerResponse);
-      } else {
-        console.log("start polling for record locator status");
-        return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator/${registerResponse.data.task_id}`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(
-          repeat({ delay: 3e3 }),
-          //check every 3 seconds
-          filter((statusResponse) => statusResponse.data.status === "success" || statusResponse.data.status === "failed"),
-          //only pass through successful or failed status
-          take(1),
-          timeout(3e5)
-          // Stop polling after 5 minutes
-        );
-      }
-    }));
-  }
-  recordLocatorResults(taskId) {
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator/${taskId}/result`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
-      let rlsResponse = response.data;
-      if (!rlsResponse.discovered_patient_accounts) {
-        rlsResponse.discovered_patient_accounts = {};
-      }
-      if (!rlsResponse.pending_patient_accounts) {
-        rlsResponse.pending_patient_accounts = {};
-      }
-      return rlsResponse;
-    }));
-  }
-  searchCatalog(apiMode, filter2) {
-    if ((typeof filter2.searchAfter === "string" || filter2.searchAfter instanceof String) && filter2.searchAfter.length > 0) {
-      filter2.searchAfter = filter2.searchAfter.split(",");
-    } else {
-      filter2.searchAfter = [];
-    }
-    const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/bridge/catalog/search`);
-    return this._httpClient.post(endpointUrl.toString(), filter2, { params: {
-      "public_id": this.configService.systemConfig$.publicId,
-      "api_mode": apiMode
-    } }).pipe(map((response) => {
-      this.logger.info("Metadata RESPONSE", response);
-      return response.data;
-    }));
-  }
-  searchCatalogBrand(apiMode, brandId) {
-    const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/bridge/catalog/search/${brandId}`);
-    return this._httpClient.post(endpointUrl.toString(), {}, { params: {
-      "public_id": this.configService.systemConfig$.publicId,
-      "api_mode": apiMode
-    } }).pipe(map((response) => {
-      this.logger.info("Metadata RESPONSE", response);
-      return response.data;
-    }));
-  }
-  getOrgByPublicId(publicId) {
-    let queryParams = {};
-    queryParams["public_id"] = publicId;
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/org`, { params: queryParams }).pipe(map((response) => {
-      this.logger.info("Organization", response);
-      return response.data;
-    }));
-  }
-  getOrgConfig(publicId) {
-    const params = {
-      public_id: publicId,
-      client_auth_contract: "http-only-v1"
-    };
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/config`, { params }).pipe(tap((response) => {
-      this.logger.info("Organization", response);
-    }));
-  }
-  getOrgConnectionById(publicId, orgConnectionId) {
-    let queryParams = {};
-    queryParams["public_id"] = publicId;
-    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/org_connection/${orgConnectionId}`, { params: queryParams }).pipe(map((response) => {
-      this.logger.info("Organization Connection Data", response);
-      return response.data;
-    }));
-  }
-  requestHealthSystem(requestHealth) {
-    const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/support/healthsystem`);
-    requestHealth.organization_id = this.configService.systemConfig$.org?.id || "";
-    requestHealth.organization_name = this.configService.systemConfig$.org?.name || "";
-    requestHealth.api_mode = this.configService.systemConfig$.apiMode || "test";
-    return this._httpClient.post(endpointUrl.toString(), requestHealth, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
-      return {};
-    }));
-  }
-  requestSupport(request) {
-    const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/support/request`);
-    const zendeskTicket = buildSupportRequestZendeskTicket(request, {
-      organizationId: this.configService.systemConfig$.org?.id || "",
-      organizationName: this.configService.systemConfig$.org?.name || "",
-      apiMode: this.configService.systemConfig$.apiMode || "test"
-    });
-    return this._httpClient.post(endpointUrl.toString(), zendeskTicket, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
-      return {};
-    }));
-  }
-  storageApiUserInteractionWithPopup() {
-    const redirectUrl = new URL(`${window.location.origin}/consent`);
-    const isDesktop = this.deviceService.isDesktop();
-    let features = "";
-    if (isDesktop) {
-      features = "popup=true,width=700,height=600";
-    }
-    const openedWindow = window.open(redirectUrl.toString(), "_blank", features);
-    this.sentryContext.recordPopupOpen("storage_access", ConnectMode.Popup, openedWindow !== null);
-    return this.waitForPopupNotification(openedWindow, SDKMode.None);
-  }
-  verificationWithWebsocket(cspType) {
-    const roomId = v4_default();
-    const websocketUrl = this.generateWebsocketURL(roomId);
-    const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
-    redirectUrlParts.searchParams.set("public_id", this.configService.systemConfig$.publicId);
-    redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
-    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
-    redirectUrlParts.searchParams.set("room_id", roomId);
-    this.logger.debug(redirectUrlParts.toString());
-    const openedWindow = this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.IdentityVerification);
-    this.sentryContext.recordPopupOpen("identity_verification", ConnectMode.Websocket, openedWindow !== null);
-    const callback = this.waitForWebsocketNotification(websocketUrl, openedWindow);
-    if (openedWindow === null) {
-      return callback;
-    }
-    const callbackAttempt = this.sentryContext.recordCallbackStarted("identity_verification", ConnectMode.Websocket);
-    return this.monitorCallback("identity_verification", callbackAttempt, callback).pipe(
-      switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))),
-      //TODO: this is a flaky way to handle the issue where the websocket response is sent before the cookie is set in the browser
-      // wait 2 seconds here -- sometimes the websocket sends the response before the cookie has been recieved by the browser (in the modal popup)
-      delay(2500)
-    );
-  }
-  verificationWithPopup(cspType) {
-    const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
-    redirectUrlParts.searchParams.set("public_id", this.configService.systemConfig$.publicId);
-    redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
-    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
-    const openedWindow = this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.IdentityVerification);
-    this.sentryContext.recordPopupOpen("identity_verification", ConnectMode.Popup, openedWindow !== null);
-    const callback = this.waitForPopupNotification(openedWindow);
-    if (openedWindow === null) {
-      return callback;
-    }
-    const callbackAttempt = this.sentryContext.recordCallbackStarted("identity_verification", ConnectMode.Popup);
-    return this.monitorCallback("identity_verification", callbackAttempt, callback).pipe(switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))));
-  }
-  accountConnectWithWebsocket(connectData) {
-    const roomId = v4_default();
-    const websocketUrl = this.generateWebsocketURL(roomId);
-    const redirectUrlParts = this.generateConnectURL(connectData);
-    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
-    redirectUrlParts.searchParams.set("room_id", roomId);
-    this.logger.debug(redirectUrlParts.toString());
-    const openedWindow = connectData.vault_profile_connection_id ? this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.BridgeConnect) : this.openWindowInPopup(redirectUrlParts);
-    this.sentryContext.recordPopupOpen("connection", ConnectMode.Websocket, openedWindow !== null);
-    const callback = this.waitForWebsocketNotification(websocketUrl, openedWindow);
-    if (openedWindow === null) {
-      return callback;
-    }
-    const callbackAttempt = this.sentryContext.recordCallbackStarted("connection", ConnectMode.Websocket);
-    return this.monitorCallback("connection", callbackAttempt, callback);
-  }
-  accountConnectWithPopup(connectData) {
-    const redirectUrlParts = this.generateConnectURL(connectData);
-    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
-    this.logger.debug(redirectUrlParts.toString());
-    const openedWindow = connectData.vault_profile_connection_id ? this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.BridgeConnect) : this.openWindowInPopup(redirectUrlParts);
-    this.sentryContext.recordPopupOpen("connection", ConnectMode.Popup, openedWindow !== null);
-    const callback = this.waitForPopupNotification(openedWindow);
-    if (openedWindow === null) {
-      return callback;
-    }
-    const callbackAttempt = this.sentryContext.recordCallbackStarted("connection", ConnectMode.Popup);
-    return this.monitorCallback("connection", callbackAttempt, callback);
-  }
-  authorizeTefcaDirect(vaultConnectionIds, external_id) {
-    const url = `${environment.connect_api_endpoint_base}/bridge/vault_connection/authorize`;
-    return this._httpClient.post(url, {
-      vault_connection_ids: vaultConnectionIds,
-      external_id
-    }, { params: { public_id: this.configService.systemConfig$.publicId } }).pipe(map((resp) => resp.data));
-  }
-  //this function only works in ApiMode.Test. It will allow us to "reset" the enabled vault profile connections for a patient + org combo
-  revokeVaultProfileConnections(vaultProfileConnectionIds) {
-    const url = `${environment.connect_api_endpoint_base}/bridge/vault_connection/revoke`;
-    return this._httpClient.post(url, {
-      vault_connection_ids: vaultProfileConnectionIds
-    }, { params: { public_id: this.configService.systemConfig$.publicId } }).pipe(map((resp) => resp.data));
-  }
-  refreshAuthCookie() {
-    return __async(this, null, function* () {
-      const response = yield firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, {
-        withCredentials: true,
-        params: { public_id: this.configService.systemConfig$.publicId }
-      }));
-      this.authService.ClearSession();
-      return response;
-    });
-  }
-  /// HELPERS
-  openWindowInPopup(redirectUrlParts) {
-    const isDesktop = this.deviceService.isDesktop();
-    let features = "";
-    if (isDesktop) {
-      features = "popup=true,width=700,height=600";
-    }
-    return window.open(redirectUrlParts.toString(), "_blank", features);
-  }
-  // Native SDK WebViews need the final URL in window.open; browser embeds use a scoped-token POST
-  // so the popup does not depend on access to the iframe's partitioned cookie.
-  openWindowInPopupWithAuthHandoff(redirectUrlParts, purpose) {
-    this.logger.log("Opening popup with auth handoff: ", redirectUrlParts, purpose);
-    if (isNativeSdkMode(this.configService.systemConfig$.sdkMode)) {
-      return this.openWindowInPopup(redirectUrlParts);
-    }
-    const isDesktop = this.deviceService.isDesktop();
-    let features = "";
-    if (isDesktop) {
-      features = "popup=true,width=700,height=600";
-    }
-    const target = `VaultAuthHandoffPopupWindow-${v4_default()}`;
-    const opened = window.open("", target, features);
-    if (!opened) {
-      return null;
-    }
-    this.authService.GetVaultAuthHandoffToken(purpose).then((handoffToken) => {
-      const form = document.createElement("form");
-      form.setAttribute("method", "post");
-      form.setAttribute("action", redirectUrlParts.toString());
-      form.setAttribute("target", target);
-      form.style.display = "none";
-      const input2 = document.createElement("input");
-      input2.type = "hidden";
-      input2.name = FASTEN_AUTH_VAULT_COOKIE_NAME;
-      input2.value = handoffToken;
-      form.appendChild(input2);
-      document.body.appendChild(form);
-      form.submit();
-      document.body.removeChild(form);
-    }).catch((error2) => {
-      this.logger.error("failed to fetch vault auth handoff token", { purpose, error: error2 });
-      opened.close();
-    });
-    return opened;
-  }
-  generateWebsocketURL(roomId) {
-    const websocketUrlParts = new URL(`wss://websocket.${environment.connect_base_domain}/v1`);
-    const websocketParams = new URLSearchParams();
-    websocketParams.set("public_id", this.configService.systemConfig$.publicId);
-    websocketParams.set("room_id", roomId);
-    websocketUrlParts.search = websocketParams.toString();
-    return websocketUrlParts;
-  }
-  generateConnectURL(connectData) {
-    const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/connect`);
-    const redirectParams = new URLSearchParams();
-    redirectParams.set("public_id", this.configService.systemConfig$.publicId);
-    redirectParams.set("brand_id", connectData.brand_id);
-    redirectParams.set("portal_id", connectData.portal_id);
-    redirectParams.set("endpoint_id", connectData.endpoint_id);
-    redirectParams.set("sdk_mode", this.configService.systemConfig$.sdkMode);
-    if (connectData.org_connection_id) {
-      redirectParams.set("reconnect_org_connection_id", connectData.org_connection_id);
-    }
-    if (connectData.external_id) {
-      redirectParams.set("external_id", connectData.external_id);
-    }
-    if (connectData.external_state) {
-      redirectParams.set("external_state", connectData.external_state);
-    }
-    if (connectData.vault_profile_connection_id) {
-      redirectParams.set("reconnect_vault_profile_connection_id", connectData.vault_profile_connection_id);
-    }
-    redirectUrlParts.search = redirectParams.toString();
-    return redirectUrlParts;
-  }
-  waitForPopupNotification(openedWindow, overrideSdkMode) {
-    const sdkMode = overrideSdkMode ?? this.configService.systemConfig$.sdkMode;
-    return waitForPostMessageOrgConnectionOrTimeout(this.logger, openedWindow, sdkMode);
-  }
-  waitForWebsocketNotification(websocketUrl, openedWindow, overrideSdkMode) {
-    const sdkMode = overrideSdkMode ?? this.configService.systemConfig$.sdkMode;
-    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, sdkMode);
-  }
-  monitorCallback(flow, attempt, callback) {
-    return callback.pipe(tap({
-      next: () => this.sentryContext.recordCallbackReceived(flow, attempt),
-      error: (error2) => this.sentryContext.recordCallbackError(flow, attempt, error2)
-    }));
-  }
-  reverseGeocodePostalCode(latitude, longitude) {
-    let queryParams = {};
-    queryParams["public_id"] = this.configService.systemConfig$.publicId;
-    queryParams["latlng"] = `${latitude},${longitude}`;
-    const url = `${environment.connect_api_endpoint_base}/bridge/catalog/geocode`;
-    return this._httpClient.get(url, { params: queryParams }).pipe(map((resp) => resp.data));
-  }
-  static {
-    this.\u0275fac = function FastenService_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _FastenService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger), \u0275\u0275inject(SentryContextService), \u0275\u0275inject(AuthService));
-    };
-  }
-  static {
-    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _FastenService, factory: _FastenService.\u0275fac, providedIn: "root" });
-  }
-};
-
-// projects/fasten-connect-stitch-embed/src/app/app.component.ts
-function AppComponent_div_1_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 3);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 4);
-    \u0275\u0275element(2, "rect", 5)(3, "path", 6)(4, "path", 7)(5, "path", 8)(6, "path", 9)(7, "path", 10)(8, "path", 11)(9, "path", 12);
-    \u0275\u0275elementEnd();
-    \u0275\u0275text(10, " You are using Fasten in test mode\n");
-    \u0275\u0275elementEnd();
-  }
-}
-function AppComponent_ng_container_3_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 13)(2, "div", 14)(3, "h1", 15);
-    \u0275\u0275text(4);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(5, "div", 16)(6, "div", 17);
-    \u0275\u0275element(7, "div", 18);
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(8, "div", 19);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "div", 20)(10, "div", 21);
-    \u0275\u0275element(11, "div", 22);
-    \u0275\u0275elementStart(12, "div", 23);
-    \u0275\u0275element(13, "div", 24)(14, "div", 25);
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(15, "div", 26);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "div", 21);
-    \u0275\u0275element(17, "div", 22);
-    \u0275\u0275elementStart(18, "div", 23);
-    \u0275\u0275element(19, "div", 24)(20, "div", 25);
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(21, "div", 26);
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275elementContainerEnd();
-  }
-  if (rf & 2) {
-    const ctx_r0 = \u0275\u0275nextContext();
-    \u0275\u0275advance(4);
-    \u0275\u0275textInterpolate(ctx_r0.logoText());
-  }
-}
-function AppComponent_ng_container_4_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 27)(2, "div", 28);
-    \u0275\u0275element(3, "div", 29);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "div", 30);
-    \u0275\u0275element(5, "div", 22);
-    \u0275\u0275elementStart(6, "div", 31);
-    \u0275\u0275element(7, "div", 32)(8, "div", 32)(9, "div", 32);
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(10, "div", 22);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(11, "div", 33);
-    \u0275\u0275element(12, "div", 34)(13, "div", 35);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(14, "div", 36)(15, "div", 37);
-    \u0275\u0275element(16, "div", 22);
-    \u0275\u0275elementStart(17, "div", 23);
-    \u0275\u0275element(18, "div", 38)(19, "div", 39);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(20, "div", 37);
-    \u0275\u0275element(21, "div", 22);
-    \u0275\u0275elementStart(22, "div", 23);
-    \u0275\u0275element(23, "div", 38)(24, "div", 39);
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(25, "div", 36);
-    \u0275\u0275element(26, "div", 24)(27, "div", 18)(28, "div", 40);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementContainerEnd();
-  }
-}
-function AppComponent_ng_container_5_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 41)(2, "div", 42);
-    \u0275\u0275element(3, "router-outlet");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementContainerEnd();
-  }
-}
-function AppComponent_ng_container_6_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r2 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 43)(2, "div", 44)(3, "div", 45)(4, "div", 46);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(5, "svg", 47);
-    \u0275\u0275element(6, "path", 48);
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(7, "span", 49);
-    \u0275\u0275text(8, "Error");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "h3", 50);
-    \u0275\u0275text(10, "Configuration Error");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(11, "div", 51);
-    \u0275\u0275text(12);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "div", 52)(14, "button", 53);
-    \u0275\u0275listener("click", function AppComponent_ng_container_6_Template_button_click_14_listener() {
-      \u0275\u0275restoreView(_r2);
-      const ctx_r0 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r0.modalClose());
-    });
-    \u0275\u0275text(15, "Close");
-    \u0275\u0275elementEnd()()()()();
-    \u0275\u0275elementContainerEnd();
-  }
-  if (rf & 2) {
-    const ctx_r0 = \u0275\u0275nextContext();
-    \u0275\u0275advance(12);
-    \u0275\u0275textInterpolate1(" ", ctx_r0.errorMessage, " ");
-  }
-}
-var AppComponent = class _AppComponent {
-  populateInputsFromWindowLocation() {
-    let urlParams = new URLSearchParams(window.location.search);
-    this.publicId = urlParams.get("public-id") || "";
-    this.externalId = urlParams.get("external-id") || "";
-    this.email = urlParams.get("email") || "";
-    this.externalState = urlParams.get("external-state") || "";
-    this.reconnectOrgConnectionId = urlParams.get("reconnect-org-connection-id") || "";
-    this.searchOnly = urlParams.get("search-only") == "true";
-    this.tefcaMode = urlParams.get("tefca-mode") == "true";
-    this.tefcaCspPromptForce = urlParams.get("tefca-csp-prompt-force") == "true";
-    this.identityRequestUri = urlParams.get("identity-request-uri") || "";
-    this.eventTypes = urlParams.get("event-types") || "";
-    this.staticBackdrop = urlParams.get("static-backdrop") == "true";
-    this.searchQuery = urlParams.get("search-query") || "";
-    this.searchSortBy = urlParams.get("search-sort-by") || "";
-    this.searchSortByOpts = urlParams.get("search-sort-by-opts") || "";
-    this.showSplash = urlParams.get("show-splash") == "true";
-    this.brandId = urlParams.get("brand-id") || "";
-    this.portalId = urlParams.get("portal-id") || "";
-    this.endpointId = urlParams.get("endpoint-id") || "";
-    this.sdkMode = urlParams.get("sdk-mode") || SDKMode.None;
-    this.connectMode = urlParams.get("connect-mode") || ConnectMode.Popup;
-    this.idpCode = urlParams.get("code") || "";
-    this.idpState = urlParams.get("state") || "";
-    this.idpError = urlParams.get("error") || "";
-    this.idpErrorDescription = urlParams.get("error_description") || "";
-    this.idpErrorUri = urlParams.get("error_uri") || "";
-    if (!this.searchOnly && !this.tefcaMode) {
-      this.searchOnly = true;
-    }
-  }
-  constructor(activatedRoute, configService, messageBus, fastenService, authService, router, logger, sentryContext) {
-    this.activatedRoute = activatedRoute;
-    this.configService = configService;
-    this.messageBus = messageBus;
-    this.fastenService = fastenService;
-    this.authService = authService;
-    this.router = router;
-    this.logger = logger;
-    this.sentryContext = sentryContext;
-    this.logoText = logoText;
-    this.publicId = "";
-    this.externalId = "";
-    this.email = "";
-    this.externalState = "";
-    this.tefcaMode = false;
-    this.tefcaCspPromptForce = false;
-    this.identityRequestUri = "";
-    this.staticBackdrop = false;
-    this.eventTypes = "";
-    this.showSplash = false;
-    this.searchOnly = false;
-    this.searchQuery = "";
-    this.searchSortBy = "";
-    this.searchSortByOpts = "";
-    this.brandId = "";
-    this.portalId = "";
-    this.endpointId = "";
-    this.sdkMode = "";
-    this.connectMode = "";
-    this.idpCode = "";
-    this.idpState = "";
-    this.idpError = "";
-    this.idpErrorDescription = "";
-    this.idpErrorUri = "";
-    this.loading = true;
-  }
-  ngOnInit() {
-    this.populateInputsFromWindowLocation();
-    this.messageBus.messageBusSubject.subscribe((eventPayload) => {
-      this.logger.debug("bubbling up client-event", eventPayload);
-      this.sendPostMessage(eventPayload);
-    });
-    if (this.isIdentityCallbackRequest()) {
-      this.restoreIdentityCallbackConfiguration();
-      this.logger.info("state: auth/callback");
-      this.loading = false;
-      this.errorMessage = "";
-      this.router.navigate(["auth/callback"], {
-        queryParams: {
-          code: this.idpCode || void 0,
-          state: this.idpState || void 0,
-          error: this.idpError || void 0,
-          error_description: this.idpErrorDescription || void 0,
-          error_uri: this.idpErrorUri || void 0
-        }
-      });
-      return;
-    }
-    const apiMode = this.inferApiMode(this.publicId);
-    let eventTypes = [];
-    if (this.eventTypes) {
-      eventTypes = this.eventTypes.split(",").map((eventType) => {
-        return eventType;
-      }).filter((eventType) => Object.values(EventTypes).indexOf(eventType) >= 0);
-    }
-    if (!this.sdkMode) {
-      this.sdkMode = SDKMode.None;
-    }
-    this.configService.systemConfig = {
-      apiMode,
-      publicId: this.publicId,
-      org: void 0,
-      externalId: this.externalId,
-      externalState: this.externalState,
-      reconnectOrgConnectionId: this.reconnectOrgConnectionId,
-      staticBackdrop: this.staticBackdrop,
-      searchOnly: this.searchOnly,
-      showSplash: this.showSplash,
-      tefcaMode: this.tefcaMode,
-      tefcaCspPromptForce: this.tefcaCspPromptForce,
-      identityRequestUri: this.tefcaMode ? this.identityRequestUri : "",
-      eventTypes,
-      sdkMode: this.sdkMode,
-      connectMode: this.connectMode
-    };
-    this.configService.vaultProfileConfig = {
-      email: this.email
-    };
-    this.sentryContext.recordWidgetStarted(this.getWidgetExperience(), apiMode);
-    this.getApiModeFromPublicId(this.publicId);
-    if (this.reconnectOrgConnectionId) {
-      this.fastenService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
-        this.logger.info("state: dashboard/connecting#reconnectOrgConnectionId", orgConnection);
-        this.router.navigate(["dashboard/connecting"], {
-          queryParams: {
-            "brandId": orgConnection.catalog_brand_id,
-            "portalId": orgConnection.catalog_portal_id,
-            "endpointId": orgConnection.catalog_endpoint_id,
-            "orgConnectionId": orgConnection.org_connection_id,
-            "externalId": this.externalId,
-            "externalState": this.externalState,
-            "sdkMode": this.sdkMode
-          },
-          skipLocationChange: true
-          // navigate without changing URL to preserve security context
-        });
-      }, (err) => {
-        this.errorMessage = "Could not find the patient connection using id. Please contact the developer of this app.";
-        this.logger.error("Invalid Fasten Connect Connection ID", err);
-      });
-    } else if (this.brandId && this.portalId && this.endpointId) {
-      this.logger.info("state: dashboard/connecting");
-      this.router.navigate(["dashboard/connecting"], {
-        queryParams: {
-          "brandId": this.brandId,
-          "portalId": this.portalId,
-          "endpointId": this.endpointId,
-          "externalId": this.externalId,
-          "externalState": this.externalState,
-          "sdkMode": this.sdkMode
-        }
-      });
-    } else if (this.brandId) {
-      this.fastenService.searchCatalogBrand(apiMode, this.brandId).subscribe((brandItem) => {
-        this.logger.info("state: brand/details");
-        this.configService.searchConfig$.selectedBrand = brandItem._source;
-        this.router.navigateByUrl("brand/details");
-      });
-    } else {
-      if (this.searchOnly) {
-        if (this.showSplash) {
-          this.logger.info("state: splash");
-          this.router.navigateByUrl("splash");
-        } else {
-          this.logger.info("state: search");
-          let searchFilter = new SearchFilter();
-          if (this.searchQuery) {
-            searchFilter.query = this.searchQuery;
-          }
-          if (this.searchSortBy) {
-            searchFilter.sortBy = this.searchSortBy;
-            if (this.searchSortByOpts) {
-              try {
-                let base64DecodedSearchSortByOpts = Base64UrlDecode(this.searchSortByOpts);
-                let sortByOptsObj = JSON.parse(base64DecodedSearchSortByOpts);
-                if (searchFilter.sortBy == "location" && sortByOptsObj.location && sortByOptsObj.location.zipcodes) {
-                  searchFilter.sortByOpts.locationZipcodes = sortByOptsObj.location.zipcodes;
-                }
-              } catch (e2) {
-                this.logger.error("Could not parse searchSortByOpts", this.searchSortByOpts, e2);
-              }
-            }
-          }
-          this.configService.searchConfig = __spreadProps(__spreadValues({}, this.configService.searchConfig$), {
-            searchFilter
-          });
-          this.router.navigate(["search"]);
-        }
-      }
-    }
-    if (this.searchSortBy == "location") {
-      this.configService.searchConfig$.showSearchByLocation = true;
-      this.configService.searchConfig$.searchFilter;
-    }
-  }
-  ngOnChanges(changes) {
-    this.logger.debug("embed ngOnChanges", changes);
-  }
-  isIdentityCallbackRequest() {
-    return !!(this.idpCode && this.idpState) || !!this.idpError;
-  }
-  restoreIdentityCallbackConfiguration() {
-    if (!this.idpState) {
-      return;
-    }
-    const oauthContext = getOAuthCallbackContext(this.idpState, this.logger);
-    if (oauthContext.systemConfig?.publicId) {
-      restoreConfigurationFromOauthContext(oauthContext, this.configService);
-    }
-  }
-  getApiModeFromPublicId(publicId) {
-    let publicIdParts = publicId.split("_");
-    let apiMode = this.inferApiMode(publicId);
-    if (publicIdParts.length != 3) {
-      console.error("Could not register Fasten Connect installation: missing or invalid id", this.publicId);
-      this.errorMessage = "Could not register Fasten Connect installation: missing or invalid id. Please contact the developer of this app.";
-      this.sentryContext.recordWidgetConfigError("invalid_public_id");
-      this.messageBus.publishWidgetConfigError();
-      this.configService.systemConfig = {
-        org: void 0
-      };
-      this.loading = false;
-      return apiMode;
-    } else {
-      this.errorMessage = "";
-      this.fastenService.getOrgConfig(this.publicId).subscribe((org) => {
-        this.logger.info("Fasten Connect registration", org);
-        this.configService.systemConfig = {
-          org
-        };
-        if (this.configService.systemConfig$.tefcaMode && !this.isFeatureFlagOrgTefcaModeEnabled(this.configService.systemConfig$.org)) {
-          this.logger.error("TEFCA mode requested but organization is not enabled for TEFCA", this.configService.systemConfig$.org?.feature_flags);
-          this.loading = false;
-          this.errorMessage = "TEFCA mode not enabled for this organization and/or api mode. Please contact your account representative or the developer of this app.";
-          this.sentryContext.recordWidgetConfigError("tefca_not_enabled");
-          this.messageBus.publishWidgetConfigError();
-          return;
-        }
-        if (this.tefcaMode) {
-          void this.validateCookieSupport();
-        } else {
-          this.loading = false;
-          this.sentryContext.recordWidgetInitialized("cookie_not_required");
-        }
-      }, (err) => {
-        this.loading = false;
-        this.errorMessage = "Could not register Fasten Connect installation using id. Please contact the developer of this app.";
-        this.sentryContext.recordWidgetConfigError("org_config_failed");
-        this.messageBus.publishWidgetConfigError();
-        this.logger.error("Invalid Fasten Connect registration", err);
-      });
-      return apiMode;
-    }
-  }
-  inferApiMode(publicId) {
-    const publicIdParts = publicId.split("_");
-    return publicIdParts.length === 3 && publicIdParts[1] === ApiMode.Live ? ApiMode.Live : ApiMode.Test;
-  }
-  getWidgetExperience() {
-    if (this.tefcaMode) {
-      return "tefca";
-    }
-    if (this.reconnectOrgConnectionId || this.brandId && this.portalId && this.endpointId) {
-      return "direct";
-    }
-    return "search_only";
-  }
-  validateCookieSupport() {
-    return __async(this, null, function* () {
-      try {
-        const cookieProbe = isNativeSdkMode(this.sdkMode) ? CookieProbeScope.Regular : CookieProbeScope.All;
-        const cookieSupported = yield this.authService.CheckCookieSupport(cookieProbe);
-        if (cookieSupported) {
-          this.logger.info("[AppComponent] Cookie support detected");
-          this.sentryContext.recordWidgetInitialized("cookies_supported");
-          return;
-        }
-        if (this.authService.CanUseStorageAccessFallback()) {
-          this.logger.info("[AppComponent] Cookie probes were blocked; continuing with the Storage Access API fallback");
-          this.sentryContext.recordWidgetInitialized("storage_access_fallback");
-        } else {
-          this.logger.info("[AppComponent] Cookie support was not found!");
-          this.sentryContext.recordWidgetBlocked("cookies_blocked");
-          yield this.router.navigateByUrl("auth/signin/cookies-required");
-        }
-      } catch (error2) {
-        this.logger.error("[AppComponent] Failed to check browser cookie support", error2);
-        this.errorMessage = "Could not verify browser cookie support. Please try again or contact the developer of this app.";
-        this.sentryContext.recordWidgetConfigError("cookie_probe_failed");
-        this.messageBus.publishWidgetConfigError();
-      } finally {
-        this.loading = false;
-      }
-    });
-  }
-  // these functions can be called externally to hide the widget via javascript
-  modalClose() {
-    this.logger.info("modalClose pressed");
-    this.messageBus.publishRequestClose();
-  }
-  // postMessage registration, listen to events from the parent window
-  receivePostMessage(event) {
-    this.logger.debug("received client-event from parent window", event);
-  }
-  sendPostMessage(eventPayload) {
-    if (eventPayload == null) {
-      this.logger.warn("No eventPayload to send");
-      return;
-    }
-    if (this.sdkMode == SDKMode.ReactNative && window.ReactNativeWebView) {
-      this.logger.info("sending client-event to React Native WebView", eventPayload);
-      window.ReactNativeWebView.postMessage(JSON.stringify({
-        "from": CommunicationEntity.PrimaryWebView,
-        "to": CommunicationEntity.External,
-        "payload": JSON.stringify(eventPayload)
-      }));
-    } else if (window.opener || window.parent) {
-      this.logger.info("sending client-event", eventPayload);
-      let parentWindowRef = window.parent || window.opener;
-      parentWindowRef.postMessage(JSON.stringify(eventPayload), "*");
-    } else {
-      this.logger.debug("No parent window to send message to", this.sdkMode);
-      return;
-    }
-  }
-  isFeatureFlagOrgTefcaModeEnabled(org) {
-    const orgFlags = org?.feature_flags || [];
-    return orgFlags.includes(`${this.configService.systemConfig$.apiMode}.tefca.enable`);
-  }
-  static {
-    this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(SentryContextService));
-    };
-  }
-  static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _AppComponent, selectors: [["app-root"]], hostBindings: function AppComponent_HostBindings(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275listener("message", function AppComponent_message_HostBindingHandler($event) {
-          return ctx.receivePostMessage($event);
-        }, false, \u0275\u0275resolveWindow);
-      }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], email: "email", externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], identityRequestUri: [0, "identity-request-uri", "identityRequestUri"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"], idpCode: [0, "code", "idpCode"], idpState: [0, "state", "idpState"], idpError: [0, "error", "idpError"], idpErrorDescription: [0, "error-description", "idpErrorDescription"], idpErrorUri: [0, "error-uri", "idpErrorUri"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 7, vars: 7, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "test-mode-banner", "class", "top-0 sticky z-50 w-full mb-2 bg-[#DC3545] text-white text-center py-2 px-4 rounded-t-lg font-medium text-sm flex items-center justify-center gap-2", 4, "ngIf"], [4, "ngIf"], ["id", "test-mode-banner", 1, "top-0", "sticky", "z-50", "w-full", "mb-2", "bg-[#DC3545]", "text-white", "text-center", "py-2", "px-4", "rounded-t-lg", "font-medium", "text-sm", "flex", "items-center", "justify-center", "gap-2"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-construction"], ["x", "2", "y", "6", "width", "20", "height", "8", "rx", "1"], ["d", "M17 14v7"], ["d", "M7 14v7"], ["d", "M17 3v3"], ["d", "M7 3v3"], ["d", "M10 14 2.3 6.3"], ["d", "m14 6 7.7 7.7"], ["d", "m8 6 8 8"], [1, "p-6", "space-y-6", "fade-in"], [1, "relative", "flex", "justify-center", "items-center"], [1, "az-logo"], [1, "animate-pulse", "flex", "gap-2"], [1, "flex-1"], [1, "skeleton", "h-10", "w-full", "rounded-md"], [1, "skeleton", "skeleton-button"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], ["id", "vault-profile-skeleton-loader", 1, "p-6", "space-y-6", "animate-pulse"], [1, "flex", "justify-center", "items-center"], [1, "skeleton", "skeleton-text", "w-24", "h-8", "rounded-md"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "flex", "space-x-1"], [1, "skeleton", "w-2", "h-2", "rounded-full"], [1, "text-center", "space-y-2"], [1, "skeleton", "skeleton-text", "w-48", "h-6", "rounded-md"], [1, "skeleton", "skeleton-text", "w-64", "h-4", "rounded-md"], [1, "space-y-4"], [1, "skeleton-info-card"], [1, "skeleton", "skeleton-text", "w-24"], [1, "skeleton", "skeleton-text", "w-40"], [1, "mt-50", "skeleton", "h-10", "w-full", "rounded-md"], ["id", "widget-container", 1, "p-6", "fade-in", "flex", "flex-col"], [1, "flex-1", "min-h-0", "flex", "flex-col"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275element(0, "link", 0);
-        \u0275\u0275template(1, AppComponent_div_1_Template, 11, 0, "div", 1);
-        \u0275\u0275pipe(2, "async");
-        \u0275\u0275template(3, AppComponent_ng_container_3_Template, 22, 1, "ng-container", 2)(4, AppComponent_ng_container_4_Template, 29, 0, "ng-container", 2)(5, AppComponent_ng_container_5_Template, 4, 0, "ng-container", 2)(6, AppComponent_ng_container_6_Template, 16, 1, "ng-container", 2);
-      }
-      if (rf & 2) {
-        let tmp_0_0;
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ((tmp_0_0 = \u0275\u0275pipeBind1(2, 5, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.apiMode) == "test");
-        \u0275\u0275advance(2);
-        \u0275\u0275property("ngIf", ctx.loading && ctx.searchOnly);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ctx.loading && !ctx.searchOnly);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", !ctx.loading && !!!ctx.errorMessage);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", !ctx.loading && ctx.errorMessage);
-      }
-    }, dependencies: [
-      CommonModule,
-      NgIf,
-      AsyncPipe,
-      RouterOutlet,
-      RouterModule
-    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  height: 100vh;\n  height: 100dvh;\n  min-height: 0;\n}\n#widget-container[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  flex: 1 1 auto;\n  width: 100%;\n  height: auto;\n  min-height: 0;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  -webkit-overflow-scrolling: touch;\n}\n/*# sourceMappingURL=app.component.css.map */"] });
-  }
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 43 });
-})();
-
-// projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts
-function HeaderComponent_button_1_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 4);
-    \u0275\u0275listener("click", function HeaderComponent_button_1_Template_button_click_0_listener($event) {
-      \u0275\u0275restoreView(_r1);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.backButtonClick($event));
-    });
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 5);
-    \u0275\u0275element(2, "path", 6);
-    \u0275\u0275elementEnd()();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275property("routerLink", ctx_r1.backButtonLink)("replaceUrl", ctx_r1.backButtonReplaceUrl);
-  }
-}
-function HeaderComponent_button_2_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 7);
-    \u0275\u0275listener("click", function HeaderComponent_button_2_Template_button_click_0_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.closeButtonClick($event));
-    });
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 5);
-    \u0275\u0275element(2, "path", 8);
-    \u0275\u0275elementEnd()();
-  }
-}
-var HeaderComponent = class _HeaderComponent {
-  constructor() {
-    this.logoText = logoText;
-    this.backButtonLink = "";
-    this.backButtonReplaceUrl = false;
-    this.backButtonEvent = new EventEmitter();
-    this.showClose = false;
-    this.closeButtonEvent = new EventEmitter();
-  }
-  ngOnInit() {
-  }
-  backButtonClick(e2) {
-    console.log("header: back button clicked");
-    this.backButtonEvent.emit(e2);
-  }
-  closeButtonClick(e2) {
-    console.log("header: close button clicked");
-    this.closeButtonEvent.emit(e2);
-  }
-  static {
-    this.\u0275fac = function HeaderComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _HeaderComponent)();
-    };
-  }
-  static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HeaderComponent, selectors: [["app-header"]], inputs: { backButtonLink: "backButtonLink", backButtonReplaceUrl: "backButtonReplaceUrl", showClose: "showClose" }, outputs: { backButtonEvent: "backButtonEvent", closeButtonEvent: "closeButtonEvent" }, decls: 5, vars: 3, consts: [[1, "relative", "flex", "justify-center", "items-center"], ["id", "stitch-back", "type", "button", "class", "absolute left-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "routerLink", "replaceUrl", "click", 4, "ngIf"], ["id", "stitch-close", "type", "button", "class", "absolute right-0 top-1/2 -translate-y-1/2 text-gray-700 p-2 hover:bg-gray-100 rounded-md", 3, "click", 4, "ngIf"], [1, "az-logo"], ["id", "stitch-back", "type", "button", 1, "absolute", "left-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click", "routerLink", "replaceUrl"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", 1, "w-5", "h-5"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M15 19l-7-7 7-7"], ["id", "stitch-close", "type", "button", 1, "absolute", "right-0", "top-1/2", "-translate-y-1/2", "text-gray-700", "p-2", "hover:bg-gray-100", "rounded-md", 3, "click"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M6 18L18 6M6 6l12 12"]], template: function HeaderComponent_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275template(1, HeaderComponent_button_1_Template, 3, 2, "button", 1)(2, HeaderComponent_button_2_Template, 3, 0, "button", 2);
-        \u0275\u0275elementStart(3, "h1", 3);
-        \u0275\u0275text(4);
-        \u0275\u0275elementEnd()();
-      }
-      if (rf & 2) {
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ctx.backButtonLink);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ctx.showClose);
-        \u0275\u0275advance(2);
-        \u0275\u0275textInterpolate(ctx.logoText());
-      }
-    }, dependencies: [CommonModule, NgIf, RouterModule, RouterLink], encapsulation: 2 });
-  }
-};
-(() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HeaderComponent, { className: "HeaderComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/header/header.component.ts", lineNumber: 14 });
-})();
-
 // node_modules/@angular/forms/fesm2022/forms.mjs
 var BaseControlValueAccessor = class _BaseControlValueAccessor {
   _renderer;
@@ -78056,30 +76354,5210 @@ var ReactiveFormsModule = class _ReactiveFormsModule {
   }], null, null);
 })();
 
-// projects/fasten-connect-stitch-embed/src/app/components/spinner/spinner.component.ts
-var SpinnerComponent = class _SpinnerComponent {
-  constructor() {
+// dist/fasten-design-kit/fesm2022/fasten-design-kit.mjs
+function FdkIconComponent_Case_0_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 2)(2, "line", 3)(3, "line", 4);
+    \u0275\u0275elementEnd();
   }
-  ngOnInit() {
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 5)(2, "line", 6)(3, "line", 7);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 8)(2, "line", 9)(3, "line", 10);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 11)(2, "line", 12)(3, "line", 13);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 14)(2, "line", 15);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 16)(2, "line", 17);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 18)(2, "line", 19);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 20)(2, "line", 21);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 22)(2, "line", 23);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 24)(2, "line", 25);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "path", 26);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 27)(2, "line", 28)(3, "line", 29)(4, "line", 30)(5, "path", 31)(6, "path", 32);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_12_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "path", 33);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_13_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "path", 34);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_14_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "rect", 35)(2, "path", 36);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_15_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "line", 37)(2, "line", 38);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_16_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "path", 39);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_17_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "circle", 40)(2, "rect", 41)(3, "circle", 42);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_18_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "circle", 43)(2, "line", 44)(3, "path", 45);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIconComponent_Case_19_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "path", 46);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275styleProp("width", ctx_r0.resolvedSize)("height", ctx_r0.resolvedSize);
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+var _c0 = ["*"];
+function FdkCardComponent_Conditional_2_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "img", 7);
+    \u0275\u0275listener("error", function FdkCardComponent_Conditional_2_Template_img_error_0_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.handleLogoError());
+    });
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("src", ctx_r1.logo, \u0275\u0275sanitizeUrl);
+  }
+}
+function FdkCardComponent_Conditional_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "fdk-initials", 2);
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("initials", ctx_r1.initials);
+  }
+}
+function FdkCardComponent_Conditional_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 4);
+    \u0275\u0275element(1, "fdk-icon", 8);
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkCardComponent_Case_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 5);
+    \u0275\u0275element(1, "fdk-icon", 9);
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkCardComponent_Case_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 5);
+    \u0275\u0275element(1, "fdk-icon", 10);
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkCardComponent_Case_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 6)(1, "span");
+    \u0275\u0275text(2, "Sign In");
+    \u0275\u0275elementEnd()();
+  }
+}
+var _c1 = ["overlay"];
+function FdkDialogComponent_Conditional_0_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 2, 0);
+    \u0275\u0275listener("click", function FdkDialogComponent_Conditional_0_Template_div_click_0_listener($event) {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onOverlayClick($event));
+    });
+    \u0275\u0275elementStart(2, "section", 3);
+    \u0275\u0275projection(3);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(2);
+    \u0275\u0275attribute("aria-label", ctx_r1.ariaLabel || null)("aria-labelledby", ctx_r1.ariaLabel ? null : ctx_r1.dialogTitle == null ? null : ctx_r1.dialogTitle.id);
+  }
+}
+function FdkHeaderComponent_Conditional_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 1)(1, "span");
+    \u0275\u0275text(2);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r0.testModeText);
+  }
+}
+function FdkHeaderComponent_Conditional_4_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r2 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 4)(1, "fdk-icon-button", 12);
+    \u0275\u0275listener("click", function FdkHeaderComponent_Conditional_4_Template_fdk_icon_button_click_1_listener() {
+      \u0275\u0275restoreView(_r2);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.back.emit());
+    });
+    \u0275\u0275elementEnd()();
+  }
+}
+function FdkHeaderComponent_Conditional_6_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "img", 13);
+    \u0275\u0275listener("load", function FdkHeaderComponent_Conditional_6_Template_img_load_0_listener($event) {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.handleLogoLoad($event));
+    })("error", function FdkHeaderComponent_Conditional_6_Template_img_error_0_listener() {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.handleLogoError());
+    });
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("src", ctx_r0.logoUrl, \u0275\u0275sanitizeUrl)("alt", ctx_r0.logoAlt || ctx_r0.name);
+  }
+}
+function FdkHeaderComponent_Conditional_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 7);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r0.name);
+  }
+}
+function FdkHeaderComponent_Conditional_9_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "fdk-icon-button", 14);
+    \u0275\u0275listener("click", function FdkHeaderComponent_Conditional_9_Template_fdk_icon_button_click_0_listener() {
+      \u0275\u0275restoreView(_r4);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.reportIssue.emit());
+    });
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkHeaderComponent_Conditional_10_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "fdk-icon-button", 15);
+    \u0275\u0275listener("click", function FdkHeaderComponent_Conditional_10_Template_fdk_icon_button_click_0_listener() {
+      \u0275\u0275restoreView(_r5);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.profile.emit());
+    });
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkHeaderComponent_Conditional_11_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "fdk-icon-button", 16);
+    \u0275\u0275listener("click", function FdkHeaderComponent_Conditional_11_Template_fdk_icon_button_click_0_listener() {
+      \u0275\u0275restoreView(_r6);
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.close.emit());
+    });
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkInputComponent_Conditional_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 2);
+    \u0275\u0275text(1, "*");
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkInputComponent_Conditional_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "p", 4);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("id", ctx_r0.errorMessageId);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.errorMessage, " ");
+  }
+}
+function FdkLinkComponent_ng_template_0_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275projection(0);
+  }
+}
+function FdkLinkComponent_Conditional_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "a", 1);
+    \u0275\u0275elementContainer(1, 3);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    const linkContent_r2 = \u0275\u0275reference(1);
+    \u0275\u0275property("routerLink", ctx_r0.routerLink)("target", ctx_r0.target);
+    \u0275\u0275attribute("rel", ctx_r0.rel);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngTemplateOutlet", linkContent_r2);
+  }
+}
+function FdkLinkComponent_Conditional_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "a", 2);
+    \u0275\u0275elementContainer(1, 3);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    const linkContent_r2 = \u0275\u0275reference(1);
+    \u0275\u0275property("href", ctx_r0.href, \u0275\u0275sanitizeUrl)("target", ctx_r0.target);
+    \u0275\u0275attribute("rel", ctx_r0.rel);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngTemplateOutlet", linkContent_r2);
+  }
+}
+function FdkSelectComponent_Conditional_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 2);
+    \u0275\u0275text(1, "*");
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkSelectComponent_Conditional_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "option", 5);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.placeholder, " ");
+  }
+}
+function FdkSelectComponent_For_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "option", 6);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const option_r2 = ctx.$implicit;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("disabled", ctx_r0.optionDisabled(option_r2))("value", ctx_r0.optionValue(option_r2));
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.optionLabel(option_r2), " ");
+  }
+}
+function FdkSelectComponent_Conditional_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "p", 8);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("id", ctx_r0.errorMessageId);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.errorMessage, " ");
+  }
+}
+function FdkIllustrationComponent_Case_0_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 0);
+    \u0275\u0275element(1, "path", 3)(2, "path", 4)(3, "path", 5)(4, "path", 6);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 0);
+    \u0275\u0275element(1, "rect", 7)(2, "rect", 8)(3, "path", 9)(4, "path", 10)(5, "path", 11)(6, "path", 12)(7, "path", 13)(8, "path", 14);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 0);
+    \u0275\u0275element(1, "path", 15)(2, "path", 16)(3, "path", 17)(4, "path", 18)(5, "path", 19)(6, "path", 20)(7, "path", 21)(8, "path", 22)(9, "rect", 23)(10, "rect", 24);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "circle", 25)(2, "circle", 26)(3, "circle", 27);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "circle", 28)(2, "circle", 26)(3, "circle", 29);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 1);
+    \u0275\u0275element(1, "circle", 28)(2, "circle", 30)(3, "circle", 31);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 0);
+    \u0275\u0275element(1, "path", 32)(2, "path", 33)(3, "path", 34)(4, "path", 35)(5, "path", 36)(6, "path", 37)(7, "path", 38)(8, "path", 39)(9, "path", 40)(10, "path", 41)(11, "path", 42)(12, "path", 43)(13, "rect", 44)(14, "rect", 45);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_7_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 0);
+    \u0275\u0275element(1, "rect", 46)(2, "rect", 47)(3, "path", 48)(4, "path", 49)(5, "path", 50)(6, "path", 51)(7, "path", 52);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 0);
+    \u0275\u0275element(1, "circle", 53)(2, "path", 54)(3, "path", 55)(4, "rect", 56);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_9_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 0);
+    \u0275\u0275element(1, "path", 57)(2, "path", 58)(3, "path", 59)(4, "circle", 60)(5, "path", 61);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 2);
+    \u0275\u0275element(1, "rect", 62)(2, "rect", 63)(3, "path", 64)(4, "path", 65)(5, "path", 66)(6, "path", 67)(7, "path", 68)(8, "path", 69)(9, "path", 70)(10, "path", 71)(11, "path", 72)(12, "path", 73)(13, "path", 74)(14, "path", 75)(15, "path", 76)(16, "path", 77)(17, "path", 78)(18, "path", 79)(19, "path", 80)(20, "path", 81)(21, "rect", 82)(22, "rect", 83)(23, "circle", 84)(24, "circle", 85)(25, "circle", 86);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 2);
+    \u0275\u0275element(1, "rect", 62)(2, "rect", 63)(3, "path", 64)(4, "path", 65)(5, "path", 66)(6, "path", 67)(7, "path", 68)(8, "path", 69)(9, "path", 87)(10, "path", 71)(11, "path", 88)(12, "path", 73)(13, "path", 89)(14, "path", 75)(15, "path", 76)(16, "path", 77)(17, "path", 78)(18, "path", 79)(19, "path", 80)(20, "path", 90)(21, "rect", 82)(22, "rect", 83)(23, "circle", 91)(24, "circle", 85)(25, "circle", 92);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_12_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 2);
+    \u0275\u0275element(1, "rect", 62)(2, "rect", 63)(3, "path", 64)(4, "path", 65)(5, "path", 66)(6, "path", 67)(7, "path", 93)(8, "path", 69)(9, "path", 94)(10, "path", 71)(11, "path", 72)(12, "path", 73)(13, "path", 74)(14, "path", 75)(15, "path", 76)(16, "path", 77)(17, "path", 78)(18, "path", 79)(19, "path", 80)(20, "path", 81)(21, "rect", 95)(22, "rect", 96)(23, "circle", 91)(24, "circle", 97)(25, "circle", 98);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkIllustrationComponent_Case_13_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(0, "svg", 2);
+    \u0275\u0275element(1, "rect", 62)(2, "rect", 63)(3, "path", 64)(4, "path", 65)(5, "path", 66)(6, "path", 67)(7, "path", 68)(8, "path", 69)(9, "path", 70)(10, "path", 71)(11, "path", 72)(12, "path", 73)(13, "path", 74)(14, "path", 75)(15, "path", 76)(16, "path", 77)(17, "path", 78)(18, "path", 79)(19, "path", 80)(20, "path", 81)(21, "rect", 82)(22, "rect", 83)(23, "circle", 99)(24, "circle", 84)(25, "circle", 85)(26, "circle", 100)(27, "circle", 101)(28, "circle", 102);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275attribute("aria-hidden", ctx_r0.ariaHidden)("aria-label", ctx_r0.normalizedAriaLabel)("role", ctx_r0.role);
+  }
+}
+function FdkTextareaComponent_Conditional_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 2);
+    \u0275\u0275text(1, "*");
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkTextareaComponent_Conditional_5_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "p", 4);
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("id", ctx_r0.errorMessageId);
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", ctx_r0.errorMessage, " ");
+  }
+}
+var FdkIconComponent = class _FdkIconComponent {
+  constructor() {
+    this.size = 24;
+    this.ariaLabel = null;
+  }
+  get normalizedAriaLabel() {
+    const label = this.ariaLabel?.trim();
+    return label ? label : null;
+  }
+  get ariaHidden() {
+    return this.normalizedAriaLabel ? null : "true";
+  }
+  get role() {
+    return this.normalizedAriaLabel ? "img" : null;
+  }
+  get resolvedSize() {
+    return typeof this.size === "number" ? `${this.size}px` : this.size;
   }
   static {
-    this.\u0275fac = function SpinnerComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _SpinnerComponent)();
+    this.\u0275fac = function FdkIconComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkIconComponent)();
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SpinnerComponent, selectors: [["app-spinner"]], decls: 3, vars: 0, consts: [["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", 1, "mr-2", "h-5", "w-5", "animate-spin", "text-white"], ["cx", "12", "cy", "12", "r", "10", "stroke", "currentColor", "stroke-width", "4", 1, "opacity-25"], ["fill", "currentColor", "d", "M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z", 1, "opacity-75"]], template: function SpinnerComponent_Template(rf, ctx) {
-      if (rf & 1) {
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(0, "svg", 0);
-        \u0275\u0275element(1, "circle", 1)(2, "path", 2);
-        \u0275\u0275elementEnd();
-      }
-    }, dependencies: [CommonModule], encapsulation: 2 });
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkIconComponent,
+      selectors: [["fdk-icon"]],
+      inputs: {
+        name: "name",
+        size: "size",
+        ariaLabel: [0, "aria-label", "ariaLabel"]
+      },
+      decls: 20,
+      vars: 1,
+      consts: [["focusable", "false", "viewBox", "0 0 24 24", "fill", "none", "xmlns", "http://www.w3.org/2000/svg", 1, "fdk-icon__svg", 3, "width", "height"], ["focusable", "false", "viewBox", "0 0 24 24", "fill", "none", "xmlns", "http://www.w3.org/2000/svg", 1, "fdk-icon__svg"], ["x1", "11.2929", "y1", "17.2929", "x2", "17.2929", "y2", "11.2929", "stroke", "currentColor", "stroke-width", "2"], ["x1", "6.71363", "y1", "11.2995", "x2", "12.6034", "y2", "17.2995", "stroke", "currentColor", "stroke-width", "2"], ["x1", "12", "y1", "6", "x2", "12", "y2", "16", "stroke", "currentColor", "stroke-width", "2"], ["x1", "6.70711", "y1", "11.2929", "x2", "12.7071", "y2", "17.2929", "stroke", "currentColor", "stroke-width", "2"], ["x1", "12.7005", "y1", "6.71363", "x2", "6.70052", "y2", "12.6034", "stroke", "currentColor", "stroke-width", "2"], ["x1", "18", "y1", "12", "x2", "8", "y2", "12", "stroke", "currentColor", "stroke-width", "2"], ["x1", "17.2929", "y1", "12.7071", "x2", "11.2929", "y2", "6.70711", "stroke", "currentColor", "stroke-width", "2"], ["x1", "11.2995", "y1", "17.2864", "x2", "17.2995", "y2", "11.3966", "stroke", "currentColor", "stroke-width", "2"], ["x1", "6", "y1", "12", "x2", "16", "y2", "12", "stroke", "currentColor", "stroke-width", "2"], ["x1", "12.7071", "y1", "6.70711", "x2", "6.70711", "y2", "12.7071", "stroke", "currentColor", "stroke-width", "2"], ["x1", "17.2864", "y1", "12.7005", "x2", "11.3966", "y2", "6.70052", "stroke", "currentColor", "stroke-width", "2"], ["x1", "12", "y1", "18", "x2", "12", "y2", "8", "stroke", "currentColor", "stroke-width", "2"], ["x1", "5.70711", "y1", "11.2929", "x2", "9.70711", "y2", "15.2929", "stroke", "currentColor", "stroke-width", "2"], ["x1", "9.29289", "y1", "16.2929", "x2", "19.2929", "y2", "6.29289", "stroke", "currentColor", "stroke-width", "2"], ["x1", "11.2929", "y1", "15.2929", "x2", "17.2929", "y2", "9.29289", "stroke", "currentColor", "stroke-width", "2"], ["x1", "6.71363", "y1", "9.29948", "x2", "12.6034", "y2", "15.2995", "stroke", "currentColor", "stroke-width", "2"], ["x1", "8.70711", "y1", "11.2929", "x2", "14.7071", "y2", "17.2929", "stroke", "currentColor", "stroke-width", "2"], ["x1", "14.7005", "y1", "6.71363", "x2", "8.70052", "y2", "12.6034", "stroke", "currentColor", "stroke-width", "2"], ["x1", "15.2929", "y1", "12.7071", "x2", "9.29289", "y2", "6.70711", "stroke", "currentColor", "stroke-width", "2"], ["x1", "9.29948", "y1", "17.2864", "x2", "15.2995", "y2", "11.3966", "stroke", "currentColor", "stroke-width", "2"], ["x1", "12.7071", "y1", "8.70711", "x2", "6.70711", "y2", "14.7071", "stroke", "currentColor", "stroke-width", "2"], ["x1", "17.2864", "y1", "14.7005", "x2", "11.3966", "y2", "8.70052", "stroke", "currentColor", "stroke-width", "2"], ["x1", "6.94975", "y1", "6.94969", "x2", "16.8492", "y2", "16.8492", "stroke", "currentColor", "stroke-width", "2"], ["x1", "16.8582", "y1", "6.96006", "x2", "6.94903", "y2", "16.8499", "stroke", "currentColor", "stroke-width", "2"], ["d", "M12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4ZM12 15C11.4477 15 11 15.4477 11 16C11 16.5523 11.4477 17 12 17C12.5523 17 13 16.5523 13 16C13 15.4477 12.5523 15 12 15ZM11 13H13V7H11V13Z", "fill", "currentColor"], ["x1", "3", "y1", "8", "x2", "7", "y2", "8", "stroke", "currentColor", "stroke-width", "2"], ["x1", "3", "y1", "17", "x2", "12", "y2", "17", "stroke", "currentColor", "stroke-width", "2"], ["x1", "18", "y1", "17", "x2", "21", "y2", "17", "stroke", "currentColor", "stroke-width", "2"], ["x1", "13", "y1", "8", "x2", "21", "y2", "8", "stroke", "currentColor", "stroke-width", "2"], ["d", "M15 13C17.2091 13 19 14.7909 19 17C19 19.2091 17.2091 21 15 21C12.7909 21 11 19.2091 11 17C11 14.7909 12.7909 13 15 13ZM15 15C13.8954 15 13 15.8954 13 17C13 18.1046 13.8954 19 15 19C16.1046 19 17 18.1046 17 17C17 15.8954 16.1046 15 15 15Z", "fill", "currentColor"], ["d", "M10 4C12.2091 4 14 5.79086 14 8C14 10.2091 12.2091 12 10 12C7.79086 12 6 10.2091 6 8C6 5.79086 7.79086 4 10 4ZM10 6C8.89543 6 8 6.89543 8 8C8 9.10457 8.89543 10 10 10C11.1046 10 12 9.10457 12 8C12 6.89543 11.1046 6 10 6Z", "fill", "currentColor"], ["d", "M12 12.5C12.4125 12.5 12.7656 12.3531 13.0594 12.0594C13.3531 11.7656 13.5 11.4125 13.5 11C13.5 10.5875 13.3531 10.2344 13.0594 9.94063C12.7656 9.64687 12.4125 9.5 12 9.5C11.5875 9.5 11.2344 9.64687 10.9406 9.94063C10.6469 10.2344 10.5 10.5875 10.5 11C10.5 11.4125 10.6469 11.7656 10.9406 12.0594C11.2344 12.3531 11.5875 12.5 12 12.5ZM12 18.0125C13.525 16.6125 14.6562 15.3406 15.3938 14.1969C16.1313 13.0531 16.5 12.0375 16.5 11.15C16.5 9.7875 16.0656 8.67188 15.1969 7.80312C14.3281 6.93438 13.2625 6.5 12 6.5C10.7375 6.5 9.67188 6.93438 8.80312 7.80312C7.93438 8.67188 7.5 9.7875 7.5 11.15C7.5 12.0375 7.86875 13.0531 8.60625 14.1969C9.34375 15.3406 10.475 16.6125 12 18.0125ZM12 20C9.9875 18.2875 8.48438 16.6969 7.49063 15.2281C6.49688 13.7594 6 12.4 6 11.15C6 9.275 6.60312 7.78125 7.80938 6.66875C9.01563 5.55625 10.4125 5 12 5C13.5875 5 14.9844 5.55625 16.1906 6.66875C17.3969 7.78125 18 9.275 18 11.15C18 12.4 17.5031 13.7594 16.5094 15.2281C15.5156 16.6969 14.0125 18.2875 12 20Z", "fill", "currentColor"], ["d", "M12 12.5C12.4125 12.5 12.7656 12.3531 13.0594 12.0594C13.3531 11.7656 13.5 11.4125 13.5 11C13.5 10.5875 13.3531 10.2344 13.0594 9.94063C12.7656 9.64687 12.4125 9.5 12 9.5C11.5875 9.5 11.2344 9.64687 10.9406 9.94063C10.6469 10.2344 10.5 10.5875 10.5 11C10.5 11.4125 10.6469 11.7656 10.9406 12.0594C11.2344 12.3531 11.5875 12.5 12 12.5ZM12 20C9.9875 18.2875 8.48438 16.6969 7.49063 15.2281C6.49688 13.7594 6 12.4 6 11.15C6 9.275 6.60312 7.78125 7.80938 6.66875C9.01563 5.55625 10.4125 5 12 5C13.5875 5 14.9844 5.55625 16.1906 6.66875C17.3969 7.78125 18 9.275 18 11.15C18 12.4 17.5031 13.7594 16.5094 15.2281C15.5156 16.6969 14.0125 18.2875 12 20Z", "fill", "currentColor"], ["x", "3", "y", "5", "width", "18", "height", "14", "rx", "1", "stroke", "currentColor", "stroke-width", "2"], ["d", "M3 6L12 12L21 6", "stroke", "currentColor", "stroke-width", "2"], ["x1", "12", "y1", "5", "x2", "12", "y2", "19", "stroke", "currentColor", "stroke-width", "2"], ["x1", "18.999", "y1", "12.0137", "x2", "4.99903", "y2", "12", "stroke", "currentColor", "stroke-width", "2"], ["d", "M12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4ZM11 12.1719L9.41406 10.5859L8 12L11 15L16 10L14.5859 8.58594L11 12.1719Z", "fill", "currentColor"], ["cx", "12", "cy", "12", "r", "8", "stroke", "currentColor", "stroke-width", "2"], ["x", "11", "y", "7", "width", "2", "height", "6", "fill", "currentColor"], ["cx", "12", "cy", "16", "r", "1", "fill", "currentColor"], ["cx", "12", "cy", "8", "r", "3", "stroke", "currentColor", "stroke-width", "2"], ["x1", "5", "y1", "20", "x2", "19", "y2", "20", "stroke", "currentColor", "stroke-width", "2"], ["d", "M12 13C16.4183 13 20 16.5817 20 21H18C18 17.6863 15.3137 15 12 15C8.68629 15 6 17.6863 6 21H4C4 16.5817 7.58172 13 12 13Z", "fill", "currentColor"], ["d", "M12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4ZM11 16H13V10H11V16ZM12 7C11.4477 7 11 7.44772 11 8C11 8.55228 11.4477 9 12 9C12.5523 9 13 8.55228 13 8C13 7.44772 12.5523 7 12 7Z", "fill", "currentColor"]],
+      template: function FdkIconComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275template(0, FdkIconComponent_Case_0_Template, 4, 7, ":svg:svg", 0)(1, FdkIconComponent_Case_1_Template, 4, 7, ":svg:svg", 0)(2, FdkIconComponent_Case_2_Template, 4, 7, ":svg:svg", 0)(3, FdkIconComponent_Case_3_Template, 4, 7, ":svg:svg", 0)(4, FdkIconComponent_Case_4_Template, 3, 7, ":svg:svg", 0)(5, FdkIconComponent_Case_5_Template, 3, 7, ":svg:svg", 0)(6, FdkIconComponent_Case_6_Template, 3, 7, ":svg:svg", 0)(7, FdkIconComponent_Case_7_Template, 3, 7, ":svg:svg", 0)(8, FdkIconComponent_Case_8_Template, 3, 7, ":svg:svg", 0)(9, FdkIconComponent_Case_9_Template, 3, 7, ":svg:svg", 0)(10, FdkIconComponent_Case_10_Template, 2, 7, ":svg:svg", 0)(11, FdkIconComponent_Case_11_Template, 7, 7, ":svg:svg", 0)(12, FdkIconComponent_Case_12_Template, 2, 7, ":svg:svg", 0)(13, FdkIconComponent_Case_13_Template, 2, 7, ":svg:svg", 0)(14, FdkIconComponent_Case_14_Template, 3, 7, ":svg:svg", 0)(15, FdkIconComponent_Case_15_Template, 3, 7, ":svg:svg", 0)(16, FdkIconComponent_Case_16_Template, 2, 7, ":svg:svg", 0)(17, FdkIconComponent_Case_17_Template, 4, 7, ":svg:svg", 0)(18, FdkIconComponent_Case_18_Template, 4, 7, ":svg:svg", 0)(19, FdkIconComponent_Case_19_Template, 2, 7, ":svg:svg", 0);
+        }
+        if (rf & 2) {
+          let tmp_0_0;
+          \u0275\u0275conditional((tmp_0_0 = ctx.name) === "arrow-down" ? 0 : tmp_0_0 === "arrow-left" ? 1 : tmp_0_0 === "arrow-right" ? 2 : tmp_0_0 === "arrow-up" ? 3 : tmp_0_0 === "checkmark" ? 4 : tmp_0_0 === "chevron-down" ? 5 : tmp_0_0 === "chevron-left" ? 6 : tmp_0_0 === "chevron-right" ? 7 : tmp_0_0 === "chevron-up" ? 8 : tmp_0_0 === "cross" ? 9 : tmp_0_0 === "error" ? 10 : tmp_0_0 === "filter" ? 11 : tmp_0_0 === "location-off" ? 12 : tmp_0_0 === "location-on" ? 13 : tmp_0_0 === "message" ? 14 : tmp_0_0 === "plus" ? 15 : tmp_0_0 === "success" ? 16 : tmp_0_0 === "support" ? 17 : tmp_0_0 === "user" ? 18 : tmp_0_0 === "warning" ? 19 : -1);
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:inline-flex;flex:none;color:inherit;line-height:0;vertical-align:middle}.fdk-icon__svg[_ngcontent-%COMP%]{display:block;flex:none}"],
+      changeDetection: 0
+    });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SpinnerComponent, { className: "SpinnerComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/spinner/spinner.component.ts", lineNumber: 11 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkIconComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-icon",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: `<!-- Generated by scripts/generate-svg-components.mjs. Do not edit manually. -->
+@switch (name) {
+  @case ('arrow-down') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="11.2929" y1="17.2929" x2="17.2929" y2="11.2929" stroke="currentColor" stroke-width="2"/>
+    <line x1="6.71363" y1="11.2995" x2="12.6034" y2="17.2995" stroke="currentColor" stroke-width="2"/>
+    <line x1="12" y1="6" x2="12" y2="16" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('arrow-left') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="6.70711" y1="11.2929" x2="12.7071" y2="17.2929" stroke="currentColor" stroke-width="2"/>
+    <line x1="12.7005" y1="6.71363" x2="6.70052" y2="12.6034" stroke="currentColor" stroke-width="2"/>
+    <line x1="18" y1="12" x2="8" y2="12" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('arrow-right') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="17.2929" y1="12.7071" x2="11.2929" y2="6.70711" stroke="currentColor" stroke-width="2"/>
+    <line x1="11.2995" y1="17.2864" x2="17.2995" y2="11.3966" stroke="currentColor" stroke-width="2"/>
+    <line x1="6" y1="12" x2="16" y2="12" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('arrow-up') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="12.7071" y1="6.70711" x2="6.70711" y2="12.7071" stroke="currentColor" stroke-width="2"/>
+    <line x1="17.2864" y1="12.7005" x2="11.3966" y2="6.70052" stroke="currentColor" stroke-width="2"/>
+    <line x1="12" y1="18" x2="12" y2="8" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('checkmark') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="5.70711" y1="11.2929" x2="9.70711" y2="15.2929" stroke="currentColor" stroke-width="2"/>
+    <line x1="9.29289" y1="16.2929" x2="19.2929" y2="6.29289" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('chevron-down') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="11.2929" y1="15.2929" x2="17.2929" y2="9.29289" stroke="currentColor" stroke-width="2"/>
+    <line x1="6.71363" y1="9.29948" x2="12.6034" y2="15.2995" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('chevron-left') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="8.70711" y1="11.2929" x2="14.7071" y2="17.2929" stroke="currentColor" stroke-width="2"/>
+    <line x1="14.7005" y1="6.71363" x2="8.70052" y2="12.6034" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('chevron-right') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="15.2929" y1="12.7071" x2="9.29289" y2="6.70711" stroke="currentColor" stroke-width="2"/>
+    <line x1="9.29948" y1="17.2864" x2="15.2995" y2="11.3966" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('chevron-up') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="12.7071" y1="8.70711" x2="6.70711" y2="14.7071" stroke="currentColor" stroke-width="2"/>
+    <line x1="17.2864" y1="14.7005" x2="11.3966" y2="8.70052" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('cross') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="6.94975" y1="6.94969" x2="16.8492" y2="16.8492" stroke="currentColor" stroke-width="2"/>
+    <line x1="16.8582" y1="6.96006" x2="6.94903" y2="16.8499" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('error') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4ZM12 15C11.4477 15 11 15.4477 11 16C11 16.5523 11.4477 17 12 17C12.5523 17 13 16.5523 13 16C13 15.4477 12.5523 15 12 15ZM11 13H13V7H11V13Z" fill="currentColor"/>
+    </svg>
+  }
+  @case ('filter') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="3" y1="8" x2="7" y2="8" stroke="currentColor" stroke-width="2"/>
+    <line x1="3" y1="17" x2="12" y2="17" stroke="currentColor" stroke-width="2"/>
+    <line x1="18" y1="17" x2="21" y2="17" stroke="currentColor" stroke-width="2"/>
+    <line x1="13" y1="8" x2="21" y2="8" stroke="currentColor" stroke-width="2"/>
+    <path d="M15 13C17.2091 13 19 14.7909 19 17C19 19.2091 17.2091 21 15 21C12.7909 21 11 19.2091 11 17C11 14.7909 12.7909 13 15 13ZM15 15C13.8954 15 13 15.8954 13 17C13 18.1046 13.8954 19 15 19C16.1046 19 17 18.1046 17 17C17 15.8954 16.1046 15 15 15Z" fill="currentColor"/>
+    <path d="M10 4C12.2091 4 14 5.79086 14 8C14 10.2091 12.2091 12 10 12C7.79086 12 6 10.2091 6 8C6 5.79086 7.79086 4 10 4ZM10 6C8.89543 6 8 6.89543 8 8C8 9.10457 8.89543 10 10 10C11.1046 10 12 9.10457 12 8C12 6.89543 11.1046 6 10 6Z" fill="currentColor"/>
+    </svg>
+  }
+  @case ('location-off') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 12.5C12.4125 12.5 12.7656 12.3531 13.0594 12.0594C13.3531 11.7656 13.5 11.4125 13.5 11C13.5 10.5875 13.3531 10.2344 13.0594 9.94063C12.7656 9.64687 12.4125 9.5 12 9.5C11.5875 9.5 11.2344 9.64687 10.9406 9.94063C10.6469 10.2344 10.5 10.5875 10.5 11C10.5 11.4125 10.6469 11.7656 10.9406 12.0594C11.2344 12.3531 11.5875 12.5 12 12.5ZM12 18.0125C13.525 16.6125 14.6562 15.3406 15.3938 14.1969C16.1313 13.0531 16.5 12.0375 16.5 11.15C16.5 9.7875 16.0656 8.67188 15.1969 7.80312C14.3281 6.93438 13.2625 6.5 12 6.5C10.7375 6.5 9.67188 6.93438 8.80312 7.80312C7.93438 8.67188 7.5 9.7875 7.5 11.15C7.5 12.0375 7.86875 13.0531 8.60625 14.1969C9.34375 15.3406 10.475 16.6125 12 18.0125ZM12 20C9.9875 18.2875 8.48438 16.6969 7.49063 15.2281C6.49688 13.7594 6 12.4 6 11.15C6 9.275 6.60312 7.78125 7.80938 6.66875C9.01563 5.55625 10.4125 5 12 5C13.5875 5 14.9844 5.55625 16.1906 6.66875C17.3969 7.78125 18 9.275 18 11.15C18 12.4 17.5031 13.7594 16.5094 15.2281C15.5156 16.6969 14.0125 18.2875 12 20Z" fill="currentColor"/>
+    </svg>
+  }
+  @case ('location-on') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 12.5C12.4125 12.5 12.7656 12.3531 13.0594 12.0594C13.3531 11.7656 13.5 11.4125 13.5 11C13.5 10.5875 13.3531 10.2344 13.0594 9.94063C12.7656 9.64687 12.4125 9.5 12 9.5C11.5875 9.5 11.2344 9.64687 10.9406 9.94063C10.6469 10.2344 10.5 10.5875 10.5 11C10.5 11.4125 10.6469 11.7656 10.9406 12.0594C11.2344 12.3531 11.5875 12.5 12 12.5ZM12 20C9.9875 18.2875 8.48438 16.6969 7.49063 15.2281C6.49688 13.7594 6 12.4 6 11.15C6 9.275 6.60312 7.78125 7.80938 6.66875C9.01563 5.55625 10.4125 5 12 5C13.5875 5 14.9844 5.55625 16.1906 6.66875C17.3969 7.78125 18 9.275 18 11.15C18 12.4 17.5031 13.7594 16.5094 15.2281C15.5156 16.6969 14.0125 18.2875 12 20Z" fill="currentColor"/>
+    </svg>
+  }
+  @case ('message') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="3" y="5" width="18" height="14" rx="1" stroke="currentColor" stroke-width="2"/>
+    <path d="M3 6L12 12L21 6" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('plus') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2"/>
+    <line x1="18.999" y1="12.0137" x2="4.99903" y2="12" stroke="currentColor" stroke-width="2"/>
+    </svg>
+  }
+  @case ('success') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4ZM11 12.1719L9.41406 10.5859L8 12L11 15L16 10L14.5859 8.58594L11 12.1719Z" fill="currentColor"/>
+    </svg>
+  }
+  @case ('support') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/>
+    <rect x="11" y="7" width="2" height="6" fill="currentColor"/>
+    <circle cx="12" cy="16" r="1" fill="currentColor"/>
+    </svg>
+  }
+  @case ('user') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="12" cy="8" r="3" stroke="currentColor" stroke-width="2"/>
+    <line x1="5" y1="20" x2="19" y2="20" stroke="currentColor" stroke-width="2"/>
+    <path d="M12 13C16.4183 13 20 16.5817 20 21H18C18 17.6863 15.3137 15 12 15C8.68629 15 6 17.6863 6 21H4C4 16.5817 7.58172 13 12 13Z" fill="currentColor"/>
+    </svg>
+  }
+  @case ('warning') {
+    <svg
+          class="fdk-icon__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          [style.width]="resolvedSize"
+          [style.height]="resolvedSize"
+          viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C7.58172 20 4 16.4183 4 12C4 7.58172 7.58172 4 12 4ZM11 16H13V10H11V16ZM12 7C11.4477 7 11 7.44772 11 8C11 8.55228 11.4477 9 12 9C12.5523 9 13 8.55228 13 8C13 7.44772 12.5523 7 12 7Z" fill="currentColor"/>
+    </svg>
+  }
+}
+`,
+      styles: [":host{display:inline-flex;flex:none;color:inherit;line-height:0;vertical-align:middle}.fdk-icon__svg{display:block;flex:none}\n"]
+    }]
+  }], null, {
+    name: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    size: [{
+      type: Input
+    }],
+    ariaLabel: [{
+      type: Input,
+      args: ["aria-label"]
+    }]
+  });
+})();
+var FdkAlertComponent = class _FdkAlertComponent {
+  constructor() {
+    this.variant = "success";
+  }
+  static {
+    this.\u0275fac = function FdkAlertComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkAlertComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkAlertComponent,
+      selectors: [["fdk-alert"]],
+      inputs: {
+        title: "title",
+        description: "description",
+        variant: "variant"
+      },
+      decls: 7,
+      vars: 7,
+      consts: [["role", "alert"], [1, "fdk-alert__icon", 3, "name", "size"], [1, "fdk-alert__content"], [1, "fdk-alert__title"], [1, "fdk-alert__description"]],
+      template: function FdkAlertComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "div", 0);
+          \u0275\u0275element(1, "fdk-icon", 1);
+          \u0275\u0275elementStart(2, "div", 2)(3, "div", 3);
+          \u0275\u0275text(4);
+          \u0275\u0275elementEnd();
+          \u0275\u0275elementStart(5, "div", 4);
+          \u0275\u0275text(6);
+          \u0275\u0275elementEnd()()();
+        }
+        if (rf & 2) {
+          \u0275\u0275classMapInterpolate1("fdk-alert fdk-alert--", ctx.variant, "");
+          \u0275\u0275advance();
+          \u0275\u0275property("name", ctx.variant)("size", 24);
+          \u0275\u0275advance(3);
+          \u0275\u0275textInterpolate(ctx.title);
+          \u0275\u0275advance(2);
+          \u0275\u0275textInterpolate(ctx.description);
+        }
+      },
+      dependencies: [FdkIconComponent],
+      styles: ["[_nghost-%COMP%]{display:block}.fdk-alert[_ngcontent-%COMP%]{display:flex;align-items:flex-start;gap:var(--fdk-spacing-xxs);width:100%;padding:var(--fdk-spacing-xs);border-radius:var(--fdk-radius-sm);box-sizing:border-box;font-family:var(--fdk-font-family-sans)}.fdk-alert--success[_ngcontent-%COMP%]{background-color:var(--fdk-color-semantic-success-subtle);color:var(--fdk-color-semantic-success)}.fdk-alert--error[_ngcontent-%COMP%]{background-color:var(--fdk-color-semantic-error-subtle);color:var(--fdk-color-semantic-error)}.fdk-alert--warning[_ngcontent-%COMP%]{background-color:var(--fdk-color-semantic-warning-subtle);color:var(--fdk-color-semantic-warning)}.fdk-alert__icon[_ngcontent-%COMP%]{flex:none}.fdk-alert--success[_ngcontent-%COMP%]   .fdk-alert__icon[_ngcontent-%COMP%]{color:var(--fdk-color-semantic-success)}.fdk-alert--error[_ngcontent-%COMP%]   .fdk-alert__icon[_ngcontent-%COMP%]{color:var(--fdk-color-semantic-error)}.fdk-alert--warning[_ngcontent-%COMP%]   .fdk-alert__icon[_ngcontent-%COMP%]{color:var(--fdk-color-semantic-warning)}.fdk-alert__content[_ngcontent-%COMP%]{min-width:0}.fdk-alert__title[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small)}.fdk-alert__description[_ngcontent-%COMP%]{margin-top:var(--fdk-spacing-xxxs);font-size:var(--fdk-font-size-paragraph-s);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph-s)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkAlertComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-alert",
+      imports: [FdkIconComponent],
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<div\n  class="fdk-alert fdk-alert--{{ variant }}"\n  role="alert">\n  <fdk-icon\n    class="fdk-alert__icon"\n    [name]="variant"\n    [size]="24" />\n\n  <div class="fdk-alert__content">\n    <div class="fdk-alert__title">{{ title }}</div>\n    <div class="fdk-alert__description">{{ description }}</div>\n  </div>\n</div>\n',
+      styles: [":host{display:block}.fdk-alert{display:flex;align-items:flex-start;gap:var(--fdk-spacing-xxs);width:100%;padding:var(--fdk-spacing-xs);border-radius:var(--fdk-radius-sm);box-sizing:border-box;font-family:var(--fdk-font-family-sans)}.fdk-alert--success{background-color:var(--fdk-color-semantic-success-subtle);color:var(--fdk-color-semantic-success)}.fdk-alert--error{background-color:var(--fdk-color-semantic-error-subtle);color:var(--fdk-color-semantic-error)}.fdk-alert--warning{background-color:var(--fdk-color-semantic-warning-subtle);color:var(--fdk-color-semantic-warning)}.fdk-alert__icon{flex:none}.fdk-alert--success .fdk-alert__icon{color:var(--fdk-color-semantic-success)}.fdk-alert--error .fdk-alert__icon{color:var(--fdk-color-semantic-error)}.fdk-alert--warning .fdk-alert__icon{color:var(--fdk-color-semantic-warning)}.fdk-alert__content{min-width:0}.fdk-alert__title{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small)}.fdk-alert__description{margin-top:var(--fdk-spacing-xxxs);font-size:var(--fdk-font-size-paragraph-s);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph-s)}\n"]
+    }]
+  }], null, {
+    title: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    description: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    variant: [{
+      type: Input
+    }]
+  });
+})();
+var FdkButtonComponent = class _FdkButtonComponent {
+  constructor() {
+    this.variant = "primary";
+    this.type = "button";
+    this.width = "auto";
+    this.disabled = false;
+  }
+  static {
+    this.\u0275fac = function FdkButtonComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkButtonComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkButtonComponent,
+      selectors: [["fdk-button"]],
+      hostVars: 2,
+      hostBindings: function FdkButtonComponent_HostBindings(rf, ctx) {
+        if (rf & 2) {
+          \u0275\u0275classProp("fdk-button-host--full-width", ctx.width === "full");
+        }
+      },
+      inputs: {
+        variant: "variant",
+        type: "type",
+        width: "width",
+        disabled: [2, "disabled", "disabled", booleanAttribute]
+      },
+      ngContentSelectors: _c0,
+      decls: 2,
+      vars: 7,
+      consts: [[3, "disabled", "type"]],
+      template: function FdkButtonComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275projectionDef();
+          \u0275\u0275elementStart(0, "button", 0);
+          \u0275\u0275projection(1);
+          \u0275\u0275elementEnd();
+        }
+        if (rf & 2) {
+          \u0275\u0275classMapInterpolate1("fdk-button fdk-button--", ctx.variant, " fdk-type-label-large");
+          \u0275\u0275classProp("fdk-button--full-width", ctx.width === "full");
+          \u0275\u0275property("disabled", ctx.disabled)("type", ctx.type);
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:inline-block}.fdk-button-host--full-width[_nghost-%COMP%]{display:block;width:100%}.fdk-button[_ngcontent-%COMP%]{font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-label-large);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-large);text-align:center;border-radius:var(--fdk-radius-lg);padding:.5rem .688rem;border:1px solid transparent;cursor:pointer;box-sizing:border-box;width:auto}.fdk-button--full-width[_ngcontent-%COMP%]{width:100%}.fdk-button--primary[_ngcontent-%COMP%]{background-color:var(--fdk-color-accent);color:var(--fdk-color-text-inverted)}.fdk-button--primary[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-medium);color:var(--fdk-color-accent)}.fdk-button--primary[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-subtle);color:var(--fdk-color-accent)}.fdk-button--primary[_ngcontent-%COMP%]:disabled{background-color:var(--fdk-color-text-placeholder);color:var(--fdk-color-text-inverted);cursor:not-allowed}.fdk-button--secondary[_ngcontent-%COMP%]{background-color:transparent;color:var(--fdk-color-accent);border:1px solid var(--fdk-color-accent)}.fdk-button--secondary[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-button--secondary[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-button--secondary[_ngcontent-%COMP%]:disabled{background-color:transparent;color:var(--fdk-color-text-placeholder);border-color:var(--fdk-color-text-placeholder);cursor:not-allowed}.fdk-button--tertiary[_ngcontent-%COMP%]{background-color:transparent;color:var(--fdk-color-accent)}.fdk-button--tertiary[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-button--tertiary[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-button--tertiary[_ngcontent-%COMP%]:disabled{background-color:transparent;color:var(--fdk-color-text-placeholder);cursor:not-allowed}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkButtonComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-button",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      host: {
+        "[class.fdk-button-host--full-width]": "width === 'full'"
+      },
+      template: `<button
+  class="fdk-button fdk-button--{{ variant }} fdk-type-label-large"
+  [class.fdk-button--full-width]="width === 'full'"
+  [disabled]="disabled"
+  [type]="type">
+  <ng-content></ng-content>
+</button>
+`,
+      styles: [":host{display:inline-block}:host(.fdk-button-host--full-width){display:block;width:100%}.fdk-button{font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-label-large);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-large);text-align:center;border-radius:var(--fdk-radius-lg);padding:.5rem .688rem;border:1px solid transparent;cursor:pointer;box-sizing:border-box;width:auto}.fdk-button--full-width{width:100%}.fdk-button--primary{background-color:var(--fdk-color-accent);color:var(--fdk-color-text-inverted)}.fdk-button--primary:hover{background-color:var(--fdk-color-accent-medium);color:var(--fdk-color-accent)}.fdk-button--primary:active{background-color:var(--fdk-color-accent-subtle);color:var(--fdk-color-accent)}.fdk-button--primary:disabled{background-color:var(--fdk-color-text-placeholder);color:var(--fdk-color-text-inverted);cursor:not-allowed}.fdk-button--secondary{background-color:transparent;color:var(--fdk-color-accent);border:1px solid var(--fdk-color-accent)}.fdk-button--secondary:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-button--secondary:active{background-color:var(--fdk-color-accent-medium)}.fdk-button--secondary:disabled{background-color:transparent;color:var(--fdk-color-text-placeholder);border-color:var(--fdk-color-text-placeholder);cursor:not-allowed}.fdk-button--tertiary{background-color:transparent;color:var(--fdk-color-accent)}.fdk-button--tertiary:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-button--tertiary:active{background-color:var(--fdk-color-accent-medium)}.fdk-button--tertiary:disabled{background-color:transparent;color:var(--fdk-color-text-placeholder);cursor:not-allowed}\n"]
+    }]
+  }], null, {
+    variant: [{
+      type: Input
+    }],
+    type: [{
+      type: Input
+    }],
+    width: [{
+      type: Input
+    }],
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }]
+  });
+})();
+var FdkInitialsComponent = class _FdkInitialsComponent {
+  constructor() {
+    this.initials = "";
+    this.size = "small";
+  }
+  get displayedInitials() {
+    return this.initials.slice(0, 2).toUpperCase();
+  }
+  static {
+    this.\u0275fac = function FdkInitialsComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkInitialsComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkInitialsComponent,
+      selectors: [["fdk-initials"]],
+      inputs: {
+        initials: "initials",
+        size: "size"
+      },
+      decls: 2,
+      vars: 4,
+      template: function FdkInitialsComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "div");
+          \u0275\u0275text(1);
+          \u0275\u0275elementEnd();
+        }
+        if (rf & 2) {
+          \u0275\u0275classMapInterpolate1("fdk-initials fdk-initials--", ctx.size, "");
+          \u0275\u0275advance();
+          \u0275\u0275textInterpolate1(" ", ctx.displayedInitials, "\n");
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:inline-flex;flex:none}.fdk-initials[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:center;box-sizing:border-box;border-radius:var(--fdk-radius-full);background-color:var(--fdk-color-accent);color:var(--fdk-color-text-inverted);font-family:var(--fdk-font-family-sans);font-weight:var(--fdk-font-weight-bold)}.fdk-initials--small[_ngcontent-%COMP%]{width:2rem;height:2rem;font-size:var(--fdk-font-size-label-small);line-height:var(--fdk-line-height-label-small)}.fdk-initials--large[_ngcontent-%COMP%]{width:3.5rem;height:3.5rem;font-size:var(--fdk-font-size-heading-1);line-height:var(--fdk-line-height-heading-1)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkInitialsComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-initials",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<div class="fdk-initials fdk-initials--{{ size }}">\n  {{ displayedInitials }}\n</div>\n',
+      styles: [":host{display:inline-flex;flex:none}.fdk-initials{display:flex;align-items:center;justify-content:center;box-sizing:border-box;border-radius:var(--fdk-radius-full);background-color:var(--fdk-color-accent);color:var(--fdk-color-text-inverted);font-family:var(--fdk-font-family-sans);font-weight:var(--fdk-font-weight-bold)}.fdk-initials--small{width:2rem;height:2rem;font-size:var(--fdk-font-size-label-small);line-height:var(--fdk-line-height-label-small)}.fdk-initials--large{width:3.5rem;height:3.5rem;font-size:var(--fdk-font-size-heading-1);line-height:var(--fdk-line-height-heading-1)}\n"]
+    }]
+  }], null, {
+    initials: [{
+      type: Input
+    }],
+    size: [{
+      type: Input
+    }]
+  });
+})();
+var FdkCardComponent = class _FdkCardComponent {
+  constructor() {
+    this.initials = "";
+    this.variant = "select";
+    this.selected = false;
+    this.logoLoadFailed = false;
+    this.logoUrl = "";
+  }
+  set logo(value) {
+    this.logoUrl = value;
+    this.logoLoadFailed = false;
+  }
+  get logo() {
+    return this.logoUrl;
+  }
+  handleLogoError() {
+    this.logoLoadFailed = true;
+  }
+  static {
+    this.\u0275fac = function FdkCardComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkCardComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkCardComponent,
+      selectors: [["fdk-card"]],
+      inputs: {
+        title: "title",
+        initials: "initials",
+        variant: "variant",
+        selected: [2, "selected", "selected", booleanAttribute],
+        logo: "logo"
+      },
+      decls: 10,
+      vars: 9,
+      consts: [[1, "fdk-card__header"], ["alt", "", 1, "fdk-card__logo", 3, "src"], ["size", "small", 3, "initials"], [1, "fdk-card__title"], [1, "fdk-card__selected-indicator"], [1, "fdk-card__action"], [1, "fdk-card__sign-in"], ["alt", "", 1, "fdk-card__logo", 3, "error", "src"], ["name", "checkmark", "size", "24"], ["name", "chevron-right", "size", "24"], ["name", "plus", "size", "24"]],
+      template: function FdkCardComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "div")(1, "div", 0);
+          \u0275\u0275template(2, FdkCardComponent_Conditional_2_Template, 1, 1, "img", 1)(3, FdkCardComponent_Conditional_3_Template, 1, 1, "fdk-initials", 2);
+          \u0275\u0275elementStart(4, "div", 3);
+          \u0275\u0275text(5);
+          \u0275\u0275elementEnd()();
+          \u0275\u0275template(6, FdkCardComponent_Conditional_6_Template, 2, 0, "div", 4)(7, FdkCardComponent_Case_7_Template, 2, 0, "div", 5)(8, FdkCardComponent_Case_8_Template, 2, 0, "div", 5)(9, FdkCardComponent_Case_9_Template, 3, 0, "div", 6);
+          \u0275\u0275elementEnd();
+        }
+        if (rf & 2) {
+          let tmp_5_0;
+          \u0275\u0275classMapInterpolate1("fdk-card fdk-card--", ctx.variant, "");
+          \u0275\u0275classProp("fdk-card--selected", ctx.selected);
+          \u0275\u0275advance(2);
+          \u0275\u0275conditional(ctx.logo && !ctx.logoLoadFailed ? 2 : ctx.initials ? 3 : -1);
+          \u0275\u0275advance(3);
+          \u0275\u0275textInterpolate(ctx.title);
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.selected ? 6 : -1);
+          \u0275\u0275advance();
+          \u0275\u0275conditional((tmp_5_0 = ctx.variant) === "more" ? 7 : tmp_5_0 === "add" ? 8 : tmp_5_0 === "signIn" ? 9 : -1);
+        }
+      },
+      dependencies: [FdkIconComponent, FdkInitialsComponent],
+      styles: ["[_nghost-%COMP%]{display:block;width:100%;min-width:0}.fdk-card[_ngcontent-%COMP%]{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);font-family:var(--fdk-font-family-sans);display:flex;justify-content:space-between;cursor:pointer;align-items:center}.fdk-card__header[_ngcontent-%COMP%]{display:flex;align-items:center;gap:var(--fdk-spacing-m);min-width:0}.fdk-card__logo[_ngcontent-%COMP%]{width:2rem;height:2rem;flex:0 0 2rem;object-fit:contain}.fdk-card__title[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary);overflow-wrap:anywhere}.fdk-card--selected[_ngcontent-%COMP%]{border-color:var(--fdk-color-accent);background-color:var(--fdk-color-accent-subtle)}.fdk-card__selected-indicator[_ngcontent-%COMP%]{color:var(--fdk-color-accent)}.fdk-card__sign-in[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-accent);flex:none;white-space:nowrap}.fdk-card--signIn[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--signIn[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--select[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--select[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--add[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--add[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--more[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--more[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--readOnly[_ngcontent-%COMP%]{cursor:default;border:none;background-color:var(--fdk-color-neutrals-hover)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkCardComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-card",
+      imports: [FdkIconComponent, FdkInitialsComponent],
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<div\n  class="fdk-card fdk-card--{{ variant }}"\n  [class.fdk-card--selected]="selected"\n>\n  <div class="fdk-card__header">\n    @if (logo && !logoLoadFailed) {\n      <img\n        class="fdk-card__logo"\n        [src]="logo"\n        alt=""\n        (error)="handleLogoError()"\n      />\n    } @else if (initials) {\n      <fdk-initials [initials]="initials" size="small" />\n    }\n    <div class="fdk-card__title">{{ title }}</div>\n  </div>\n  @if (selected) {\n    <div class="fdk-card__selected-indicator">\n      <fdk-icon name="checkmark" size="24"></fdk-icon>\n    </div>\n  }\n  @switch (variant) {\n    @case ("more") {\n      <div class="fdk-card__action">\n        <fdk-icon name="chevron-right" size="24" />\n      </div>\n    }\n\n    @case ("add") {\n      <div class="fdk-card__action">\n        <fdk-icon name="plus" size="24" />\n      </div>\n    }\n    @case ("signIn") {\n      <div class="fdk-card__sign-in">\n        <span>Sign In</span>\n      </div>\n    }\n  }\n</div>\n',
+      styles: [":host{display:block;width:100%;min-width:0}.fdk-card{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);font-family:var(--fdk-font-family-sans);display:flex;justify-content:space-between;cursor:pointer;align-items:center}.fdk-card__header{display:flex;align-items:center;gap:var(--fdk-spacing-m);min-width:0}.fdk-card__logo{width:2rem;height:2rem;flex:0 0 2rem;object-fit:contain}.fdk-card__title{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary);overflow-wrap:anywhere}.fdk-card--selected{border-color:var(--fdk-color-accent);background-color:var(--fdk-color-accent-subtle)}.fdk-card__selected-indicator{color:var(--fdk-color-accent)}.fdk-card__sign-in{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-accent);flex:none;white-space:nowrap}.fdk-card--signIn:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--signIn:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--select:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--select:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--add:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--add:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--more:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--more:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--readOnly{cursor:default;border:none;background-color:var(--fdk-color-neutrals-hover)}\n"]
+    }]
+  }], null, {
+    title: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    initials: [{
+      type: Input
+    }],
+    variant: [{
+      type: Input
+    }],
+    selected: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    logo: [{
+      type: Input
+    }]
+  });
+})();
+var nextCheckboxId = 0;
+var FdkCheckboxComponent = class _FdkCheckboxComponent {
+  constructor() {
+    this.checked = false;
+    this.indeterminate = false;
+    this.value = "";
+    this.disabled = false;
+    this.checkboxId = `fdk-checkbox-${nextCheckboxId++}`;
+    this.contentId = `${this.checkboxId}-content`;
+  }
+  static {
+    this.\u0275fac = function FdkCheckboxComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkCheckboxComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkCheckboxComponent,
+      selectors: [["fdk-checkbox"]],
+      inputs: {
+        checked: [2, "checked", "checked", booleanAttribute],
+        indeterminate: [2, "indeterminate", "indeterminate", booleanAttribute],
+        value: "value",
+        disabled: [2, "disabled", "disabled", booleanAttribute]
+      },
+      ngContentSelectors: _c0,
+      decls: 4,
+      vars: 7,
+      consts: [[1, "fdk-checkbox"], ["type", "checkbox", 1, "fdk-checkbox__control", 3, "checked", "disabled", "indeterminate", "id", "value"], [1, "fdk-checkbox__content", 3, "id"]],
+      template: function FdkCheckboxComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275projectionDef();
+          \u0275\u0275elementStart(0, "div", 0);
+          \u0275\u0275element(1, "input", 1);
+          \u0275\u0275elementStart(2, "div", 2);
+          \u0275\u0275projection(3);
+          \u0275\u0275elementEnd()();
+        }
+        if (rf & 2) {
+          \u0275\u0275advance();
+          \u0275\u0275property("checked", ctx.checked)("disabled", ctx.disabled)("indeterminate", ctx.indeterminate)("id", ctx.checkboxId)("value", ctx.value);
+          \u0275\u0275attribute("aria-labelledby", ctx.contentId);
+          \u0275\u0275advance();
+          \u0275\u0275property("id", ctx.contentId);
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:block}.fdk-checkbox[_ngcontent-%COMP%]{display:flex;align-items:flex-start;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-checkbox__control[_ngcontent-%COMP%]{align-self:flex-start;flex:0 0 auto;width:1.125rem;height:1.125rem;margin:0;margin-block-start:.125rem;accent-color:var(--fdk-color-accent);cursor:pointer}.fdk-checkbox__control[_ngcontent-%COMP%]:focus-visible{outline:2px solid var(--fdk-color-accent);outline-offset:2px}.fdk-checkbox__content[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-paragraph-s);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary)}.fdk-checkbox__control[_ngcontent-%COMP%]:disabled{cursor:not-allowed;opacity:.6}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkCheckboxComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-checkbox",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<div class="fdk-checkbox">\n  <input\n    class="fdk-checkbox__control"\n    [checked]="checked"\n    [disabled]="disabled"\n    [indeterminate]="indeterminate"\n    [attr.aria-labelledby]="contentId"\n    [id]="checkboxId"\n    [value]="value"\n    type="checkbox" />\n\n  <div\n    class="fdk-checkbox__content"\n    [id]="contentId">\n    <ng-content />\n  </div>\n</div>\n',
+      styles: [":host{display:block}.fdk-checkbox{display:flex;align-items:flex-start;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-checkbox__control{align-self:flex-start;flex:0 0 auto;width:1.125rem;height:1.125rem;margin:0;margin-block-start:.125rem;accent-color:var(--fdk-color-accent);cursor:pointer}.fdk-checkbox__control:focus-visible{outline:2px solid var(--fdk-color-accent);outline-offset:2px}.fdk-checkbox__content{font-size:var(--fdk-font-size-paragraph-s);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary)}.fdk-checkbox__control:disabled{cursor:not-allowed;opacity:.6}\n"]
+    }]
+  }], null, {
+    checked: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    indeterminate: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    value: [{
+      type: Input
+    }],
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }]
+  });
+})();
+var nextUniqueId = 0;
+var FdkDialogTitleComponent = class _FdkDialogTitleComponent {
+  constructor() {
+    this.id = `fdk-dialog-title-${nextUniqueId++}`;
+  }
+  static {
+    this.\u0275fac = function FdkDialogTitleComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkDialogTitleComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkDialogTitleComponent,
+      selectors: [["fdk-dialog-title"]],
+      inputs: {
+        id: "id"
+      },
+      ngContentSelectors: _c0,
+      decls: 2,
+      vars: 1,
+      consts: [[1, "fdk-dialog-title", 3, "id"]],
+      template: function FdkDialogTitleComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275projectionDef();
+          \u0275\u0275elementStart(0, "h2", 0);
+          \u0275\u0275projection(1);
+          \u0275\u0275elementEnd();
+        }
+        if (rf & 2) {
+          \u0275\u0275property("id", ctx.id);
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:block;flex:none}.fdk-dialog-title[_ngcontent-%COMP%]{margin:0;color:var(--fdk-color-text-primary);font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-heading-3);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-heading-3);padding-bottom:var(--fdk-spacing-xxs)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkDialogTitleComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-dialog-title",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<h2\n  class="fdk-dialog-title"\n  [id]="id">\n  <ng-content></ng-content>\n</h2>\n',
+      styles: [":host{display:block;flex:none}.fdk-dialog-title{margin:0;color:var(--fdk-color-text-primary);font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-heading-3);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-heading-3);padding-bottom:var(--fdk-spacing-xxs)}\n"]
+    }]
+  }], null, {
+    id: [{
+      type: Input
+    }]
+  });
+})();
+var FdkDialogComponent = class _FdkDialogComponent {
+  constructor(document2, elementRef) {
+    this.document = document2;
+    this.elementRef = elementRef;
+    this.ariaLabel = "";
+    this.open = false;
+    this.openChange = output();
+  }
+  set overlay(overlay) {
+    this.overlayElement = overlay?.nativeElement;
+    if (!this.overlayElement || !this.document.body) {
+      return;
+    }
+    this.copyDesignTokens(this.overlayElement);
+    this.document.body.appendChild(this.overlayElement);
+  }
+  ngOnDestroy() {
+    this.overlayElement?.remove();
+  }
+  onOverlayClick(event) {
+    if (event.target === event.currentTarget) {
+      this.openChange.emit(false);
+    }
+  }
+  copyDesignTokens(overlay) {
+    const defaultView = this.document.defaultView;
+    if (!defaultView) {
+      return;
+    }
+    const styles = defaultView.getComputedStyle(this.elementRef.nativeElement);
+    for (let index = 0; index < styles.length; index += 1) {
+      const property = styles.item(index);
+      if (property.startsWith("--fdk-")) {
+        overlay.style.setProperty(property, styles.getPropertyValue(property));
+      }
+    }
+  }
+  static {
+    this.\u0275fac = function FdkDialogComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkDialogComponent)(\u0275\u0275directiveInject(DOCUMENT2), \u0275\u0275directiveInject(ElementRef));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkDialogComponent,
+      selectors: [["fdk-dialog"]],
+      contentQueries: function FdkDialogComponent_ContentQueries(rf, ctx, dirIndex) {
+        if (rf & 1) {
+          \u0275\u0275contentQuery(dirIndex, FdkDialogTitleComponent, 5);
+        }
+        if (rf & 2) {
+          let _t;
+          \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.dialogTitle = _t.first);
+        }
+      },
+      viewQuery: function FdkDialogComponent_Query(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275viewQuery(_c1, 5);
+        }
+        if (rf & 2) {
+          let _t;
+          \u0275\u0275queryRefresh(_t = \u0275\u0275loadQuery()) && (ctx.overlay = _t.first);
+        }
+      },
+      inputs: {
+        ariaLabel: "ariaLabel",
+        open: [2, "open", "open", booleanAttribute]
+      },
+      outputs: {
+        openChange: "openChange"
+      },
+      ngContentSelectors: _c0,
+      decls: 1,
+      vars: 1,
+      consts: [["overlay", ""], [1, "fdk-dialog-overlay"], [1, "fdk-dialog-overlay", 3, "click"], ["role", "dialog", "aria-modal", "true", 1, "fdk-dialog"]],
+      template: function FdkDialogComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275projectionDef();
+          \u0275\u0275template(0, FdkDialogComponent_Conditional_0_Template, 4, 2, "div", 1);
+        }
+        if (rf & 2) {
+          \u0275\u0275conditional(ctx.open ? 0 : -1);
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:block}.fdk-dialog-overlay[_ngcontent-%COMP%]{position:fixed;z-index:1000;inset:0;display:grid;place-items:center;box-sizing:border-box;padding:var(--fdk-spacing-s);background-color:var(--fdk-color-neutrals-overlay)}.fdk-dialog[_ngcontent-%COMP%]{display:flex;flex-direction:column;width:min(24.375rem,100%);max-height:100%;overflow:hidden;box-sizing:border-box;padding:var(--fdk-spacing-l) var(--fdk-spacing-m) var(--fdk-spacing-m) var(--fdk-spacing-m);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);background-color:var(--fdk-color-neutrals-background);box-shadow:0 1rem 2rem #00000029;color:var(--fdk-color-text-primary);font-family:var(--fdk-font-family-sans)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkDialogComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-dialog",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '@if (open) {\n  <div\n    #overlay\n    class="fdk-dialog-overlay"\n    (click)="onOverlayClick($event)">\n    <section\n      class="fdk-dialog"\n      role="dialog"\n      aria-modal="true"\n      [attr.aria-label]="ariaLabel || null"\n      [attr.aria-labelledby]="ariaLabel ? null : dialogTitle?.id">\n      <ng-content></ng-content>\n    </section>\n  </div>\n}\n',
+      styles: [":host{display:block}.fdk-dialog-overlay{position:fixed;z-index:1000;inset:0;display:grid;place-items:center;box-sizing:border-box;padding:var(--fdk-spacing-s);background-color:var(--fdk-color-neutrals-overlay)}.fdk-dialog{display:flex;flex-direction:column;width:min(24.375rem,100%);max-height:100%;overflow:hidden;box-sizing:border-box;padding:var(--fdk-spacing-l) var(--fdk-spacing-m) var(--fdk-spacing-m) var(--fdk-spacing-m);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);background-color:var(--fdk-color-neutrals-background);box-shadow:0 1rem 2rem #00000029;color:var(--fdk-color-text-primary);font-family:var(--fdk-font-family-sans)}\n"]
+    }]
+  }], () => [{
+    type: Document,
+    decorators: [{
+      type: Inject,
+      args: [DOCUMENT2]
+    }]
+  }, {
+    type: ElementRef
+  }], {
+    ariaLabel: [{
+      type: Input
+    }],
+    open: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    dialogTitle: [{
+      type: ContentChild,
+      args: [FdkDialogTitleComponent]
+    }],
+    overlay: [{
+      type: ViewChild,
+      args: ["overlay"]
+    }]
+  });
+})();
+var FdkDialogActionsComponent = class _FdkDialogActionsComponent {
+  static {
+    this.\u0275fac = function FdkDialogActionsComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkDialogActionsComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkDialogActionsComponent,
+      selectors: [["fdk-dialog-actions"]],
+      ngContentSelectors: _c0,
+      decls: 2,
+      vars: 0,
+      consts: [[1, "fdk-dialog-actions"]],
+      template: function FdkDialogActionsComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275projectionDef();
+          \u0275\u0275elementStart(0, "div", 0);
+          \u0275\u0275projection(1);
+          \u0275\u0275elementEnd();
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:block;flex:none}.fdk-dialog-actions[_ngcontent-%COMP%]{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:var(--fdk-spacing-s)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkDialogActionsComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-dialog-actions",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<div class="fdk-dialog-actions">\n  <ng-content></ng-content>\n</div>\n',
+      styles: [":host{display:block;flex:none}.fdk-dialog-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:var(--fdk-spacing-s)}\n"]
+    }]
+  }], null, null);
+})();
+var FdkDialogContentComponent = class _FdkDialogContentComponent {
+  static {
+    this.\u0275fac = function FdkDialogContentComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkDialogContentComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkDialogContentComponent,
+      selectors: [["fdk-dialog-content"]],
+      ngContentSelectors: _c0,
+      decls: 2,
+      vars: 0,
+      consts: [[1, "fdk-dialog-content"]],
+      template: function FdkDialogContentComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275projectionDef();
+          \u0275\u0275elementStart(0, "div", 0);
+          \u0275\u0275projection(1);
+          \u0275\u0275elementEnd();
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:block;flex:1 1 auto;min-height:0;overflow-y:auto}.fdk-dialog-content[_ngcontent-%COMP%]{color:var(--fdk-color-text-secondary);font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-paragraph);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph);padding-bottom:var(--fdk-spacing-m)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkDialogContentComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-dialog-content",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<div class="fdk-dialog-content">\n  <ng-content></ng-content>\n</div>\n',
+      styles: [":host{display:block;flex:1 1 auto;min-height:0;overflow-y:auto}.fdk-dialog-content{color:var(--fdk-color-text-secondary);font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-paragraph);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph);padding-bottom:var(--fdk-spacing-m)}\n"]
+    }]
+  }], null, null);
+})();
+var FdkLogoComponent = class _FdkLogoComponent {
+  constructor() {
+    this.ariaLabel = "Fasten";
+  }
+  static {
+    this.\u0275fac = function FdkLogoComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkLogoComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkLogoComponent,
+      selectors: [["fdk-logo"]],
+      inputs: {
+        ariaLabel: [0, "aria-label", "ariaLabel"]
+      },
+      decls: 3,
+      vars: 2,
+      consts: [[1, "fdk-logo"], ["src", "assets/logos/fasten-light.svg", 1, "fdk-logo__image", "fdk-logo__image--light"], ["src", "assets/logos/fasten-dark.svg", 1, "fdk-logo__image", "fdk-logo__image--dark"]],
+      template: function FdkLogoComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "span", 0);
+          \u0275\u0275element(1, "img", 1)(2, "img", 2);
+          \u0275\u0275elementEnd();
+        }
+        if (rf & 2) {
+          \u0275\u0275advance();
+          \u0275\u0275attribute("alt", ctx.ariaLabel);
+          \u0275\u0275advance();
+          \u0275\u0275attribute("alt", ctx.ariaLabel);
+        }
+      },
+      styles: ['[_nghost-%COMP%]{display:inline-block;max-width:100%;vertical-align:middle}.fdk-logo[_ngcontent-%COMP%]{display:block}.fdk-logo__image[_ngcontent-%COMP%]{display:block;width:100%;height:auto}.fdk-logo__image--dark[_ngcontent-%COMP%]{display:none}[data-fdk-theme="dark"][_nghost-%COMP%]   .fdk-logo__image--light[_ngcontent-%COMP%], [data-fdk-theme="dark"]   [_nghost-%COMP%]   .fdk-logo__image--light[_ngcontent-%COMP%], .fdk-theme-dark[_nghost-%COMP%]   .fdk-logo__image--light[_ngcontent-%COMP%], .fdk-theme-dark   [_nghost-%COMP%]   .fdk-logo__image--light[_ngcontent-%COMP%]{display:none}[data-fdk-theme="dark"][_nghost-%COMP%]   .fdk-logo__image--dark[_ngcontent-%COMP%], [data-fdk-theme="dark"]   [_nghost-%COMP%]   .fdk-logo__image--dark[_ngcontent-%COMP%], .fdk-theme-dark[_nghost-%COMP%]   .fdk-logo__image--dark[_ngcontent-%COMP%], .fdk-theme-dark   [_nghost-%COMP%]   .fdk-logo__image--dark[_ngcontent-%COMP%]{display:block}'],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkLogoComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-logo",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<span class="fdk-logo">\n  <img\n    class="fdk-logo__image fdk-logo__image--light"\n    src="assets/logos/fasten-light.svg"\n    [attr.alt]="ariaLabel" />\n  <img\n    class="fdk-logo__image fdk-logo__image--dark"\n    src="assets/logos/fasten-dark.svg"\n    [attr.alt]="ariaLabel" />\n</span>\n',
+      styles: [':host{display:inline-block;max-width:100%;vertical-align:middle}.fdk-logo{display:block}.fdk-logo__image{display:block;width:100%;height:auto}.fdk-logo__image--dark{display:none}:host-context([data-fdk-theme="dark"]) .fdk-logo__image--light,:host-context(.fdk-theme-dark) .fdk-logo__image--light{display:none}:host-context([data-fdk-theme="dark"]) .fdk-logo__image--dark,:host-context(.fdk-theme-dark) .fdk-logo__image--dark{display:block}\n']
+    }]
+  }], null, {
+    ariaLabel: [{
+      type: Input,
+      args: ["aria-label"]
+    }]
+  });
+})();
+var FdkFooterComponent = class _FdkFooterComponent {
+  static {
+    this.\u0275fac = function FdkFooterComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkFooterComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkFooterComponent,
+      selectors: [["fdk-footer"]],
+      decls: 4,
+      vars: 0,
+      consts: [[1, "fdk-footer"]],
+      template: function FdkFooterComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "div", 0)(1, "span");
+          \u0275\u0275text(2, "powered by");
+          \u0275\u0275elementEnd();
+          \u0275\u0275element(3, "fdk-logo");
+          \u0275\u0275elementEnd();
+        }
+      },
+      dependencies: [FdkLogoComponent],
+      styles: [".fdk-footer[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:center;gap:var(--fdk-spacing-xxxs);padding-top:var(--fdk-spacing-m);padding-bottom:1.125rem;color:var(--fdk-color-text-secondary);font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-paragraph-xs);line-height:var(--fdk-line-height-paragraph-xs);font-weight:var(--fdk-font-weight-normal)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkFooterComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-footer",
+      imports: [FdkLogoComponent],
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<div class="fdk-footer">\n  <span>powered by</span>\n  <fdk-logo />\n</div>\n',
+      styles: [".fdk-footer{display:flex;align-items:center;justify-content:center;gap:var(--fdk-spacing-xxxs);padding-top:var(--fdk-spacing-m);padding-bottom:1.125rem;color:var(--fdk-color-text-secondary);font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-paragraph-xs);line-height:var(--fdk-line-height-paragraph-xs);font-weight:var(--fdk-font-weight-normal)}\n"]
+    }]
+  }], null, null);
+})();
+var FdkIconButtonComponent = class _FdkIconButtonComponent {
+  constructor() {
+    this.variant = "primary";
+  }
+  static {
+    this.\u0275fac = function FdkIconButtonComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkIconButtonComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkIconButtonComponent,
+      selectors: [["fdk-icon-button"]],
+      inputs: {
+        icon: "icon",
+        ariaLabel: [0, "aria-label", "ariaLabel"],
+        variant: "variant"
+      },
+      decls: 2,
+      vars: 6,
+      consts: [["type", "button"], [3, "name", "size"]],
+      template: function FdkIconButtonComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "button", 0);
+          \u0275\u0275element(1, "fdk-icon", 1);
+          \u0275\u0275elementEnd();
+        }
+        if (rf & 2) {
+          \u0275\u0275classMapInterpolate1("fdk-icon-button fdk-icon-button--", ctx.variant, "");
+          \u0275\u0275attribute("aria-label", ctx.ariaLabel);
+          \u0275\u0275advance();
+          \u0275\u0275property("name", ctx.icon)("size", 24);
+        }
+      },
+      dependencies: [FdkIconComponent],
+      styles: [".fdk-icon-button[_ngcontent-%COMP%]{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:3rem;height:3rem;background-color:transparent;border:none;border-radius:var(--fdk-border-radius-large);cursor:pointer}.fdk-icon-button--primary[_ngcontent-%COMP%]{color:var(--fdk-color-accent)}.fdk-icon-button--secondary[_ngcontent-%COMP%]{color:var(--fdk-color-text-primary)}.fdk-icon-button[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-icon-button[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkIconButtonComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-icon-button",
+      imports: [FdkIconComponent],
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<button\n  class="fdk-icon-button fdk-icon-button--{{ variant }}"\n  [attr.aria-label]="ariaLabel"\n  type="button">\n  <fdk-icon\n    [name]="icon"\n    [size]="24" />\n</button>\n',
+      styles: [".fdk-icon-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:3rem;height:3rem;background-color:transparent;border:none;border-radius:var(--fdk-border-radius-large);cursor:pointer}.fdk-icon-button--primary{color:var(--fdk-color-accent)}.fdk-icon-button--secondary{color:var(--fdk-color-text-primary)}.fdk-icon-button:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-icon-button:active{background-color:var(--fdk-color-accent-medium)}\n"]
+    }]
+  }], null, {
+    icon: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    ariaLabel: [{
+      type: Input,
+      args: [{
+        alias: "aria-label",
+        required: true
+      }]
+    }],
+    variant: [{
+      type: Input
+    }]
+  });
+})();
+var FdkHeaderComponent = class _FdkHeaderComponent {
+  constructor() {
+    this._logoUrl = null;
+    this.logoAlt = "";
+    this.name = "";
+    this.showBackButton = false;
+    this.showReportIssueButton = true;
+    this.showProfileButton = false;
+    this.showCloseButton = true;
+    this.testMode = false;
+    this.testModeText = "You are using Fasten in test mode";
+    this.back = new EventEmitter();
+    this.reportIssue = new EventEmitter();
+    this.profile = new EventEmitter();
+    this.close = new EventEmitter();
+    this.logoIsWide = false;
+  }
+  get logoUrl() {
+    return this._logoUrl;
+  }
+  set logoUrl(value) {
+    this._logoUrl = value;
+    this.logoIsWide = false;
+  }
+  handleLogoLoad(event) {
+    const logo = event.target;
+    console.log("Logo loaded:", logo.naturalWidth, logo.naturalHeight);
+    this.logoIsWide = logo.naturalWidth > logo.naturalHeight;
+  }
+  handleLogoError() {
+    this.logoIsWide = false;
+  }
+  static {
+    this.\u0275fac = function FdkHeaderComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkHeaderComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkHeaderComponent,
+      selectors: [["fdk-header"]],
+      inputs: {
+        logoUrl: "logoUrl",
+        logoAlt: "logoAlt",
+        name: "name",
+        showBackButton: [2, "showBackButton", "showBackButton", booleanAttribute],
+        showReportIssueButton: [2, "showReportIssueButton", "showReportIssueButton", booleanAttribute],
+        showProfileButton: [2, "showProfileButton", "showProfileButton", booleanAttribute],
+        showCloseButton: [2, "showCloseButton", "showCloseButton", booleanAttribute],
+        testMode: [2, "testMode", "testMode", booleanAttribute],
+        testModeText: "testModeText"
+      },
+      outputs: {
+        back: "back",
+        reportIssue: "reportIssue",
+        profile: "profile",
+        close: "close"
+      },
+      decls: 12,
+      vars: 8,
+      consts: [[1, "fdk-header"], ["role", "status", 1, "fdk-header__test-mode"], [1, "fdk-header__main"], [1, "fdk-header__leading-brand"], [1, "fdk-header__leading"], [1, "fdk-header__brand"], [1, "fdk-header__logo", 3, "src", "alt"], [1, "fdk-header__name"], [1, "fdk-header__actions"], ["icon", "support", "aria-label", "Report an issue", "variant", "secondary"], ["icon", "user", "aria-label", "Open profile", "variant", "secondary"], ["icon", "cross", "aria-label", "Close", "variant", "secondary"], ["icon", "chevron-left", "aria-label", "Go back", "variant", "secondary", 3, "click"], [1, "fdk-header__logo", 3, "load", "error", "src", "alt"], ["icon", "support", "aria-label", "Report an issue", "variant", "secondary", 3, "click"], ["icon", "user", "aria-label", "Open profile", "variant", "secondary", 3, "click"], ["icon", "cross", "aria-label", "Close", "variant", "secondary", 3, "click"]],
+      template: function FdkHeaderComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "header", 0);
+          \u0275\u0275template(1, FdkHeaderComponent_Conditional_1_Template, 3, 1, "div", 1);
+          \u0275\u0275elementStart(2, "div", 2)(3, "div", 3);
+          \u0275\u0275template(4, FdkHeaderComponent_Conditional_4_Template, 2, 0, "div", 4);
+          \u0275\u0275elementStart(5, "div", 5);
+          \u0275\u0275template(6, FdkHeaderComponent_Conditional_6_Template, 1, 2, "img", 6)(7, FdkHeaderComponent_Conditional_7_Template, 2, 1, "span", 7);
+          \u0275\u0275elementEnd()();
+          \u0275\u0275elementStart(8, "div", 8);
+          \u0275\u0275template(9, FdkHeaderComponent_Conditional_9_Template, 1, 0, "fdk-icon-button", 9)(10, FdkHeaderComponent_Conditional_10_Template, 1, 0, "fdk-icon-button", 10)(11, FdkHeaderComponent_Conditional_11_Template, 1, 0, "fdk-icon-button", 11);
+          \u0275\u0275elementEnd()()();
+        }
+        if (rf & 2) {
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.testMode ? 1 : -1);
+          \u0275\u0275advance(3);
+          \u0275\u0275conditional(ctx.showBackButton ? 4 : -1);
+          \u0275\u0275advance();
+          \u0275\u0275classProp("fdk-header__brand--wide", ctx.logoIsWide);
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.logoUrl ? 6 : ctx.name ? 7 : -1);
+          \u0275\u0275advance(3);
+          \u0275\u0275conditional(ctx.showReportIssueButton ? 9 : -1);
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.showProfileButton ? 10 : -1);
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.showCloseButton ? 11 : -1);
+        }
+      },
+      dependencies: [FdkIconButtonComponent],
+      styles: ["[_nghost-%COMP%]{display:block;width:100%}.fdk-header[_ngcontent-%COMP%]{width:100%;box-sizing:border-box;color:var(--fdk-color-text-primary);background-color:transparent;font-family:var(--fdk-font-family-sans)}.fdk-header__test-mode[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;padding:var(--fdk-spacing-xxs) var(--fdk-spacing-s);color:var(--fdk-color-text-inverted);background-color:var(--fdk-color-semantic-error);font-size:var(--fdk-font-size-paragraph-small);line-height:var(--fdk-line-height-paragraph-small);text-align:center}.fdk-header__main[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;width:100%;min-height:4.5rem;padding-inline-start:var(--fdk-spacing-m, 1.5rem)}.fdk-header__leading-brand[_ngcontent-%COMP%]{display:flex;align-items:center;gap:var(--fdk-spacing-xxxs, .25rem);justify-self:start}.fdk-header__leading[_ngcontent-%COMP%]{display:flex;justify-self:start}.fdk-header__brand[_ngcontent-%COMP%]{min-width:0;max-width:10rem;max-height:3rem}.fdk-header__logo[_ngcontent-%COMP%]{display:block;width:auto;max-width:100%;height:3rem;object-fit:contain}.fdk-header__brand--wide[_ngcontent-%COMP%], .fdk-header__brand--wide[_ngcontent-%COMP%]   .fdk-header__logo[_ngcontent-%COMP%]{max-height:2rem}.fdk-header__brand--wide[_ngcontent-%COMP%]   .fdk-header__logo[_ngcontent-%COMP%]{height:2rem}.fdk-header__name[_ngcontent-%COMP%]{display:block;overflow:hidden;font-size:var(--fdk-font-size-paragraph);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-paragraph);text-overflow:ellipsis;white-space:nowrap}.fdk-header__actions[_ngcontent-%COMP%]{display:flex;justify-self:end}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkHeaderComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-header",
+      imports: [FdkIconButtonComponent, FdkIconComponent],
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<header class="fdk-header">\n  @if (testMode) {\n    <div\n      class="fdk-header__test-mode"\n      role="status">\n      <span>{{ testModeText }}</span>\n    </div>\n  }\n\n  <div class="fdk-header__main">\n    <div class="fdk-header__leading-brand">\n      @if (showBackButton) {\n        <div class="fdk-header__leading">\n          <fdk-icon-button\n            icon="chevron-left"\n            aria-label="Go back"\n            variant="secondary"\n            (click)="back.emit()" />\n        </div>\n      }\n\n      <div\n        class="fdk-header__brand"\n        [class.fdk-header__brand--wide]="logoIsWide">\n        @if (logoUrl) {\n          <img\n            class="fdk-header__logo"\n            [src]="logoUrl"\n            [alt]="logoAlt || name"\n            (load)="handleLogoLoad($event)"\n            (error)="handleLogoError()" />\n        } @else if (name) {\n          <span class="fdk-header__name">{{ name }}</span>\n        }\n      </div>\n    </div>\n\n    <div class="fdk-header__actions">\n      @if (showReportIssueButton) {\n        <fdk-icon-button\n          icon="support"\n          aria-label="Report an issue"\n          variant="secondary"\n          (click)="reportIssue.emit()" />\n      }\n\n      @if (showProfileButton) {\n        <fdk-icon-button\n          icon="user"\n          aria-label="Open profile"\n          variant="secondary"\n          (click)="profile.emit()" />\n      }\n\n      @if (showCloseButton) {\n        <fdk-icon-button\n          icon="cross"\n          aria-label="Close"\n          variant="secondary"\n          (click)="close.emit()" />\n      }\n    </div>\n  </div>\n</header>\n',
+      styles: [":host{display:block;width:100%}.fdk-header{width:100%;box-sizing:border-box;color:var(--fdk-color-text-primary);background-color:transparent;font-family:var(--fdk-font-family-sans)}.fdk-header__test-mode{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;padding:var(--fdk-spacing-xxs) var(--fdk-spacing-s);color:var(--fdk-color-text-inverted);background-color:var(--fdk-color-semantic-error);font-size:var(--fdk-font-size-paragraph-small);line-height:var(--fdk-line-height-paragraph-small);text-align:center}.fdk-header__main{display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;width:100%;min-height:4.5rem;padding-inline-start:var(--fdk-spacing-m, 1.5rem)}.fdk-header__leading-brand{display:flex;align-items:center;gap:var(--fdk-spacing-xxxs, .25rem);justify-self:start}.fdk-header__leading{display:flex;justify-self:start}.fdk-header__brand{min-width:0;max-width:10rem;max-height:3rem}.fdk-header__logo{display:block;width:auto;max-width:100%;height:3rem;object-fit:contain}.fdk-header__brand--wide,.fdk-header__brand--wide .fdk-header__logo{max-height:2rem}.fdk-header__brand--wide .fdk-header__logo{height:2rem}.fdk-header__name{display:block;overflow:hidden;font-size:var(--fdk-font-size-paragraph);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-paragraph);text-overflow:ellipsis;white-space:nowrap}.fdk-header__actions{display:flex;justify-self:end}\n"]
+    }]
+  }], null, {
+    logoUrl: [{
+      type: Input
+    }],
+    logoAlt: [{
+      type: Input
+    }],
+    name: [{
+      type: Input
+    }],
+    showBackButton: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    showReportIssueButton: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    showProfileButton: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    showCloseButton: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    testMode: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    testModeText: [{
+      type: Input
+    }],
+    back: [{
+      type: Output
+    }],
+    reportIssue: [{
+      type: Output
+    }],
+    profile: [{
+      type: Output
+    }],
+    close: [{
+      type: Output
+    }]
+  });
+})();
+var nextInputId = 0;
+var FdkInputComponent = class _FdkInputComponent {
+  constructor(changeDetectorRef) {
+    this.changeDetectorRef = changeDetectorRef;
+    this.hideLabel = false;
+    this.placeholder = "";
+    this.value = "";
+    this.valueChange = new EventEmitter();
+    this.type = "text";
+    this.autocomplete = null;
+    this.list = null;
+    this.name = null;
+    this.minlength = null;
+    this.maxlength = null;
+    this.disabled = false;
+    this.required = false;
+    this.error = false;
+    this.errorMessage = "";
+    this.inputId = `fdk-input-${nextInputId++}`;
+    this.errorMessageId = `${this.inputId}-error`;
+    this.onChange = () => {
+    };
+    this.onTouched = () => {
+    };
+  }
+  get showErrorMessage() {
+    return this.error && this.errorMessage.trim().length > 0;
+  }
+  get describedBy() {
+    return this.showErrorMessage ? this.errorMessageId : null;
+  }
+  handleInput(event) {
+    const value = event.target.value;
+    this.value = value;
+    this.valueChange.emit(value);
+    this.onChange(value);
+  }
+  handleBlur() {
+    this.onTouched();
+  }
+  writeValue(value) {
+    this.value = value ?? "";
+    this.changeDetectorRef.markForCheck();
+  }
+  registerOnChange(onChange) {
+    this.onChange = onChange;
+  }
+  registerOnTouched(onTouched) {
+    this.onTouched = onTouched;
+  }
+  setDisabledState(disabled) {
+    this.disabled = disabled;
+    this.changeDetectorRef.markForCheck();
+  }
+  static {
+    this.\u0275fac = function FdkInputComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkInputComponent)(\u0275\u0275directiveInject(ChangeDetectorRef));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkInputComponent,
+      selectors: [["fdk-input"]],
+      inputs: {
+        label: "label",
+        hideLabel: [2, "hideLabel", "hideLabel", booleanAttribute],
+        placeholder: "placeholder",
+        value: "value",
+        type: "type",
+        autocomplete: "autocomplete",
+        list: "list",
+        name: "name",
+        minlength: "minlength",
+        maxlength: "maxlength",
+        disabled: [2, "disabled", "disabled", booleanAttribute],
+        required: [2, "required", "required", booleanAttribute],
+        error: [2, "error", "error", booleanAttribute],
+        errorMessage: "errorMessage"
+      },
+      outputs: {
+        valueChange: "valueChange"
+      },
+      features: [\u0275\u0275ProvidersFeature([{
+        provide: NG_VALUE_ACCESSOR,
+        useExisting: forwardRef(() => _FdkInputComponent),
+        multi: true
+      }])],
+      decls: 6,
+      vars: 21,
+      consts: [[1, "fdk-input"], [1, "fdk-input__label", 3, "for"], ["aria-hidden", "true", 1, "fdk-input__required"], [1, "fdk-input__control", 3, "blur", "input", "disabled", "id", "placeholder", "required", "value", "type"], [1, "fdk-input__error", 3, "id"]],
+      template: function FdkInputComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "div", 0)(1, "label", 1);
+          \u0275\u0275text(2);
+          \u0275\u0275template(3, FdkInputComponent_Conditional_3_Template, 2, 0, "span", 2);
+          \u0275\u0275elementEnd();
+          \u0275\u0275elementStart(4, "input", 3);
+          \u0275\u0275listener("blur", function FdkInputComponent_Template_input_blur_4_listener() {
+            return ctx.handleBlur();
+          })("input", function FdkInputComponent_Template_input_input_4_listener($event) {
+            return ctx.handleInput($event);
+          });
+          \u0275\u0275elementEnd();
+          \u0275\u0275template(5, FdkInputComponent_Conditional_5_Template, 2, 2, "p", 4);
+          \u0275\u0275elementEnd();
+        }
+        if (rf & 2) {
+          \u0275\u0275advance();
+          \u0275\u0275classProp("fdk-input__label--visually-hidden", ctx.hideLabel);
+          \u0275\u0275property("for", ctx.inputId);
+          \u0275\u0275advance();
+          \u0275\u0275textInterpolate1(" ", ctx.label, " ");
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.required ? 3 : -1);
+          \u0275\u0275advance();
+          \u0275\u0275classProp("fdk-input__control--error", ctx.error);
+          \u0275\u0275property("disabled", ctx.disabled)("id", ctx.inputId)("placeholder", ctx.placeholder)("required", ctx.required)("value", ctx.value)("type", ctx.type);
+          \u0275\u0275attribute("autocomplete", ctx.autocomplete)("aria-describedby", ctx.describedBy)("aria-invalid", ctx.error ? "true" : null)("list", ctx.list)("maxlength", ctx.maxlength)("minlength", ctx.minlength)("name", ctx.name);
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.showErrorMessage ? 5 : -1);
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:block}.fdk-input[_ngcontent-%COMP%]{display:grid;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-input__label[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary)}.fdk-input__label--visually-hidden[_ngcontent-%COMP%]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.fdk-input__required[_ngcontent-%COMP%]{margin-inline-start:var(--fdk-spacing-xxxs);color:var(--fdk-color-semantic-error)}.fdk-input__control[_ngcontent-%COMP%]{box-sizing:border-box;width:100%;min-height:3rem;max-height:3rem;height:3rem;padding-left:var(--fdk-spacing-s);padding-right:var(--fdk-spacing-s);font-family:inherit;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary);background-color:var(--fdk-color-neutrals-background);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg)}.fdk-input__control[_ngcontent-%COMP%]::placeholder{color:var(--fdk-color-text-placeholder)}.fdk-input__control[_ngcontent-%COMP%]:focus{border-color:var(--fdk-color-accent);outline:2px solid var(--fdk-color-accent);outline-offset:1px}.fdk-input__control[_ngcontent-%COMP%]:disabled{color:var(--fdk-color-text-placeholder);background-color:var(--fdk-color-neutrals-hover);cursor:not-allowed}.fdk-input__control--error[_ngcontent-%COMP%]{border-color:var(--fdk-color-semantic-error)}.fdk-input__control--error[_ngcontent-%COMP%]:focus{border-color:var(--fdk-color-semantic-error);outline-color:var(--fdk-color-semantic-error)}.fdk-input__error[_ngcontent-%COMP%]{margin:0;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-semantic-error)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkInputComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-input",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      providers: [{
+        provide: NG_VALUE_ACCESSOR,
+        useExisting: forwardRef(() => FdkInputComponent),
+        multi: true
+      }],
+      template: `<div class="fdk-input">
+  <label
+    class="fdk-input__label"
+    [class.fdk-input__label--visually-hidden]="hideLabel"
+    [for]="inputId">
+    {{ label }}
+    @if (required) {
+      <span
+        class="fdk-input__required"
+        aria-hidden="true">*</span>
+    }
+  </label>
+
+  <input
+    class="fdk-input__control"
+    (blur)="handleBlur()"
+    (input)="handleInput($event)"
+    [class.fdk-input__control--error]="error"
+    [attr.autocomplete]="autocomplete"
+    [attr.aria-describedby]="describedBy"
+    [attr.aria-invalid]="error ? 'true' : null"
+    [attr.list]="list"
+    [attr.maxlength]="maxlength"
+    [attr.minlength]="minlength"
+    [attr.name]="name"
+    [disabled]="disabled"
+    [id]="inputId"
+    [placeholder]="placeholder"
+    [required]="required"
+    [value]="value"
+    [type]="type" />
+
+  @if (showErrorMessage) {
+    <p
+      class="fdk-input__error"
+      [id]="errorMessageId">
+      {{ errorMessage }}
+    </p>
+  }
+</div>
+`,
+      styles: [":host{display:block}.fdk-input{display:grid;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-input__label{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary)}.fdk-input__label--visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.fdk-input__required{margin-inline-start:var(--fdk-spacing-xxxs);color:var(--fdk-color-semantic-error)}.fdk-input__control{box-sizing:border-box;width:100%;min-height:3rem;max-height:3rem;height:3rem;padding-left:var(--fdk-spacing-s);padding-right:var(--fdk-spacing-s);font-family:inherit;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary);background-color:var(--fdk-color-neutrals-background);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg)}.fdk-input__control::placeholder{color:var(--fdk-color-text-placeholder)}.fdk-input__control:focus{border-color:var(--fdk-color-accent);outline:2px solid var(--fdk-color-accent);outline-offset:1px}.fdk-input__control:disabled{color:var(--fdk-color-text-placeholder);background-color:var(--fdk-color-neutrals-hover);cursor:not-allowed}.fdk-input__control--error{border-color:var(--fdk-color-semantic-error)}.fdk-input__control--error:focus{border-color:var(--fdk-color-semantic-error);outline-color:var(--fdk-color-semantic-error)}.fdk-input__error{margin:0;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-semantic-error)}\n"]
+    }]
+  }], () => [{
+    type: ChangeDetectorRef
+  }], {
+    label: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    hideLabel: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    placeholder: [{
+      type: Input
+    }],
+    value: [{
+      type: Input
+    }],
+    valueChange: [{
+      type: Output
+    }],
+    type: [{
+      type: Input
+    }],
+    autocomplete: [{
+      type: Input
+    }],
+    list: [{
+      type: Input
+    }],
+    name: [{
+      type: Input
+    }],
+    minlength: [{
+      type: Input
+    }],
+    maxlength: [{
+      type: Input
+    }],
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    required: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    error: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    errorMessage: [{
+      type: Input
+    }]
+  });
+})();
+var FdkLinkComponent = class _FdkLinkComponent {
+  constructor() {
+    this.href = "";
+    this.target = "_self";
+  }
+  static {
+    this.\u0275fac = function FdkLinkComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkLinkComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkLinkComponent,
+      selectors: [["fdk-link"]],
+      inputs: {
+        href: "href",
+        rel: "rel",
+        routerLink: "routerLink",
+        target: "target"
+      },
+      ngContentSelectors: _c0,
+      decls: 4,
+      vars: 1,
+      consts: [["linkContent", ""], [1, "fdk-link", 3, "routerLink", "target"], [1, "fdk-link", 3, "href", "target"], [3, "ngTemplateOutlet"]],
+      template: function FdkLinkComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275projectionDef();
+          \u0275\u0275template(0, FdkLinkComponent_ng_template_0_Template, 1, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor)(2, FdkLinkComponent_Conditional_2_Template, 2, 4, "a", 1)(3, FdkLinkComponent_Conditional_3_Template, 2, 4, "a", 2);
+        }
+        if (rf & 2) {
+          \u0275\u0275advance(2);
+          \u0275\u0275conditional(ctx.routerLink !== void 0 && ctx.routerLink !== null ? 2 : 3);
+        }
+      },
+      dependencies: [NgTemplateOutlet, RouterLink],
+      styles: ["[_nghost-%COMP%]{display:inline}.fdk-link[_ngcontent-%COMP%]{font:inherit;color:var(--fdk-color-accent)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkLinkComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-link",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      imports: [NgTemplateOutlet, RouterLink],
+      template: '<ng-template #linkContent>\n  <ng-content></ng-content>\n</ng-template>\n\n@if (routerLink !== undefined && routerLink !== null) {\n  <a class="fdk-link" [attr.rel]="rel" [routerLink]="routerLink" [target]="target">\n    <ng-container [ngTemplateOutlet]="linkContent"></ng-container>\n  </a>\n} @else {\n  <a class="fdk-link" [attr.rel]="rel" [href]="href" [target]="target">\n    <ng-container [ngTemplateOutlet]="linkContent"></ng-container>\n  </a>\n}\n',
+      styles: [":host{display:inline}.fdk-link{font:inherit;color:var(--fdk-color-accent)}\n"]
+    }]
+  }], null, {
+    href: [{
+      type: Input
+    }],
+    rel: [{
+      type: Input
+    }],
+    routerLink: [{
+      type: Input
+    }],
+    target: [{
+      type: Input
+    }]
+  });
+})();
+var FdkLoadingDotsComponent = class _FdkLoadingDotsComponent {
+  static {
+    this.\u0275fac = function FdkLoadingDotsComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkLoadingDotsComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkLoadingDotsComponent,
+      selectors: [["fdk-loading-dots"]],
+      hostAttrs: ["aria-hidden", "true"],
+      decls: 4,
+      vars: 0,
+      consts: [[1, "fdk-loading-dots"], [1, "fdk-loading-dots__dot"]],
+      template: function FdkLoadingDotsComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "div", 0);
+          \u0275\u0275element(1, "span", 1)(2, "span", 1)(3, "span", 1);
+          \u0275\u0275elementEnd();
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:inline-block;width:66px;height:18px;line-height:0;vertical-align:middle}.fdk-loading-dots[_ngcontent-%COMP%]{position:relative;width:100%;height:100%}.fdk-loading-dots__dot[_ngcontent-%COMP%]{position:absolute;top:2px;width:14px;height:14px;box-sizing:border-box;border:2px solid var(--fdk-color-accent, #5b47fb);border-radius:50%;background-color:transparent;transform:scale(1);animation:_ngcontent-%COMP%_fdk-loading-dot-active 1.2s ease-in-out infinite}.fdk-loading-dots__dot[_ngcontent-%COMP%]:nth-child(1){left:1px;animation-delay:-.4s}.fdk-loading-dots__dot[_ngcontent-%COMP%]:nth-child(2){left:26px}.fdk-loading-dots__dot[_ngcontent-%COMP%]:nth-child(3){left:51px;animation-delay:.4s}@keyframes _ngcontent-%COMP%_fdk-loading-dot-active{0%,66.666%,to{background-color:transparent;transform:scale(1)}33.333%{background-color:var(--fdk-color-accent, #5b47fb);transform:scale(1.2857)}}@media (prefers-reduced-motion: reduce){.fdk-loading-dots__dot[_ngcontent-%COMP%]{animation:none}.fdk-loading-dots__dot[_ngcontent-%COMP%]:first-child{background-color:var(--fdk-color-accent, #5b47fb);transform:scale(1.2857)}}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkLoadingDotsComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-loading-dots",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      host: {
+        "aria-hidden": "true"
+      },
+      template: '<div class="fdk-loading-dots">\n  <span class="fdk-loading-dots__dot"></span>\n  <span class="fdk-loading-dots__dot"></span>\n  <span class="fdk-loading-dots__dot"></span>\n</div>\n',
+      styles: [":host{display:inline-block;width:66px;height:18px;line-height:0;vertical-align:middle}.fdk-loading-dots{position:relative;width:100%;height:100%}.fdk-loading-dots__dot{position:absolute;top:2px;width:14px;height:14px;box-sizing:border-box;border:2px solid var(--fdk-color-accent, #5b47fb);border-radius:50%;background-color:transparent;transform:scale(1);animation:fdk-loading-dot-active 1.2s ease-in-out infinite}.fdk-loading-dots__dot:nth-child(1){left:1px;animation-delay:-.4s}.fdk-loading-dots__dot:nth-child(2){left:26px}.fdk-loading-dots__dot:nth-child(3){left:51px;animation-delay:.4s}@keyframes fdk-loading-dot-active{0%,66.666%,to{background-color:transparent;transform:scale(1)}33.333%{background-color:var(--fdk-color-accent, #5b47fb);transform:scale(1.2857)}}@media (prefers-reduced-motion: reduce){.fdk-loading-dots__dot{animation:none}.fdk-loading-dots__dot:first-child{background-color:var(--fdk-color-accent, #5b47fb);transform:scale(1.2857)}}\n"]
+    }]
+  }], null, null);
+})();
+var FdkSpinnerComponent = class _FdkSpinnerComponent {
+  static {
+    this.\u0275fac = function FdkSpinnerComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkSpinnerComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkSpinnerComponent,
+      selectors: [["fdk-spinner"]],
+      hostAttrs: ["aria-hidden", "true"],
+      decls: 3,
+      vars: 0,
+      consts: [["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", 1, "fdk-spinner"], ["cx", "12", "cy", "12", "r", "10", "stroke-width", "4", 1, "fdk-spinner__track"], ["d", "M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647Z", 1, "fdk-spinner__indicator"]],
+      template: function FdkSpinnerComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275namespaceSVG();
+          \u0275\u0275elementStart(0, "svg", 0);
+          \u0275\u0275element(1, "circle", 1)(2, "path", 2);
+          \u0275\u0275elementEnd();
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:inline-flex;width:1.25rem;height:1.25rem;flex-shrink:0;color:inherit;line-height:0}.fdk-spinner[_ngcontent-%COMP%]{width:100%;height:100%;animation:_ngcontent-%COMP%_fdk-spinner-rotate 1s linear infinite}.fdk-spinner__track[_ngcontent-%COMP%]{stroke:currentColor;opacity:.25}.fdk-spinner__indicator[_ngcontent-%COMP%]{fill:currentColor;opacity:.75}@keyframes _ngcontent-%COMP%_fdk-spinner-rotate{to{transform:rotate(360deg)}}@media (prefers-reduced-motion: reduce){.fdk-spinner[_ngcontent-%COMP%]{animation-duration:2s}}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkSpinnerComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-spinner",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      host: {
+        "aria-hidden": "true"
+      },
+      template: '<svg\n  class="fdk-spinner"\n  xmlns="http://www.w3.org/2000/svg"\n  fill="none"\n  viewBox="0 0 24 24">\n  <circle\n    class="fdk-spinner__track"\n    cx="12"\n    cy="12"\n    r="10"\n    stroke-width="4" />\n  <path\n    class="fdk-spinner__indicator"\n    d="M4 12a8 8 0 0 1 8-8V0C5.373 0 0 5.373 0 12h4Zm2 5.291A7.962 7.962 0 0 1 4 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647Z" />\n</svg>\n',
+      styles: [":host{display:inline-flex;width:1.25rem;height:1.25rem;flex-shrink:0;color:inherit;line-height:0}.fdk-spinner{width:100%;height:100%;animation:fdk-spinner-rotate 1s linear infinite}.fdk-spinner__track{stroke:currentColor;opacity:.25}.fdk-spinner__indicator{fill:currentColor;opacity:.75}@keyframes fdk-spinner-rotate{to{transform:rotate(360deg)}}@media (prefers-reduced-motion: reduce){.fdk-spinner{animation-duration:2s}}\n"]
+    }]
+  }], null, null);
+})();
+var nextSelectId = 0;
+var FdkSelectComponent = class _FdkSelectComponent {
+  constructor(changeDetectorRef) {
+    this.changeDetectorRef = changeDetectorRef;
+    this.options = [];
+    this.placeholder = "";
+    this.value = "";
+    this.valueChange = new EventEmitter();
+    this.name = null;
+    this.disabled = false;
+    this.required = false;
+    this.error = false;
+    this.errorMessage = "";
+    this.selectId = `fdk-select-${nextSelectId++}`;
+    this.errorMessageId = `${this.selectId}-error`;
+    this.onChange = () => {
+    };
+    this.onTouched = () => {
+    };
+  }
+  get showErrorMessage() {
+    return this.error && this.errorMessage.trim().length > 0;
+  }
+  get describedBy() {
+    return this.showErrorMessage ? this.errorMessageId : null;
+  }
+  optionLabel(option) {
+    return typeof option === "string" ? option : option.label;
+  }
+  optionValue(option) {
+    return typeof option === "string" ? option : option.value;
+  }
+  optionDisabled(option) {
+    return typeof option === "string" ? false : !!option.disabled;
+  }
+  handleChange(event) {
+    const value = event.target.value;
+    this.value = value;
+    this.valueChange.emit(value);
+    this.onChange(value);
+  }
+  handleBlur() {
+    this.onTouched();
+  }
+  writeValue(value) {
+    this.value = value ?? "";
+    this.changeDetectorRef.markForCheck();
+  }
+  registerOnChange(onChange) {
+    this.onChange = onChange;
+  }
+  registerOnTouched(onTouched) {
+    this.onTouched = onTouched;
+  }
+  setDisabledState(disabled) {
+    this.disabled = disabled;
+    this.changeDetectorRef.markForCheck();
+  }
+  static {
+    this.\u0275fac = function FdkSelectComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkSelectComponent)(\u0275\u0275directiveInject(ChangeDetectorRef));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkSelectComponent,
+      selectors: [["fdk-select"]],
+      inputs: {
+        label: "label",
+        options: "options",
+        placeholder: "placeholder",
+        value: "value",
+        name: "name",
+        disabled: [2, "disabled", "disabled", booleanAttribute],
+        required: [2, "required", "required", booleanAttribute],
+        error: [2, "error", "error", booleanAttribute],
+        errorMessage: "errorMessage"
+      },
+      outputs: {
+        valueChange: "valueChange"
+      },
+      features: [\u0275\u0275ProvidersFeature([{
+        provide: NG_VALUE_ACCESSOR,
+        useExisting: forwardRef(() => _FdkSelectComponent),
+        multi: true
+      }])],
+      decls: 11,
+      vars: 15,
+      consts: [[1, "fdk-select"], [1, "fdk-select__label", 3, "for"], ["aria-hidden", "true", 1, "fdk-select__required"], [1, "fdk-select__control-wrapper"], [1, "fdk-select__control", 3, "blur", "change", "disabled", "id", "required", "value"], ["disabled", "", "value", ""], [3, "disabled", "value"], ["name", "chevron-down", 1, "fdk-select__arrow", 3, "size"], [1, "fdk-select__error", 3, "id"]],
+      template: function FdkSelectComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "div", 0)(1, "label", 1);
+          \u0275\u0275text(2);
+          \u0275\u0275template(3, FdkSelectComponent_Conditional_3_Template, 2, 0, "span", 2);
+          \u0275\u0275elementEnd();
+          \u0275\u0275elementStart(4, "div", 3)(5, "select", 4);
+          \u0275\u0275listener("blur", function FdkSelectComponent_Template_select_blur_5_listener() {
+            return ctx.handleBlur();
+          })("change", function FdkSelectComponent_Template_select_change_5_listener($event) {
+            return ctx.handleChange($event);
+          });
+          \u0275\u0275template(6, FdkSelectComponent_Conditional_6_Template, 2, 1, "option", 5);
+          \u0275\u0275repeaterCreate(7, FdkSelectComponent_For_8_Template, 2, 3, "option", 6, \u0275\u0275repeaterTrackByIndex);
+          \u0275\u0275elementEnd();
+          \u0275\u0275element(9, "fdk-icon", 7);
+          \u0275\u0275elementEnd();
+          \u0275\u0275template(10, FdkSelectComponent_Conditional_10_Template, 2, 2, "p", 8);
+          \u0275\u0275elementEnd();
+        }
+        if (rf & 2) {
+          \u0275\u0275advance();
+          \u0275\u0275property("for", ctx.selectId);
+          \u0275\u0275advance();
+          \u0275\u0275textInterpolate1(" ", ctx.label, " ");
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.required ? 3 : -1);
+          \u0275\u0275advance(2);
+          \u0275\u0275classProp("fdk-select__control--error", ctx.error);
+          \u0275\u0275property("disabled", ctx.disabled)("id", ctx.selectId)("required", ctx.required)("value", ctx.value);
+          \u0275\u0275attribute("aria-describedby", ctx.describedBy)("aria-invalid", ctx.error ? "true" : null)("name", ctx.name);
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.placeholder ? 6 : -1);
+          \u0275\u0275advance();
+          \u0275\u0275repeater(ctx.options);
+          \u0275\u0275advance(2);
+          \u0275\u0275property("size", 24);
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.showErrorMessage ? 10 : -1);
+        }
+      },
+      dependencies: [FdkIconComponent],
+      styles: ["[_nghost-%COMP%]{display:block}.fdk-select[_ngcontent-%COMP%]{display:grid;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-select__label[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary)}.fdk-select__required[_ngcontent-%COMP%]{margin-inline-start:var(--fdk-spacing-xxxs);color:var(--fdk-color-semantic-error)}.fdk-select__control-wrapper[_ngcontent-%COMP%]{position:relative}.fdk-select__control[_ngcontent-%COMP%]{appearance:none;box-sizing:border-box;width:100%;min-height:3rem;max-height:3rem;height:3rem;padding-inline-start:var(--fdk-spacing-s);padding-inline-end:3rem;font-family:inherit;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary);background-color:var(--fdk-color-neutrals-background);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg)}.fdk-select__arrow[_ngcontent-%COMP%]{position:absolute;inset-inline-end:var(--fdk-spacing-s);top:50%;color:var(--fdk-color-text-primary);pointer-events:none;transform:translateY(-50%)}.fdk-select__control[_ngcontent-%COMP%]:focus{border-color:var(--fdk-color-accent);outline:2px solid var(--fdk-color-accent);outline-offset:1px}.fdk-select__control[_ngcontent-%COMP%]:disabled{color:var(--fdk-color-text-placeholder);background-color:var(--fdk-color-neutrals-hover);cursor:not-allowed}.fdk-select__control--error[_ngcontent-%COMP%]{border-color:var(--fdk-color-semantic-error)}.fdk-select__control--error[_ngcontent-%COMP%]:focus{border-color:var(--fdk-color-semantic-error);outline-color:var(--fdk-color-semantic-error)}.fdk-select__error[_ngcontent-%COMP%]{margin:0;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-semantic-error)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkSelectComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-select",
+      imports: [FdkIconComponent],
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      providers: [{
+        provide: NG_VALUE_ACCESSOR,
+        useExisting: forwardRef(() => FdkSelectComponent),
+        multi: true
+      }],
+      template: `<div class="fdk-select">
+  <label
+    class="fdk-select__label"
+    [for]="selectId">
+    {{ label }}
+    @if (required) {
+      <span
+        class="fdk-select__required"
+        aria-hidden="true">*</span>
+    }
+  </label>
+
+  <div class="fdk-select__control-wrapper">
+    <select
+      class="fdk-select__control"
+      (blur)="handleBlur()"
+      (change)="handleChange($event)"
+      [class.fdk-select__control--error]="error"
+      [attr.aria-describedby]="describedBy"
+      [attr.aria-invalid]="error ? 'true' : null"
+      [disabled]="disabled"
+      [id]="selectId"
+      [attr.name]="name"
+      [required]="required"
+      [value]="value">
+      @if (placeholder) {
+        <option
+          disabled
+          value="">
+          {{ placeholder }}
+        </option>
+      }
+      @for (option of options; track $index) {
+        <option
+          [disabled]="optionDisabled(option)"
+          [value]="optionValue(option)">
+          {{ optionLabel(option) }}
+        </option>
+      }
+    </select>
+
+    <fdk-icon
+      class="fdk-select__arrow"
+      name="chevron-down"
+      [size]="24" />
+  </div>
+
+  @if (showErrorMessage) {
+    <p
+      class="fdk-select__error"
+      [id]="errorMessageId">
+      {{ errorMessage }}
+    </p>
+  }
+</div>
+`,
+      styles: [":host{display:block}.fdk-select{display:grid;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-select__label{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary)}.fdk-select__required{margin-inline-start:var(--fdk-spacing-xxxs);color:var(--fdk-color-semantic-error)}.fdk-select__control-wrapper{position:relative}.fdk-select__control{appearance:none;box-sizing:border-box;width:100%;min-height:3rem;max-height:3rem;height:3rem;padding-inline-start:var(--fdk-spacing-s);padding-inline-end:3rem;font-family:inherit;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary);background-color:var(--fdk-color-neutrals-background);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg)}.fdk-select__arrow{position:absolute;inset-inline-end:var(--fdk-spacing-s);top:50%;color:var(--fdk-color-text-primary);pointer-events:none;transform:translateY(-50%)}.fdk-select__control:focus{border-color:var(--fdk-color-accent);outline:2px solid var(--fdk-color-accent);outline-offset:1px}.fdk-select__control:disabled{color:var(--fdk-color-text-placeholder);background-color:var(--fdk-color-neutrals-hover);cursor:not-allowed}.fdk-select__control--error{border-color:var(--fdk-color-semantic-error)}.fdk-select__control--error:focus{border-color:var(--fdk-color-semantic-error);outline-color:var(--fdk-color-semantic-error)}.fdk-select__error{margin:0;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-semantic-error)}\n"]
+    }]
+  }], () => [{
+    type: ChangeDetectorRef
+  }], {
+    label: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    options: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    placeholder: [{
+      type: Input
+    }],
+    value: [{
+      type: Input
+    }],
+    valueChange: [{
+      type: Output
+    }],
+    name: [{
+      type: Input
+    }],
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    required: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    error: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    errorMessage: [{
+      type: Input
+    }]
+  });
+})();
+var FDK_ILLUSTRATION_DEFAULT_WIDTHS = {
+  "connecting": 118,
+  "empty": 118,
+  "identifying": 118,
+  "loading-1": 66,
+  "loading-2": 66,
+  "loading-3": 66,
+  "location": 118,
+  "sign-in": 118,
+  "success": 118,
+  "warning": 118,
+  "welcome-1": 232,
+  "welcome-2": 232,
+  "welcome-3": 232,
+  "welcome-animated": 232
+};
+var FdkIllustrationComponent = class _FdkIllustrationComponent {
+  constructor() {
+    this.ariaLabel = null;
+  }
+  get normalizedAriaLabel() {
+    const label = this.ariaLabel?.trim();
+    return label ? label : null;
+  }
+  get ariaHidden() {
+    return this.normalizedAriaLabel ? null : "true";
+  }
+  get role() {
+    return this.normalizedAriaLabel ? "img" : null;
+  }
+  get resolvedWidth() {
+    return `${FDK_ILLUSTRATION_DEFAULT_WIDTHS[this.name] ?? 0}px`;
+  }
+  static {
+    this.\u0275fac = function FdkIllustrationComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkIllustrationComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkIllustrationComponent,
+      selectors: [["fdk-illustration"]],
+      hostVars: 2,
+      hostBindings: function FdkIllustrationComponent_HostBindings(rf, ctx) {
+        if (rf & 2) {
+          \u0275\u0275styleProp("width", ctx.resolvedWidth);
+        }
+      },
+      inputs: {
+        name: "name",
+        ariaLabel: [0, "aria-label", "ariaLabel"]
+      },
+      decls: 14,
+      vars: 1,
+      consts: [["focusable", "false", "viewBox", "0 0 118 104", "fill", "none", "xmlns", "http://www.w3.org/2000/svg", 1, "fdk-illustration__svg"], ["focusable", "false", "viewBox", "0 0 66 18", "fill", "none", "xmlns", "http://www.w3.org/2000/svg", 1, "fdk-illustration__svg"], ["focusable", "false", "viewBox", "0 0 232 72", "fill", "none", "xmlns", "http://www.w3.org/2000/svg", 1, "fdk-illustration__svg"], ["d", "M36.7026 39.2923L44.0078 36.0455L49.6928 37.148L54.5598 39.2923L61.865 36.0455L66.6975 36.5812L70.7935 39.2923L74.0403 46.5975L70.7935 56.3377L63.4883 63.6429L54.5598 68.513L39.9494 58.7728L34.2676 48.2208L36.7026 39.2923Z", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M63.4769 35.8051C59.7837 35.5795 56.4282 36.9091 54.1312 39.2451C51.8356 36.9091 48.4801 35.5795 44.787 35.8051C38.9038 36.1656 34.076 40.9269 34.1213 46.8213C34.209 58.1201 50.2708 66.7954 53.5516 68.4497C53.9184 68.6347 54.3454 68.6347 54.7124 68.4497C57.9932 66.7954 74.0548 58.1201 74.1425 46.8213C74.188 40.9269 69.36 36.1656 63.4769 35.8051Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M71.7804 72.8815L82.1261 72.8701L84.4411 66.5876L88.3144 77.4465L92.6699 56.3262L96.9524 86.0179L102.651 63.5844L105.711 72.9335L115.6 72.8815", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M94.0567 47.599C94.2271 42.5634 94.2645 36.8198 94.2645 30.1948C94.2645 25.755 94.0518 21.4075 93.6459 17.1818C68.5015 23.0569 54.1315 4 54.1315 4C54.1315 4 39.7628 23.0569 14.6184 17.1818C14.2126 21.4075 14 25.755 14 30.1948C14 77.0113 15.8198 79.7679 54.1315 100C67.2645 93.065 76.1103 88.1834 82.0632 82.8767", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "57.6707", "y", "57.3563", "width", "4.67129", "height", "19.1996", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["x", "68.7991", "y", "65.4276", "width", "4.67129", "height", "19.1996", "transform", "rotate(90 68.7991 65.4276)", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M71.3546 63.3562H62.9765V54.9782H55.4381V63.3562H47.06V70.9109H55.4381V79.2888H62.9765V70.9109H71.3546V63.3562Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M90.1444 26.8578V20.6429C90.1444 19.5936 89.7569 18.5927 89.0466 17.8179L77.5532 5.33972C76.7621 4.4842 75.6482 3.99992 74.4861 3.99992H31.6114C29.3029 3.99992 27.4465 5.85632 27.4465 8.16467V17.6242", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M98.4901 99.9999H19.9403C16.6635 99.9999 14 97.3364 14 94.0593V30.2477C14 26.9708 16.6635 24.3073 19.9403 24.3073H34.7754C36.9868 24.3073 39.021 25.5503 40.0378 27.5197L41.4585 30.2477C42.4753 32.2172 44.5095 33.4439 46.737 33.4439H98.4901C101.767 33.4439 104.431 36.1075 104.431 39.4006V94.0593C104.431 97.3364 101.767 99.9999 98.4901 99.9999Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M89.8218 19.0123H78.6834C77.3759 19.0123 76.3105 17.9468 76.3105 16.6393V12.9749", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M78.8609 53.3638C81.5083 57.2864 83.058 62.0324 83.058 67.1333C83.058 80.7415 72.0328 91.767 58.4244 91.767C54.3242 91.767 50.466 90.7662 47.06 88.9905", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M38.4076 81.4679C35.502 77.4322 33.807 72.4766 33.807 67.1333C33.807 53.5251 44.8325 42.4998 58.4245 42.4998C62.6215 42.4998 66.5604 43.549 70.015 45.3892", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M78.5126 99.9998H35.2293C30.1323 99.9998 26 95.8724 26 90.7738V15.994C26 11.6561 29.5172 8.12757 33.8583 8.12757H40.3312", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M77.1482 8.12786H83.6162C87.9557 8.12786 91.4745 11.6564 91.4745 15.9943V62.6588", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 46.3107H80.4599", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 29.7357H80.4599", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 62.869H80.4599", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 79.444H69.2737", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M74.67 12.7079H42.8045C41.4368 12.7079 40.3296 11.5911 40.3296 10.2315V6.46012C40.3296 5.10047 41.4368 3.99984 42.8045 3.99984H74.67C76.0361 3.99984 77.1449 5.10047 77.1449 6.46012V10.2315C77.1449 11.5911 76.0361 12.7079 74.67 12.7079Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M105.278 80.35H95.7619V70.8325H87.1865V80.35H77.6707V88.9286H87.1865V98.446H95.7619V88.9286H105.278V80.35Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "88", "y", "71", "width", "7", "height", "28", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "77.5", "y", "88.5", "width", "7", "height", "28", "transform", "rotate(-90 77.5 88.5)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "34", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "58", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "9", "cy", "9", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "8", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "33", "cy", "9", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "32", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "57", "cy", "9", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M92.7051 54.6437H82.6201V44.5569H73.5324V54.6437H63.4474V63.7297H73.5324V73.8163H82.6201V63.7297H92.7051V54.6437Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M11 100V38.3151L33.9862 29.0351", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M87.285 100V83.604", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M33.9861 100V4H87.2849V35.4119", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M87.285 25.363L110.273 38.3151V100", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 58.7793H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 69.2965H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 79.8152H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.8865 79.8152H63.3621", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 90.3324H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.8865 90.3324H63.3621", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M75.4089 90.3324H79.8846", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "75", "y", "45", "width", "8", "height", "29", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "63", "y", "63", "width", "8", "height", "29", "transform", "rotate(-90 63 63)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "43", "y", "52", "width", "28", "height", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "52.5", "y", "70.5", "width", "28", "height", "9", "transform", "rotate(-90 52.5 70.5)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M72.4732 51.5288H62.0118V41.0706H52.6015V51.5288H42.1403V60.9504H52.6015V71.4068H62.0118V60.9504H72.4732V51.5288Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M75.7233 19.1794L80.6872 24.1433L90.3562 14.4726", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M96.8724 18.4387C96.8724 26.4116 90.4048 32.876 82.4333 32.876C74.462 32.876 67.9944 26.4116 67.9944 18.4387C67.9944 10.4641 74.462 3.99984 82.4333 3.99984C90.4048 3.99984 96.8724 10.4641 96.8724 18.4387Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M83.6139 41.0383V91.5164C83.6139 96.2022 79.8142 100 75.1252 100H39.4887C34.7997 100 31 96.2022 31 91.5164V20.9631C31 16.2772 34.7997 12.4791 39.4887 12.4791H61.0743", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M41.6231 89.5369H72.9747", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["cx", "59", "cy", "52", "r", "46.3", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M74.418 35.2304L51.8778 57.7706L44.376 50.2619C42.3662 48.2521 39.1061 48.2521 37.0963 50.2619C35.0865 52.2706 35.0865 55.5295 37.0963 57.5393L48.2437 68.6867C50.2536 70.6966 53.5137 70.6966 55.5234 68.6867L59.1575 65.0481L81.6978 42.5077C83.7076 40.498 83.7076 37.239 81.6978 35.2304C79.688 33.2206 76.4279 33.2206 74.418 35.2304Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M35.4276 55.4028L37.242 50.8666L41.0396 47.5884L56.7813 64.6783L54.933 69.9184L49.036 69.9184L35.4276 55.4028Z", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "76.8206", "y", "31.9999", "width", "10.4125", "height", "40.1362", "transform", "rotate(46.2842 76.8206 31.9999)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M42.4012 13.1131L28.8593 35.1115L6.87241 70.8049C-0.983449 83.5663 8.20143 100 23.19 100H94.2137C109.202 100 118.387 83.5663 110.531 70.8049L75.0193 13.1131C67.5334 0.962303 49.87 0.962303 42.4012 13.1131Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M62.702 28.1079L64.5262 32.0942L63.705 51.811L62.1493 65.814L58.6718 66.9731L55.2509 65.8325L53.1415 31.9292L54.1591 28.146L60.1317 26.8179L62.702 28.1079Z", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M64.1185 60.0167L63.8662 64.2257C63.698 66.9491 61.427 69.0756 58.7016 69.0756C55.9765 69.0756 53.7222 66.9491 53.554 64.2257L51.6027 32.3171C51.3504 28.2243 54.6139 24.7691 58.7016 24.7691C62.8063 24.7691 66.0531 28.2243 65.8007 32.3171L64.1185 59.5", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["cx", "58.2857", "cy", "82.2857", "r", "3.44286", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M64.0344 82.352C64.0344 85.2924 61.6454 87.6761 58.7015 87.6761C55.7576 87.6761 53.3857 85.2924 53.3857 82.352C53.3857 79.4114 55.7576 77.0293 58.7015 77.0293C61.6454 77.0293 64.0344 79.4114 64.0344 82.352Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "197.18", "y", "39.6375", "width", "2.98086", "height", "12.6664", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4"], ["x", "204.466", "y", "45.0184", "width", "2.98086", "height", "12.6664", "transform", "rotate(90 204.466 45.0184)", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4"], ["d", "M206.236 43.5708H200.651V37.9854H195.625V43.5708H190.04V48.6073H195.625V54.1926H200.651V48.6073H206.236V43.5708Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M218.763 19.2385V15.0953C218.763 14.3957 218.505 13.7285 218.031 13.212L210.369 4.89317C209.841 4.32282 209.099 3.99997 208.324 3.99997H179.741C178.202 3.99997 176.964 5.23756 176.964 6.77647V13.0828", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M224.327 67.9999H171.96C169.776 67.9999 168 66.2243 168 64.0395V21.4985C168 19.3139 169.776 17.5382 171.96 17.5382H181.85C183.325 17.5382 184.681 18.3668 185.359 19.6798L186.306 21.4985C186.984 22.8114 188.34 23.6293 189.825 23.6293H224.327C226.511 23.6293 228.287 25.405 228.287 27.6004V64.0395C228.287 66.2243 226.511 67.9999 224.327 67.9999Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M218.548 14.0082H211.122C210.251 14.0082 209.54 13.2978 209.54 12.4262V9.98325", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M211.241 36.9092C213.006 39.5242 214.039 42.6882 214.039 46.0889C214.039 55.161 206.688 62.5114 197.616 62.5114C194.883 62.5114 192.311 61.8441 190.04 60.6603", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M184.272 55.6453C182.335 52.9548 181.205 49.6511 181.205 46.0889C181.205 37.0168 188.555 29.6665 197.616 29.6665C200.414 29.6665 203.04 30.366 205.343 31.5928", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.4701 37.7624H51.7467V31.0379H45.6883V37.7624H38.9649V43.8198H45.6883V50.5442H51.7467V43.8198H58.4701V37.7624Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M4 68V26.8768L19.3242 20.6901", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8567 68V57.0694", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M19.3241 68V4H54.8566V24.9413", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8567 18.242L70.1819 26.8768V68", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 40.5195H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 47.531H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 54.5435H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M35.9243 54.5435H38.9081", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 61.5549H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M35.9243 61.5549H38.9081", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M46.9393 61.5549H49.9231", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "46.6667", "y", "31.3333", "width", "5.33333", "height", "19.3333", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "38.6667", "y", "43.3333", "width", "5.33333", "height", "19.3333", "transform", "rotate(-90 38.6667 43.3333)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "120", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "144", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "95", "cy", "44", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M58.47 37.7624H51.7467V31.0379H45.6883V37.7624H38.9649V43.8198H45.6883V50.5442H51.7467V43.8198H58.47V37.7624Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8566 68V57.0694", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8566 18.242L70.1818 26.8768V68", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M46.9393 61.5549H49.923", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["cx", "94", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "119", "cy", "44", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M211.241 36.9092C213.006 39.5242 214.039 42.6882 214.039 46.0889C214.039 55.161 206.689 62.5114 197.616 62.5114C194.883 62.5114 192.311 61.8441 190.04 60.6603", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.4701 37.7624H51.7468V31.0379H45.6883V37.7624H38.965V43.8198H45.6883V50.5442H51.7468V43.8198H58.4701V37.7624Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "46.6666", "y", "31.3333", "width", "5.33333", "height", "19.3333", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "38.6666", "y", "43.3333", "width", "5.33333", "height", "19.3333", "transform", "rotate(-90 38.6666 43.3333)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "118", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "143", "cy", "44", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "95", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "95", "cy", "44", "r", "7", "fill", "var(--fdk-color-accent, #5B47FB)", 1, "fdk-illustration__welcome-dot", "fdk-illustration__welcome-dot--1"], ["cx", "120", "cy", "44", "r", "7", "fill", "var(--fdk-color-accent, #5B47FB)", 1, "fdk-illustration__welcome-dot", "fdk-illustration__welcome-dot--2"], ["cx", "144", "cy", "44", "r", "7", "fill", "var(--fdk-color-accent, #5B47FB)", 1, "fdk-illustration__welcome-dot", "fdk-illustration__welcome-dot--3"]],
+      template: function FdkIllustrationComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275template(0, FdkIllustrationComponent_Case_0_Template, 5, 3, ":svg:svg", 0)(1, FdkIllustrationComponent_Case_1_Template, 9, 3, ":svg:svg", 0)(2, FdkIllustrationComponent_Case_2_Template, 11, 3, ":svg:svg", 0)(3, FdkIllustrationComponent_Case_3_Template, 4, 3, ":svg:svg", 1)(4, FdkIllustrationComponent_Case_4_Template, 4, 3, ":svg:svg", 1)(5, FdkIllustrationComponent_Case_5_Template, 4, 3, ":svg:svg", 1)(6, FdkIllustrationComponent_Case_6_Template, 15, 3, ":svg:svg", 0)(7, FdkIllustrationComponent_Case_7_Template, 8, 3, ":svg:svg", 0)(8, FdkIllustrationComponent_Case_8_Template, 5, 3, ":svg:svg", 0)(9, FdkIllustrationComponent_Case_9_Template, 6, 3, ":svg:svg", 0)(10, FdkIllustrationComponent_Case_10_Template, 26, 3, ":svg:svg", 2)(11, FdkIllustrationComponent_Case_11_Template, 26, 3, ":svg:svg", 2)(12, FdkIllustrationComponent_Case_12_Template, 26, 3, ":svg:svg", 2)(13, FdkIllustrationComponent_Case_13_Template, 29, 3, ":svg:svg", 2);
+        }
+        if (rf & 2) {
+          let tmp_0_0;
+          \u0275\u0275conditional((tmp_0_0 = ctx.name) === "connecting" ? 0 : tmp_0_0 === "empty" ? 1 : tmp_0_0 === "identifying" ? 2 : tmp_0_0 === "loading-1" ? 3 : tmp_0_0 === "loading-2" ? 4 : tmp_0_0 === "loading-3" ? 5 : tmp_0_0 === "location" ? 6 : tmp_0_0 === "sign-in" ? 7 : tmp_0_0 === "success" ? 8 : tmp_0_0 === "warning" ? 9 : tmp_0_0 === "welcome-1" ? 10 : tmp_0_0 === "welcome-2" ? 11 : tmp_0_0 === "welcome-3" ? 12 : tmp_0_0 === "welcome-animated" ? 13 : -1);
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:inline-block;max-width:100%;line-height:0;vertical-align:middle}.fdk-illustration__svg[_ngcontent-%COMP%]{display:block;width:100%;height:auto}.fdk-illustration__welcome-dot[_ngcontent-%COMP%]{opacity:0;transform-box:fill-box;transform-origin:center;animation:_ngcontent-%COMP%_fdk-welcome-dot-active 1.2s ease-in-out infinite}.fdk-illustration__welcome-dot--1[_ngcontent-%COMP%]{animation-delay:-.4s}.fdk-illustration__welcome-dot--3[_ngcontent-%COMP%]{animation-delay:.4s}@keyframes _ngcontent-%COMP%_fdk-welcome-dot-active{0%,66.666%,to{opacity:0;transform:scale(1)}33.333%{opacity:1;transform:scale(1.2857)}}@media (prefers-reduced-motion: reduce){.fdk-illustration__welcome-dot[_ngcontent-%COMP%]{animation:none}.fdk-illustration__welcome-dot--1[_ngcontent-%COMP%]{opacity:1;transform:scale(1.2857)}}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkIllustrationComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-illustration",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      host: {
+        "[style.width]": "resolvedWidth"
+      },
+      template: `<!-- Generated by scripts/generate-svg-components.mjs. Do not edit manually. -->
+@switch (name) {
+  @case ('connecting') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 118 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M36.7026 39.2923L44.0078 36.0455L49.6928 37.148L54.5598 39.2923L61.865 36.0455L66.6975 36.5812L70.7935 39.2923L74.0403 46.5975L70.7935 56.3377L63.4883 63.6429L54.5598 68.513L39.9494 58.7728L34.2676 48.2208L36.7026 39.2923Z" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <path d="M63.4769 35.8051C59.7837 35.5795 56.4282 36.9091 54.1312 39.2451C51.8356 36.9091 48.4801 35.5795 44.787 35.8051C38.9038 36.1656 34.076 40.9269 34.1213 46.8213C34.209 58.1201 50.2708 66.7954 53.5516 68.4497C53.9184 68.6347 54.3454 68.6347 54.7124 68.4497C57.9932 66.7954 74.0548 58.1201 74.1425 46.8213C74.188 40.9269 69.36 36.1656 63.4769 35.8051Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M71.7804 72.8815L82.1261 72.8701L84.4411 66.5876L88.3144 77.4465L92.6699 56.3262L96.9524 86.0179L102.651 63.5844L105.711 72.9335L115.6 72.8815" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M94.0567 47.599C94.2271 42.5634 94.2645 36.8198 94.2645 30.1948C94.2645 25.755 94.0518 21.4075 93.6459 17.1818C68.5015 23.0569 54.1315 4 54.1315 4C54.1315 4 39.7628 23.0569 14.6184 17.1818C14.2126 21.4075 14 25.755 14 30.1948C14 77.0113 15.8198 79.7679 54.1315 100C67.2645 93.065 76.1103 88.1834 82.0632 82.8767" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  }
+  @case ('empty') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 118 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="57.6707" y="57.3563" width="4.67129" height="19.1996" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4"/>
+    <rect x="68.7991" y="65.4276" width="4.67129" height="19.1996" transform="rotate(90 68.7991 65.4276)" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4"/>
+    <path d="M71.3546 63.3562H62.9765V54.9782H55.4381V63.3562H47.06V70.9109H55.4381V79.2888H62.9765V70.9109H71.3546V63.3562Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M90.1444 26.8578V20.6429C90.1444 19.5936 89.7569 18.5927 89.0466 17.8179L77.5532 5.33972C76.7621 4.4842 75.6482 3.99992 74.4861 3.99992H31.6114C29.3029 3.99992 27.4465 5.85632 27.4465 8.16467V17.6242" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M98.4901 99.9999H19.9403C16.6635 99.9999 14 97.3364 14 94.0593V30.2477C14 26.9708 16.6635 24.3073 19.9403 24.3073H34.7754C36.9868 24.3073 39.021 25.5503 40.0378 27.5197L41.4585 30.2477C42.4753 32.2172 44.5095 33.4439 46.737 33.4439H98.4901C101.767 33.4439 104.431 36.1075 104.431 39.4006V94.0593C104.431 97.3364 101.767 99.9999 98.4901 99.9999Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M89.8218 19.0123H78.6834C77.3759 19.0123 76.3105 17.9468 76.3105 16.6393V12.9749" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M78.8609 53.3638C81.5083 57.2864 83.058 62.0324 83.058 67.1333C83.058 80.7415 72.0328 91.767 58.4244 91.767C54.3242 91.767 50.466 90.7662 47.06 88.9905" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M38.4076 81.4679C35.502 77.4322 33.807 72.4766 33.807 67.1333C33.807 53.5251 44.8325 42.4998 58.4245 42.4998C62.6215 42.4998 66.5604 43.549 70.015 45.3892" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  }
+  @case ('identifying') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 118 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M78.5126 99.9998H35.2293C30.1323 99.9998 26 95.8724 26 90.7738V15.994C26 11.6561 29.5172 8.12757 33.8583 8.12757H40.3312" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M77.1482 8.12786H83.6162C87.9557 8.12786 91.4745 11.6564 91.4745 15.9943V62.6588" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M37.12 46.3107H80.4599" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M37.12 29.7357H80.4599" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M37.12 62.869H80.4599" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M37.12 79.444H69.2737" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M74.67 12.7079H42.8045C41.4368 12.7079 40.3296 11.5911 40.3296 10.2315V6.46012C40.3296 5.10047 41.4368 3.99984 42.8045 3.99984H74.67C76.0361 3.99984 77.1449 5.10047 77.1449 6.46012V10.2315C77.1449 11.5911 76.0361 12.7079 74.67 12.7079Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M105.278 80.35H95.7619V70.8325H87.1865V80.35H77.6707V88.9286H87.1865V98.446H95.7619V88.9286H105.278V80.35Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="88" y="71" width="7" height="28" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <rect x="77.5" y="88.5" width="7" height="28" transform="rotate(-90 77.5 88.5)" fill="var(--fdk-color-accent, #5B47FB)"/>
+    </svg>
+  }
+  @case ('loading-1') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 66 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="34" cy="9" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="58" cy="9" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="9" cy="9" r="9" fill="var(--fdk-color-accent, #5B47FB)"/>
+    </svg>
+  }
+  @case ('loading-2') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 66 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="8" cy="9" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="58" cy="9" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="33" cy="9" r="9" fill="var(--fdk-color-accent, #5B47FB)"/>
+    </svg>
+  }
+  @case ('loading-3') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 66 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="8" cy="9" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="32" cy="9" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="57" cy="9" r="9" fill="var(--fdk-color-accent, #5B47FB)"/>
+    </svg>
+  }
+  @case ('location') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 118 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M92.7051 54.6437H82.6201V44.5569H73.5324V54.6437H63.4474V63.7297H73.5324V73.8163H82.6201V63.7297H92.7051V54.6437Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M11 100V38.3151L33.9862 29.0351" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M87.285 100V83.604" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M33.9861 100V4H87.2849V35.4119" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M87.285 25.363L110.273 38.3151V100" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M42.3638 58.7793H46.8394" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M42.3638 69.2965H46.8394" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M42.3638 79.8152H46.8394" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M58.8865 79.8152H63.3621" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M42.3638 90.3324H46.8394" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M58.8865 90.3324H63.3621" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M75.4089 90.3324H79.8846" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="75" y="45" width="8" height="29" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <rect x="63" y="63" width="8" height="29" transform="rotate(-90 63 63)" fill="var(--fdk-color-accent, #5B47FB)"/>
+    </svg>
+  }
+  @case ('sign-in') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 118 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="43" y="52" width="28" height="9" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <rect x="52.5" y="70.5" width="28" height="9" transform="rotate(-90 52.5 70.5)" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <path d="M72.4732 51.5288H62.0118V41.0706H52.6015V51.5288H42.1403V60.9504H52.6015V71.4068H62.0118V60.9504H72.4732V51.5288Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M75.7233 19.1794L80.6872 24.1433L90.3562 14.4726" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M96.8724 18.4387C96.8724 26.4116 90.4048 32.876 82.4333 32.876C74.462 32.876 67.9944 26.4116 67.9944 18.4387C67.9944 10.4641 74.462 3.99984 82.4333 3.99984C90.4048 3.99984 96.8724 10.4641 96.8724 18.4387Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M83.6139 41.0383V91.5164C83.6139 96.2022 79.8142 100 75.1252 100H39.4887C34.7997 100 31 96.2022 31 91.5164V20.9631C31 16.2772 34.7997 12.4791 39.4887 12.4791H61.0743" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M41.6231 89.5369H72.9747" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  }
+  @case ('success') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 118 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <circle cx="59" cy="52" r="46.3" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4"/>
+    <path d="M74.418 35.2304L51.8778 57.7706L44.376 50.2619C42.3662 48.2521 39.1061 48.2521 37.0963 50.2619C35.0865 52.2706 35.0865 55.5295 37.0963 57.5393L48.2437 68.6867C50.2536 70.6966 53.5137 70.6966 55.5234 68.6867L59.1575 65.0481L81.6978 42.5077C83.7076 40.498 83.7076 37.239 81.6978 35.2304C79.688 33.2206 76.4279 33.2206 74.418 35.2304Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.4276 55.4028L37.242 50.8666L41.0396 47.5884L56.7813 64.6783L54.933 69.9184L49.036 69.9184L35.4276 55.4028Z" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <rect x="76.8206" y="31.9999" width="10.4125" height="40.1362" transform="rotate(46.2842 76.8206 31.9999)" fill="var(--fdk-color-accent, #5B47FB)"/>
+    </svg>
+  }
+  @case ('warning') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 118 104" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M42.4012 13.1131L28.8593 35.1115L6.87241 70.8049C-0.983449 83.5663 8.20143 100 23.19 100H94.2137C109.202 100 118.387 83.5663 110.531 70.8049L75.0193 13.1131C67.5334 0.962303 49.87 0.962303 42.4012 13.1131Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M62.702 28.1079L64.5262 32.0942L63.705 51.811L62.1493 65.814L58.6718 66.9731L55.2509 65.8325L53.1415 31.9292L54.1591 28.146L60.1317 26.8179L62.702 28.1079Z" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4"/>
+    <path d="M64.1185 60.0167L63.8662 64.2257C63.698 66.9491 61.427 69.0756 58.7016 69.0756C55.9765 69.0756 53.7222 66.9491 53.554 64.2257L51.6027 32.3171C51.3504 28.2243 54.6139 24.7691 58.7016 24.7691C62.8063 24.7691 66.0531 28.2243 65.8007 32.3171L64.1185 59.5" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="58.2857" cy="82.2857" r="3.44286" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4"/>
+    <path d="M64.0344 82.352C64.0344 85.2924 61.6454 87.6761 58.7015 87.6761C55.7576 87.6761 53.3857 85.2924 53.3857 82.352C53.3857 79.4114 55.7576 77.0293 58.7015 77.0293C61.6454 77.0293 64.0344 79.4114 64.0344 82.352Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  }
+  @case ('welcome-1') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 232 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="197.18" y="39.6375" width="2.98086" height="12.6664" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4"/>
+    <rect x="204.466" y="45.0184" width="2.98086" height="12.6664" transform="rotate(90 204.466 45.0184)" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4"/>
+    <path d="M206.236 43.5708H200.651V37.9854H195.625V43.5708H190.04V48.6073H195.625V54.1926H200.651V48.6073H206.236V43.5708Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M218.763 19.2385V15.0953C218.763 14.3957 218.505 13.7285 218.031 13.212L210.369 4.89317C209.841 4.32282 209.099 3.99997 208.324 3.99997H179.741C178.202 3.99997 176.964 5.23756 176.964 6.77647V13.0828" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M224.327 67.9999H171.96C169.776 67.9999 168 66.2243 168 64.0395V21.4985C168 19.3139 169.776 17.5382 171.96 17.5382H181.85C183.325 17.5382 184.681 18.3668 185.359 19.6798L186.306 21.4985C186.984 22.8114 188.34 23.6293 189.825 23.6293H224.327C226.511 23.6293 228.287 25.405 228.287 27.6004V64.0395C228.287 66.2243 226.511 67.9999 224.327 67.9999Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M218.548 14.0082H211.122C210.251 14.0082 209.54 13.2978 209.54 12.4262V9.98325" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M211.241 36.9092C213.006 39.5242 214.039 42.6882 214.039 46.0889C214.039 55.161 206.688 62.5114 197.616 62.5114C194.883 62.5114 192.311 61.8441 190.04 60.6603" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M184.272 55.6453C182.335 52.9548 181.205 49.6511 181.205 46.0889C181.205 37.0168 188.555 29.6665 197.616 29.6665C200.414 29.6665 203.04 30.366 205.343 31.5928" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M58.4701 37.7624H51.7467V31.0379H45.6883V37.7624H38.9649V43.8198H45.6883V50.5442H51.7467V43.8198H58.4701V37.7624Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4 68V26.8768L19.3242 20.6901" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M54.8567 68V57.0694" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M19.3241 68V4H54.8566V24.9413" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M54.8567 18.242L70.1819 26.8768V68" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 40.5195H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 47.531H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 54.5435H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.9243 54.5435H38.9081" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 61.5549H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.9243 61.5549H38.9081" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M46.9393 61.5549H49.9231" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="46.6667" y="31.3333" width="5.33333" height="19.3333" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <rect x="38.6667" y="43.3333" width="5.33333" height="19.3333" transform="rotate(-90 38.6667 43.3333)" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <circle cx="120" cy="44" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="144" cy="44" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="95" cy="44" r="9" fill="var(--fdk-color-accent, #5B47FB)"/>
+    </svg>
+  }
+  @case ('welcome-2') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 232 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="197.18" y="39.6375" width="2.98086" height="12.6664" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4"/>
+    <rect x="204.466" y="45.0184" width="2.98086" height="12.6664" transform="rotate(90 204.466 45.0184)" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4"/>
+    <path d="M206.236 43.5708H200.651V37.9854H195.625V43.5708H190.04V48.6073H195.625V54.1926H200.651V48.6073H206.236V43.5708Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M218.763 19.2385V15.0953C218.763 14.3957 218.505 13.7285 218.031 13.212L210.369 4.89317C209.841 4.32282 209.099 3.99997 208.324 3.99997H179.741C178.202 3.99997 176.964 5.23756 176.964 6.77647V13.0828" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M224.327 67.9999H171.96C169.776 67.9999 168 66.2243 168 64.0395V21.4985C168 19.3139 169.776 17.5382 171.96 17.5382H181.85C183.325 17.5382 184.681 18.3668 185.359 19.6798L186.306 21.4985C186.984 22.8114 188.34 23.6293 189.825 23.6293H224.327C226.511 23.6293 228.287 25.405 228.287 27.6004V64.0395C228.287 66.2243 226.511 67.9999 224.327 67.9999Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M218.548 14.0082H211.122C210.251 14.0082 209.54 13.2978 209.54 12.4262V9.98325" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M211.241 36.9092C213.006 39.5242 214.039 42.6882 214.039 46.0889C214.039 55.161 206.688 62.5114 197.616 62.5114C194.883 62.5114 192.311 61.8441 190.04 60.6603" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M184.272 55.6453C182.335 52.9548 181.205 49.6511 181.205 46.0889C181.205 37.0168 188.555 29.6665 197.616 29.6665C200.414 29.6665 203.04 30.366 205.343 31.5928" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M58.47 37.7624H51.7467V31.0379H45.6883V37.7624H38.9649V43.8198H45.6883V50.5442H51.7467V43.8198H58.47V37.7624Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4 68V26.8768L19.3242 20.6901" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M54.8566 68V57.0694" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M19.3241 68V4H54.8566V24.9413" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M54.8566 18.242L70.1818 26.8768V68" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 40.5195H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 47.531H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 54.5435H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.9243 54.5435H38.9081" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 61.5549H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.9243 61.5549H38.9081" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M46.9393 61.5549H49.923" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="46.6667" y="31.3333" width="5.33333" height="19.3333" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <rect x="38.6667" y="43.3333" width="5.33333" height="19.3333" transform="rotate(-90 38.6667 43.3333)" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <circle cx="94" cy="44" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="144" cy="44" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="119" cy="44" r="9" fill="var(--fdk-color-accent, #5B47FB)"/>
+    </svg>
+  }
+  @case ('welcome-3') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 232 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="197.18" y="39.6375" width="2.98086" height="12.6664" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4"/>
+    <rect x="204.466" y="45.0184" width="2.98086" height="12.6664" transform="rotate(90 204.466 45.0184)" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4"/>
+    <path d="M206.236 43.5708H200.651V37.9854H195.625V43.5708H190.04V48.6073H195.625V54.1926H200.651V48.6073H206.236V43.5708Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M218.763 19.2385V15.0953C218.763 14.3957 218.505 13.7285 218.031 13.212L210.369 4.89317C209.841 4.32282 209.099 3.99997 208.324 3.99997H179.741C178.202 3.99997 176.964 5.23756 176.964 6.77647V13.0828" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M224.327 67.9999H171.96C169.776 67.9999 168 66.2243 168 64.0395V21.4985C168 19.3139 169.776 17.5382 171.96 17.5382H181.85C183.325 17.5382 184.681 18.3668 185.359 19.6798L186.306 21.4985C186.984 22.8114 188.34 23.6293 189.825 23.6293H224.327C226.511 23.6293 228.287 25.405 228.287 27.6004V64.0395C228.287 66.2243 226.511 67.9999 224.327 67.9999Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M218.548 14.0082H211.122C210.251 14.0082 209.54 13.2978 209.54 12.4262V9.98325" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M211.241 36.9092C213.006 39.5242 214.039 42.6882 214.039 46.0889C214.039 55.161 206.689 62.5114 197.616 62.5114C194.883 62.5114 192.311 61.8441 190.04 60.6603" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M184.272 55.6453C182.335 52.9548 181.205 49.6511 181.205 46.0889C181.205 37.0168 188.555 29.6665 197.616 29.6665C200.414 29.6665 203.04 30.366 205.343 31.5928" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M58.4701 37.7624H51.7468V31.0379H45.6883V37.7624H38.965V43.8198H45.6883V50.5442H51.7468V43.8198H58.4701V37.7624Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4 68V26.8768L19.3242 20.6901" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M54.8567 68V57.0694" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M19.3241 68V4H54.8566V24.9413" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M54.8567 18.242L70.1819 26.8768V68" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 40.5195H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 47.531H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 54.5435H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.9243 54.5435H38.9081" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 61.5549H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.9243 61.5549H38.9081" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M46.9393 61.5549H49.9231" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="46.6666" y="31.3333" width="5.33333" height="19.3333" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <rect x="38.6666" y="43.3333" width="5.33333" height="19.3333" transform="rotate(-90 38.6666 43.3333)" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <circle cx="94" cy="44" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="118" cy="44" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="143" cy="44" r="9" fill="var(--fdk-color-accent, #5B47FB)"/>
+    </svg>
+  }
+  @case ('welcome-animated') {
+    <svg
+          class="fdk-illustration__svg"
+          [attr.aria-hidden]="ariaHidden"
+          [attr.aria-label]="normalizedAriaLabel"
+          [attr.role]="role"
+          focusable="false"
+          viewBox="0 0 232 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="197.18" y="39.6375" width="2.98086" height="12.6664" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4"/>
+    <rect x="204.466" y="45.0184" width="2.98086" height="12.6664" transform="rotate(90 204.466 45.0184)" fill="var(--fdk-color-accent, #5B47FB)" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4"/>
+    <path d="M206.236 43.5708H200.651V37.9854H195.625V43.5708H190.04V48.6073H195.625V54.1926H200.651V48.6073H206.236V43.5708Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M218.763 19.2385V15.0953C218.763 14.3957 218.505 13.7285 218.031 13.212L210.369 4.89317C209.841 4.32282 209.099 3.99997 208.324 3.99997H179.741C178.202 3.99997 176.964 5.23756 176.964 6.77647V13.0828" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M224.327 67.9999H171.96C169.776 67.9999 168 66.2243 168 64.0395V21.4985C168 19.3139 169.776 17.5382 171.96 17.5382H181.85C183.325 17.5382 184.681 18.3668 185.359 19.6798L186.306 21.4985C186.984 22.8114 188.34 23.6293 189.825 23.6293H224.327C226.511 23.6293 228.287 25.405 228.287 27.6004V64.0395C228.287 66.2243 226.511 67.9999 224.327 67.9999Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M218.548 14.0082H211.122C210.251 14.0082 209.54 13.2978 209.54 12.4262V9.98325" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M211.241 36.9092C213.006 39.5242 214.039 42.6882 214.039 46.0889C214.039 55.161 206.688 62.5114 197.616 62.5114C194.883 62.5114 192.311 61.8441 190.04 60.6603" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M184.272 55.6453C182.335 52.9548 181.205 49.6511 181.205 46.0889C181.205 37.0168 188.555 29.6665 197.616 29.6665C200.414 29.6665 203.04 30.366 205.343 31.5928" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M58.4701 37.7624H51.7467V31.0379H45.6883V37.7624H38.9649V43.8198H45.6883V50.5442H51.7467V43.8198H58.4701V37.7624Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M4 68V26.8768L19.3242 20.6901" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M54.8567 68V57.0694" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M19.3241 68V4H54.8566V24.9413" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M54.8567 18.242L70.1819 26.8768V68" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 40.5195H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 47.531H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 54.5435H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.9243 54.5435H38.9081" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24.9092 61.5549H27.8929" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M35.9243 61.5549H38.9081" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M46.9393 61.5549H49.9231" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="46.6667" y="31.3333" width="5.33333" height="19.3333" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <rect x="38.6667" y="43.3333" width="5.33333" height="19.3333" transform="rotate(-90 38.6667 43.3333)" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <circle cx="95" cy="44" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="120" cy="44" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle cx="144" cy="44" r="7" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="2"/>
+    <circle class="fdk-illustration__welcome-dot fdk-illustration__welcome-dot--1" cx="95" cy="44" r="7" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <circle class="fdk-illustration__welcome-dot fdk-illustration__welcome-dot--2" cx="120" cy="44" r="7" fill="var(--fdk-color-accent, #5B47FB)"/>
+    <circle class="fdk-illustration__welcome-dot fdk-illustration__welcome-dot--3" cx="144" cy="44" r="7" fill="var(--fdk-color-accent, #5B47FB)"/>
+    </svg>
+  }
+}
+`,
+      styles: [":host{display:inline-block;max-width:100%;line-height:0;vertical-align:middle}.fdk-illustration__svg{display:block;width:100%;height:auto}.fdk-illustration__welcome-dot{opacity:0;transform-box:fill-box;transform-origin:center;animation:fdk-welcome-dot-active 1.2s ease-in-out infinite}.fdk-illustration__welcome-dot--1{animation-delay:-.4s}.fdk-illustration__welcome-dot--3{animation-delay:.4s}@keyframes fdk-welcome-dot-active{0%,66.666%,to{opacity:0;transform:scale(1)}33.333%{opacity:1;transform:scale(1.2857)}}@media (prefers-reduced-motion: reduce){.fdk-illustration__welcome-dot{animation:none}.fdk-illustration__welcome-dot--1{opacity:1;transform:scale(1.2857)}}\n"]
+    }]
+  }], null, {
+    name: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    ariaLabel: [{
+      type: Input,
+      args: ["aria-label"]
+    }]
+  });
+})();
+var FdkStateViewComponent = class _FdkStateViewComponent {
+  static {
+    this.\u0275fac = function FdkStateViewComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkStateViewComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkStateViewComponent,
+      selectors: [["fdk-state-view"]],
+      inputs: {
+        illustration: "illustration",
+        title: "title",
+        subtitle: "subtitle"
+      },
+      decls: 7,
+      vars: 3,
+      consts: [[1, "fdk-state-view"], [3, "name"], [1, "fdk-state-view__content"], [1, "fdk-state-view__title"], [1, "fdk-state-view__subtitle"]],
+      template: function FdkStateViewComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "section", 0);
+          \u0275\u0275element(1, "fdk-illustration", 1);
+          \u0275\u0275elementStart(2, "div", 2)(3, "h2", 3);
+          \u0275\u0275text(4);
+          \u0275\u0275elementEnd();
+          \u0275\u0275elementStart(5, "p", 4);
+          \u0275\u0275text(6);
+          \u0275\u0275elementEnd()()();
+        }
+        if (rf & 2) {
+          \u0275\u0275advance();
+          \u0275\u0275property("name", ctx.illustration);
+          \u0275\u0275advance(3);
+          \u0275\u0275textInterpolate(ctx.title);
+          \u0275\u0275advance(2);
+          \u0275\u0275textInterpolate(ctx.subtitle);
+        }
+      },
+      dependencies: [FdkIllustrationComponent],
+      styles: ["[_nghost-%COMP%]{display:block;width:100%}.fdk-state-view[_ngcontent-%COMP%]{display:flex;flex-direction:column;align-items:center;gap:var(--fdk-spacing-l);box-sizing:border-box;width:100%;color:var(--fdk-color-text-primary);font-family:var(--fdk-font-family-sans);text-align:center}.fdk-state-view__content[_ngcontent-%COMP%]{max-width:32rem}.fdk-state-view__title[_ngcontent-%COMP%]{margin:0;font-size:var(--fdk-font-size-heading-2);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-heading-2)}.fdk-state-view__subtitle[_ngcontent-%COMP%]{margin:var(--fdk-spacing-xxs) 0 0;color:var(--fdk-color-text-secondary);font-size:var(--fdk-font-size-paragraph);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkStateViewComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-state-view",
+      imports: [FdkIllustrationComponent],
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      template: '<section class="fdk-state-view">\n  <fdk-illustration [name]="illustration" />\n\n  <div class="fdk-state-view__content">\n    <h2 class="fdk-state-view__title">{{ title }}</h2>\n    <p class="fdk-state-view__subtitle">{{ subtitle }}</p>\n  </div>\n</section>\n',
+      styles: [":host{display:block;width:100%}.fdk-state-view{display:flex;flex-direction:column;align-items:center;gap:var(--fdk-spacing-l);box-sizing:border-box;width:100%;color:var(--fdk-color-text-primary);font-family:var(--fdk-font-family-sans);text-align:center}.fdk-state-view__content{max-width:32rem}.fdk-state-view__title{margin:0;font-size:var(--fdk-font-size-heading-2);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-heading-2)}.fdk-state-view__subtitle{margin:var(--fdk-spacing-xxs) 0 0;color:var(--fdk-color-text-secondary);font-size:var(--fdk-font-size-paragraph);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph)}\n"]
+    }]
+  }], null, {
+    illustration: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    title: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    subtitle: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }]
+  });
+})();
+var nextTextareaId = 0;
+var FdkTextareaComponent = class _FdkTextareaComponent {
+  constructor(changeDetectorRef) {
+    this.changeDetectorRef = changeDetectorRef;
+    this.placeholder = "";
+    this.value = "";
+    this.valueChange = new EventEmitter();
+    this.name = null;
+    this.disabled = false;
+    this.required = false;
+    this.error = false;
+    this.errorMessage = "";
+    this.textareaId = `fdk-textarea-${nextTextareaId++}`;
+    this.errorMessageId = `${this.textareaId}-error`;
+    this.onChange = () => {
+    };
+    this.onTouched = () => {
+    };
+  }
+  get showErrorMessage() {
+    return this.error && this.errorMessage.trim().length > 0;
+  }
+  get describedBy() {
+    return this.showErrorMessage ? this.errorMessageId : null;
+  }
+  handleInput(event) {
+    const value = event.target.value;
+    this.value = value;
+    this.valueChange.emit(value);
+    this.onChange(value);
+  }
+  handleBlur() {
+    this.onTouched();
+  }
+  writeValue(value) {
+    this.value = value ?? "";
+    this.changeDetectorRef.markForCheck();
+  }
+  registerOnChange(onChange) {
+    this.onChange = onChange;
+  }
+  registerOnTouched(onTouched) {
+    this.onTouched = onTouched;
+  }
+  setDisabledState(disabled) {
+    this.disabled = disabled;
+    this.changeDetectorRef.markForCheck();
+  }
+  static {
+    this.\u0275fac = function FdkTextareaComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FdkTextareaComponent)(\u0275\u0275directiveInject(ChangeDetectorRef));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({
+      type: _FdkTextareaComponent,
+      selectors: [["fdk-textarea"]],
+      inputs: {
+        label: "label",
+        placeholder: "placeholder",
+        value: "value",
+        name: "name",
+        disabled: [2, "disabled", "disabled", booleanAttribute],
+        required: [2, "required", "required", booleanAttribute],
+        error: [2, "error", "error", booleanAttribute],
+        errorMessage: "errorMessage"
+      },
+      outputs: {
+        valueChange: "valueChange"
+      },
+      features: [\u0275\u0275ProvidersFeature([{
+        provide: NG_VALUE_ACCESSOR,
+        useExisting: forwardRef(() => _FdkTextareaComponent),
+        multi: true
+      }])],
+      decls: 6,
+      vars: 14,
+      consts: [[1, "fdk-textarea"], [1, "fdk-textarea__label", 3, "for"], ["aria-hidden", "true", 1, "fdk-textarea__required"], ["rows", "3", 1, "fdk-textarea__control", 3, "blur", "input", "disabled", "id", "placeholder", "required", "value"], [1, "fdk-textarea__error", 3, "id"]],
+      template: function FdkTextareaComponent_Template(rf, ctx) {
+        if (rf & 1) {
+          \u0275\u0275elementStart(0, "div", 0)(1, "label", 1);
+          \u0275\u0275text(2);
+          \u0275\u0275template(3, FdkTextareaComponent_Conditional_3_Template, 2, 0, "span", 2);
+          \u0275\u0275elementEnd();
+          \u0275\u0275elementStart(4, "textarea", 3);
+          \u0275\u0275listener("blur", function FdkTextareaComponent_Template_textarea_blur_4_listener() {
+            return ctx.handleBlur();
+          })("input", function FdkTextareaComponent_Template_textarea_input_4_listener($event) {
+            return ctx.handleInput($event);
+          });
+          \u0275\u0275elementEnd();
+          \u0275\u0275template(5, FdkTextareaComponent_Conditional_5_Template, 2, 2, "p", 4);
+          \u0275\u0275elementEnd();
+        }
+        if (rf & 2) {
+          \u0275\u0275advance();
+          \u0275\u0275property("for", ctx.textareaId);
+          \u0275\u0275advance();
+          \u0275\u0275textInterpolate1(" ", ctx.label, " ");
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.required ? 3 : -1);
+          \u0275\u0275advance();
+          \u0275\u0275classProp("fdk-textarea__control--error", ctx.error);
+          \u0275\u0275property("disabled", ctx.disabled)("id", ctx.textareaId)("placeholder", ctx.placeholder)("required", ctx.required)("value", ctx.value);
+          \u0275\u0275attribute("aria-describedby", ctx.describedBy)("aria-invalid", ctx.error ? "true" : null)("name", ctx.name);
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.showErrorMessage ? 5 : -1);
+        }
+      },
+      styles: ["[_nghost-%COMP%]{display:block}.fdk-textarea[_ngcontent-%COMP%]{display:grid;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-textarea__label[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary)}.fdk-textarea__required[_ngcontent-%COMP%]{margin-inline-start:var(--fdk-spacing-xxxs);color:var(--fdk-color-semantic-error)}.fdk-textarea__control[_ngcontent-%COMP%]{box-sizing:border-box;width:100%;padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);resize:vertical;font-family:inherit;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary);background-color:var(--fdk-color-neutrals-background);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg)}.fdk-textarea__control[_ngcontent-%COMP%]::placeholder{color:var(--fdk-color-text-placeholder)}.fdk-textarea__control[_ngcontent-%COMP%]:focus{border-color:var(--fdk-color-accent);outline:2px solid var(--fdk-color-accent);outline-offset:1px}.fdk-textarea__control[_ngcontent-%COMP%]:disabled{color:var(--fdk-color-text-placeholder);background-color:var(--fdk-color-neutrals-hover);cursor:not-allowed}.fdk-textarea__control--error[_ngcontent-%COMP%]{border-color:var(--fdk-color-semantic-error)}.fdk-textarea__control--error[_ngcontent-%COMP%]:focus{border-color:var(--fdk-color-semantic-error);outline-color:var(--fdk-color-semantic-error)}.fdk-textarea__error[_ngcontent-%COMP%]{margin:0;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-semantic-error)}"],
+      changeDetection: 0
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(FdkTextareaComponent, [{
+    type: Component,
+    args: [{
+      selector: "fdk-textarea",
+      changeDetection: ChangeDetectionStrategy.OnPush,
+      standalone: true,
+      providers: [{
+        provide: NG_VALUE_ACCESSOR,
+        useExisting: forwardRef(() => FdkTextareaComponent),
+        multi: true
+      }],
+      template: `<div class="fdk-textarea">
+  <label
+    class="fdk-textarea__label"
+    [for]="textareaId">
+    {{ label }}
+    @if (required) {
+      <span
+        class="fdk-textarea__required"
+        aria-hidden="true">*</span>
+    }
+  </label>
+
+  <textarea
+    class="fdk-textarea__control"
+    (blur)="handleBlur()"
+    (input)="handleInput($event)"
+    rows="3"
+    [class.fdk-textarea__control--error]="error"
+    [attr.aria-describedby]="describedBy"
+    [attr.aria-invalid]="error ? 'true' : null"
+    [disabled]="disabled"
+    [id]="textareaId"
+    [attr.name]="name"
+    [placeholder]="placeholder"
+    [required]="required"
+    [value]="value"></textarea>
+
+  @if (showErrorMessage) {
+    <p
+      class="fdk-textarea__error"
+      [id]="errorMessageId">
+      {{ errorMessage }}
+    </p>
+  }
+</div>
+`,
+      styles: [":host{display:block}.fdk-textarea{display:grid;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-textarea__label{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary)}.fdk-textarea__required{margin-inline-start:var(--fdk-spacing-xxxs);color:var(--fdk-color-semantic-error)}.fdk-textarea__control{box-sizing:border-box;width:100%;padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);resize:vertical;font-family:inherit;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary);background-color:var(--fdk-color-neutrals-background);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg)}.fdk-textarea__control::placeholder{color:var(--fdk-color-text-placeholder)}.fdk-textarea__control:focus{border-color:var(--fdk-color-accent);outline:2px solid var(--fdk-color-accent);outline-offset:1px}.fdk-textarea__control:disabled{color:var(--fdk-color-text-placeholder);background-color:var(--fdk-color-neutrals-hover);cursor:not-allowed}.fdk-textarea__control--error{border-color:var(--fdk-color-semantic-error)}.fdk-textarea__control--error:focus{border-color:var(--fdk-color-semantic-error);outline-color:var(--fdk-color-semantic-error)}.fdk-textarea__error{margin:0;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-semantic-error)}\n"]
+    }]
+  }], () => [{
+    type: ChangeDetectorRef
+  }], {
+    label: [{
+      type: Input,
+      args: [{
+        required: true
+      }]
+    }],
+    placeholder: [{
+      type: Input
+    }],
+    value: [{
+      type: Input
+    }],
+    valueChange: [{
+      type: Output
+    }],
+    name: [{
+      type: Input
+    }],
+    disabled: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    required: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    error: [{
+      type: Input,
+      args: [{
+        transform: booleanAttribute
+      }]
+    }],
+    errorMessage: [{
+      type: Input
+    }]
+  });
+})();
+
+// projects/fasten-connect-stitch-embed/src/app/models/embed-header-config.ts
+var DEFAULT_EMBED_HEADER_CONFIG = {
+  showBackButton: false,
+  showReportIssueButton: false,
+  showProfileButton: false,
+  showCloseButton: true,
+  closeAction: "close"
+};
+
+// node_modules/ngx-device-detector/fesm2022/ngx-device-detector.mjs
+var GENERAL = {
+  UKNOWN: "Unknown"
+};
+var BROWSERS = {
+  CHROME: "Chrome",
+  FIREFOX: "Firefox",
+  SAFARI: "Safari",
+  OPERA: "Opera",
+  IE: "IE",
+  MS_EDGE: "MS-Edge",
+  MS_EDGE_CHROMIUM: "MS-Edge-Chromium",
+  FB_MESSANGER: "FB-Messanger",
+  SAMSUNG: "Samsung",
+  UCBROWSER: "UC-Browser",
+  UNKNOWN: GENERAL.UKNOWN
+};
+var MOBILES_RE = {
+  // tslint:disable-next-line:max-line-length
+  HTC: /HTC|HTC.*(Sensation|Evo|Vision|Explorer|6800|8100|8900|A7272|S510e|C110e|Legend|Desire|T8282)|APX515CKT|Qtek9090|APA9292KT|HD_mini|Sensation.*Z710e|PG86100|Z715e|Desire.*(A8181|HD)|ADR6200|ADR6400L|ADR6425|001HT|Inspire 4G|Android.*\bEVO\b|T-Mobile G1|Z520m|Android [0-9.]+; Pixel/,
+  NEXUS_PHONE: /Nexus One|Nexus S|Galaxy.*Nexus|Android.*Nexus.*Mobile|Nexus 4|Nexus 5|Nexus 6/,
+  DELL: /Dell[;]? (Streak|Aero|Venue|Venue Pro|Flash|Smoke|Mini 3iX)|XCD28|XCD35|\b001DL\b|\b101DL\b|\bGS01\b/,
+  MOTOROLA: new RegExp(`Motorola|DROIDX|DROID BIONIC|\\bDroid\\b.*Build|Android.*Xoom|HRI39|MOT-|A1260|A1680|A555|A853|
+      A855|A953|A955|A956|Motorola.*ELECTRIFY|Motorola.*i1|i867|i940|MB200|MB300|MB501|MB502|MB508|MB511|
+      MB520|MB525|MB526|MB611|MB612|MB632|MB810|MB855|MB860|MB861|MB865|MB870|ME501|ME502|ME511|ME525|ME600|
+      ME632|ME722|ME811|ME860|ME863|ME865|MT620|MT710|MT716|MT720|MT810|MT870|MT917|Motorola.*TITANIUM|WX435|
+      WX445|XT300|XT301|XT311|XT316|XT317|XT319|XT320|XT390|XT502|XT530|XT531|XT532|XT535|XT603|XT610|XT611|
+      XT615|XT681|XT701|XT702|XT711|XT720|XT800|XT806|XT860|XT862|XT875|XT882|XT883|XT894|XT901|XT907|XT909|
+      XT910|XT912|XT928|XT926|XT915|XT919|XT925|XT1021|\\bMoto E\\b|XT1068|XT1092|XT1052`),
+  SAMSUNG: new RegExp(`\\bSamsung\\b|SM-G950F|SM-G955F|SM-G9250|GT-19300|SGH-I337|BGT-S5230|GT-B2100|GT-B2700|GT-B2710|
+      GT-B3210|GT-B3310|GT-B3410|GT-B3730|GT-B3740|GT-B5510|GT-B5512|GT-B5722|GT-B6520|GT-B7300|GT-B7320|
+      GT-B7330|GT-B7350|GT-B7510|GT-B7722|GT-B7800|GT-C3010|GT-C3011|GT-C3060|GT-C3200|GT-C3212|GT-C3212I|
+      GT-C3262|GT-C3222|GT-C3300|GT-C3300K|GT-C3303|GT-C3303K|GT-C3310|GT-C3322|GT-C3330|GT-C3350|GT-C3500|
+      GT-C3510|GT-C3530|GT-C3630|GT-C3780|GT-C5010|GT-C5212|GT-C6620|GT-C6625|GT-C6712|GT-E1050|GT-E1070|
+      GT-E1075|GT-E1080|GT-E1081|GT-E1085|GT-E1087|GT-E1100|GT-E1107|GT-E1110|GT-E1120|GT-E1125|GT-E1130|
+      GT-E1160|GT-E1170|GT-E1175|GT-E1180|GT-E1182|GT-E1200|GT-E1210|GT-E1225|GT-E1230|GT-E1390|GT-E2100|
+      GT-E2120|GT-E2121|GT-E2152|GT-E2220|GT-E2222|GT-E2230|GT-E2232|GT-E2250|GT-E2370|GT-E2550|GT-E2652|
+      GT-E3210|GT-E3213|GT-I5500|GT-I5503|GT-I5700|GT-I5800|GT-I5801|GT-I6410|GT-I6420|GT-I7110|GT-I7410|
+      GT-I7500|GT-I8000|GT-I8150|GT-I8160|GT-I8190|GT-I8320|GT-I8330|GT-I8350|GT-I8530|GT-I8700|GT-I8703|
+      GT-I8910|GT-I9000|GT-I9001|GT-I9003|GT-I9010|GT-I9020|GT-I9023|GT-I9070|GT-I9082|GT-I9100|GT-I9103|
+      GT-I9220|GT-I9250|GT-I9300|GT-I9305|GT-I9500|GT-I9505|GT-M3510|GT-M5650|GT-M7500|GT-M7600|GT-M7603|
+      GT-M8800|GT-M8910|GT-N7000|GT-S3110|GT-S3310|GT-S3350|GT-S3353|GT-S3370|GT-S3650|GT-S3653|GT-S3770|
+      GT-S3850|GT-S5210|GT-S5220|GT-S5229|GT-S5230|GT-S5233|GT-S5250|GT-S5253|GT-S5260|GT-S5263|GT-S5270|
+      GT-S5300|GT-S5330|GT-S5350|GT-S5360|GT-S5363|GT-S5369|GT-S5380|GT-S5380D|GT-S5560|GT-S5570|GT-S5600|
+      GT-S5603|GT-S5610|GT-S5620|GT-S5660|GT-S5670|GT-S5690|GT-S5750|GT-S5780|GT-S5830|GT-S5839|GT-S6102|
+      GT-S6500|GT-S7070|GT-S7200|GT-S7220|GT-S7230|GT-S7233|GT-S7250|GT-S7500|GT-S7530|GT-S7550|GT-S7562|
+      GT-S7710|GT-S8000|GT-S8003|GT-S8500|GT-S8530|GT-S8600|SCH-A310|SCH-A530|SCH-A570|SCH-A610|SCH-A630|
+      SCH-A650|SCH-A790|SCH-A795|SCH-A850|SCH-A870|SCH-A890|SCH-A930|SCH-A950|SCH-A970|SCH-A990|SCH-I100|
+      SCH-I110|SCH-I400|SCH-I405|SCH-I500|SCH-I510|SCH-I515|SCH-I600|SCH-I730|SCH-I760|SCH-I770|SCH-I830|
+      SCH-I910|SCH-I920|SCH-I959|SCH-LC11|SCH-N150|SCH-N300|SCH-R100|SCH-R300|SCH-R351|SCH-R400|SCH-R410|
+      SCH-T300|SCH-U310|SCH-U320|SCH-U350|SCH-U360|SCH-U365|SCH-U370|SCH-U380|SCH-U410|SCH-U430|SCH-U450|
+      SCH-U460|SCH-U470|SCH-U490|SCH-U540|SCH-U550|SCH-U620|SCH-U640|SCH-U650|SCH-U660|SCH-U700|SCH-U740|
+      SCH-U750|SCH-U810|SCH-U820|SCH-U900|SCH-U940|SCH-U960|SCS-26UC|SGH-A107|SGH-A117|SGH-A127|SGH-A137|
+      SGH-A157|SGH-A167|SGH-A177|SGH-A187|SGH-A197|SGH-A227|SGH-A237|SGH-A257|SGH-A437|SGH-A517|SGH-A597|
+      SGH-A637|SGH-A657|SGH-A667|SGH-A687|SGH-A697|SGH-A707|SGH-A717|SGH-A727|SGH-A737|SGH-A747|SGH-A767|
+      SGH-A777|SGH-A797|SGH-A817|SGH-A827|SGH-A837|SGH-A847|SGH-A867|SGH-A877|SGH-A887|SGH-A897|SGH-A927|
+      SGH-B100|SGH-B130|SGH-B200|SGH-B220|SGH-C100|SGH-C110|SGH-C120|SGH-C130|SGH-C140|SGH-C160|SGH-C170|
+      SGH-C180|SGH-C200|SGH-C207|SGH-C210|SGH-C225|SGH-C230|SGH-C417|SGH-C450|SGH-D307|SGH-D347|SGH-D357|
+      SGH-D407|SGH-D415|SGH-D780|SGH-D807|SGH-D980|SGH-E105|SGH-E200|SGH-E315|SGH-E316|SGH-E317|SGH-E335|
+      SGH-E590|SGH-E635|SGH-E715|SGH-E890|SGH-F300|SGH-F480|SGH-I200|SGH-I300|SGH-I320|SGH-I550|SGH-I577|
+      SGH-I600|SGH-I607|SGH-I617|SGH-I627|SGH-I637|SGH-I677|SGH-I700|SGH-I717|SGH-I727|SGH-i747M|SGH-I777|
+      SGH-I780|SGH-I827|SGH-I847|SGH-I857|SGH-I896|SGH-I897|SGH-I900|SGH-I907|SGH-I917|SGH-I927|SGH-I937|
+      SGH-I997|SGH-J150|SGH-J200|SGH-L170|SGH-L700|SGH-M110|SGH-M150|SGH-M200|SGH-N105|SGH-N500|SGH-N600|
+      SGH-N620|SGH-N625|SGH-N700|SGH-N710|SGH-P107|SGH-P207|SGH-P300|SGH-P310|SGH-P520|SGH-P735|SGH-P777|
+      SGH-Q105|SGH-R210|SGH-R220|SGH-R225|SGH-S105|SGH-S307|SGH-T109|SGH-T119|SGH-T139|SGH-T209|SGH-T219|
+      SGH-T229|SGH-T239|SGH-T249|SGH-T259|SGH-T309|SGH-T319|SGH-T329|SGH-T339|SGH-T349|SGH-T359|SGH-T369|
+      SGH-T379|SGH-T409|SGH-T429|SGH-T439|SGH-T459|SGH-T469|SGH-T479|SGH-T499|SGH-T509|SGH-T519|SGH-T539|
+      SGH-T559|SGH-T589|SGH-T609|SGH-T619|SGH-T629|SGH-T639|SGH-T659|SGH-T669|SGH-T679|SGH-T709|SGH-T719|
+      SGH-T729|SGH-T739|SGH-T746|SGH-T749|SGH-T759|SGH-T769|SGH-T809|SGH-T819|SGH-T839|SGH-T919|SGH-T929|
+      SGH-T939|SGH-T959|SGH-T989|SGH-U100|SGH-U200|SGH-U800|SGH-V205|SGH-V206|SGH-X100|SGH-X105|SGH-X120|
+      SGH-X140|SGH-X426|SGH-X427|SGH-X475|SGH-X495|SGH-X497|SGH-X507|SGH-X600|SGH-X610|SGH-X620|SGH-X630|
+      SGH-X700|SGH-X820|SGH-X890|SGH-Z130|SGH-Z150|SGH-Z170|SGH-ZX10|SGH-ZX20|SHW-M110|SPH-A120|SPH-A400|
+      SPH-A420|SPH-A460|SPH-A500|SPH-A560|SPH-A600|SPH-A620|SPH-A660|SPH-A700|SPH-A740|SPH-A760|SPH-A790|
+      SPH-A800|SPH-A820|SPH-A840|SPH-A880|SPH-A900|SPH-A940|SPH-A960|SPH-D600|SPH-D700|SPH-D710|SPH-D720|
+      SPH-I300|SPH-I325|SPH-I330|SPH-I350|SPH-I500|SPH-I600|SPH-I700|SPH-L700|SPH-M100|SPH-M220|SPH-M240|
+      SPH-M300|SPH-M305|SPH-M320|SPH-M330|SPH-M350|SPH-M360|SPH-M370|SPH-M380|SPH-M510|SPH-M540|SPH-M550|
+      SPH-M560|SPH-M570|SPH-M580|SPH-M610|SPH-M620|SPH-M630|SPH-M800|SPH-M810|SPH-M850|SPH-M900|SPH-M910|
+      SPH-M920|SPH-M930|SPH-N100|SPH-N200|SPH-N240|SPH-N300|SPH-N400|SPH-Z400|SWC-E100|SCH-i909|GT-N7100|
+      GT-N7105|SCH-I535|SM-N900A|SM-N900T|SGH-I317|SGH-T999L|GT-S5360B|GT-I8262|GT-S6802|GT-S6312|GT-S6310|GT-S5312|
+      GT-S5310|GT-I9105|GT-I8510|GT-S6790N|SM-G7105|SM-N9005|GT-S5301|GT-I9295|GT-I9195|SM-C101|GT-S7392|GT-S7560|
+      GT-B7610|GT-I5510|GT-S7582|GT-S7530E|GT-I8750|SM-G9006V|SM-G9008V|SM-G9009D|SM-G900A|SM-G900D|SM-G900F|
+      SM-G900H|SM-G900I|SM-G900J|SM-G900K|SM-G900L|SM-G900M|SM-G900P|SM-G900R4|SM-G900S|SM-G900T|SM-G900V|
+      SM-G900W8|SHV-E160K|SCH-P709|SCH-P729|SM-T2558|GT-I9205|SM-G9350|SM-J120F|SM-G920F|SM-G920V|SM-G930F|
+      SM-N910C|SM-A310F|GT-I9190|SM-J500FN|SM-G903F|SM-J330F`),
+  LG: new RegExp(`\\bLG\\b;|LG[- ]?(C800|C900|E400|E610|E900|E-900|F160|F180K|F180L|F180S|730|855|L160|LS740|LS840|LS970|
+      LU6200|MS690|MS695|MS770|MS840|MS870|MS910|P500|P700|P705|VM696|AS680|AS695|AX840|C729|E970|GS505|272|
+      C395|E739BK|E960|L55C|L75C|LS696|LS860|P769BK|P350|P500|P509|P870|UN272|US730|VS840|VS950|LN272|LN510|
+      LS670|LS855|LW690|MN270|MN510|P509|P769|P930|UN200|UN270|UN510|UN610|US670|US740|US760|UX265|UX840|VN271|
+      VN530|VS660|VS700|VS740|VS750|VS910|VS920|VS930|VX9200|VX11000|AX840A|LW770|P506|P925|P999|E612|D955|D802|
+      MS323|M257)`),
+  SONY: /SonyST|SonyLT|SonyEricsson|SonyEricssonLT15iv|LT18i|E10i|LT28h|LT26w|SonyEricssonMT27i|C5303|C6902|C6903|C6906|C6943|D2533/,
+  ASUS: /Asus.*Galaxy|PadFone.*Mobile/,
+  NOKIA_LUMIA: /Lumia [0-9]{3,4}/,
+  MICROMAX: /Micromax.*\b(A210|A92|A88|A72|A111|A110Q|A115|A116|A110|A90S|A26|A51|A35|A54|A25|A27|A89|A68|A65|A57|A90)\b/,
+  PALM: /PalmSource|Palm/,
+  VERTU: /Vertu|Vertu.*Ltd|Vertu.*Ascent|Vertu.*Ayxta|Vertu.*Constellation(F|Quest)?|Vertu.*Monika|Vertu.*Signature/,
+  PANTECH: new RegExp(`PANTECH|IM-A850S|IM-A840S|IM-A830L|IM-A830K|IM-A830S|IM-A820L|IM-A810K|IM-A810S|IM-A800S|IM-T100K|
+        IM-A725L|IM-A780L|IM-A775C|IM-A770K|IM-A760S|IM-A750K|IM-A740S|IM-A730S|IM-A720L|IM-A710K|IM-A690L|
+        IM-A690S|IM-A650S|IM-A630K|IM-A600S|VEGA PTL21|PT003|P8010|ADR910L|P6030|P6020|P9070|P4100|P9060|P5000|
+        CDM8992|TXT8045|ADR8995|IS11PT|P2030|P6010|P8000|PT002|IS06|CDM8999|P9050|PT001|TXT8040|P2020|P9020|
+        P2000|P7040|P7000|C790`),
+  FLY: /IQ230|IQ444|IQ450|IQ440|IQ442|IQ441|IQ245|IQ256|IQ236|IQ255|IQ235|IQ245|IQ275|IQ240|IQ285|IQ280|IQ270|IQ260|IQ250/,
+  WIKO: new RegExp(`KITE 4G|HIGHWAY|GETAWAY|STAIRWAY|DARKSIDE|DARKFULL|DARKNIGHT|DARKMOON|SLIDE|WAX 4G|RAINBOW|BLOOM|
+        SUNSET|GOA(?!nna)|LENNY|BARRY|IGGY|OZZY|CINK FIVE|CINK PEAX|CINK PEAX 2|CINK SLIM|CINK SLIM 2|CINK +|
+        CINK KING|CINK PEAX|CINK SLIM|SUBLIM`),
+  I_MOBILE: /i-mobile (IQ|i-STYLE|idea|ZAA|Hitz)/,
+  SIMVALLEY: /\b(SP-80|XT-930|SX-340|XT-930|SX-310|SP-360|SP60|SPT-800|SP-120|SPT-800|SP-140|SPX-5|SPX-8|SP-100|SPX-8|SPX-12)\b/,
+  WOLFGANG: /AT-B24D|AT-AS50HD|AT-AS40W|AT-AS55HD|AT-AS45q2|AT-B26D|AT-AS50Q/,
+  ALCATEL: /Alcatel|Mobile; rv:49.0|Mobile; ALCATEL 4052R; rv:48.0/,
+  NINTENDO: /Nintendo (3DS|Switch)/,
+  AMOI: /Amoi/,
+  INQ: /INQ/,
+  VITA: /\bVita\b/,
+  BLACKBERRY: /\bBlackBerry\b|\bBB10\b|rim[0-9]+/,
+  FIREFOX_OS: /\bFirefox-OS\b/,
+  IPHONE: /\biPhone\b/,
+  iPod: /\biPod\b/,
+  ANDROID: /\bAndroid\b/,
+  WINDOWS_PHONE: /\bWindows-Phone\b/,
+  GENERIC_PHONE: new RegExp(`Tapatalk|PDA;|SAGEM|\\bmmp\\b|pocket|\\bpsp\\b|symbian|Smartphone|smartfon|treo|up.browser|
+        up.link|vodafone|\\bwap\\b|nokia|Nokia|Series40|Series60|S60|SonyEricsson|N900|MAUI.*WAP.*Browser`)
+};
+var TABLETS_RE = {
+  iPad: /iPad|iPad.*Mobile/,
+  NexusTablet: /Android.*Nexus[\s]+(7|9|10)/,
+  GoogleTablet: /Android.*Pixel C/,
+  SamsungTablet: new RegExp(`SAMSUNG.*Tablet|Galaxy.*Tab|SC-01C|GT-P1000|GT-P1003|GT-P1010|GT-P3105|GT-P6210|
+        GT-P6800|GT-P6810|GT-P7100|GT-P7300|GT-P7310|GT-P7500|GT-P7510|SCH-I800|SCH-I815|SCH-I905|
+        SGH-I957|SGH-I987|SGH-T849|SGH-T859|SGH-T869|SPH-P100|GT-P3100|GT-P3108|GT-P3110|GT-P5100|
+        GT-P5110|GT-P6200|GT-P7320|GT-P7511|GT-N8000|GT-P8510|SGH-I497|SPH-P500|SGH-T779|SCH-I705|
+        SCH-I915|GT-N8013|GT-P3113|GT-P5113|GT-P8110|GT-N8010|GT-N8005|GT-N8020|GT-P1013|GT-P6201|
+        GT-P7501|GT-N5100|GT-N5105|GT-N5110|SHV-E140K|SHV-E140L|SHV-E140S|SHV-E150S|SHV-E230K|SHV-E230L|
+        SHV-E230S|SHW-M180K|SHW-M180L|SM-T865|SM-T290|SHW-M180S|SHW-M180W|SHW-M300W|SHW-M305W|SHW-M380K|SHW-M380S|SHW-M380W|
+        SHW-M430W|SHW-M480K|SHW-M480S|SHW-M480W|SHW-M485W|SHW-M486W|SHW-M500W|GT-I9228|SCH-P739|SCH-I925|
+        GT-I9200|GT-P5200|GT-P5210|GT-P5210X|SM-T385M|SM-P585M|SM-T311|SM-T310|SM-T310X|SM-T210|SM-T210R|SM-T211|SM-P600|
+        SM-P601|SM-P605|SM-P615|SM-P900|SM-P901|SM-T217|SM-T217A|SM-T217S|SM-P6000|SM-T3100|SGH-I467|XE500|SM-T110|
+        GT-P5220|GT-I9200X|GT-N5110X|GT-N5120|SM-P905|SM-T111|SM-T2105|SM-T315|SM-T320|SM-T320X|SM-T321|
+        SM-T510|SM-T520|SM-T525|SM-T530NU|SM-T230NU|SM-T330NU|SM-T900|XE500T1C|SM-P605V|SM-P905V|SM-T337V|SM-T537V|
+        SM-T707V|SM-T807V|SM-P600X|SM-P900X|SM-T210X|SM-T230|SM-T230X|SM-T325|GT-P7503|SM-T531|SM-T500|SM-T330|
+        SM-T530|SM-T705|SM-T705C|SM-T535|SM-T331|SM-T800|SM-T700|SM-T537|SM-T807|SM-P907A|SM-T337A|SM-T537A|
+        SM-T707A|SM-T807A|SM-T237|SM-T807P|SM-P607T|SM-T217T|SM-T337T|SM-T807T|SM-T116NQ|SM-T116BU|SM-P550|
+        SM-T350|SM-T550|SM-T9000|SM-P9000|SM-T705Y|SM-T805|GT-P3113|SM-T710|SM-T810|SM-T815|SM-T360|SM-T533|
+        SM-T113|SM-T335|SM-T715|SM-T560|SM-T670|SM-T677|SM-T377|SM-T567|SM-T357T|SM-T555|SM-T561|SM-T713|
+        SM-T719|SM-T725|SM-T813|SM-T819|SM-T580|SM-T590|SM-T355Y?|SM-T280|SM-T817A|SM-T820|SM-W700|SM-P580|SM-T587|SM-P350|
+        SM-P555M|SM-P355M|SM-T113NU|SM-T815Y|SM-T585|SM-T285|SM-T825|SM-W708|SM-T835|SM-P585Y|SM-X200|SM-T970`),
+  Kindle: new RegExp(`Kindle|Silk.*Accelerated|Android.*\\b(KFOT|KFTT|KFJWI|KFJWA|KFOTE|KFSOWI|KFTHWI|KFTHWA|KFAPWI|
+        KFAPWA|WFJWAE|KFSAWA|KFSAWI|KFASWI|KFARWI|KFFOWI|KFGIWI|KFMEWI)\\b|Android.*Silk/[0-9.]+ like Chrome        /[0-9.]+ (?!Mobile)`),
+  SurfaceTablet: /Windows NT [0-9.]+; ARM;.*(Tablet|ARMBJS)/,
+  HPTablet: /HP Slate (7|8|10)|HP ElitePad 900|hp-tablet|EliteBook.*Touch|HP 8|Slate 21|HP SlateBook 10/,
+  AsusTablet: new RegExp(`^.*PadFone((?!Mobile).)*$|Transformer|TF101|TF101G|TF300T|TF300TG|TF300TL|TF700T|TF700KL|
+        TF701T|TF810C|ME171|ME301T|ME302C|ME371MG|ME370T|ME372MG|ME172V|ME173X|ME400C|
+        Slider SL101|\\bK00F\\b|\\bK00C\\b|\\bK00E\\b|\\bK00L\\b|TX201LA|ME176C|ME102A|\\bM80TA\\b|ME372CL|
+        ME560CG|ME372CG|ME302KL| K010 | K011 | K017 | K01E |ME572C|ME103K|ME170C|ME171C|\\bME70C\\b|ME581C|
+        ME581CL|ME8510C|ME181C|P01Y|PO1MA|P01Z|\\bP027\\b|\\bP024\\b|\\bP00C\\b`),
+  BlackBerryTablet: /PlayBook|RIM Tablet/,
+  HTCtablet: /HTC_Flyer_P512|HTC Flyer|HTC Jetstream|HTC-P715a|HTC EVO View 4G|PG41200|PG09410/,
+  MotorolaTablet: /xoom|sholest|MZ615|MZ605|MZ505|MZ601|MZ602|MZ603|MZ604|MZ606|MZ607|MZ608|MZ609|MZ615|MZ616|MZ617/,
+  NookTablet: /Android.*Nook|NookColor|nook browser|BNRV200|BNRV200A|BNTV250|BNTV250A|BNTV400|BNTV600|LogicPD Zoom2/,
+  AcerTablet: new RegExp(`Android.*; \\b(A100|A101|A110|A200|A210|A211|A500|A501|A510|A511|A700|A701|W500|W500P|W501|
+        W501P|W510|W511|W700|G100|G100W|B1-A71|B1-710|B1-711|A1-810|A1-811|A1-830)\\b|W3-810|\\bA3-A10\\b|\\bA3-A11\\b|
+        \\bA3-A20\\b|\\bA3-A30`),
+  ToshibaTablet: /Android.*(AT100|AT105|AT200|AT205|AT270|AT275|AT300|AT305|AT1S5|AT500|AT570|AT700|AT830)|TOSHIBA.*FOLIO/,
+  LGTablet: /\bL-06C|LG-V909|LG-V900|LG-V700|LG-V510|LG-V500|LG-V410|LG-V400|LG-VK810\b/,
+  FujitsuTablet: /Android.*\b(F-01D|F-02F|F-05E|F-10D|M532|Q572)\b/,
+  PrestigioTablet: new RegExp(`PMP3170B|PMP3270B|PMP3470B|PMP7170B|PMP3370B|PMP3570C|PMP5870C|PMP3670B|PMP5570C|
+        PMP5770D|PMP3970B|PMP3870C|PMP5580C|PMP5880D|PMP5780D|PMP5588C|PMP7280C|PMP7280C3G|PMP7280|PMP7880D|
+        PMP5597D|PMP5597|PMP7100D|PER3464|PER3274|PER3574|PER3884|PER5274|PER5474|PMP5097CPRO|PMP5097|PMP7380D|
+        PMP5297C|PMP5297C_QUAD|PMP812E|PMP812E3G|PMP812F|PMP810E|PMP880TD|PMT3017|PMT3037|PMT3047|PMT3057|PMT7008|
+        PMT5887|PMT5001|PMT5002`),
+  LenovoTablet: new RegExp(`Lenovo TAB|Idea(Tab|Pad)( A1|A10| K1|)|ThinkPad([ ]+)?Tablet|YT3-850M|YT3-X90L|YT3-X90F|
+        YT3-X90X|Lenovo.*(S2109|S2110|S5000|S6000|K3011|A3000|A3500|A1000|A2107|A2109|A1107|A5500|A7600|B6000|
+        B8000|B8080)(-|)(FL|F|HV|H|)|TB-X606F|TB-X103F|TB-X304F|TB-X304L|TB-X704F|TB-8703F|Tab2A7-10F|TB2-X30L|TB-8504F`),
+  DellTablet: /Venue 11|Venue 8|Venue 7|Dell Streak 10|Dell Streak 7/,
+  YarvikTablet: new RegExp(`Android.*\\b(TAB210|TAB211|TAB224|TAB250|TAB260|TAB264|TAB310|TAB360|TAB364|TAB410|TAB411|
+        TAB420|TAB424|TAB450|TAB460|TAB461|TAB464|TAB465|TAB467|TAB468|TAB07-100|TAB07-101|TAB07-150|TAB07-151|
+        TAB07-152|TAB07-200|TAB07-201-3G|TAB07-210|TAB07-211|TAB07-212|TAB07-214|TAB07-220|TAB07-400|TAB07-485|
+        TAB08-150|TAB08-200|TAB08-201-3G|TAB08-201-30|TAB09-100|TAB09-211|TAB09-410|TAB10-150|TAB10-201|TAB10-211|
+        TAB10-400|TAB10-410|TAB13-201|TAB274EUK|TAB275EUK|TAB374EUK|TAB462EUK|TAB474EUK|TAB9-200)\\b`),
+  MedionTablet: /Android.*\bOYO\b|LIFE.*(P9212|P9514|P9516|S9512)|LIFETAB/,
+  ArnovaTablet: /97G4|AN10G2|AN7bG3|AN7fG3|AN8G3|AN8cG3|AN7G3|AN9G3|AN7dG3|AN7dG3ST|AN7dG3ChildPad|AN10bG3|AN10bG3DT|AN9G2/,
+  IntensoTablet: /INM8002KP|INM1010FP|INM805ND|Intenso Tab|TAB1004/,
+  IRUTablet: /M702pro/,
+  MegafonTablet: /MegaFon V9|\bZTE V9\b|Android.*\bMT7A\b/,
+  EbodaTablet: /E-Boda (Supreme|Impresspeed|Izzycomm|Essential)/,
+  AllViewTablet: /Allview.*(Viva|Alldro|City|Speed|All TV|Frenzy|Quasar|Shine|TX1|AX1|AX2)/,
+  ArchosTablet: new RegExp(`\\b(101G9|80G9|A101IT)\\b|Qilive 97R|Archos5|\\bARCHOS (70|79|80|90|97|101|FAMILYPAD|)(b|c|)(G10|
+         Cobalt| TITANIUM(HD|)| Xenon| Neon|XSK| 2| XS 2| PLATINUM| CARBON|GAMEPAD)\\b`),
+  AinolTablet: /NOVO7|NOVO8|NOVO10|Novo7Aurora|Novo7Basic|NOVO7PALADIN|novo9-Spark/,
+  NokiaLumiaTablet: /Lumia 2520/,
+  SonyTablet: new RegExp(`Sony.*Tablet|Xperia Tablet|Sony Tablet S|SO-03E|SGPT12|SGPT13|SGPT114|SGPT121|SGPT122|SGPT123|
+        SGPT111|SGPT112|SGPT113|SGPT131|SGPT132|SGPT133|SGPT211|SGPT212|SGPT213|SGP311|SGP312|SGP321|EBRD1101|
+        EBRD1102|EBRD1201|SGP351|SGP341|SGP511|SGP512|SGP521|SGP541|SGP551|SGP621|SGP641|SGP612|SOT31|SGP771|SGP611|
+        SGP612|SGP712`),
+  PhilipsTablet: /\b(PI2010|PI3000|PI3100|PI3105|PI3110|PI3205|PI3210|PI3900|PI4010|PI7000|PI7100)\b/,
+  CubeTablet: /Android.*(K8GT|U9GT|U10GT|U16GT|U17GT|U18GT|U19GT|U20GT|U23GT|U30GT)|CUBE U8GT/,
+  CobyTablet: new RegExp(`MID1042|MID1045|MID1125|MID1126|MID7012|MID7014|MID7015|MID7034|MID7035|MID7036|MID7042|MID7048|
+        MID7127|MID8042|MID8048|MID8127|MID9042|MID9740|MID9742|MID7022|MID7010`),
+  MIDTablet: new RegExp(`M9701|M9000|M9100|M806|M1052|M806|T703|MID701|MID713|MID710|MID727|MID760|MID830|MID728|MID933|
+        MID125|MID810|MID732|MID120|MID930|MID800|MID731|MID900|MID100|MID820|MID735|MID980|MID130|MID833|MID737|
+        MID960|MID135|MID860|MID736|MID140|MID930|MID835|MID733|MID4X10`),
+  MSITablet: new RegExp(`MSI \\b(Primo 73K|Primo 73L|Primo 81L|Primo 77|Primo 93|Primo 75|Primo 76|Primo 73|Primo 81|
+        Primo 91|Primo 90|Enjoy 71|Enjoy 7|Enjoy 10)\\b`),
+  SMiTTablet: /Android.*(\bMID\b|MID-560|MTV-T1200|MTV-PND531|MTV-P1101|MTV-PND530)/,
+  RockChipTablet: /Android.*(RK2818|RK2808A|RK2918|RK3066)|RK2738|RK2808A/,
+  FlyTablet: /IQ310|Fly Vision/,
+  bqTablet: new RegExp(`Android.*(bq)?.*(Elcano|Curie|Edison|Maxwell|Kepler|Pascal|Tesla|Hypatia|Platon|Newton|
+        Livingstone|Cervantes|Avant|Aquaris ([E|M]10|M8))|Maxwell.*Lite|Maxwell.*Plus`),
+  HuaweiTablet: new RegExp(`MediaPad|MediaPad 7 Youth|MediaPad T3 10|IDEOS S7|S7-201c|S7-202u|S7-101|S7-103|S7-104|S7-105|S7-106|
+        S7-201|S7-Slim|M2-A01L|BAH-L09|BAH-W09|AGS-W09|AGS-L09`),
+  NecTablet: /\bN-06D|\bN-08D/,
+  PantechTablet: /Pantech.*P4100/,
+  BronchoTablet: /Broncho.*(N701|N708|N802|a710)/,
+  VersusTablet: /TOUCHPAD.*[78910]|\bTOUCHTAB\b/,
+  ZyncTablet: /z1000|Z99 2G|z99|z930|z999|z990|z909|Z919|z900/,
+  PositivoTablet: /TB07STA|TB10STA|TB07FTA|TB10FTA/,
+  NabiTablet: /Android.*\bNabi/,
+  KoboTablet: /Kobo Touch|\bK080\b|\bVox\b Build|\bArc\b Build/,
+  DanewTablet: /DSlide.*\b(700|701R|702|703R|704|802|970|971|972|973|974|1010|1012)\b/,
+  TexetTablet: new RegExp(`NaviPad|TB-772A|TM-7045|TM-7055|TM-9750|TM-7016|TM-7024|TM-7026|TM-7041|TM-7043|TM-7047|
+        TM-8041|TM-9741|TM-9747|TM-9748|TM-9751|TM-7022|TM-7021|TM-7020|TM-7011|TM-7010|TM-7023|TM-7025|
+        TM-7037W|TM-7038W|TM-7027W|TM-9720|TM-9725|TM-9737W|TM-1020|TM-9738W|TM-9740|TM-9743W|TB-807A|TB-771A|
+        TB-727A|TB-725A|TB-719A|TB-823A|TB-805A|TB-723A|TB-715A|TB-707A|TB-705A|TB-709A|TB-711A|TB-890HD|
+        TB-880HD|TB-790HD|TB-780HD|TB-770HD|TB-721HD|TB-710HD|TB-434HD|TB-860HD|TB-840HD|TB-760HD|TB-750HD|
+        TB-740HD|TB-730HD|TB-722HD|TB-720HD|TB-700HD|TB-500HD|TB-470HD|TB-431HD|TB-430HD|TB-506|TB-504|TB-446|
+        TB-436|TB-416|TB-146SE|TB-126SE`),
+  PlaystationTablet: /Playstation.*(Portable|Vita)/,
+  TrekstorTablet: /ST10416-1|VT10416-1|ST70408-1|ST702xx-1|ST702xx-2|ST80208|ST97216|ST70104-2|VT10416-2|ST10216-2A|SurfTab/,
+  PyleAudioTablet: /\b(PTBL10CEU|PTBL10C|PTBL72BC|PTBL72BCEU|PTBL7CEU|PTBL7C|PTBL92BC|PTBL92BCEU|PTBL9CEU|PTBL9CUK|PTBL9C)\b/,
+  AdvanTablet: new RegExp(`Android.* \\b(E3A|T3X|T5C|T5B|T3E|T3C|T3B|T1J|T1F|T2A|T1H|T1i|E1C|T1-E|T5-A|T4|E1-B|T2Ci|
+        T1-B|T1-D|O1-A|E1-A|T1-A|T3A|T4i)\\b`),
+  DanyTechTablet: `Genius Tab G3|Genius Tab S2|Genius Tab Q3|Genius Tab G4|Genius Tab Q4|Genius Tab G-II|
+        Genius TAB GII|Genius TAB GIII|Genius Tab S1`,
+  GalapadTablet: /Android.*\bG1\b(?!\))/,
+  MicromaxTablet: /Funbook|Micromax.*\b(P250|P560|P360|P362|P600|P300|P350|P500|P275)\b/,
+  KarbonnTablet: /Android.*\b(A39|A37|A34|ST8|ST10|ST7|Smart Tab3|Smart Tab2)\b/,
+  AllFineTablet: /Fine7 Genius|Fine7 Shine|Fine7 Air|Fine8 Style|Fine9 More|Fine10 Joy|Fine11 Wide/,
+  PROSCANTablet: new RegExp(`\\b(PEM63|PLT1023G|PLT1041|PLT1044|PLT1044G|PLT1091|PLT4311|PLT4311PL|PLT4315|PLT7030|
+        PLT7033|PLT7033D|PLT7035|PLT7035D|PLT7044K|PLT7045K|PLT7045KB|PLT7071KG|PLT7072|PLT7223G|PLT7225G|
+        PLT7777G|PLT7810K|PLT7849G|PLT7851G|PLT7852G|PLT8015|PLT8031|PLT8034|PLT8036|PLT8080K|PLT8082|PLT8088|
+        PLT8223G|PLT8234G|PLT8235G|PLT8816K|PLT9011|PLT9045K|PLT9233G|PLT9735|PLT9760G|PLT9770G)\\b`),
+  YONESTablet: /BQ1078|BC1003|BC1077|RK9702|BC9730|BC9001|IT9001|BC7008|BC7010|BC708|BC728|BC7012|BC7030|BC7027|BC7026/,
+  ChangJiaTablet: new RegExp(`TPC7102|TPC7103|TPC7105|TPC7106|TPC7107|TPC7201|TPC7203|TPC7205|TPC7210|TPC7708|TPC7709|
+        TPC7712|TPC7110|TPC8101|TPC8103|TPC8105|TPC8106|TPC8203|TPC8205|TPC8503|TPC9106|TPC9701|TPC97101|TPC97103|
+        TPC97105|TPC97106|TPC97111|TPC97113|TPC97203|TPC97603|TPC97809|TPC97205|TPC10101|TPC10103|TPC10106|
+        TPC10111|TPC10203|TPC10205|TPC10503`),
+  GUTablet: /TX-A1301|TX-M9002|Q702|kf026/,
+  PointOfViewTablet: new RegExp(`TAB-P506|TAB-navi-7-3G-M|TAB-P517|TAB-P-527|TAB-P701|TAB-P703|TAB-P721|TAB-P731N|
+        TAB-P741|TAB-P825|TAB-P905|TAB-P925|TAB-PR945|TAB-PL1015|TAB-P1025|TAB-PI1045|TAB-P1325|TAB-PROTAB[0-9]+|
+        TAB-PROTAB25|TAB-PROTAB26|TAB-PROTAB27|TAB-PROTAB26XL|TAB-PROTAB2-IPS9|TAB-PROTAB30-IPS9|TAB-PROTAB25XXL|
+        TAB-PROTAB26-IPS10|TAB-PROTAB30-IPS10`),
+  OvermaxTablet: new RegExp(`OV-(SteelCore|NewBase|Basecore|Baseone|Exellen|Quattor|EduTab|Solution|ACTION|BasicTab|TeddyTab|
+        MagicTab|Stream|TB-08|TB-09)|Qualcore 1027`),
+  HCLTablet: /HCL.*Tablet|Connect-3G-2.0|Connect-2G-2.0|ME Tablet U1|ME Tablet U2|ME Tablet G1|ME Tablet X1|ME Tablet Y2|ME Tablet Sync/,
+  DPSTablet: /DPS Dream 9|DPS Dual 7/,
+  VistureTablet: /V97 HD|i75 3G|Visture V4( HD)?|Visture V5( HD)?|Visture V10/,
+  CrestaTablet: /CTP(-)?810|CTP(-)?818|CTP(-)?828|CTP(-)?838|CTP(-)?888|CTP(-)?978|CTP(-)?980|CTP(-)?987|CTP(-)?988|CTP(-)?989/,
+  MediatekTablet: /\bMT8125|MT8389|MT8135|MT8377\b/,
+  ConcordeTablet: /Concorde([ ]+)?Tab|ConCorde ReadMan/,
+  GoCleverTablet: new RegExp(`GOCLEVER TAB|A7GOCLEVER|M1042|M7841|M742|R1042BK|R1041|TAB A975|TAB A7842|TAB A741|TAB A741L|TAB M723G|
+        TAB M721|TAB A1021|TAB I921|TAB R721|TAB I720|TAB T76|TAB R70|TAB R76.2|TAB R106|TAB R83.2|TAB M813G|TAB I721|
+        GCTA722|TAB I70|TAB I71|TAB S73|TAB R73|TAB R74|TAB R93|TAB R75|TAB R76.1|TAB A73|TAB A93|TAB A93.2|TAB T72|
+        TAB R83|TAB R974|TAB R973|TAB A101|TAB A103|TAB A104|TAB A104.2|R105BK|M713G|A972BK|TAB A971|TAB R974.2|
+        TAB R104|TAB R83.3|TAB A1042`),
+  ModecomTablet: new RegExp(`FreeTAB 9000|FreeTAB 7.4|FreeTAB 7004|FreeTAB 7800|FreeTAB 2096|FreeTAB 7.5|FreeTAB 1014|
+        FreeTAB 1001 |FreeTAB 8001|FreeTAB 9706|FreeTAB 9702|FreeTAB 7003|FreeTAB 7002|FreeTAB 1002|FreeTAB 7801|
+        FreeTAB 1331|FreeTAB 1004|FreeTAB 8002|FreeTAB 8014|FreeTAB 9704|FreeTAB 1003`),
+  VoninoTablet: new RegExp(`\\b(Argus[ _]?S|Diamond[ _]?79HD|Emerald[ _]?78E|Luna[ _]?70C|Onyx[ _]?S|Onyx[ _]?Z|
+        Orin[ _]?HD|Orin[ _]?S|Otis[ _]?S|SpeedStar[ _]?S|Magnet[ _]?M9|Primus[ _]?94[ _]?3G|Primus[ _]?94HD|
+        Primus[ _]?QS|Android.*\\bQ8\\b|Sirius[ _]?EVO[ _]?QS|Sirius[ _]?QS|Spirit[ _]?S)\\b`),
+  ECSTablet: /V07OT2|TM105A|S10OT1|TR10CS1/,
+  StorexTablet: /eZee[_']?(Tab|Go)[0-9]+|TabLC7|Looney Tunes Tab/,
+  VodafoneTablet: /SmartTab([ ]+)?[0-9]+|SmartTabII10|SmartTabII7|VF-1497/,
+  EssentielBTablet: /Smart[ ']?TAB[ ]+?[0-9]+|Family[ ']?TAB2/,
+  RossMoorTablet: /RM-790|RM-997|RMD-878G|RMD-974R|RMT-705A|RMT-701|RME-601|RMT-501|RMT-711/,
+  iMobileTablet: /i-mobile i-note/,
+  TolinoTablet: /tolino tab [0-9.]+|tolino shine/,
+  AudioSonicTablet: /\bC-22Q|T7-QC|T-17B|T-17P\b/,
+  AMPETablet: /Android.* A78 /,
+  SkkTablet: /Android.* (SKYPAD|PHOENIX|CYCLOPS)/,
+  TecnoTablet: /TECNO P9|TECNO DP8D/,
+  JXDTablet: new RegExp(`Android.* \\b(F3000|A3300|JXD5000|JXD3000|JXD2000|JXD300B|JXD300|S5800|S7800|S602b|S5110b|S7300|
+        S5300|S602|S603|S5100|S5110|S601|S7100a|P3000F|P3000s|P101|P200s|P1000m|P200m|P9100|P1000s|S6600b|S908|
+        P1000|P300|S18|S6600|S9100)\\b`),
+  iJoyTablet: new RegExp(`Tablet (Spirit 7|Essentia|Galatea|Fusion|Onix 7|Landa|Titan|Scooby|Deox|Stella|Themis|Argon|
+        Unique 7|Sygnus|Hexen|Finity 7|Cream|Cream X2|Jade|Neon 7|Neron 7|Kandy|Scape|Saphyr 7|Rebel|Biox|Rebel|
+        Rebel 8GB|Myst|Draco 7|Myst|Tab7-004|Myst|Tadeo Jones|Tablet Boing|Arrow|Draco Dual Cam|Aurix|Mint|Amity|
+        Revolution|Finity 9|Neon 9|T9w|Amity 4GB Dual Cam|Stone 4GB|Stone 8GB|Andromeda|Silken|X2|Andromeda II|
+        Halley|Flame|Saphyr 9,7|Touch 8|Planet|Triton|Unique 10|Hexen 10|Memphis 4GB|Memphis 8GB|Onix 10)`),
+  FX2Tablet: /FX2 PAD7|FX2 PAD10/,
+  XoroTablet: new RegExp(`KidsPAD 701|PAD[ ]?712|PAD[ ]?714|PAD[ ]?716|PAD[ ]?717|PAD[ ]?718|PAD[ ]?720|PAD[ ]?721|
+        PAD[ ]?722|PAD[ ]?790|PAD[ ]?792|PAD[ ]?900|PAD[ ]?9715D|PAD[ ]?9716DR|PAD[ ]?9718DR|PAD[ ]?9719QR|
+        PAD[ ]?9720QR|TelePAD1030|Telepad1032|TelePAD730|TelePAD731|TelePAD732|TelePAD735Q|TelePAD830|TelePAD9730|
+        TelePAD795|MegaPAD 1331|MegaPAD 1851|MegaPAD 2151`),
+  ViewsonicTablet: /ViewPad 10pi|ViewPad 10e|ViewPad 10s|ViewPad E72|ViewPad7|ViewPad E100|ViewPad 7e|ViewSonic VB733|VB100a/,
+  VerizonTablet: /QTAQZ3|QTAIR7|QTAQTZ3|QTASUN1|QTASUN2|QTAXIA1/,
+  OdysTablet: /LOOX|XENO10|ODYS[ -](Space|EVO|Xpress|NOON)|\bXELIO\b|Xelio10Pro|XELIO7PHONETAB|XELIO10EXTREME|XELIOPT2|NEO_QUAD10/,
+  CaptivaTablet: /CAPTIVA PAD/,
+  IconbitTablet: new RegExp(`NetTAB|NT-3702|NT-3702S|NT-3702S|NT-3603P|NT-3603P|NT-0704S|NT-0704S|NT-3805C|NT-3805C|
+        NT-0806C|NT-0806C|NT-0909T|NT-0909T|NT-0907S|NT-0907S|NT-0902S|NT-0902S`),
+  TeclastTablet: new RegExp(`T98 4G|\\bP80\\b|\\bX90HD\\b|X98 Air|X98 Air 3G|\\bX89\\b|P80 3G|\\bX80h\\b|P98 Air|
+        \\bX89HD\\b|P98 3G|\\bP90HD\\b|P89 3G|X98 3G|\\bP70h\\b|P79HD 3G|G18d 3G|\\bP79HD\\b|\\bP89s\\b|\\bA88\\b|
+        \\bP10HD\\b|\\bP19HD\\b|G18 3G|\\bP78HD\\b|\\bA78\\b|\\bP75\\b|G17s 3G|G17h 3G|\\bP85t\\b|\\bP90\\b|
+        \\bP11\\b|\\bP98t\\b|\\bP98HD\\b|\\bG18d\\b|\\bP85s\\b|\\bP11HD\\b|\\bP88s\\b|\\bA80HD\\b|\\bA80se\\b|
+        \\bA10h\\b|\\bP89\\b|\\bP78s\\b|\\bG18\\b|\\bP85\\b|\\bA70h\\b|\\bA70\\b|\\bG17\\b|\\bP18\\b|\\bA80s\\b|
+        \\bA11s\\b|\\bP88HD\\b|\\bA80h\\b|\\bP76s\\b|\\bP76h\\b|\\bP98\\b|\\bA10HD\\b|\\bP78\\b|\\bP88\\b|\\bA11\\b|
+        \\bA10t\\b|\\bP76a\\b|\\bP76t\\b|\\bP76e\\b|\\bP85HD\\b|\\bP85a\\b|\\bP86\\b|\\bP75HD\\b|\\bP76v\\b|\\bA12\\b|
+        \\bP75a\\b|\\bA15\\b|\\bP76Ti\\b|\\bP81HD\\b|\\bA10\\b|\\bT760VE\\b|\\bT720HD\\b|\\bP76\\b|\\bP73\\b|\\bP71\\b|
+        \\bP72\\b|\\bT720SE\\b|\\bC520Ti\\b|\\bT760\\b|\\bT720VE\\b|T720-3GE|T720-WiFi`),
+  OndaTablet: new RegExp(`\\b(V975i|Vi30|VX530|V701|Vi60|V701s|Vi50|V801s|V719|Vx610w|VX610W|V819i|Vi10|VX580W|Vi10|
+        V711s|V813|V811|V820w|V820|Vi20|V711|VI30W|V712|V891w|V972|V819w|V820w|Vi60|V820w|V711|V813s|V801|V819|
+        V975s|V801|V819|V819|V818|V811|V712|V975m|V101w|V961w|V812|V818|V971|V971s|V919|V989|V116w|V102w|V973|
+        Vi40)\\b[s]+|V10 \\b4G\\b`),
+  JaytechTablet: /TPC-PA762/,
+  BlaupunktTablet: /Endeavour 800NG|Endeavour 1010/,
+  DigmaTablet: /\b(iDx10|iDx9|iDx8|iDx7|iDxD7|iDxD8|iDsQ8|iDsQ7|iDsQ8|iDsD10|iDnD7|3TS804H|iDsQ11|iDj7|iDs10)\b/,
+  EvolioTablet: /ARIA_Mini_wifi|Aria[ _]Mini|Evolio X10|Evolio X7|Evolio X8|\bEvotab\b|\bNeura\b/,
+  LavaTablet: /QPAD E704|\bIvoryS\b|E-TAB IVORY|\bE-TAB\b/,
+  AocTablet: /MW0811|MW0812|MW0922|MTK8382|MW1031|MW0831|MW0821|MW0931|MW0712/,
+  MpmanTablet: new RegExp(`MP11 OCTA|MP10 OCTA|MPQC1114|MPQC1004|MPQC994|MPQC974|MPQC973|MPQC804|MPQC784|MPQC780|
+        \\bMPG7\\b|MPDCG75|MPDCG71|MPDC1006|MP101DC|MPDC9000|MPDC905|MPDC706HD|MPDC706|MPDC705|MPDC110|
+        MPDC100|MPDC99|MPDC97|MPDC88|MPDC8|MPDC77|MP709|MID701|MID711|MID170|MPDC703|MPQC1010`),
+  CelkonTablet: /CT695|CT888|CT[\s]?910|CT7 Tab|CT9 Tab|CT3 Tab|CT2 Tab|CT1 Tab|C820|C720|\bCT-1\b/,
+  WolderTablet: new RegExp(`miTab \\b(DIAMOND|SPACE|BROOKLYN|NEO|FLY|MANHATTAN|FUNK|EVOLUTION|SKY|GOCAR|IRON|GENIUS|
+        POP|MINT|EPSILON|BROADWAY|JUMP|HOP|LEGEND|NEW AGE|LINE|ADVANCE|FEEL|FOLLOW|LIKE|LINK|LIVE|THINK|
+        FREEDOM|CHICAGO|CLEVELAND|BALTIMORE-GH|IOWA|BOSTON|SEATTLE|PHOENIX|DALLAS|IN 101|MasterChef)\\b`),
+  MediacomTablet: "M-MPI10C3G|M-SP10EG|M-SP10EGP|M-SP10HXAH|M-SP7HXAH|M-SP10HXBH|M-SP8HXAH|M-SP8MXA",
+  MiTablet: /\bMI PAD\b|\bHM NOTE 1W\b/,
+  NibiruTablet: /Nibiru M1|Nibiru Jupiter One/,
+  NexoTablet: /NEXO NOVA|NEXO 10|NEXO AVIO|NEXO FREE|NEXO GO|NEXO EVO|NEXO 3G|NEXO SMART|NEXO KIDDO|NEXO MOBI/,
+  LeaderTablet: new RegExp(`TBLT10Q|TBLT10I|TBL-10WDKB|TBL-10WDKBO2013|TBL-W230V2|TBL-W450|TBL-W500|SV572|TBLT7I|
+        TBA-AC7-8G|TBLT79|TBL-8W16|TBL-10W32|TBL-10WKB|TBL-W100`),
+  UbislateTablet: /UbiSlate[\s]?7C/,
+  PocketBookTablet: /Pocketbook/,
+  KocasoTablet: /\b(TB-1207)\b/,
+  HisenseTablet: /\b(F5281|E2371)\b/,
+  Hudl: /Hudl HT7S3|Hudl 2/,
+  TelstraTablet: /T-Hub2/,
+  Honeywell: /RT10A/,
+  GenericTablet: new RegExp(`Android.*\\b97D\\b|Tablet(?!.*PC)|BNTV250A|MID-WCDMA|LogicPD Zoom2|\\bA7EB\\b|CatNova8|
+        A1_07|CT704|CT1002|\\bM721\\b|rk30sdk|\\bEVOTAB\\b|M758A|ET904|ALUMIUM10|Smartfren Tab|Endeavour 1010|
+        Tablet-PC-4|Tagi Tab|\\bM6pro\\b|CT1020W|arc 10HD|\\bTP750\\b|\\bQTAQZ3\\b|WVT101|TM1088|KT107`)
+};
+var DEVICES = {
+  BLACKBERRY: "Blackberry",
+  FIREFOX_OS: "Firefox-OS",
+  CHROME_BOOK: "Chrome-Book",
+  WINDOWS_PHONE: "Windows-Phone",
+  VITA: "Vita",
+  PS4: "PS4",
+  MAC: "Macintosh",
+  CHROMECAST: "Chromecast",
+  APPLE_TV: "Apple-TV",
+  GOOGLE_TV: "Google-TV",
+  ANDROID: "Android",
+  Tesla: "Tesla",
+  iPad: "iPad",
+  IPHONE: "iPhone",
+  iPod: "iPod",
+  UNKNOWN: GENERAL.UKNOWN,
+  HTC: "HTC",
+  NEXUS_PHONE: "Nexus Phone",
+  NexusTablet: "Nexus Tablet",
+  DELL: "Dell",
+  MOTOROLA: "Motorola",
+  SAMSUNG: "Samsung",
+  LG: "LG",
+  SONY: "Sony",
+  ASUS: "Asus",
+  NOKIA_LUMIA: "Nokia Lumia",
+  MICROMAX: "Micromax",
+  PALM: "Palm",
+  VERTU: "Vertu",
+  PANTECH: "PANTECH",
+  FLY: "Fly",
+  WIKO: `WIKO`,
+  I_MOBILE: "i-mobile",
+  SIMVALLEY: "Simvalley",
+  WOLFGANG: "Wolfgang",
+  ALCATEL: "Alcatel",
+  HONEYWELL: "Honeywell",
+  NINTENDO: "Nintendo",
+  AMOI: "Amoi",
+  INQ: "INQ",
+  GENERIC_PHONE: "Generic Phone",
+  MI_SE_9: "Mi SE 9"
+};
+var DESKTOP_DEVICES = [DEVICES.PS4, DEVICES.CHROME_BOOK, DEVICES.MAC, DEVICES.DELL, DEVICES.ASUS, DEVICES.UNKNOWN];
+var OS = {
+  WINDOWS: "Windows",
+  MAC: "Mac",
+  IOS: "iOS",
+  ANDROID: "Android",
+  LINUX: "Linux",
+  UNIX: "Unix",
+  FIREFOX_OS: "Firefox-OS",
+  CHROME_OS: "Chrome-OS",
+  WINDOWS_PHONE: "Windows-Phone",
+  UNKNOWN: GENERAL.UKNOWN
+};
+var OS_VERSIONS = {
+  WINDOWS_3_11: "windows-3-11",
+  WINDOWS_95: "windows-95",
+  WINDOWS_ME: "windows-me",
+  WINDOWS_98: "windows-98",
+  WINDOWS_CE: "windows-ce",
+  WINDOWS_2000: "windows-2000",
+  WINDOWS_XP: "windows-xp",
+  WINDOWS_SERVER_2003: "windows-server-2003",
+  WINDOWS_VISTA: "windows-vista",
+  WINDOWS_7: "windows-7",
+  WINDOWS_8_1: "windows-8-1",
+  WINDOWS_8: "windows-8",
+  WINDOWS_10: "windows-10",
+  WINDOWS_PHONE_7_5: "windows-phone-7-5",
+  WINDOWS_PHONE_8_1: "windows-phone-8-1",
+  WINDOWS_PHONE_10: "windows-phone-10",
+  WINDOWS_NT_4_0: "windows-nt-4-0",
+  MACOSX_11_0: "mac-os-x-11-0",
+  MACOSX_16: "mac-os-x-16",
+  MACOSX_15: "mac-os-x-15",
+  MACOSX_14: "mac-os-x-14",
+  MACOSX_13: "mac-os-x-13",
+  MACOSX_12: "mac-os-x-12",
+  MACOSX_11: "mac-os-x-11",
+  MACOSX_10: "mac-os-x-10",
+  MACOSX_9: "mac-os-x-9",
+  MACOSX_8: "mac-os-x-8",
+  MACOSX_7: "mac-os-x-7",
+  MACOSX_6: "mac-os-x-6",
+  MACOSX_5: "mac-os-x-5",
+  MACOSX_4: "mac-os-x-4",
+  MACOSX_3: "mac-os-x-3",
+  MACOSX_2: "mac-os-x-2",
+  MACOSX: "mac-os-x",
+  iOS: "iOS",
+  ANDROID_9: "android-9",
+  UNKNOWN: GENERAL.UKNOWN.toLowerCase()
+};
+var OS_RE = {
+  WINDOWS: {
+    and: [{
+      or: [/\bWindows|(Win\d\d)\b/, /\bWin 9x\b/]
+    }, {
+      not: /\bWindows Phone\b/
+    }]
+  },
+  MAC: {
+    and: [/\bMac OS\b/, {
+      not: {
+        or: [/\biPhone\b/, /\biPad\b/, /\biPod\b/, /\bWindows Phone\b/]
+      }
+    }]
+  },
+  IOS: {
+    and: [{
+      or: [/\biPad\b/, /\biPhone\b/, /\biPod\b/]
+    }, {
+      not: /\bWindows Phone\b/
+    }]
+  },
+  ANDROID: {
+    and: [/\bAndroid\b/, {
+      not: /\bWindows Phone\b/
+    }]
+  },
+  LINUX: /\bLinux\b/,
+  UNIX: /\bUNIX\b/,
+  FIREFOX_OS: {
+    and: [/\bFirefox\b/, /Mobile\b/]
+  },
+  CHROME_OS: /\bCrOS\b/,
+  WINDOWS_PHONE: {
+    or: [/\bIEMobile\b/, /\bWindows Phone\b/]
+  },
+  PS4: /\bMozilla\/5.0 \(PlayStation 4\b/,
+  VITA: /\bMozilla\/5.0 \(Play(S|s)tation Vita\b/
+};
+var BROWSERS_RE = {
+  CHROME: {
+    and: [{
+      or: [/\bChrome\b/, /\bCriOS\b/, /\bHeadlessChrome\b/]
+    }, {
+      not: {
+        or: [/\bOPR\b/, /\bEdg(e|A|iOS)\b/, /\bEdg\/\b/, /\bSamsungBrowser\b/, /\bUCBrowser\b/]
+      }
+    }]
+  },
+  FIREFOX: {
+    or: [/\bFirefox\b/, /\bFxiOS\b/]
+  },
+  SAFARI: {
+    and: [/^((?!CriOS).)*\Safari\b.*$/, {
+      not: {
+        or: [/\bOPR\b/, /\bEdg(e|A|iOS)\b/, /\bEdg\/\b/, /\bWindows Phone\b/, /\bSamsungBrowser\b/, /\bUCBrowser\b/]
+      }
+    }]
+  },
+  OPERA: {
+    or: [/Opera\b/, /\bOPR\b/]
+  },
+  IE: {
+    or: [/\bMSIE\b/, /\bTrident\b/, /^Mozilla\/5\.0 \(Windows NT 10\.0; Win64; x64\)$/]
+  },
+  MS_EDGE: {
+    or: [/\bEdg(e|A|iOS)\b/]
+  },
+  MS_EDGE_CHROMIUM: /\bEdg\/\b/,
+  PS4: /\bMozilla\/5.0 \(PlayStation 4\b/,
+  VITA: /\bMozilla\/5.0 \(Play(S|s)tation Vita\b/,
+  FB_MESSANGER: /\bFBAN\/MessengerForiOS\b/,
+  SAMSUNG: /\bSamsungBrowser\b/,
+  UCBROWSER: /\bUCBrowser\b/
+};
+var DEVICES_RE = __spreadProps(__spreadValues(__spreadValues(__spreadValues({}, MOBILES_RE), TABLETS_RE), OS_RE), {
+  FIREFOX_OS: {
+    and: [/\bFirefox\b/, /\bMobile\b/]
+  },
+  CHROME_BOOK: /\bCrOS\b/,
+  PS4: /\bMozilla\/5.0 \(PlayStation 4\b/,
+  CHROMECAST: /\bCrKey\b/,
+  APPLE_TV: /^iTunes-AppleTV\/4.1$/,
+  GOOGLE_TV: /\bGoogleTV\b/,
+  Tesla: /Tesla\/([0-9]{4}.[0-9]{1,2}.?[0-9]{0,2}.?[0-9]{0,2})-(.{7})/,
+  MI_SE_9: /\bXiaomi\b/,
+  MAC: {
+    and: [/\bMac OS\b/, {
+      not: {
+        or: [/\biPhone\b/, /\biPad\b/, /\biPod\b/, /\bWindows Phone\b/]
+      }
+    }]
+  }
+});
+var OS_VERSIONS_RE_MAP = {
+  WINDOWS_3_11: /Win16/,
+  WINDOWS_95: /(Windows 95|Win95|Windows_95)/,
+  WINDOWS_ME: /(Win 9x 4.90|Windows ME)/,
+  WINDOWS_98: /(Windows 98|Win98)/,
+  WINDOWS_CE: /Windows CE/,
+  WINDOWS_2000: /(Windows NT 5.0|Windows 2000)/,
+  WINDOWS_XP: /(Windows NT 5.1|Windows XP)/,
+  WINDOWS_SERVER_2003: /Windows NT 5.2/,
+  WINDOWS_VISTA: /Windows NT 6.0/,
+  WINDOWS_7: /(Windows 7|Windows NT 6.1)/,
+  WINDOWS_8_1: /(Windows 8.1|Windows NT 6.3)/,
+  WINDOWS_8: /(Windows 8|Windows NT 6.2)/,
+  WINDOWS_10: /(Windows NT 10.0)/,
+  WINDOWS_PHONE_7_5: /(Windows Phone OS 7.5)/,
+  WINDOWS_PHONE_8_1: /(Windows Phone 8.1)/,
+  WINDOWS_PHONE_10: /(Windows Phone 10)/,
+  WINDOWS_NT_4_0: {
+    and: [/(Windows NT 4.0|WinNT4.0|WinNT|Windows NT)/, {
+      not: /Windows NT 10.0/
+    }]
+  },
+  MACOSX: /(MAC OS X\s*[^ 0-9])/,
+  MACOSX_3: /(Darwin 10.3|Mac OS X 10.3)/,
+  MACOSX_4: /(Darwin 10.4|Mac OS X 10.4)/,
+  MACOSX_5: /(Mac OS X 10.5)/,
+  MACOSX_6: /(Mac OS X 10.6)/,
+  MACOSX_7: /(Mac OS X 10.7)/,
+  MACOSX_8: /(Mac OS X 10.8)/,
+  MACOSX_9: /(Mac OS X 10.9)/,
+  MACOSX_10: /(Mac OS X 10.10)/,
+  MACOSX_11: /(Mac OS X 10.11)/,
+  MACOSX_12: /(Mac OS X 10.12)/,
+  MACOSX_13: /(Mac OS X 10.13)/,
+  MACOSX_14: /(Mac OS X 10.14)/,
+  MACOSX_15: /(Mac OS X 10.15)/,
+  MACOSX_16: /(Mac OS X 10.16)/,
+  MACOSX_11_0: {
+    or: [/11_0 like Mac OS X/, /Mac OS X 11/]
+  },
+  iOS: /(iPhone OS\s*[0-9_]+)/,
+  ANDROID_9: /(Android 9)/
+};
+var BROWSER_VERSIONS_RE_MAP = {
+  CHROME: [/\bChrome\/([\d\.]+)\b/, /\bCriOS\/([\d\.]+)\b/, /\bHeadlessChrome\/([\d\.]+)\b/],
+  FIREFOX: [/\bFirefox\/([\d\.]+)\b/, /\bFxiOS\/([\d\.]+)\b/],
+  SAFARI: [/\bVersion\/([\d\.]+)\b/, /\bSafari\/([\d\.]+)\b/],
+  OPERA: [/\bVersion\/([\d\.]+)\b/, /\bOPR\/([\d\.]+)\b/],
+  IE: [/\bMSIE ([\d\.]+\w?)\b/, /\brv:([\d\.]+\w?)\b/],
+  MS_EDGE: /\bEdg(?:e|A|iOS)\/([\d\.]+)\b/,
+  MS_EDGE_CHROMIUM: /\bEdg\/([\d\.]+)\b/,
+  SAMSUNG: /\bSamsungBrowser\/([\d\.]+)\b/,
+  UCBROWSER: /\bUCBrowser\/([\d\.]+)\b/
+};
+var OS_VERSIONS_RE = Object.keys(OS_VERSIONS_RE_MAP).reduce((obj, key) => {
+  obj[key] = OS_VERSIONS_RE_MAP[key];
+  return obj;
+}, {});
+var BROWSER_VERSIONS_RE = Object.keys(BROWSER_VERSIONS_RE_MAP).reduce((obj, key) => {
+  obj[BROWSERS[key]] = BROWSER_VERSIONS_RE_MAP[key];
+  return obj;
+}, {});
+var Constants = /* @__PURE__ */ Object.freeze({
+  __proto__: null,
+  BROWSERS,
+  BROWSERS_RE,
+  BROWSER_VERSIONS_RE,
+  BROWSER_VERSIONS_RE_MAP,
+  DESKTOP_DEVICES,
+  DEVICES,
+  DEVICES_RE,
+  GENERAL,
+  MOBILES_RE,
+  OS,
+  OS_RE,
+  OS_VERSIONS,
+  OS_VERSIONS_RE,
+  OS_VERSIONS_RE_MAP,
+  TABLETS_RE
+});
+var ReTree = class {
+  constructor() {
+  }
+  test(str, regex) {
+    if (typeof regex === "string") {
+      regex = new RegExp(regex);
+    }
+    if (regex instanceof RegExp) {
+      return regex.test(str);
+    } else if (regex && Array.isArray(regex.and)) {
+      return regex.and.every((item) => {
+        return this.test(str, item);
+      });
+    } else if (regex && Array.isArray(regex.or)) {
+      return regex.or.some((item) => {
+        return this.test(str, item);
+      });
+    } else if (regex && regex.not) {
+      return !this.test(str, regex.not);
+    } else {
+      return false;
+    }
+  }
+  exec(str, regex) {
+    if (typeof regex === "string") {
+      regex = new RegExp(regex);
+    }
+    if (regex instanceof RegExp) {
+      return regex.exec(str);
+    } else if (regex && Array.isArray(regex)) {
+      return regex.reduce((res, item) => {
+        return !!res ? res : this.exec(str, item);
+      }, null);
+    } else {
+      return null;
+    }
+  }
+};
+var DeviceType;
+(function(DeviceType2) {
+  DeviceType2["Mobile"] = "mobile";
+  DeviceType2["Tablet"] = "tablet";
+  DeviceType2["Desktop"] = "desktop";
+  DeviceType2["Unknown"] = "unknown";
+})(DeviceType || (DeviceType = {}));
+var OrientationType;
+(function(OrientationType2) {
+  OrientationType2["Portrait"] = "portrait";
+  OrientationType2["Landscape"] = "landscape";
+})(OrientationType || (OrientationType = {}));
+var iPad = "iPad";
+var DeviceDetectorService = class _DeviceDetectorService {
+  constructor(platformId) {
+    this.platformId = platformId;
+    this.ua = "";
+    this.userAgent = "";
+    this.os = "";
+    this.browser = "";
+    this.device = "";
+    this.os_version = "";
+    this.browser_version = "";
+    this.reTree = new ReTree();
+    this.deviceType = "";
+    this.orientation = "";
+    if (isPlatformBrowser(this.platformId) && typeof window !== "undefined") {
+      this.userAgent = window.navigator.userAgent;
+    }
+    this.setDeviceInfo(this.userAgent);
+  }
+  /**
+   * @author Ahsan Ayaz
+   * @desc Sets the initial value of the device when the service is initiated.
+   * This value is later accessible for usage
+   */
+  setDeviceInfo(ua = this.userAgent) {
+    if (ua !== this.userAgent) {
+      this.userAgent = ua;
+    }
+    const mappings = [{
+      const: "OS",
+      prop: "os"
+    }, {
+      const: "BROWSERS",
+      prop: "browser"
+    }, {
+      const: "DEVICES",
+      prop: "device"
+    }, {
+      const: "OS_VERSIONS",
+      prop: "os_version"
+    }];
+    mappings.forEach((mapping) => {
+      this[mapping.prop] = Object.keys(Constants[mapping.const]).reduce((obj, item) => {
+        if (Constants[mapping.const][item] === "device") {
+          if (isPlatformBrowser(this.platformId) && (!!this.reTree.test(this.userAgent, TABLETS_RE[iPad]) || navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
+            obj[Constants[mapping.const][item]] = iPad;
+            return Object;
+          }
+        }
+        obj[Constants[mapping.const][item]] = this.reTree.test(ua, Constants[`${mapping.const}_RE`][item]);
+        return obj;
+      }, {});
+    });
+    mappings.forEach((mapping) => {
+      this[mapping.prop] = Object.keys(Constants[mapping.const]).map((key) => {
+        return Constants[mapping.const][key];
+      }).reduce((previousValue, currentValue) => {
+        if (mapping.prop === "device" && previousValue === Constants[mapping.const].ANDROID) {
+          return this[mapping.prop][currentValue] ? currentValue : previousValue;
+        } else {
+          return previousValue === Constants[mapping.const].UNKNOWN && this[mapping.prop][currentValue] ? currentValue : previousValue;
+        }
+      }, Constants[mapping.const].UNKNOWN);
+    });
+    this.browser_version = "0";
+    if (this.browser !== BROWSERS.UNKNOWN) {
+      const re = BROWSER_VERSIONS_RE[this.browser];
+      const res = this.reTree.exec(ua, re);
+      if (!!res) {
+        this.browser_version = res[1];
+      }
+    }
+    if (typeof window !== "undefined" && window.matchMedia) {
+      this.orientation = window.matchMedia("(orientation: landscape)").matches ? OrientationType.Landscape : OrientationType.Portrait;
+    } else {
+      this.orientation = GENERAL.UKNOWN;
+    }
+    this.deviceType = this.isTablet() ? DeviceType.Tablet : this.isMobile(this.userAgent) ? DeviceType.Mobile : this.isDesktop(this.userAgent) ? DeviceType.Desktop : DeviceType.Unknown;
+  }
+  /**
+   * @author Ahsan Ayaz
+   * @desc Returns the device information
+   * @returns the device information object.
+   */
+  getDeviceInfo() {
+    const deviceInfo = {
+      userAgent: this.userAgent,
+      os: this.os,
+      browser: this.browser,
+      device: this.device,
+      os_version: this.os_version,
+      browser_version: this.browser_version,
+      deviceType: this.deviceType,
+      orientation: this.orientation
+    };
+    return deviceInfo;
+  }
+  /**
+   * @author Ahsan Ayaz
+   * @desc Compares the current device info with the mobile devices to check
+   * if the current device is a mobile and also check current device is tablet so it will return false.
+   * @returns whether the current device is a mobile
+   */
+  isMobile(userAgent = this.userAgent) {
+    if (this.isTablet(userAgent)) {
+      return false;
+    }
+    const match2 = Object.keys(MOBILES_RE).find((mobile) => {
+      return this.reTree.test(userAgent, MOBILES_RE[mobile]);
+    });
+    return !!match2;
+  }
+  /**
+   * @author Ahsan Ayaz
+   * @desc Compares the current device info with the tablet devices to check
+   * if the current device is a tablet.
+   * @returns whether the current device is a tablet
+   */
+  isTablet(userAgent = this.userAgent) {
+    if (isPlatformBrowser(this.platformId) && (!!this.reTree.test(this.userAgent, TABLETS_RE[iPad]) || typeof navigator !== "undefined" && navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) {
+      return true;
+    }
+    const match2 = Object.keys(TABLETS_RE).find((mobile) => {
+      return !!this.reTree.test(userAgent, TABLETS_RE[mobile]);
+    });
+    return !!match2;
+  }
+  /**
+   * @author Ahsan Ayaz
+   * @desc Compares the current device info with the desktop devices to check
+   * if the current device is a desktop device.
+   * @returns whether the current device is a desktop device
+   */
+  isDesktop(userAgent = this.userAgent) {
+    if (this.device === DEVICES.UNKNOWN) {
+      if (this.isMobile(userAgent) || this.isTablet(userAgent)) {
+        return false;
+      }
+    }
+    return DESKTOP_DEVICES.indexOf(this.device) > -1;
+  }
+  static {
+    this.\u0275fac = function DeviceDetectorService_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _DeviceDetectorService)(\u0275\u0275inject(PLATFORM_ID));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({
+      token: _DeviceDetectorService,
+      factory: _DeviceDetectorService.\u0275fac,
+      providedIn: "root"
+    });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && setClassMetadata(DeviceDetectorService, [{
+    type: Injectable,
+    args: [{
+      providedIn: "root"
+    }]
+  }], () => [{
+    type: void 0,
+    decorators: [{
+      type: Inject,
+      args: [PLATFORM_ID]
+    }]
+  }], null);
+})();
+
+// projects/fasten-connect-stitch-embed/src/app/services/fasten.service.ts
+var FastenService = class _FastenService {
+  constructor(_httpClient, deviceService, configService, logger, sentryContext, authService) {
+    this._httpClient = _httpClient;
+    this.deviceService = deviceService;
+    this.configService = configService;
+    this.logger = logger;
+    this.sentryContext = sentryContext;
+    this.authService = authService;
+    this.configService.systemConfigSubject.subscribe((systemConfig) => {
+      const isPlaceholderConfig = !systemConfig.publicId && systemConfig.searchOnly === void 0 && systemConfig.tefcaMode === void 0 && systemConfig.connectMode === void 0;
+      if (isPlaceholderConfig) {
+        return;
+      }
+      this.logger.info("System configuration changed:", systemConfig, this.configService.systemConfig$);
+      if (systemConfig.org_id && !systemConfig.org) {
+        this.logger.info("attempt to download org information, and store in config");
+        this.getOrgConfig(systemConfig.publicId).subscribe((org) => {
+          this.logger.debug("org:", org);
+          this.configService.systemConfig = { org };
+        });
+      }
+    });
+  }
+  recordLocatorRegisterAndPollForStatus() {
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(switchMap((registerResponse) => {
+      if (registerResponse.data.status == "failed") {
+        console.error("record locator registration failed", registerResponse.data);
+        return throwError(() => new Error("Record locator registration failed"));
+      } else if (registerResponse.data.status == "success") {
+        console.info("record locator already successful, no need to poll");
+        return of(registerResponse);
+      } else {
+        console.log("start polling for record locator status");
+        return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator/${registerResponse.data.task_id}`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(
+          repeat({ delay: 3e3 }),
+          //check every 3 seconds
+          filter((statusResponse) => statusResponse.data.status === "success" || statusResponse.data.status === "failed"),
+          //only pass through successful or failed status
+          take(1),
+          timeout(3e5)
+          // Stop polling after 5 minutes
+        );
+      }
+    }));
+  }
+  recordLocatorResults(taskId) {
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/record_locator/${taskId}/result`, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
+      let rlsResponse = response.data;
+      if (!rlsResponse.discovered_patient_accounts) {
+        rlsResponse.discovered_patient_accounts = {};
+      }
+      if (!rlsResponse.pending_patient_accounts) {
+        rlsResponse.pending_patient_accounts = {};
+      }
+      return rlsResponse;
+    }));
+  }
+  searchCatalog(apiMode, filter2) {
+    if ((typeof filter2.searchAfter === "string" || filter2.searchAfter instanceof String) && filter2.searchAfter.length > 0) {
+      filter2.searchAfter = filter2.searchAfter.split(",");
+    } else {
+      filter2.searchAfter = [];
+    }
+    const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/bridge/catalog/search`);
+    return this._httpClient.post(endpointUrl.toString(), filter2, { params: {
+      "public_id": this.configService.systemConfig$.publicId,
+      "api_mode": apiMode
+    } }).pipe(map((response) => {
+      this.logger.info("Metadata RESPONSE", response);
+      return response.data;
+    }));
+  }
+  searchCatalogBrand(apiMode, brandId) {
+    const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/bridge/catalog/search/${brandId}`);
+    return this._httpClient.post(endpointUrl.toString(), {}, { params: {
+      "public_id": this.configService.systemConfig$.publicId,
+      "api_mode": apiMode
+    } }).pipe(map((response) => {
+      this.logger.info("Metadata RESPONSE", response);
+      return response.data;
+    }));
+  }
+  getOrgByPublicId(publicId) {
+    let queryParams = {};
+    queryParams["public_id"] = publicId;
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/org`, { params: queryParams }).pipe(map((response) => {
+      this.logger.info("Organization", response);
+      return response.data;
+    }));
+  }
+  getOrgConfig(publicId) {
+    const params = {
+      public_id: publicId,
+      client_auth_contract: "http-only-v1"
+    };
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/config`, { params }).pipe(tap((response) => {
+      this.logger.info("Organization", response);
+    }));
+  }
+  getOrgConnectionById(publicId, orgConnectionId) {
+    let queryParams = {};
+    queryParams["public_id"] = publicId;
+    return this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/org_connection/${orgConnectionId}`, { params: queryParams }).pipe(map((response) => {
+      this.logger.info("Organization Connection Data", response);
+      return response.data;
+    }));
+  }
+  requestHealthSystem(requestHealth) {
+    const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/support/healthsystem`);
+    requestHealth.organization_id = this.configService.systemConfig$.org?.id || "";
+    requestHealth.organization_name = this.configService.systemConfig$.org?.name || "";
+    requestHealth.api_mode = this.configService.systemConfig$.apiMode || "test";
+    return this._httpClient.post(endpointUrl.toString(), requestHealth, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
+      return {};
+    }));
+  }
+  requestSupport(request) {
+    const endpointUrl = new URL(`${environment.connect_api_endpoint_base}/support/request`);
+    const zendeskTicket = buildSupportRequestZendeskTicket(request, {
+      organizationId: this.configService.systemConfig$.org?.id || "",
+      organizationName: this.configService.systemConfig$.org?.name || "",
+      apiMode: this.configService.systemConfig$.apiMode || "test"
+    });
+    return this._httpClient.post(endpointUrl.toString(), zendeskTicket, { params: { "public_id": this.configService.systemConfig$.publicId } }).pipe(map((response) => {
+      return {};
+    }));
+  }
+  storageApiUserInteractionWithPopup() {
+    const redirectUrl = new URL(`${window.location.origin}/consent`);
+    const isDesktop = this.deviceService.isDesktop();
+    let features = "";
+    if (isDesktop) {
+      features = "popup=true,width=700,height=600";
+    }
+    const openedWindow = window.open(redirectUrl.toString(), "_blank", features);
+    this.sentryContext.recordPopupOpen("storage_access", ConnectMode.Popup, openedWindow !== null);
+    return this.waitForPopupNotification(openedWindow, SDKMode.None);
+  }
+  verificationWithWebsocket(cspType) {
+    const roomId = v4_default();
+    const websocketUrl = this.generateWebsocketURL(roomId);
+    const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
+    redirectUrlParts.searchParams.set("public_id", this.configService.systemConfig$.publicId);
+    redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
+    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
+    redirectUrlParts.searchParams.set("room_id", roomId);
+    this.logger.debug(redirectUrlParts.toString());
+    const openedWindow = this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.IdentityVerification);
+    this.sentryContext.recordPopupOpen("identity_verification", ConnectMode.Websocket, openedWindow !== null);
+    const callback = this.waitForWebsocketNotification(websocketUrl, openedWindow);
+    if (openedWindow === null) {
+      return callback;
+    }
+    const callbackAttempt = this.sentryContext.recordCallbackStarted("identity_verification", ConnectMode.Websocket);
+    return this.monitorCallback("identity_verification", callbackAttempt, callback).pipe(
+      switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))),
+      //TODO: this is a flaky way to handle the issue where the websocket response is sent before the cookie is set in the browser
+      // wait 2 seconds here -- sometimes the websocket sends the response before the cookie has been recieved by the browser (in the modal popup)
+      delay(2500)
+    );
+  }
+  verificationWithPopup(cspType) {
+    const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/identity_verification/connect`);
+    redirectUrlParts.searchParams.set("public_id", this.configService.systemConfig$.publicId);
+    redirectUrlParts.searchParams.set("csp_type", cspType || CspType.ClearCsp);
+    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
+    const openedWindow = this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.IdentityVerification);
+    this.sentryContext.recordPopupOpen("identity_verification", ConnectMode.Popup, openedWindow !== null);
+    const callback = this.waitForPopupNotification(openedWindow);
+    if (openedWindow === null) {
+      return callback;
+    }
+    const callbackAttempt = this.sentryContext.recordCallbackStarted("identity_verification", ConnectMode.Popup);
+    return this.monitorCallback("identity_verification", callbackAttempt, callback).pipe(switchMap((payload) => from(this.refreshAuthCookie()).pipe(map(() => payload))));
+  }
+  accountConnectWithWebsocket(connectData) {
+    const roomId = v4_default();
+    const websocketUrl = this.generateWebsocketURL(roomId);
+    const redirectUrlParts = this.generateConnectURL(connectData);
+    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Websocket);
+    redirectUrlParts.searchParams.set("room_id", roomId);
+    this.logger.debug(redirectUrlParts.toString());
+    const openedWindow = connectData.vault_profile_connection_id ? this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.BridgeConnect) : this.openWindowInPopup(redirectUrlParts);
+    this.sentryContext.recordPopupOpen("connection", ConnectMode.Websocket, openedWindow !== null);
+    const callback = this.waitForWebsocketNotification(websocketUrl, openedWindow);
+    if (openedWindow === null) {
+      return callback;
+    }
+    const callbackAttempt = this.sentryContext.recordCallbackStarted("connection", ConnectMode.Websocket);
+    return this.monitorCallback("connection", callbackAttempt, callback);
+  }
+  accountConnectWithPopup(connectData) {
+    const redirectUrlParts = this.generateConnectURL(connectData);
+    redirectUrlParts.searchParams.set("connect_mode", ConnectMode.Popup);
+    this.logger.debug(redirectUrlParts.toString());
+    const openedWindow = connectData.vault_profile_connection_id ? this.openWindowInPopupWithAuthHandoff(redirectUrlParts, VaultAuthHandoffPurpose.BridgeConnect) : this.openWindowInPopup(redirectUrlParts);
+    this.sentryContext.recordPopupOpen("connection", ConnectMode.Popup, openedWindow !== null);
+    const callback = this.waitForPopupNotification(openedWindow);
+    if (openedWindow === null) {
+      return callback;
+    }
+    const callbackAttempt = this.sentryContext.recordCallbackStarted("connection", ConnectMode.Popup);
+    return this.monitorCallback("connection", callbackAttempt, callback);
+  }
+  authorizeTefcaDirect(vaultConnectionIds, external_id) {
+    const url = `${environment.connect_api_endpoint_base}/bridge/vault_connection/authorize`;
+    return this._httpClient.post(url, {
+      vault_connection_ids: vaultConnectionIds,
+      external_id
+    }, { params: { public_id: this.configService.systemConfig$.publicId } }).pipe(map((resp) => resp.data));
+  }
+  //this function only works in ApiMode.Test. It will allow us to "reset" the enabled vault profile connections for a patient + org combo
+  revokeVaultProfileConnections(vaultProfileConnectionIds) {
+    const url = `${environment.connect_api_endpoint_base}/bridge/vault_connection/revoke`;
+    return this._httpClient.post(url, {
+      vault_connection_ids: vaultProfileConnectionIds
+    }, { params: { public_id: this.configService.systemConfig$.publicId } }).pipe(map((resp) => resp.data));
+  }
+  refreshAuthCookie() {
+    return __async(this, null, function* () {
+      const response = yield firstValueFrom(this._httpClient.get(`${environment.connect_api_endpoint_base}/bridge/vault_auth_refresh`, {
+        withCredentials: true,
+        params: { public_id: this.configService.systemConfig$.publicId }
+      }));
+      this.authService.ClearSession();
+      return response;
+    });
+  }
+  /// HELPERS
+  openWindowInPopup(redirectUrlParts) {
+    const isDesktop = this.deviceService.isDesktop();
+    let features = "";
+    if (isDesktop) {
+      features = "popup=true,width=700,height=600";
+    }
+    return window.open(redirectUrlParts.toString(), "_blank", features);
+  }
+  // Native SDK WebViews need the final URL in window.open; browser embeds use a scoped-token POST
+  // so the popup does not depend on access to the iframe's partitioned cookie.
+  openWindowInPopupWithAuthHandoff(redirectUrlParts, purpose) {
+    this.logger.log("Opening popup with auth handoff: ", redirectUrlParts, purpose);
+    if (isNativeSdkMode(this.configService.systemConfig$.sdkMode)) {
+      return this.openWindowInPopup(redirectUrlParts);
+    }
+    const isDesktop = this.deviceService.isDesktop();
+    let features = "";
+    if (isDesktop) {
+      features = "popup=true,width=700,height=600";
+    }
+    const target = `VaultAuthHandoffPopupWindow-${v4_default()}`;
+    const opened = window.open("", target, features);
+    if (!opened) {
+      return null;
+    }
+    this.authService.GetVaultAuthHandoffToken(purpose).then((handoffToken) => {
+      const form = document.createElement("form");
+      form.setAttribute("method", "post");
+      form.setAttribute("action", redirectUrlParts.toString());
+      form.setAttribute("target", target);
+      form.style.display = "none";
+      const input2 = document.createElement("input");
+      input2.type = "hidden";
+      input2.name = FASTEN_AUTH_VAULT_COOKIE_NAME;
+      input2.value = handoffToken;
+      form.appendChild(input2);
+      document.body.appendChild(form);
+      form.submit();
+      document.body.removeChild(form);
+    }).catch((error2) => {
+      this.logger.error("failed to fetch vault auth handoff token", { purpose, error: error2 });
+      opened.close();
+    });
+    return opened;
+  }
+  generateWebsocketURL(roomId) {
+    const websocketUrlParts = new URL(`wss://websocket.${environment.connect_base_domain}/v1`);
+    const websocketParams = new URLSearchParams();
+    websocketParams.set("public_id", this.configService.systemConfig$.publicId);
+    websocketParams.set("room_id", roomId);
+    websocketUrlParts.search = websocketParams.toString();
+    return websocketUrlParts;
+  }
+  generateConnectURL(connectData) {
+    const redirectUrlParts = new URL(`${environment.connect_api_endpoint_base}/bridge/connect`);
+    const redirectParams = new URLSearchParams();
+    redirectParams.set("public_id", this.configService.systemConfig$.publicId);
+    redirectParams.set("brand_id", connectData.brand_id);
+    redirectParams.set("portal_id", connectData.portal_id);
+    redirectParams.set("endpoint_id", connectData.endpoint_id);
+    redirectParams.set("sdk_mode", this.configService.systemConfig$.sdkMode);
+    if (connectData.org_connection_id) {
+      redirectParams.set("reconnect_org_connection_id", connectData.org_connection_id);
+    }
+    if (connectData.external_id) {
+      redirectParams.set("external_id", connectData.external_id);
+    }
+    if (connectData.external_state) {
+      redirectParams.set("external_state", connectData.external_state);
+    }
+    if (connectData.vault_profile_connection_id) {
+      redirectParams.set("reconnect_vault_profile_connection_id", connectData.vault_profile_connection_id);
+    }
+    redirectUrlParts.search = redirectParams.toString();
+    return redirectUrlParts;
+  }
+  waitForPopupNotification(openedWindow, overrideSdkMode) {
+    const sdkMode = overrideSdkMode ?? this.configService.systemConfig$.sdkMode;
+    return waitForPostMessageOrgConnectionOrTimeout(this.logger, openedWindow, sdkMode);
+  }
+  waitForWebsocketNotification(websocketUrl, openedWindow, overrideSdkMode) {
+    const sdkMode = overrideSdkMode ?? this.configService.systemConfig$.sdkMode;
+    return waitForWebsocketOrgConnectionOrTimeout(this.logger, websocketUrl, openedWindow, sdkMode);
+  }
+  monitorCallback(flow, attempt, callback) {
+    return callback.pipe(tap({
+      next: () => this.sentryContext.recordCallbackReceived(flow, attempt),
+      error: (error2) => this.sentryContext.recordCallbackError(flow, attempt, error2)
+    }));
+  }
+  reverseGeocodePostalCode(latitude, longitude) {
+    let queryParams = {};
+    queryParams["public_id"] = this.configService.systemConfig$.publicId;
+    queryParams["latlng"] = `${latitude},${longitude}`;
+    const url = `${environment.connect_api_endpoint_base}/bridge/catalog/geocode`;
+    return this._httpClient.get(url, { params: queryParams }).pipe(map((resp) => resp.data));
+  }
+  static {
+    this.\u0275fac = function FastenService_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _FastenService)(\u0275\u0275inject(HttpClient), \u0275\u0275inject(DeviceDetectorService), \u0275\u0275inject(ConfigService), \u0275\u0275inject(NGXLogger), \u0275\u0275inject(SentryContextService), \u0275\u0275inject(AuthService));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _FastenService, factory: _FastenService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// projects/fasten-connect-stitch-embed/src/app/app.component.ts
+function AppComponent_ng_container_15_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 7)(2, "div", 8);
+    \u0275\u0275element(3, "fdk-illustration", 9);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "h2", 10);
+    \u0275\u0275text(5, " Connecting you with Fasten ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "p", 11);
+    \u0275\u0275text(7, " You're about to be taken to Fasten to connect your health records. This usually takes just a few seconds. ");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementContainerEnd();
+  }
+}
+function AppComponent_ng_container_16_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 7)(2, "div", 8);
+    \u0275\u0275element(3, "fdk-illustration", 9);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "h2", 10);
+    \u0275\u0275text(5, " Connecting you with Fasten ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "p", 11);
+    \u0275\u0275text(7, " You're about to be taken to Fasten to connect your health records. This usually takes just a few seconds. ");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementContainerEnd();
+  }
+}
+function AppComponent_ng_container_17_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 12)(2, "main", 13);
+    \u0275\u0275element(3, "router-outlet");
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(4, "fdk-footer");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementContainerEnd();
+  }
+}
+function AppComponent_ng_container_18_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 14)(2, "div", 15)(3, "div", 16)(4, "div", 17);
+    \u0275\u0275namespaceSVG();
+    \u0275\u0275elementStart(5, "svg", 18);
+    \u0275\u0275element(6, "path", 19);
+    \u0275\u0275elementEnd();
+    \u0275\u0275namespaceHTML();
+    \u0275\u0275elementStart(7, "span", 20);
+    \u0275\u0275text(8, "Error");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(9, "h3", 21);
+    \u0275\u0275text(10, "Configuration Error");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(11, "div", 22);
+    \u0275\u0275text(12);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(13, "div", 23)(14, "button", 24);
+    \u0275\u0275listener("click", function AppComponent_ng_container_18_Template_button_click_14_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.modalClose());
+    });
+    \u0275\u0275text(15, " Close ");
+    \u0275\u0275elementEnd()()()()();
+    \u0275\u0275elementContainerEnd();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(12);
+    \u0275\u0275textInterpolate1(" ", ctx_r1.errorMessage, " ");
+  }
+}
+var AppComponent = class _AppComponent {
+  populateInputsFromWindowLocation() {
+    let urlParams = new URLSearchParams(window.location.search);
+    this.publicId = urlParams.get("public-id") || "";
+    this.externalId = urlParams.get("external-id") || "";
+    this.email = urlParams.get("email") || "";
+    this.externalState = urlParams.get("external-state") || "";
+    this.reconnectOrgConnectionId = urlParams.get("reconnect-org-connection-id") || "";
+    this.searchOnly = urlParams.get("search-only") == "true";
+    this.tefcaMode = urlParams.get("tefca-mode") == "true";
+    this.tefcaCspPromptForce = urlParams.get("tefca-csp-prompt-force") == "true";
+    this.identityRequestUri = urlParams.get("identity-request-uri") || "";
+    this.eventTypes = urlParams.get("event-types") || "";
+    this.staticBackdrop = urlParams.get("static-backdrop") == "true";
+    this.searchQuery = urlParams.get("search-query") || "";
+    this.searchSortBy = urlParams.get("search-sort-by") || "";
+    this.searchSortByOpts = urlParams.get("search-sort-by-opts") || "";
+    this.showSplash = urlParams.get("show-splash") == "true";
+    this.brandId = urlParams.get("brand-id") || "";
+    this.portalId = urlParams.get("portal-id") || "";
+    this.endpointId = urlParams.get("endpoint-id") || "";
+    this.sdkMode = urlParams.get("sdk-mode") || SDKMode.None;
+    this.connectMode = urlParams.get("connect-mode") || ConnectMode.Popup;
+    this.theme = this.normalizeTheme(urlParams.get("theme"));
+    this.applyTheme(this.theme);
+    this.accentColor = this.normalizeAccentColor(urlParams.get("accent-color"));
+    this.applyAccentColor(this.accentColor);
+    this.logoUrl = urlParams.get("logo-url")?.trim() || "";
+    this.companyName = urlParams.get("company-name")?.trim() || "";
+    this.idpCode = urlParams.get("code") || "";
+    this.idpState = urlParams.get("state") || "";
+    this.idpError = urlParams.get("error") || "";
+    this.idpErrorDescription = urlParams.get("error_description") || "";
+    this.idpErrorUri = urlParams.get("error_uri") || "";
+    if (!this.searchOnly && !this.tefcaMode) {
+      this.searchOnly = true;
+    }
+  }
+  constructor(activatedRoute, configService, messageBus, fastenService, authService, router, logger, sentryContext) {
+    this.activatedRoute = activatedRoute;
+    this.configService = configService;
+    this.messageBus = messageBus;
+    this.fastenService = fastenService;
+    this.authService = authService;
+    this.router = router;
+    this.logger = logger;
+    this.sentryContext = sentryContext;
+    this.logoText = logoText;
+    this.testApiMode = ApiMode.Test;
+    this.headerConfig = __spreadValues({}, DEFAULT_EMBED_HEADER_CONFIG);
+    this.closeConfirmationOpen = false;
+    this.publicId = "";
+    this.externalId = "";
+    this.email = "";
+    this.externalState = "";
+    this.tefcaMode = false;
+    this.tefcaCspPromptForce = false;
+    this.identityRequestUri = "";
+    this.staticBackdrop = false;
+    this.eventTypes = "";
+    this.showSplash = false;
+    this.searchOnly = false;
+    this.searchQuery = "";
+    this.searchSortBy = "";
+    this.searchSortByOpts = "";
+    this.brandId = "";
+    this.portalId = "";
+    this.endpointId = "";
+    this.sdkMode = "";
+    this.connectMode = "";
+    this.theme = FdkTheme.Light;
+    this.accentColor = "";
+    this.logoUrl = "";
+    this.companyName = "";
+    this.idpCode = "";
+    this.idpState = "";
+    this.idpError = "";
+    this.idpErrorDescription = "";
+    this.idpErrorUri = "";
+    this.loading = true;
+  }
+  ngOnInit() {
+    this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => this.updateHeaderConfig());
+    this.updateHeaderConfig();
+    this.logger.info("QUERY STRING MAP", new URLSearchParams(window.location.search));
+    this.populateInputsFromWindowLocation();
+    this.messageBus.messageBusSubject.subscribe((eventPayload) => {
+      this.logger.debug("bubbling up client-event", eventPayload);
+      this.sendPostMessage(eventPayload);
+    });
+    if (this.isIdentityCallbackRequest()) {
+      this.restoreIdentityCallbackConfiguration();
+      this.logger.info("state: auth/callback");
+      this.loading = false;
+      this.errorMessage = "";
+      this.router.navigate(["auth/callback"], {
+        queryParams: {
+          code: this.idpCode || void 0,
+          state: this.idpState || void 0,
+          error: this.idpError || void 0,
+          error_description: this.idpErrorDescription || void 0,
+          error_uri: this.idpErrorUri || void 0
+        }
+      });
+      return;
+    }
+    const apiMode = this.inferApiMode(this.publicId);
+    let eventTypes = [];
+    if (this.eventTypes) {
+      eventTypes = this.eventTypes.split(",").map((eventType) => {
+        return eventType;
+      }).filter((eventType) => Object.values(EventTypes).indexOf(eventType) >= 0);
+    }
+    if (!this.sdkMode) {
+      this.sdkMode = SDKMode.None;
+    }
+    this.configService.systemConfig = {
+      apiMode,
+      publicId: this.publicId,
+      org: void 0,
+      externalId: this.externalId,
+      externalState: this.externalState,
+      reconnectOrgConnectionId: this.reconnectOrgConnectionId,
+      staticBackdrop: this.staticBackdrop,
+      searchOnly: this.searchOnly,
+      showSplash: this.showSplash,
+      tefcaMode: this.tefcaMode,
+      tefcaCspPromptForce: this.tefcaCspPromptForce,
+      identityRequestUri: this.tefcaMode ? this.identityRequestUri : "",
+      eventTypes,
+      sdkMode: this.sdkMode,
+      connectMode: this.connectMode,
+      theme: this.theme,
+      accentColor: this.accentColor || void 0,
+      logoUrl: this.logoUrl || void 0,
+      companyName: this.companyName || void 0
+    };
+    this.configService.vaultProfileConfig = {
+      email: this.email
+    };
+    this.sentryContext.recordWidgetStarted(this.getWidgetExperience(), apiMode);
+    this.getApiModeFromPublicId(this.publicId);
+    if (this.reconnectOrgConnectionId) {
+      this.fastenService.getOrgConnectionById(this.publicId, this.reconnectOrgConnectionId).subscribe((orgConnection) => {
+        this.logger.info("state: dashboard/connecting#reconnectOrgConnectionId", orgConnection);
+        this.router.navigate(["dashboard/connecting"], {
+          queryParams: {
+            "brandId": orgConnection.catalog_brand_id,
+            "portalId": orgConnection.catalog_portal_id,
+            "endpointId": orgConnection.catalog_endpoint_id,
+            "orgConnectionId": orgConnection.org_connection_id,
+            "externalId": this.externalId,
+            "externalState": this.externalState,
+            "sdkMode": this.sdkMode
+          },
+          skipLocationChange: true
+          // navigate without changing URL to preserve security context
+        });
+      }, (err) => {
+        this.errorMessage = "Could not find the patient connection using id. Please contact the developer of this app.";
+        this.logger.error("Invalid Fasten Connect Connection ID", err);
+      });
+    } else if (this.brandId && this.portalId && this.endpointId) {
+      this.logger.info("state: dashboard/connecting");
+      this.router.navigate(["dashboard/connecting"], {
+        queryParams: {
+          "brandId": this.brandId,
+          "portalId": this.portalId,
+          "endpointId": this.endpointId,
+          "externalId": this.externalId,
+          "externalState": this.externalState,
+          "sdkMode": this.sdkMode
+        }
+      });
+    } else if (this.brandId) {
+      this.fastenService.searchCatalogBrand(apiMode, this.brandId).subscribe((brandItem) => {
+        this.logger.info("state: brand/details");
+        this.configService.searchConfig$.selectedBrand = brandItem._source;
+        this.router.navigateByUrl("brand/details");
+      });
+    } else {
+      if (this.searchOnly) {
+        if (this.showSplash) {
+          this.logger.info("state: splash");
+          this.router.navigateByUrl("splash");
+        } else {
+          this.logger.info("state: search");
+          let searchFilter = new SearchFilter();
+          if (this.searchQuery) {
+            searchFilter.query = this.searchQuery;
+          }
+          if (this.searchSortBy) {
+            searchFilter.sortBy = this.searchSortBy;
+            if (this.searchSortByOpts) {
+              try {
+                let base64DecodedSearchSortByOpts = Base64UrlDecode(this.searchSortByOpts);
+                let sortByOptsObj = JSON.parse(base64DecodedSearchSortByOpts);
+                if (searchFilter.sortBy == "location" && sortByOptsObj.location && sortByOptsObj.location.zipcodes) {
+                  searchFilter.sortByOpts.locationZipcodes = sortByOptsObj.location.zipcodes;
+                }
+              } catch (e2) {
+                this.logger.error("Could not parse searchSortByOpts", this.searchSortByOpts, e2);
+              }
+            }
+          }
+          this.configService.searchConfig = __spreadProps(__spreadValues({}, this.configService.searchConfig$), {
+            searchFilter
+          });
+          this.router.navigate(["search"]);
+        }
+      }
+    }
+    if (this.searchSortBy == "location") {
+      this.configService.searchConfig$.showSearchByLocation = true;
+      this.configService.searchConfig$.searchFilter;
+    }
+  }
+  ngOnChanges(changes) {
+    this.logger.debug("embed ngOnChanges", changes);
+    if (changes.theme) {
+      this.theme = this.normalizeTheme(changes.theme.currentValue);
+      this.applyTheme(this.theme);
+    }
+    if (changes.accentColor) {
+      this.accentColor = this.normalizeAccentColor(changes.accentColor.currentValue);
+      this.applyAccentColor(this.accentColor);
+    }
+  }
+  normalizeTheme(theme) {
+    return theme === FdkTheme.Dark ? FdkTheme.Dark : FdkTheme.Light;
+  }
+  applyTheme(theme) {
+    document.documentElement.setAttribute("data-fdk-theme", theme);
+  }
+  normalizeAccentColor(value) {
+    const color = value?.trim() || "";
+    const shortHexMatch = /^#([0-9a-f]{3})$/i.exec(color);
+    if (shortHexMatch) {
+      return `#${[...shortHexMatch[1]].map((character) => character.repeat(2)).join("")}`.toUpperCase();
+    }
+    return /^#[0-9a-f]{6}$/i.test(color) ? color.toUpperCase() : "";
+  }
+  applyAccentColor(value) {
+    const root = document.documentElement;
+    const color = this.normalizeAccentColor(value);
+    if (!color) {
+      root.style.removeProperty("--fdk-color-accent");
+      root.style.removeProperty("--fdk-color-accent-subtle");
+      root.style.removeProperty("--fdk-color-accent-medium");
+      return;
+    }
+    root.style.setProperty("--fdk-color-accent", color);
+    root.style.setProperty("--fdk-color-accent-subtle", this.hexToRgba(color, 0.08));
+    root.style.setProperty("--fdk-color-accent-medium", this.hexToRgba(color, 0.16));
+  }
+  hexToRgba(hex, opacity) {
+    const red = Number.parseInt(hex.slice(1, 3), 16);
+    const green = Number.parseInt(hex.slice(3, 5), 16);
+    const blue = Number.parseInt(hex.slice(5, 7), 16);
+    return `rgb(${red} ${green} ${blue} / ${opacity})`;
+  }
+  isIdentityCallbackRequest() {
+    return !!(this.idpCode && this.idpState) || !!this.idpError;
+  }
+  restoreIdentityCallbackConfiguration() {
+    if (!this.idpState) {
+      return;
+    }
+    const oauthContext = getOAuthCallbackContext(this.idpState, this.logger);
+    if (oauthContext.systemConfig?.publicId) {
+      restoreConfigurationFromOauthContext(oauthContext, this.configService);
+      this.theme = this.normalizeTheme(this.configService.systemConfig$.theme);
+      this.applyTheme(this.theme);
+      this.accentColor = this.normalizeAccentColor(this.configService.systemConfig$.accentColor);
+      this.applyAccentColor(this.accentColor);
+      this.logoUrl = this.configService.systemConfig$.logoUrl || "";
+      this.companyName = this.configService.systemConfig$.companyName || "";
+    }
+  }
+  getApiModeFromPublicId(publicId) {
+    let publicIdParts = publicId.split("_");
+    let apiMode = this.inferApiMode(publicId);
+    if (publicIdParts.length != 3) {
+      console.error("Could not register Fasten Connect installation: missing or invalid id", this.publicId);
+      this.errorMessage = "Could not register Fasten Connect installation: missing or invalid id. Please contact the developer of this app.";
+      this.sentryContext.recordWidgetConfigError("invalid_public_id");
+      this.messageBus.publishWidgetConfigError();
+      this.configService.systemConfig = {
+        org: void 0
+      };
+      this.loading = false;
+      return apiMode;
+    } else {
+      this.errorMessage = "";
+      this.fastenService.getOrgConfig(this.publicId).subscribe((org) => {
+        this.logger.info("Fasten Connect registration", org);
+        this.configService.systemConfig = {
+          org
+        };
+        if (this.configService.systemConfig$.tefcaMode && !this.isFeatureFlagOrgTefcaModeEnabled(this.configService.systemConfig$.org)) {
+          this.logger.error("TEFCA mode requested but organization is not enabled for TEFCA", this.configService.systemConfig$.org?.feature_flags);
+          this.loading = false;
+          this.errorMessage = "TEFCA mode not enabled for this organization and/or api mode. Please contact your account representative or the developer of this app.";
+          this.sentryContext.recordWidgetConfigError("tefca_not_enabled");
+          this.messageBus.publishWidgetConfigError();
+          return;
+        }
+        if (this.tefcaMode) {
+          void this.validateCookieSupport();
+        } else {
+          this.loading = false;
+          this.sentryContext.recordWidgetInitialized("cookie_not_required");
+        }
+      }, (err) => {
+        this.loading = false;
+        this.errorMessage = "Could not register Fasten Connect installation using id. Please contact the developer of this app.";
+        this.sentryContext.recordWidgetConfigError("org_config_failed");
+        this.messageBus.publishWidgetConfigError();
+        this.logger.error("Invalid Fasten Connect registration", err);
+      });
+      return apiMode;
+    }
+  }
+  inferApiMode(publicId) {
+    const publicIdParts = publicId.split("_");
+    return publicIdParts.length === 3 && publicIdParts[1] === ApiMode.Live ? ApiMode.Live : ApiMode.Test;
+  }
+  getWidgetExperience() {
+    if (this.tefcaMode) {
+      return "tefca";
+    }
+    if (this.reconnectOrgConnectionId || this.brandId && this.portalId && this.endpointId) {
+      return "direct";
+    }
+    return "search_only";
+  }
+  validateCookieSupport() {
+    return __async(this, null, function* () {
+      try {
+        const cookieProbe = isNativeSdkMode(this.sdkMode) ? CookieProbeScope.Regular : CookieProbeScope.All;
+        const cookieSupported = yield this.authService.CheckCookieSupport(cookieProbe);
+        if (cookieSupported) {
+          this.logger.info("[AppComponent] Cookie support detected");
+          this.sentryContext.recordWidgetInitialized("cookies_supported");
+          return;
+        }
+        if (this.authService.CanUseStorageAccessFallback()) {
+          this.logger.info("[AppComponent] Cookie probes were blocked; continuing with the Storage Access API fallback");
+          this.sentryContext.recordWidgetInitialized("storage_access_fallback");
+        } else {
+          this.logger.info("[AppComponent] Cookie support was not found!");
+          this.sentryContext.recordWidgetBlocked("cookies_blocked");
+          yield this.router.navigateByUrl("auth/signin/cookies-required");
+        }
+      } catch (error2) {
+        this.logger.error("[AppComponent] Failed to check browser cookie support", error2);
+        this.errorMessage = "Could not verify browser cookie support. Please try again or contact the developer of this app.";
+        this.sentryContext.recordWidgetConfigError("cookie_probe_failed");
+        this.messageBus.publishWidgetConfigError();
+      } finally {
+        this.loading = false;
+      }
+    });
+  }
+  // these functions can be called externally to hide the widget via javascript
+  modalClose() {
+    this.logger.info("modalClose pressed");
+    this.messageBus.publishRequestClose();
+  }
+  handleHeaderBack() {
+    if (this.headerConfig.backUrl) {
+      void this.router.navigateByUrl(this.headerConfig.backUrl, {
+        replaceUrl: this.headerConfig.backReplaceUrl === true
+      });
+    }
+  }
+  handleHeaderReportIssue() {
+    const queryParams = Object.entries(this.headerConfig.reportIssueQueryParamMap || {}).reduce((params, [source, target]) => {
+      const value = this.activeHeaderRoute?.snapshot.queryParamMap.get(source);
+      if (value) {
+        params[target] = value;
+      }
+      return params;
+    }, {});
+    void this.router.navigate(["/form/support"], {
+      queryParams: Object.keys(queryParams).length ? queryParams : void 0
+    });
+  }
+  handleHeaderProfile() {
+    void this.router.navigateByUrl("/profile");
+  }
+  handleHeaderClose() {
+    this.closeConfirmationOpen = true;
+  }
+  cancelHeaderClose() {
+    this.closeConfirmationOpen = false;
+  }
+  confirmHeaderClose() {
+    this.closeConfirmationOpen = false;
+    if (this.headerConfig.closeAction === "complete-and-close") {
+      this.messageBus.publishComplete();
+    }
+    this.modalClose();
+  }
+  shouldShowHeaderBackButton() {
+    const hiddenByQueryParam = this.headerConfig.hideBackWhenQueryParam && this.activeHeaderRoute?.snapshot.queryParamMap.has(this.headerConfig.hideBackWhenQueryParam);
+    return !!this.headerConfig.showBackButton && !hiddenByQueryParam;
+  }
+  updateHeaderConfig() {
+    let route = this.activatedRoute;
+    while (route.firstChild) {
+      route = route.firstChild;
+    }
+    this.activeHeaderRoute = route;
+    this.headerConfig = __spreadValues(__spreadValues({}, DEFAULT_EMBED_HEADER_CONFIG), route.snapshot.data["header"]);
+  }
+  // postMessage registration, listen to events from the parent window
+  receivePostMessage(event) {
+    this.logger.debug("received client-event from parent window", event);
+  }
+  sendPostMessage(eventPayload) {
+    if (eventPayload == null) {
+      this.logger.warn("No eventPayload to send");
+      return;
+    }
+    if (this.sdkMode == SDKMode.ReactNative && window.ReactNativeWebView) {
+      this.logger.info("sending client-event to React Native WebView", eventPayload);
+      window.ReactNativeWebView.postMessage(JSON.stringify({
+        "from": CommunicationEntity.PrimaryWebView,
+        "to": CommunicationEntity.External,
+        "payload": JSON.stringify(eventPayload)
+      }));
+    } else if (window.opener || window.parent) {
+      this.logger.info("sending client-event", eventPayload);
+      let parentWindowRef = window.parent || window.opener;
+      parentWindowRef.postMessage(JSON.stringify(eventPayload), "*");
+    } else {
+      this.logger.debug("No parent window to send message to", this.sdkMode);
+      return;
+    }
+  }
+  isFeatureFlagOrgTefcaModeEnabled(org) {
+    const orgFlags = org?.feature_flags || [];
+    return orgFlags.includes(`${this.configService.systemConfig$.apiMode}.tefca.enable`);
+  }
+  static {
+    this.\u0275fac = function AppComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _AppComponent)(\u0275\u0275directiveInject(ActivatedRoute), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(SentryContextService));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _AppComponent, selectors: [["app-root"]], hostBindings: function AppComponent_HostBindings(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275listener("message", function AppComponent_message_HostBindingHandler($event) {
+          return ctx.receivePostMessage($event);
+        }, false, \u0275\u0275resolveWindow);
+      }
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], email: "email", externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], identityRequestUri: [0, "identity-request-uri", "identityRequestUri"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"], theme: "theme", accentColor: [0, "accent-color", "accentColor"], logoUrl: [0, "logo-url", "logoUrl"], companyName: [0, "company-name", "companyName"], idpCode: [0, "code", "idpCode"], idpState: [0, "state", "idpState"], idpError: [0, "error", "idpError"], idpErrorDescription: [0, "error-description", "idpErrorDescription"], idpErrorUri: [0, "error-uri", "idpErrorUri"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 19, vars: 17, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "app-header-container", 1, "flex-shrink-0"], [3, "back", "reportIssue", "profile", "close", "logoUrl", "logoAlt", "name", "testMode", "showBackButton", "showReportIssueButton", "showProfileButton", "showCloseButton"], [3, "openChange", "open"], ["type", "button", "variant", "secondary", 3, "click"], ["type", "button", 3, "click"], [4, "ngIf"], [1, "flex", "flex-1", "flex-col", "items-center", "p-6", "text-center", "mt-fdk-xxxl"], [1, "flex", "justify-center"], ["name", "welcome-animated"], [1, "fdk-type-heading-2", "text-fdk-primary", "text-center", "mt-fdk-l"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs", "text-center"], ["id", "widget-container", 1, "px-6", "pb-6", "fade-in", "flex", "flex-col"], ["id", "page-scroll-container"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275element(0, "link", 0);
+        \u0275\u0275elementStart(1, "div", 1)(2, "fdk-header", 2);
+        \u0275\u0275pipe(3, "async");
+        \u0275\u0275pipe(4, "async");
+        \u0275\u0275listener("back", function AppComponent_Template_fdk_header_back_2_listener() {
+          return ctx.handleHeaderBack();
+        })("reportIssue", function AppComponent_Template_fdk_header_reportIssue_2_listener() {
+          return ctx.handleHeaderReportIssue();
+        })("profile", function AppComponent_Template_fdk_header_profile_2_listener() {
+          return ctx.handleHeaderProfile();
+        })("close", function AppComponent_Template_fdk_header_close_2_listener() {
+          return ctx.handleHeaderClose();
+        });
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(5, "fdk-dialog", 3);
+        \u0275\u0275listener("openChange", function AppComponent_Template_fdk_dialog_openChange_5_listener($event) {
+          return ctx.closeConfirmationOpen = $event;
+        });
+        \u0275\u0275elementStart(6, "fdk-dialog-title");
+        \u0275\u0275text(7, "Stop connecting your records?");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(8, "fdk-dialog-content");
+        \u0275\u0275text(9, " If you close now, your progress won't be saved and you'll need to start again. ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(10, "fdk-dialog-actions")(11, "fdk-button", 4);
+        \u0275\u0275listener("click", function AppComponent_Template_fdk_button_click_11_listener() {
+          return ctx.cancelHeaderClose();
+        });
+        \u0275\u0275text(12, " Cancel ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(13, "fdk-button", 5);
+        \u0275\u0275listener("click", function AppComponent_Template_fdk_button_click_13_listener() {
+          return ctx.confirmHeaderClose();
+        });
+        \u0275\u0275text(14, " Close ");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275template(15, AppComponent_ng_container_15_Template, 8, 0, "ng-container", 6)(16, AppComponent_ng_container_16_Template, 8, 0, "ng-container", 6)(17, AppComponent_ng_container_17_Template, 5, 0, "ng-container", 6)(18, AppComponent_ng_container_18_Template, 16, 1, "ng-container", 6);
+      }
+      if (rf & 2) {
+        let tmp_3_0;
+        let tmp_6_0;
+        \u0275\u0275advance(2);
+        \u0275\u0275property("logoUrl", ctx.logoUrl || null)("logoAlt", ctx.companyName)("name", ctx.companyName || ctx.logoText())("testMode", ((tmp_3_0 = \u0275\u0275pipeBind1(3, 13, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.apiMode) === ctx.testApiMode)("showBackButton", ctx.shouldShowHeaderBackButton())("showReportIssueButton", !!ctx.headerConfig.showReportIssueButton)("showProfileButton", !!ctx.headerConfig.showProfileButton && !!((tmp_6_0 = \u0275\u0275pipeBind1(4, 15, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_6_0.verifiedIdentityPatientDemographics))("showCloseButton", true);
+        \u0275\u0275advance(3);
+        \u0275\u0275property("open", ctx.closeConfirmationOpen);
+        \u0275\u0275advance(10);
+        \u0275\u0275property("ngIf", ctx.loading && ctx.searchOnly);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.loading && !ctx.searchOnly);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", !ctx.loading && !!!ctx.errorMessage);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", !ctx.loading && ctx.errorMessage);
+      }
+    }, dependencies: [
+      CommonModule,
+      NgIf,
+      AsyncPipe,
+      RouterOutlet,
+      RouterModule,
+      FdkButtonComponent,
+      FdkDialogActionsComponent,
+      FdkDialogComponent,
+      FdkDialogContentComponent,
+      FdkDialogTitleComponent,
+      FdkFooterComponent,
+      FdkHeaderComponent,
+      FdkIllustrationComponent
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  height: min(100dvh, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n#widget-container[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  flex: 1 1 auto;\n  width: 100%;\n  height: auto;\n  max-height: 800px;\n  min-height: 0;\n  overflow-x: hidden;\n  overflow-y: hidden;\n}\n#page-scroll-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  min-height: 0;\n  padding: 3px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  -webkit-overflow-scrolling: touch;\n}\n#widget-container[_ngcontent-%COMP%]    > fdk-footer[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n}\n/*# sourceMappingURL=app.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 67 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/test-identities.ts
@@ -78096,204 +81574,81 @@ var TEST_IDENTITY_PHONE_NUMBERS = Object.freeze({
 var TEST_IDENTITY_EMAILS = Object.freeze(Object.keys(TEST_IDENTITY_PHONE_NUMBERS));
 
 // projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts
-var _c0 = (a0, a1) => ({ "space-y-3": a0, "space-y-6": a1 });
-var _c1 = (a0) => ({ "custom-checkbox-checked": a0 });
-function VaultProfileSigninComponent_div_47_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 35)(1, "div", 36);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 37);
-    \u0275\u0275element(3, "path", 38);
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(4, "div", 39)(5, "p", 40);
-    \u0275\u0275text(6, "We couldn't sign you in.");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "p", 41);
-    \u0275\u0275text(8);
-    \u0275\u0275elementEnd()()()();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(8);
-    \u0275\u0275textInterpolate(ctx_r1.errorMsg);
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275text(1, " Create an account with your email address to access your health records via Clear. ");
+    \u0275\u0275elementContainerEnd();
   }
 }
-function VaultProfileSigninComponent_ng_container_48_datalist_5_option_1_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_template_6_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "option", 48);
+    \u0275\u0275text(0, "Press continue to verify your identity.");
+  }
+}
+function VaultProfileSigninComponent_ng_container_11_datalist_3_option_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "option", 18);
   }
   if (rf & 2) {
     const testIdentityEmail_r4 = ctx.$implicit;
     \u0275\u0275property("value", testIdentityEmail_r4);
   }
 }
-function VaultProfileSigninComponent_ng_container_48_datalist_5_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_11_datalist_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "datalist", 46);
-    \u0275\u0275template(1, VaultProfileSigninComponent_ng_container_48_datalist_5_option_1_Template, 1, 1, "option", 47);
+    \u0275\u0275elementStart(0, "datalist", 16);
+    \u0275\u0275template(1, VaultProfileSigninComponent_ng_container_11_datalist_3_option_1_Template, 1, 1, "option", 17);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext(2);
+    const ctx_r2 = \u0275\u0275nextContext(2);
     \u0275\u0275advance();
-    \u0275\u0275property("ngForOf", ctx_r1.testIdentityEmails);
+    \u0275\u0275property("ngForOf", ctx_r2.testIdentityEmails);
   }
 }
-function VaultProfileSigninComponent_ng_container_48_p_6_span_1_Template(rf, ctx) {
+function VaultProfileSigninComponent_ng_container_11_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span");
-    \u0275\u0275text(1, " Email is required. ");
-    \u0275\u0275elementEnd();
-  }
-}
-function VaultProfileSigninComponent_ng_container_48_p_6_span_2_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "span");
-    \u0275\u0275text(1, " Email must be at least 4 characters long. ");
-    \u0275\u0275elementEnd();
-  }
-}
-function VaultProfileSigninComponent_ng_container_48_p_6_span_3_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "span");
-    \u0275\u0275text(1, " Email must be a valid email address. ");
-    \u0275\u0275elementEnd();
-  }
-}
-function VaultProfileSigninComponent_ng_container_48_p_6_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 49);
-    \u0275\u0275template(1, VaultProfileSigninComponent_ng_container_48_p_6_span_1_Template, 2, 0, "span", 32)(2, VaultProfileSigninComponent_ng_container_48_p_6_span_2_Template, 2, 0, "span", 32)(3, VaultProfileSigninComponent_ng_container_48_p_6_span_3_Template, 2, 0, "span", 32);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    \u0275\u0275nextContext();
-    const email_r5 = \u0275\u0275reference(4);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", email_r5.errors == null ? null : email_r5.errors["required"]);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", email_r5.errors == null ? null : email_r5.errors["minlength"]);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", email_r5.errors == null ? null : email_r5.errors["email"]);
-  }
-}
-function VaultProfileSigninComponent_ng_container_48_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r3 = \u0275\u0275getCurrentView();
+    const _r2 = \u0275\u0275getCurrentView();
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "label", 42);
-    \u0275\u0275text(2, "Email address");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "input", 43, 2);
-    \u0275\u0275twoWayListener("ngModelChange", function VaultProfileSigninComponent_ng_container_48_Template_input_ngModelChange_3_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r1 = \u0275\u0275nextContext();
-      \u0275\u0275twoWayBindingSet(ctx_r1.existingVaultProfile.email, $event) || (ctx_r1.existingVaultProfile.email = $event);
+    \u0275\u0275elementStart(1, "fdk-input", 14, 2);
+    \u0275\u0275twoWayListener("ngModelChange", function VaultProfileSigninComponent_ng_container_11_Template_fdk_input_ngModelChange_1_listener($event) {
+      \u0275\u0275restoreView(_r2);
+      const ctx_r2 = \u0275\u0275nextContext();
+      \u0275\u0275twoWayBindingSet(ctx_r2.existingVaultProfile.email, $event) || (ctx_r2.existingVaultProfile.email = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275listener("ngModelChange", function VaultProfileSigninComponent_ng_container_48_Template_input_ngModelChange_3_listener($event) {
-      \u0275\u0275restoreView(_r3);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.existingVaultProfile.email = $event.toLowerCase().trim());
+    \u0275\u0275listener("ngModelChange", function VaultProfileSigninComponent_ng_container_11_Template_fdk_input_ngModelChange_1_listener($event) {
+      \u0275\u0275restoreView(_r2);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.existingVaultProfile.email = $event.toLowerCase().trim());
     });
     \u0275\u0275elementEnd();
-    \u0275\u0275template(5, VaultProfileSigninComponent_ng_container_48_datalist_5_Template, 2, 1, "datalist", 44)(6, VaultProfileSigninComponent_ng_container_48_p_6_Template, 4, 3, "p", 45);
+    \u0275\u0275template(3, VaultProfileSigninComponent_ng_container_11_datalist_3_Template, 2, 1, "datalist", 15);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
-    const email_r5 = \u0275\u0275reference(4);
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(3);
-    \u0275\u0275twoWayProperty("ngModel", ctx_r1.existingVaultProfile.email);
-    \u0275\u0275attribute("list", ctx_r1.configService.systemConfig$.apiMode === ctx_r1.ApiMode.Test ? "test-identity-emails" : null);
-    \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ctx_r1.configService.systemConfig$.apiMode === ctx_r1.ApiMode.Test);
+    const email_r5 = \u0275\u0275reference(2);
+    const ctx_r2 = \u0275\u0275nextContext();
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", email_r5.invalid && (email_r5.dirty || email_r5.touched));
+    \u0275\u0275twoWayProperty("ngModel", ctx_r2.existingVaultProfile.email);
+    \u0275\u0275property("list", ctx_r2.configService.systemConfig$.apiMode === ctx_r2.ApiMode.Test ? "test-identity-emails" : null)("minlength", 4)("required", true)("error", email_r5.invalid && (email_r5.dirty || email_r5.touched))("errorMessage", (email_r5.errors == null ? null : email_r5.errors["required"]) ? "Email is required." : (email_r5.errors == null ? null : email_r5.errors["minlength"]) ? "Email must be at least 4 characters long." : (email_r5.errors == null ? null : email_r5.errors["email"]) ? "Email must be a valid email address." : "");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", ctx_r2.configService.systemConfig$.apiMode === ctx_r2.ApiMode.Test);
   }
 }
-function VaultProfileSigninComponent_p_49_Template(rf, ctx) {
+function VaultProfileSigninComponent_fdk_alert_12_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 50);
-    \u0275\u0275text(1, " By clicking continue you agree to: ");
-    \u0275\u0275element(2, "br");
-    \u0275\u0275text(3, "Fasten's ");
-    \u0275\u0275elementStart(4, "a", 51);
-    \u0275\u0275text(5, "Privacy Policy");
-    \u0275\u0275elementEnd();
-    \u0275\u0275text(6, " and ");
-    \u0275\u0275elementStart(7, "a", 52);
-    \u0275\u0275text(8, "Terms & Conditions");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(9, "br");
-    \u0275\u0275text(10);
-    \u0275\u0275pipe(11, "async");
-    \u0275\u0275elementStart(12, "a", 53);
-    \u0275\u0275pipe(13, "async");
-    \u0275\u0275text(14, "Privacy Policy");
-    \u0275\u0275elementEnd()();
+    \u0275\u0275element(0, "fdk-alert", 19);
   }
   if (rf & 2) {
-    let tmp_3_0;
-    let tmp_4_0;
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(10);
-    \u0275\u0275textInterpolate1("", ((tmp_3_0 = \u0275\u0275pipeBind1(11, 2, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.name) || "Unknown", "'s ");
-    \u0275\u0275advance(2);
-    \u0275\u0275propertyInterpolate("href", (tmp_4_0 = \u0275\u0275pipeBind1(13, 4, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_4_0.org == null ? null : tmp_4_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("description", ctx_r2.errorMsg);
   }
 }
-function VaultProfileSigninComponent_ng_template_51_Template(rf, ctx) {
+function VaultProfileSigninComponent_fdk_spinner_16_Template(rf, ctx) {
   if (rf & 1) {
-    const _r6 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "p", 50);
-    \u0275\u0275element(1, "br");
-    \u0275\u0275text(2, "Fasten's ");
-    \u0275\u0275elementStart(3, "button", 54);
-    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_51_Template_button_click_3_listener() {
-      \u0275\u0275restoreView(_r6);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.awaitUserInteractionCompleted());
-    });
-    \u0275\u0275text(4, "Privacy Policy");
-    \u0275\u0275elementEnd();
-    \u0275\u0275text(5, " and ");
-    \u0275\u0275elementStart(6, "a", 52);
-    \u0275\u0275text(7, "Terms & Conditions");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(8, "br");
-    \u0275\u0275text(9);
-    \u0275\u0275pipe(10, "async");
-    \u0275\u0275elementStart(11, "a", 53);
-    \u0275\u0275pipe(12, "async");
-    \u0275\u0275text(13, "Privacy Policy");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(14, "div", 55)(15, "button", 56);
-    \u0275\u0275pipe(16, "async");
-    \u0275\u0275listener("click", function VaultProfileSigninComponent_ng_template_51_Template_button_click_15_listener() {
-      \u0275\u0275restoreView(_r6);
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.awaitUserInteractionCompleted());
-    });
-    \u0275\u0275text(17, " I agree to Fasten Health's Privacy Policy ");
-    \u0275\u0275elementEnd()();
-  }
-  if (rf & 2) {
-    let tmp_3_0;
-    let tmp_4_0;
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(9);
-    \u0275\u0275textInterpolate1("", ((tmp_3_0 = \u0275\u0275pipeBind1(10, 3, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.name) || "Unknown", "'s ");
-    \u0275\u0275advance(2);
-    \u0275\u0275propertyInterpolate("href", (tmp_4_0 = \u0275\u0275pipeBind1(12, 5, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_4_0.org == null ? null : tmp_4_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
-    \u0275\u0275advance(4);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction1(9, _c1, \u0275\u0275pipeBind1(16, 7, ctx_r1.userInteractionCompletedSubject)));
-  }
-}
-function VaultProfileSigninComponent_app_spinner_56_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275element(0, "app-spinner");
+    \u0275\u0275element(0, "fdk-spinner");
   }
 }
 var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
@@ -78549,107 +81904,52 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], decls: 58, vars: 26, consts: [["vaultProfileForm", "ngForm"], ["needStorageAccessPermissionTemplate", ""], ["email", "ngModel"], ["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [3, "ngSubmit", "ngClass"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], [4, "ngIf"], ["class", "text-xs text-gray-400 text-center", 4, "ngIf", "ngIfElse"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "block", "text-sm", "font-medium", "text-gray-700"], ["name", "email", "required", "", "email", "", "minlength", "4", "type", "email", "placeholder", "you@example.com", 1, "block", "w-full", "mt-2", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["id", "test-identity-emails", 4, "ngIf"], ["id", "initialError", "class", "text-sm text-red-500", 4, "ngIf"], ["id", "test-identity-emails"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], ["id", "initialError", 1, "text-sm", "text-red-500"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], ["type", "button", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "click"], [1, "flex", "items-center", "justify-center"], ["type", "button", 1, "custom-checkbox", "ml-2", "text-sm", "text-gray-600", 3, "click", "ngClass"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninComponent, selectors: [["app-auth-signin"]], decls: 18, vars: 6, consts: [["cspInstructions", ""], ["vaultProfileForm", "ngForm"], ["email", "ngModel"], ["id", "step-signin", 1, "flex", "flex-1", "min-h-full", "flex-col"], [1, "mt-fdk-xxxl"], [1, "fdk-type-heading-2"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxxs"], [4, "ngIf", "ngIfElse"], [1, "mt-fdk-l", "flex", "flex-1", "flex-col", 3, "ngSubmit"], [4, "ngIf"], ["class", "mt-fdk-m mb-fdk-m", "variant", "error", "title", "We couldn't sign you in.", 3, "description", 4, "ngIf"], [1, "mt-auto"], ["type", "submit", "variant", "primary", "width", "full", 3, "disabled"], [1, "flex", "items-center", "justify-center", "gap-2"], ["name", "email", "label", "Email address", "placeholder", "you@example.com", "type", "email", "autocomplete", "email", "email", "", 3, "ngModelChange", "ngModel", "list", "minlength", "required", "error", "errorMessage"], ["id", "test-identity-emails", 4, "ngIf"], ["id", "test-identity-emails"], [3, "value", 4, "ngFor", "ngForOf"], [3, "value"], ["variant", "error", "title", "We couldn't sign you in.", 1, "mt-fdk-m", "mb-fdk-m", 3, "description"]], template: function VaultProfileSigninComponent_Template(rf, ctx) {
       if (rf & 1) {
         const _r1 = \u0275\u0275getCurrentView();
-        \u0275\u0275elementStart(0, "div", 3);
-        \u0275\u0275element(1, "app-header");
-        \u0275\u0275elementStart(2, "div", 4)(3, "div", 5);
-        \u0275\u0275element(4, "img", 6);
-        \u0275\u0275pipe(5, "async");
+        \u0275\u0275elementStart(0, "div", 3)(1, "div", 4)(2, "h2", 5);
+        \u0275\u0275text(3, "Connect your health records");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(6, "div", 7);
-        \u0275\u0275element(7, "div", 8)(8, "div", 9)(9, "div", 10);
-        \u0275\u0275elementEnd();
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(10, "svg", 11);
-        \u0275\u0275element(11, "path", 12)(12, "path", 13)(13, "path", 14)(14, "path", 15)(15, "path", 16)(16, "path", 17);
+        \u0275\u0275elementStart(4, "p", 6);
+        \u0275\u0275template(5, VaultProfileSigninComponent_ng_container_5_Template, 2, 0, "ng-container", 7)(6, VaultProfileSigninComponent_ng_template_6_Template, 1, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
         \u0275\u0275elementEnd()();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(17, "div", 18)(18, "h2", 19);
-        \u0275\u0275text(19, "Connect Your Health Records");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(20, "p", 20);
-        \u0275\u0275text(21);
-        \u0275\u0275pipe(22, "async");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(23, "div", 21)(24, "div", 22)(25, "div", 23);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(26, "svg", 24);
-        \u0275\u0275element(27, "path", 25);
-        \u0275\u0275elementEnd()();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(28, "div")(29, "h3", 26);
-        \u0275\u0275text(30, "Safe");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(31, "p", 20);
-        \u0275\u0275text(32, " Securely connect your medical records with bank-level encryption ");
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(33, "div", 22)(34, "div", 23);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(35, "svg", 27);
-        \u0275\u0275element(36, "rect", 28)(37, "path", 29);
-        \u0275\u0275elementEnd()();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(38, "div")(39, "h3", 26);
-        \u0275\u0275text(40, "Private");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(41, "p", 20);
-        \u0275\u0275text(42, " We never sell your personal info and only use it with your permission ");
-        \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(43, "form", 30, 0);
-        \u0275\u0275pipe(45, "async");
-        \u0275\u0275pipe(46, "async");
-        \u0275\u0275listener("ngSubmit", function VaultProfileSigninComponent_Template_form_ngSubmit_43_listener() {
+        \u0275\u0275elementStart(8, "form", 8, 1);
+        \u0275\u0275listener("ngSubmit", function VaultProfileSigninComponent_Template_form_ngSubmit_8_listener() {
           \u0275\u0275restoreView(_r1);
           return \u0275\u0275resetView(ctx.signinSubmit());
         });
-        \u0275\u0275template(47, VaultProfileSigninComponent_div_47_Template, 9, 1, "div", 31)(48, VaultProfileSigninComponent_ng_container_48_Template, 7, 4, "ng-container", 32)(49, VaultProfileSigninComponent_p_49_Template, 15, 6, "p", 33);
-        \u0275\u0275pipe(50, "async");
-        \u0275\u0275template(51, VaultProfileSigninComponent_ng_template_51_Template, 18, 11, "ng-template", null, 1, \u0275\u0275templateRefExtractor);
-        \u0275\u0275elementStart(53, "button", 34);
-        \u0275\u0275pipe(54, "async");
-        \u0275\u0275pipe(55, "async");
-        \u0275\u0275template(56, VaultProfileSigninComponent_app_spinner_56_Template, 1, 0, "app-spinner", 32);
-        \u0275\u0275text(57, " Continue ");
-        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(10, "div");
+        \u0275\u0275template(11, VaultProfileSigninComponent_ng_container_11_Template, 4, 7, "ng-container", 9);
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(12, VaultProfileSigninComponent_fdk_alert_12_Template, 1, 1, "fdk-alert", 10);
+        \u0275\u0275elementStart(13, "div", 11)(14, "fdk-button", 12)(15, "span", 13);
+        \u0275\u0275template(16, VaultProfileSigninComponent_fdk_spinner_16_Template, 1, 0, "fdk-spinner", 9);
+        \u0275\u0275text(17, " Sign in");
+        \u0275\u0275elementEnd()()()()();
       }
       if (rf & 2) {
-        let tmp_2_0;
-        let tmp_3_0;
-        const vaultProfileForm_r7 = \u0275\u0275reference(44);
-        const needStorageAccessPermissionTemplate_r8 = \u0275\u0275reference(52);
-        \u0275\u0275advance(4);
-        \u0275\u0275property("src", (tmp_2_0 = \u0275\u0275pipeBind1(5, 9, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.logo_uri, \u0275\u0275sanitizeUrl);
-        \u0275\u0275advance(17);
-        \u0275\u0275textInterpolate1(" ", ((tmp_3_0 = \u0275\u0275pipeBind1(22, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.name) || "Unknown", " uses Fasten to securely link your health systems ");
-        \u0275\u0275advance(22);
-        \u0275\u0275property("ngClass", \u0275\u0275pureFunction2(23, _c0, \u0275\u0275pipeBind1(45, 13, ctx.needStorageAccessPermissionSubject), !\u0275\u0275pipeBind1(46, 15, ctx.needStorageAccessPermissionSubject)));
-        \u0275\u0275advance(4);
-        \u0275\u0275property("ngIf", ctx.errorMsg);
-        \u0275\u0275advance();
+        const cspInstructions_r6 = \u0275\u0275reference(7);
+        const vaultProfileForm_r7 = \u0275\u0275reference(9);
+        \u0275\u0275advance(5);
+        \u0275\u0275property("ngIf", !ctx.isCspRequestUriSignin)("ngIfElse", cspInstructions_r6);
+        \u0275\u0275advance(6);
         \u0275\u0275property("ngIf", !ctx.isCspRequestUriSignin);
         \u0275\u0275advance();
-        \u0275\u0275property("ngIf", !\u0275\u0275pipeBind1(50, 17, ctx.needStorageAccessPermissionSubject))("ngIfElse", needStorageAccessPermissionTemplate_r8);
-        \u0275\u0275advance(4);
-        \u0275\u0275property("disabled", !ctx.isCspRequestUriSignin && !vaultProfileForm_r7.form.valid || ctx.loading || \u0275\u0275pipeBind1(54, 19, ctx.needStorageAccessPermissionSubject) && !\u0275\u0275pipeBind1(55, 21, ctx.userInteractionCompletedSubject));
-        \u0275\u0275advance(3);
+        \u0275\u0275property("ngIf", ctx.errorMsg);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("disabled", !ctx.isCspRequestUriSignin && !vaultProfileForm_r7.form.valid || ctx.loading);
+        \u0275\u0275advance(2);
         \u0275\u0275property("ngIf", ctx.loading);
       }
     }, dependencies: [
       CommonModule,
-      NgClass,
       NgForOf,
       NgIf,
-      AsyncPipe,
       RouterModule,
-      HeaderComponent,
-      ImageFallbackDirective,
       ReactiveFormsModule,
       \u0275NgNoValidate,
       NgSelectOption,
       \u0275NgSelectMultipleOption,
-      DefaultValueAccessor,
       NgControlStatus,
       NgControlStatusGroup,
       RequiredValidator,
@@ -78658,45 +81958,305 @@ var VaultProfileSigninComponent = class _VaultProfileSigninComponent {
       FormsModule,
       NgModel,
       NgForm,
-      SpinnerComponent
-    ], styles: [`
-
-.custom-checkbox[_ngcontent-%COMP%] {
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-.custom-checkbox[_ngcontent-%COMP%]::before {
-  content: "";
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  flex-shrink: 0;
-  flex-grow: 0;
-  border: 1px solid #c3c3c3;
-  border-radius: 0.25em;
-  margin-right: 0.5em;
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: 50% 50%;
-}
-.custom-checkbox-checked[_ngcontent-%COMP%]::before {
-  border-color: blue;
-  background-color: blue;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e");
-}
-.custom-checkbox[_ngcontent-%COMP%]:hover::before {
-  border-color: rgba(0, 0, 255, 0.33);
-}
-/*# sourceMappingURL=vault-profile-signin.component.css.map */`] });
+      FdkSpinnerComponent,
+      FdkAlertComponent,
+      FdkButtonComponent,
+      FdkInputComponent
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  min-height: 0;\n}\n/*# sourceMappingURL=vault-profile-signin.component.css.map */"] });
   }
 };
 (() => {
   (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninComponent, { className: "VaultProfileSigninComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin/vault-profile-signin.component.ts", lineNumber: 34 });
+})();
+
+// projects/fasten-connect-stitch-embed/src/app/services/vault-profile-signin-flow.service.ts
+var VaultProfileSigninFlowService = class _VaultProfileSigninFlowService {
+  constructor(authService, fastenService, logger) {
+    this.authService = authService;
+    this.fastenService = fastenService;
+    this.logger = logger;
+    this.needStorageAccessPermissionSubject = new BehaviorSubject(false);
+    this.userInteractionCompletedSubject = new BehaviorSubject(false);
+    this.userInteractionWindowOpened = false;
+    this.welcomeCompleted = false;
+  }
+  initializeStorageAccess() {
+    if (!this.requiresStorageAccess()) {
+      this.logger.log("Storage Access API fallback is not required or is unavailable.");
+      this.needStorageAccessPermissionSubject.next(false);
+      return;
+    }
+    this.needStorageAccessPermissionSubject.next(true);
+    this.hasStorageAccess().then((hasAccess) => {
+      this.needStorageAccessPermissionSubject.next(!hasAccess);
+    });
+  }
+  hasCompletedWelcome() {
+    return this.welcomeCompleted;
+  }
+  completeWelcome() {
+    this.welcomeCompleted = true;
+  }
+  requiresStorageAccess() {
+    return this.authService.RequiresStorageAccessFallback();
+  }
+  isStorageAccessApiSupportedByBrowser() {
+    return typeof document.hasStorageAccess === "function" && typeof document.requestStorageAccess === "function";
+  }
+  hasStorageAccess() {
+    if (!this.isStorageAccessApiSupportedByBrowser()) {
+      this.logger.warn("Storage Access API not available in this browser.");
+      return Promise.resolve(true);
+    }
+    return document.hasStorageAccess().then((hasAccess) => {
+      this.logger.log("Storage Access API unpartitioned or already granted!", hasAccess);
+      return hasAccess;
+    }).catch((error2) => {
+      this.logger.error("Storage access has not been granted", error2);
+      return false;
+    });
+  }
+  requestStorageAccess() {
+    if (!this.isStorageAccessApiSupportedByBrowser()) {
+      this.logger.warn("Storage Access API not available in this browser.");
+      return Promise.resolve(true);
+    }
+    return document.requestStorageAccess().then(() => __async(this, null, function* () {
+      this.logger.log("Storage access granted!");
+      const cookieSupported = yield this.authService.CheckCookieSupport(CookieProbeScope.Regular);
+      if (!cookieSupported) {
+        const error2 = new Error("Storage access was granted, but cookies are still blocked. Please allow cookies and try again.");
+        this.restoreFirstPartyConsent();
+        this.logger.error("Storage access cookie verification failed", error2);
+        throw error2;
+      }
+      return true;
+    }), (error2) => {
+      this.restoreFirstPartyConsent();
+      this.logger.log("Storage access denied by user", error2);
+      alert("Cookies are required for the Fasten widget to function. Please allow storage access to continue.");
+      return Promise.reject(error2);
+    });
+  }
+  awaitUserInteractionCompleted() {
+    if (!this.needStorageAccessPermissionSubject.getValue()) {
+      this.logger.log("No storage access required, no user interaction needed.");
+      return;
+    }
+    if (this.userInteractionCompletedSubject.getValue()) {
+      this.logger.log("User interaction already completed, no need to wait.");
+      return;
+    }
+    if (this.userInteractionWindowOpened) {
+      this.logger.log("User interaction window already opened, waiting for completion.");
+      return;
+    }
+    this.userInteractionWindowOpened = true;
+    this.fastenService.storageApiUserInteractionWithPopup().subscribe((result) => {
+      this.logger.log("User interaction completed", result);
+      this.userInteractionCompletedSubject.next(result.success);
+      this.userInteractionWindowOpened = false;
+    });
+  }
+  restoreFirstPartyConsent() {
+    this.needStorageAccessPermissionSubject.next(true);
+    this.userInteractionCompletedSubject.next(false);
+    this.userInteractionWindowOpened = false;
+  }
+  static {
+    this.\u0275fac = function VaultProfileSigninFlowService_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _VaultProfileSigninFlowService)(\u0275\u0275inject(AuthService), \u0275\u0275inject(FastenService), \u0275\u0275inject(NGXLogger));
+    };
+  }
+  static {
+    this.\u0275prov = /* @__PURE__ */ \u0275\u0275defineInjectable({ token: _VaultProfileSigninFlowService, factory: _VaultProfileSigninFlowService.\u0275fac, providedIn: "root" });
+  }
+};
+
+// projects/fasten-connect-stitch-embed/src/app/pages/welcome/welcome.component.ts
+function WelcomeComponent_div_20_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 15)(1, "p", 16);
+    \u0275\u0275text(2, "We couldn't continue.");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "p", 17);
+    \u0275\u0275text(4);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(4);
+    \u0275\u0275textInterpolate(ctx_r1.errorMsg);
+  }
+}
+function WelcomeComponent_p_21_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "p", 18);
+    \u0275\u0275text(1, " By clicking continue you agree to: Fasten's ");
+    \u0275\u0275elementStart(2, "fdk-link", 19);
+    \u0275\u0275text(3, "Privacy Policy");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(4, " and ");
+    \u0275\u0275elementStart(5, "fdk-link", 20);
+    \u0275\u0275text(6, "Terms & Conditions");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(7);
+    \u0275\u0275pipe(8, "async");
+    \u0275\u0275pipe(9, "async");
+    \u0275\u0275elementStart(10, "fdk-link", 21);
+    \u0275\u0275pipe(11, "async");
+    \u0275\u0275text(12, "Privacy Policy");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    let tmp_2_0;
+    let tmp_3_0;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(7);
+    \u0275\u0275textInterpolate1(" ", ((tmp_2_0 = \u0275\u0275pipeBind1(8, 2, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_2_0.companyName) || ((tmp_2_0 = \u0275\u0275pipeBind1(9, 4, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.name) || "Unknown", "'s ");
+    \u0275\u0275advance(3);
+    \u0275\u0275property("href", (tmp_3_0 = (tmp_3_0 = \u0275\u0275pipeBind1(11, 6, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.privacy_policy_uri) !== null && tmp_3_0 !== void 0 ? tmp_3_0 : "");
+  }
+}
+function WelcomeComponent_ng_template_23_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r3 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "fdk-checkbox", 22);
+    \u0275\u0275listener("change", function WelcomeComponent_ng_template_23_Template_fdk_checkbox_change_0_listener($event) {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.onStorageAccessConsentChange($event));
+    });
+    \u0275\u0275elementStart(1, "span", 18);
+    \u0275\u0275text(2, "I've read and agree to Fasten's ");
+    \u0275\u0275elementStart(3, "fdk-link", 19);
+    \u0275\u0275text(4, "Privacy Policy");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(5, " and ");
+    \u0275\u0275elementStart(6, "fdk-link", 20);
+    \u0275\u0275text(7, "Terms & Conditions");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(8);
+    \u0275\u0275pipe(9, "async");
+    \u0275\u0275pipe(10, "async");
+    \u0275\u0275elementStart(11, "fdk-link", 21);
+    \u0275\u0275pipe(12, "async");
+    \u0275\u0275text(13, "Privacy Policy");
+    \u0275\u0275elementEnd();
+    \u0275\u0275text(14, ". ");
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    let tmp_3_0;
+    let tmp_4_0;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("checked", ctx_r1.storageAccessConsentChecked);
+    \u0275\u0275advance(8);
+    \u0275\u0275textInterpolate1(" and ", ((tmp_3_0 = \u0275\u0275pipeBind1(9, 3, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_3_0.companyName) || ((tmp_3_0 = \u0275\u0275pipeBind1(10, 5, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.name) || "Unknown", "'s ");
+    \u0275\u0275advance(3);
+    \u0275\u0275property("href", (tmp_4_0 = (tmp_4_0 = \u0275\u0275pipeBind1(12, 7, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_4_0.org == null ? null : tmp_4_0.org.privacy_policy_uri) !== null && tmp_4_0 !== void 0 ? tmp_4_0 : "");
+  }
+}
+function WelcomeComponent_fdk_spinner_28_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "fdk-spinner");
+  }
+}
+var WelcomeComponent = class _WelcomeComponent {
+  constructor(configService, signinFlowService, router) {
+    this.configService = configService;
+    this.signinFlowService = signinFlowService;
+    this.router = router;
+    this.loading = false;
+    this.errorMsg = "";
+    this.storageAccessConsentChecked = false;
+    this.needStorageAccessPermissionSubject = this.signinFlowService.needStorageAccessPermissionSubject;
+  }
+  ngOnInit() {
+    this.signinFlowService.initializeStorageAccess();
+  }
+  onStorageAccessConsentChange(event) {
+    this.storageAccessConsentChecked = event.target.checked;
+    if (this.storageAccessConsentChecked) {
+      this.signinFlowService.awaitUserInteractionCompleted();
+    }
+  }
+  continue() {
+    this.loading = true;
+    this.errorMsg = "";
+    const storageAccessPromise = this.signinFlowService.requiresStorageAccess() ? this.signinFlowService.requestStorageAccess() : Promise.resolve(true);
+    storageAccessPromise.then(() => {
+      this.signinFlowService.completeWelcome();
+      return this.router.navigate(["/auth/signin/email"], { queryParamsHandling: "preserve" });
+    }).catch((error2) => {
+      this.errorMsg = error2?.message || "Storage access is required to continue.";
+    }).finally(() => {
+      this.loading = false;
+    });
+  }
+  static {
+    this.\u0275fac = function WelcomeComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _WelcomeComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(VaultProfileSigninFlowService), \u0275\u0275directiveInject(Router));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _WelcomeComponent, selectors: [["app-welcome"]], decls: 30, vars: 14, consts: [["storagePermissionRequired", ""], ["id", "step-welcome", 1, "flex", "min-h-full", "flex-1", "flex-col"], [1, "flex", "justify-center", "mt-fdk-m"], ["name", "welcome-animated"], [1, "text-center", "mt-fdk-l"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "mt-fdk-m"], [1, "fdk-type-heading-4", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxxs"], [1, "mt-auto", "pt-6", "space-y-6"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], ["class", "fdk-type-paragraph-s text-fdk-secondary", 4, "ngIf", "ngIfElse"], ["type", "button", "variant", "primary", "width", "full", 3, "click", "disabled"], [1, "flex", "items-center", "justify-center", "gap-2"], [4, "ngIf"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "text-sm", "font-medium", "text-red-800"], [1, "mt-1", "text-sm", "text-red-700"], [1, "fdk-type-paragraph-s", "text-fdk-secondary"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", "target", "_blank"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank"], ["target", "_blank", 3, "href"], ["value", "privacy-consent", 3, "change", "checked"]], template: function WelcomeComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        const _r1 = \u0275\u0275getCurrentView();
+        \u0275\u0275elementStart(0, "div", 1)(1, "div", 2);
+        \u0275\u0275element(2, "fdk-illustration", 3);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(3, "div", 4)(4, "h2", 5);
+        \u0275\u0275text(5);
+        \u0275\u0275pipe(6, "async");
+        \u0275\u0275pipe(7, "async");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(8, "div", 6)(9, "div")(10, "h3", 7);
+        \u0275\u0275text(11, "Safe");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(12, "p", 8);
+        \u0275\u0275text(13, " Your records are encrypted end-to-end, the same standard used in online banking. ");
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(14, "div", 6)(15, "h3", 7);
+        \u0275\u0275text(16, "Private");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(17, "p", 8);
+        \u0275\u0275text(18, " We never sell your data. It's only shared with the providers you choose. ");
+        \u0275\u0275elementEnd()()();
+        \u0275\u0275elementStart(19, "div", 9);
+        \u0275\u0275template(20, WelcomeComponent_div_20_Template, 5, 1, "div", 10)(21, WelcomeComponent_p_21_Template, 13, 8, "p", 11);
+        \u0275\u0275pipe(22, "async");
+        \u0275\u0275template(23, WelcomeComponent_ng_template_23_Template, 15, 9, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
+        \u0275\u0275elementStart(25, "fdk-button", 12);
+        \u0275\u0275pipe(26, "async");
+        \u0275\u0275listener("click", function WelcomeComponent_Template_fdk_button_click_25_listener() {
+          \u0275\u0275restoreView(_r1);
+          return \u0275\u0275resetView(ctx.continue());
+        });
+        \u0275\u0275elementStart(27, "span", 13);
+        \u0275\u0275template(28, WelcomeComponent_fdk_spinner_28_Template, 1, 0, "fdk-spinner", 14);
+        \u0275\u0275text(29, " Continue");
+        \u0275\u0275elementEnd()()()();
+      }
+      if (rf & 2) {
+        let tmp_1_0;
+        const storagePermissionRequired_r4 = \u0275\u0275reference(24);
+        \u0275\u0275advance(5);
+        \u0275\u0275textInterpolate1(" ", ((tmp_1_0 = \u0275\u0275pipeBind1(6, 6, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.companyName) || ((tmp_1_0 = \u0275\u0275pipeBind1(7, 8, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.org == null ? null : tmp_1_0.org.name) || "Unknown", " uses Fasten to bring your health records together in one place ");
+        \u0275\u0275advance(15);
+        \u0275\u0275property("ngIf", ctx.errorMsg);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", !\u0275\u0275pipeBind1(22, 10, ctx.needStorageAccessPermissionSubject))("ngIfElse", storagePermissionRequired_r4);
+        \u0275\u0275advance(4);
+        \u0275\u0275property("disabled", ctx.loading || \u0275\u0275pipeBind1(26, 12, ctx.needStorageAccessPermissionSubject) && !ctx.storageAccessConsentChecked);
+        \u0275\u0275advance(3);
+        \u0275\u0275property("ngIf", ctx.loading);
+      }
+    }, dependencies: [CommonModule, NgIf, AsyncPipe, FdkSpinnerComponent, FdkButtonComponent, FdkCheckboxComponent, FdkIllustrationComponent, FdkLinkComponent], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  min-height: 0;\n}\n/*# sourceMappingURL=welcome.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(WelcomeComponent, { className: "WelcomeComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/welcome/welcome.component.ts", lineNumber: 16 });
 })();
 
 // node_modules/@fastenhealth/angular-code-input/fesm2022/fastenhealth-angular-code-input.mjs
@@ -79214,101 +82774,80 @@ var CodeInputModule = class _CodeInputModule {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/components/dev-tools/dev-tools.component.ts
-var _c03 = (a0, a1, a2, a3) => ({ "border-gray-400 text-gray-800 hover:bg-gray-50": a0, "border-gray-400 text-gray-600": a1, "border-green-500 text-green-700": a2, "border-red-500 text-red-700 hover:bg-red-50": a3 });
-function DevToolsComponent_div_9__svg_svg_2_Template(rf, ctx) {
+function DevToolsComponent_div_6_fdk_spinner_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(0, "svg", 15);
-    \u0275\u0275element(1, "path", 16);
-    \u0275\u0275elementEnd();
+    \u0275\u0275element(0, "fdk-spinner");
   }
 }
-function DevToolsComponent_div_9__svg_svg_3_Template(rf, ctx) {
+function DevToolsComponent_div_6_fdk_icon_4_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(0, "svg", 17);
-    \u0275\u0275element(1, "circle", 18)(2, "path", 19);
-    \u0275\u0275elementEnd();
+    \u0275\u0275element(0, "fdk-icon", 12);
+  }
+  if (rf & 2) {
+    \u0275\u0275property("size", 16);
   }
 }
-function DevToolsComponent_div_9__svg_svg_4_Template(rf, ctx) {
+function DevToolsComponent_div_6_fdk_icon_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(0, "svg", 20);
-    \u0275\u0275element(1, "path", 21)(2, "path", 22)(3, "path", 23);
-    \u0275\u0275elementEnd();
+    \u0275\u0275element(0, "fdk-icon", 13);
+  }
+  if (rf & 2) {
+    \u0275\u0275property("size", 16);
   }
 }
-function DevToolsComponent_div_9__svg_svg_5_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(0, "svg", 24);
-    \u0275\u0275element(1, "path", 25)(2, "path", 26);
-    \u0275\u0275elementEnd();
-  }
-}
-function DevToolsComponent_div_9_Template(rf, ctx) {
+function DevToolsComponent_div_6_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 8)(1, "button", 9);
-    \u0275\u0275listener("click", function DevToolsComponent_div_9_Template_button_click_1_listener() {
+    \u0275\u0275elementStart(0, "div", 5)(1, "fdk-button", 6);
+    \u0275\u0275listener("click", function DevToolsComponent_div_6_Template_fdk_button_click_1_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.resetConnections.emit());
     });
-    \u0275\u0275template(2, DevToolsComponent_div_9__svg_svg_2_Template, 2, 0, "svg", 10)(3, DevToolsComponent_div_9__svg_svg_3_Template, 3, 0, "svg", 11)(4, DevToolsComponent_div_9__svg_svg_4_Template, 4, 0, "svg", 12)(5, DevToolsComponent_div_9__svg_svg_5_Template, 3, 0, "svg", 13);
+    \u0275\u0275elementStart(2, "span", 7);
+    \u0275\u0275template(3, DevToolsComponent_div_6_fdk_spinner_3_Template, 1, 0, "fdk-spinner", 8)(4, DevToolsComponent_div_6_fdk_icon_4_Template, 1, 1, "fdk-icon", 9)(5, DevToolsComponent_div_6_fdk_icon_5_Template, 1, 1, "fdk-icon", 10);
     \u0275\u0275elementStart(6, "span");
     \u0275\u0275text(7);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(8, "span", 14);
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(8, "span", 11);
     \u0275\u0275text(9);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance();
-    \u0275\u0275property("disabled", ctx_r1.resetState === "loading")("ngClass", \u0275\u0275pureFunction4(10, _c03, ctx_r1.resetState === "idle", ctx_r1.resetState === "loading", ctx_r1.resetState === "success", ctx_r1.resetState === "error"));
-    \u0275\u0275attribute("aria-busy", ctx_r1.resetState === "loading")("title", ctx_r1.resetConnectionsTooltip);
-    \u0275\u0275advance();
+    \u0275\u0275property("disabled", ctx_r1.resetState === "loading");
+    \u0275\u0275attribute("aria-busy", ctx_r1.resetState === "loading");
+    \u0275\u0275advance(2);
     \u0275\u0275property("ngIf", ctx_r1.resetState === "loading");
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.resetState === "success");
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.resetState === "error");
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.resetState === "idle");
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(ctx_r1.resetButtonLabel);
     \u0275\u0275advance(2);
     \u0275\u0275textInterpolate1(" ", ctx_r1.resetConnectionsTooltip, " ");
   }
 }
-function DevToolsComponent_div_10_Template(rf, ctx) {
+function DevToolsComponent_div_7_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 8)(1, "button", 27);
-    \u0275\u0275listener("click", function DevToolsComponent_div_10_Template_button_click_1_listener() {
+    \u0275\u0275elementStart(0, "div", 5)(1, "fdk-button", 14);
+    \u0275\u0275listener("click", function DevToolsComponent_div_7_Template_fdk_button_click_1_listener() {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.skip.emit());
     });
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 28);
-    \u0275\u0275element(3, "polygon", 29)(4, "line", 30);
+    \u0275\u0275text(2, "Skip ");
     \u0275\u0275elementEnd();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(5, "span");
-    \u0275\u0275text(6, "Skip");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(7, "span", 31);
-    \u0275\u0275text(8);
+    \u0275\u0275elementStart(3, "span", 15);
+    \u0275\u0275text(4);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance();
-    \u0275\u0275attribute("title", ctx_r1.skipTooltip);
-    \u0275\u0275advance(7);
+    \u0275\u0275advance(4);
     \u0275\u0275textInterpolate1(" ", ctx_r1.skipTooltip, " ");
   }
 }
@@ -79340,85 +82879,47 @@ var DevToolsComponent = class _DevToolsComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DevToolsComponent, selectors: [["app-dev-tools"]], inputs: { showSkip: "showSkip", showResetConnections: "showResetConnections", resetState: "resetState", skipTooltip: "skipTooltip", resetConnectionsTooltip: "resetConnectionsTooltip" }, outputs: { skip: "skip", resetConnections: "resetConnections" }, decls: 11, vars: 2, consts: [["id", "dev-tools-banner", "aria-label", "Developer tools", 1, "fixed", "inset-x-0", "bottom-0", "z-50", "w-full", "rounded-b-lg", "border-t", "border-gray-300", "bg-gray-200", "px-3", "py-2", "text-gray-800", "shadow-[0_-2px_8px_rgba(0,0,0,0.12)]"], [1, "flex", "min-h-10", "items-center", "justify-center", "gap-2", "sm:gap-3"], [1, "dev-tools-label", "flex", "shrink-0", "items-center", "gap-1.5", "text-xs", "font-semibold", "uppercase", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-wrench"], ["d", "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.8-3.8a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9z"], ["aria-hidden", "true", 1, "h-6", "w-px", "shrink-0", "bg-gray-400"], [1, "flex", "items-center", "justify-center", "gap-2"], ["class", "dev-tool-action-group relative", 4, "ngIf"], [1, "dev-tool-action-group", "relative"], ["type", "button", "id", "dev-tools-reset-connections-button", "aria-describedby", "dev-tools-reset-connections-tooltip", 1, "flex", "h-9", "items-center", "justify-center", "gap-1.5", "whitespace-nowrap", "rounded-md", "border", "bg-white", "px-3", "text-sm", "font-medium", "shadow-sm", "transition-colors", "focus:outline-none", "focus:ring-2", "focus:ring-gray-600", "focus:ring-offset-2", "focus:ring-offset-gray-200", "disabled:cursor-not-allowed", "disabled:opacity-70", 3, "click", "disabled", "ngClass"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-loader-circle animate-spin", 4, "ngIf"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-circle-check", 4, "ngIf"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-triangle-alert", 4, "ngIf"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", "class", "lucide lucide-rotate-ccw", 4, "ngIf"], ["id", "dev-tools-reset-connections-tooltip", "role", "tooltip", 1, "dev-tool-tooltip"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-loader-circle", "animate-spin"], ["d", "M21 12a9 9 0 1 1-6.219-8.56"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-circle-check"], ["cx", "12", "cy", "12", "r", "10"], ["d", "m9 12 2 2 4-4"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-triangle-alert"], ["d", "m21.73 18-8-14a2 2 0 0 0-3.46 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"], ["d", "M12 9v4"], ["d", "M12 17h.01"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-rotate-ccw"], ["d", "M3 12a9 9 0 1 0 3-6.7L3 8"], ["d", "M3 3v5h5"], ["type", "button", "id", "dev-tools-skip-button", "aria-describedby", "dev-tools-skip-tooltip", 1, "flex", "h-9", "items-center", "justify-center", "gap-1.5", "whitespace-nowrap", "rounded-md", "border", "border-[#5B47FB]", "bg-[#5B47FB]", "px-3", "text-sm", "font-medium", "text-white", "shadow-sm", "transition-colors", "hover:border-[#4936E8]", "hover:bg-[#4936E8]", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-offset-2", "focus:ring-offset-gray-200", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "16", "height", "16", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", "aria-hidden", "true", 1, "lucide", "lucide-skip-forward"], ["points", "5 4 15 12 5 20 5 4"], ["x1", "19", "x2", "19", "y1", "5", "y2", "19"], ["id", "dev-tools-skip-tooltip", "role", "tooltip", 1, "dev-tool-tooltip"]], template: function DevToolsComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DevToolsComponent, selectors: [["app-dev-tools"]], inputs: { showSkip: "showSkip", showResetConnections: "showResetConnections", resetState: "resetState", skipTooltip: "skipTooltip", resetConnectionsTooltip: "resetConnectionsTooltip" }, outputs: { skip: "skip", resetConnections: "resetConnections" }, decls: 8, vars: 2, consts: [["id", "dev-tools-banner", "aria-label", "Developer tools", 1, "fixed", "inset-x-0", "bottom-0", "z-50", "w-full", "rounded-b-lg", "border-t", "border-fdk-border", "bg-fdk-background", "px-3", "py-2", "shadow-[0_-2px_8px_rgba(0,0,0,0.12)]"], [1, "dev-tools-layout", "flex", "min-h-10", "w-full", "items-center", "justify-between", "gap-2", "sm:gap-3"], [1, "dev-tools-label", "flex", "shrink-0", "items-center", "gap-1.5", "fdk-type-label-large", "text-fdk-secondary"], [1, "dev-tools-actions", "ml-auto", "flex", "items-center", "justify-end", "gap-2"], ["class", "dev-tool-action-group relative", 4, "ngIf"], [1, "dev-tool-action-group", "relative"], ["type", "button", "variant", "secondary", "id", "dev-tools-reset-connections-button", "aria-describedby", "dev-tools-reset-connections-tooltip", 3, "click", "disabled"], [1, "flex", "items-center", "justify-center", "gap-2"], [4, "ngIf"], ["name", "checkmark", 3, "size", 4, "ngIf"], ["name", "cross", 3, "size", 4, "ngIf"], ["id", "dev-tools-reset-connections-tooltip", "role", "tooltip", 1, "dev-tool-tooltip"], ["name", "checkmark", 3, "size"], ["name", "cross", 3, "size"], ["type", "button", "variant", "primary", "id", "dev-tools-skip-button", "aria-describedby", "dev-tools-skip-tooltip", 3, "click"], ["id", "dev-tools-skip-tooltip", "role", "tooltip", 1, "dev-tool-tooltip"]], template: function DevToolsComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "aside", 0)(1, "div", 1)(2, "div", 2);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(3, "svg", 3);
-        \u0275\u0275element(4, "path", 4);
-        \u0275\u0275elementEnd();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(5, "span");
-        \u0275\u0275text(6, "Dev tools");
+        \u0275\u0275elementStart(0, "aside", 0)(1, "div", 1)(2, "div", 2)(3, "span");
+        \u0275\u0275text(4, "Dev tools");
         \u0275\u0275elementEnd()();
-        \u0275\u0275element(7, "span", 5);
-        \u0275\u0275elementStart(8, "div", 6);
-        \u0275\u0275template(9, DevToolsComponent_div_9_Template, 10, 15, "div", 7)(10, DevToolsComponent_div_10_Template, 9, 2, "div", 7);
+        \u0275\u0275elementStart(5, "div", 3);
+        \u0275\u0275template(6, DevToolsComponent_div_6_Template, 10, 7, "div", 4)(7, DevToolsComponent_div_7_Template, 5, 1, "div", 4);
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
-        \u0275\u0275advance(9);
+        \u0275\u0275advance(6);
         \u0275\u0275property("ngIf", ctx.showResetConnections);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.showSkip);
       }
-    }, dependencies: [CommonModule, NgClass, NgIf], styles: ["\n\n[_nghost-%COMP%] {\n  display: block;\n  min-height: 3.5rem;\n}\n.dev-tool-tooltip[_ngcontent-%COMP%] {\n  position: fixed;\n  right: 0.5rem;\n  bottom: 3.75rem;\n  left: 0.5rem;\n  width: fit-content;\n  max-width: min(24rem, calc(100vw - 1rem));\n  margin: 0 auto;\n  padding: 0.5rem 0.625rem;\n  border-radius: 0.375rem;\n  background: #111827;\n  color: #ffffff;\n  font-size: 0.75rem;\n  font-weight: 400;\n  line-height: 1rem;\n  text-align: left;\n  white-space: normal;\n  visibility: hidden;\n  opacity: 0;\n  pointer-events: none;\n  transition: opacity 0.15s ease;\n}\n.dev-tool-action-group[_ngcontent-%COMP%]:hover   .dev-tool-tooltip[_ngcontent-%COMP%], \n.dev-tool-action-group[_ngcontent-%COMP%]:focus-within   .dev-tool-tooltip[_ngcontent-%COMP%] {\n  visibility: visible;\n  opacity: 1;\n}\n@media (max-width: 359px) {\n  .dev-tools-label[_ngcontent-%COMP%]   span[_ngcontent-%COMP%] {\n    display: none;\n  }\n}\n/*# sourceMappingURL=dev-tools.component.css.map */"] });
+    }, dependencies: [CommonModule, NgIf, FdkButtonComponent, FdkIconComponent, FdkSpinnerComponent], styles: ["\n\n[_nghost-%COMP%] {\n  display: block;\n  min-height: 3.5rem;\n}\n.dev-tool-tooltip[_ngcontent-%COMP%] {\n  position: fixed;\n  right: 0.5rem;\n  bottom: 3.75rem;\n  left: 0.5rem;\n  width: fit-content;\n  max-width: min(24rem, calc(100vw - 1rem));\n  margin: 0 auto;\n  padding: 0.5rem 0.625rem;\n  border-radius: 0.375rem;\n  background: #111827;\n  color: #ffffff;\n  font-size: 0.75rem;\n  font-weight: 400;\n  line-height: 1rem;\n  text-align: left;\n  white-space: normal;\n  visibility: hidden;\n  opacity: 0;\n  pointer-events: none;\n  transition: opacity 0.15s ease;\n}\n.dev-tool-action-group[_ngcontent-%COMP%]:hover   .dev-tool-tooltip[_ngcontent-%COMP%], \n.dev-tool-action-group[_ngcontent-%COMP%]:focus-within   .dev-tool-tooltip[_ngcontent-%COMP%] {\n  visibility: visible;\n  opacity: 1;\n}\n/*# sourceMappingURL=dev-tools.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DevToolsComponent, { className: "DevToolsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/dev-tools/dev-tools.component.ts", lineNumber: 13 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DevToolsComponent, { className: "DevToolsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/components/dev-tools/dev-tools.component.ts", lineNumber: 14 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts
-function VaultProfileSigninCodeComponent_p_13_Template(rf, ctx) {
+function VaultProfileSigninCodeComponent_div_15_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 12);
-    \u0275\u0275text(1);
+    \u0275\u0275elementStart(0, "div", 9);
+    \u0275\u0275element(1, "fdk-alert", 10);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const ctx_r0 = \u0275\u0275nextContext();
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(ctx_r0.errorMsg);
+    \u0275\u0275property("description", ctx_r0.errorMsg);
   }
 }
-function VaultProfileSigninCodeComponent_button_21_Template(rf, ctx) {
+function VaultProfileSigninCodeComponent_app_dev_tools_19_Template(rf, ctx) {
   if (rf & 1) {
     const _r2 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 13);
-    \u0275\u0275listener("click", function VaultProfileSigninCodeComponent_button_21_Template_button_click_0_listener() {
+    \u0275\u0275elementStart(0, "app-dev-tools", 11);
+    \u0275\u0275listener("skip", function VaultProfileSigninCodeComponent_app_dev_tools_19_Template_app_dev_tools_skip_0_listener() {
       \u0275\u0275restoreView(_r2);
-      const ctx_r0 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r0.onResendCode());
-    });
-    \u0275\u0275text(1);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const ctx_r0 = \u0275\u0275nextContext();
-    \u0275\u0275property("disabled", ctx_r0.resendLoading || ctx_r0.loading);
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ctx_r0.resendLoading ? "Sending code..." : "Re-send code", " ");
-  }
-}
-function VaultProfileSigninCodeComponent_p_22_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 14);
-    \u0275\u0275text(1);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const ctx_r0 = \u0275\u0275nextContext();
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate1(" ", ctx_r0.resendCodeTooltip, " ");
-  }
-}
-function VaultProfileSigninCodeComponent_app_dev_tools_23_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-dev-tools", 15);
-    \u0275\u0275listener("skip", function VaultProfileSigninCodeComponent_app_dev_tools_23_Template_app_dev_tools_skip_0_listener() {
-      \u0275\u0275restoreView(_r3);
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.skipSignInCode());
     });
@@ -79443,10 +82944,6 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
       return 0;
     }
     return Math.max(this.codeExpiresAt - this.resendEligibilityWindowSeconds - Math.floor(Date.now() / 1e3) + 1, 0);
-  }
-  get resendCodeTooltip() {
-    const unit = this.resendSecondsRemaining === 1 ? "second" : "seconds";
-    return `You must wait ${this.resendSecondsRemaining} ${unit} before you can resend a new code.`;
   }
   constructor(router, authService, configService, logger) {
     this.router = router;
@@ -79504,9 +83001,9 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
       console.error(err);
       this.loading = false;
       if (err?.name) {
-        this.errorMsg = "code is incorrect";
+        this.errorMsg = "Check the code and try again, or request a new one.";
       } else {
-        this.errorMsg = "an unknown error occurred during sign-in";
+        this.errorMsg = "Something went wrong on our end. Try again, and contact support if it keeps happening.";
       }
     });
   }
@@ -79534,52 +83031,52 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail", codeExpiresAt: [2, "codeExpiresAt", "codeExpiresAt", numberAttribute] }, decls: 24, vars: 14, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2"], [3, "codeCompleted", "isCodeHidden", "isPrevFocusableAfterClearing", "codeLength"], ["id", "verification-error", "class", "text-sm text-red-500", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["id", "verification-countdown", 1, "font-semibold", "text-gray-900"], ["type", "button", "id", "resend-code", "class", "verification-button", 3, "disabled", "click", 4, "ngIf"], ["id", "resend-code-help", "class", "text-xs text-gray-600", 4, "ngIf"], ["skipTooltip", "Continue without entering the test authentication code.", 3, "showSkip", "skip", 4, "ngIf"], ["id", "verification-error", 1, "text-sm", "text-red-500"], ["type", "button", "id", "resend-code", 1, "verification-button", 3, "click", "disabled"], ["id", "resend-code-help", 1, "text-xs", "text-gray-600"], ["skipTooltip", "Continue without entering the test authentication code.", 3, "skip", "showSkip"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _VaultProfileSigninCodeComponent, selectors: [["app-vault-profile-signin-code"]], inputs: { currentEmail: "currentEmail", codeExpiresAt: [2, "codeExpiresAt", "codeExpiresAt", numberAttribute] }, decls: 20, vars: 14, consts: [[1, "fdk-type-heading-2", "text-fdk-primary", "text-center", "mt-fdk-xxxl"], ["id", "verification-hint", 1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xs"], ["id", "verification-countdown", 1, "fdk-type-label-large", "text-fdk-secondary"], ["id", "verification-inputs", 1, "flex", "justify-center", "space-x-2", "mt-fdk-m"], [3, "codeCompleted", "isCodeHidden", "isPrevFocusableAfterClearing", "codeLength"], ["class", "mt-fdk-m", 4, "ngIf"], [1, "mt-fdk-m", "text-center"], ["id", "resend-code", "type", "button", "variant", "secondary", 3, "click", "disabled"], ["skipTooltip", "Continue without entering the test authentication code.", 3, "showSkip", "skip", 4, "ngIf"], [1, "mt-fdk-m"], ["title", "That code didn't work", "variant", "error", 3, "description"], ["skipTooltip", "Continue without entering the test authentication code.", 3, "skip", "showSkip"]], template: function VaultProfileSigninCodeComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275element(1, "app-header");
-        \u0275\u0275elementStart(2, "div", 1)(3, "h2", 2);
-        \u0275\u0275text(4, " Enter authentication code");
-        \u0275\u0275element(5, "br");
-        \u0275\u0275text(6, "from your email ");
+        \u0275\u0275elementStart(0, "div")(1, "h2", 0);
+        \u0275\u0275text(2, " Enter the code we emailed you ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(7, "p", 3);
-        \u0275\u0275text(8, " A code was sent to ");
-        \u0275\u0275elementStart(9, "span");
-        \u0275\u0275text(10);
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(11, "div", 4)(12, "code-input", 5);
-        \u0275\u0275listener("codeCompleted", function VaultProfileSigninCodeComponent_Template_code_input_codeCompleted_12_listener($event) {
+        \u0275\u0275elementStart(3, "p", 1);
+        \u0275\u0275text(4, " We sent a code to ");
+        \u0275\u0275elementStart(5, "span");
+        \u0275\u0275text(6);
+        \u0275\u0275elementEnd();
+        \u0275\u0275text(7, ". It will expire in ");
+        \u0275\u0275elementStart(8, "span", 2);
+        \u0275\u0275text(9);
+        \u0275\u0275pipe(10, "async");
+        \u0275\u0275pipe(11, "date");
+        \u0275\u0275elementEnd();
+        \u0275\u0275text(12, ". ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(13, "div", 3)(14, "code-input", 4);
+        \u0275\u0275listener("codeCompleted", function VaultProfileSigninCodeComponent_Template_code_input_codeCompleted_14_listener($event) {
           return ctx.onCodeCompleted($event);
         });
         \u0275\u0275elementEnd()();
-        \u0275\u0275template(13, VaultProfileSigninCodeComponent_p_13_Template, 2, 1, "p", 6);
-        \u0275\u0275elementStart(14, "div", 7);
-        \u0275\u0275text(15, " Code expires in ");
-        \u0275\u0275elementStart(16, "span", 8);
-        \u0275\u0275text(17);
-        \u0275\u0275pipe(18, "async");
-        \u0275\u0275pipe(19, "date");
+        \u0275\u0275template(15, VaultProfileSigninCodeComponent_div_15_Template, 2, 1, "div", 5);
+        \u0275\u0275elementStart(16, "div", 6)(17, "fdk-button", 7);
+        \u0275\u0275listener("click", function VaultProfileSigninCodeComponent_Template_fdk_button_click_17_listener() {
+          return ctx.onResendCode();
+        });
+        \u0275\u0275text(18);
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(20, "div", 1);
-        \u0275\u0275template(21, VaultProfileSigninCodeComponent_button_21_Template, 2, 2, "button", 9)(22, VaultProfileSigninCodeComponent_p_22_Template, 2, 1, "p", 10);
-        \u0275\u0275elementEnd();
-        \u0275\u0275template(23, VaultProfileSigninCodeComponent_app_dev_tools_23_Template, 1, 1, "app-dev-tools", 11);
+        \u0275\u0275template(19, VaultProfileSigninCodeComponent_app_dev_tools_19_Template, 1, 1, "app-dev-tools", 8);
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
-        \u0275\u0275advance(10);
+        \u0275\u0275advance(6);
         \u0275\u0275textInterpolate(ctx.currentEmail);
-        \u0275\u0275advance(2);
+        \u0275\u0275advance(3);
+        \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(11, 11, \u0275\u0275pipeBind1(10, 9, ctx.timeRemaining$), "mm:ss"));
+        \u0275\u0275advance(5);
         \u0275\u0275property("isCodeHidden", false)("isPrevFocusableAfterClearing", false)("codeLength", 6);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.errorMsg);
-        \u0275\u0275advance(4);
-        \u0275\u0275textInterpolate(\u0275\u0275pipeBind2(19, 11, \u0275\u0275pipeBind1(18, 9, ctx.timeRemaining$), "mm:ss"));
-        \u0275\u0275advance(4);
-        \u0275\u0275property("ngIf", ctx.canResendCode);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("disabled", !ctx.canResendCode || ctx.resendLoading || ctx.loading);
         \u0275\u0275advance();
-        \u0275\u0275property("ngIf", !ctx.canResendCode);
+        \u0275\u0275textInterpolate1(" ", ctx.canResendCode ? "Resend code" : "Resend code in " + ctx.resendSecondsRemaining + "s", " ");
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.canSkipSignInCode);
       }
@@ -79589,34 +83086,35 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
       AsyncPipe,
       DatePipe,
       RouterModule,
-      HeaderComponent,
       CodeInputModule,
       CodeInputComponent,
-      DevToolsComponent
-    ], styles: ["\n\ncode-input[_ngcontent-%COMP%] {\n  --item-width: 2.5rem;\n  --item-height: 2.5rem;\n  --item-border: 1px solid #d1d5db;\n  --item-border-radius: 0.5rem;\n  --item-font-size: 1.25rem;\n  --item-font-weight: 600;\n  --item-color: #111827;\n  //--item-border-bottom: none;\n  //--item-border-has-value: none;\n  //--item-border-bottom-has-value: 2px solid #888888;\n  //--item-border-focused: none;\n  //--item-border-bottom-focused: 2px solid #809070;\n  //--item-shadow-focused: none;\n}\n.verification-button[_ngcontent-%COMP%]:disabled, \n.verification-button[_ngcontent-%COMP%]:disabled:hover {\n  background-color: transparent;\n  color: #9ca3af;\n  cursor: not-allowed;\n}\n/*# sourceMappingURL=vault-profile-signin-code.component.css.map */"] });
+      DevToolsComponent,
+      FdkButtonComponent,
+      FdkAlertComponent
+    ], styles: ["\n\ncode-input[_ngcontent-%COMP%] {\n  --item-width: 2.5rem;\n  --item-height: 2.5rem;\n  --item-border: 1px solid #d1d5db;\n  --item-border-radius: 0.5rem;\n  --item-font-size: 1.25rem;\n  --item-font-weight: 600;\n  --item-color: #111827;\n  //--item-border-bottom: none;\n  //--item-border-has-value: none;\n  //--item-border-bottom-has-value: 2px solid #888888;\n  //--item-border-focused: none;\n  //--item-border-bottom-focused: 2px solid #809070;\n  //--item-shadow-focused: none;\n}\n/*# sourceMappingURL=vault-profile-signin-code.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninCodeComponent, { className: "VaultProfileSigninCodeComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts", lineNumber: 25 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(VaultProfileSigninCodeComponent, { className: "VaultProfileSigninCodeComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/vault-profile-signin-code/vault-profile-signin-code.component.ts", lineNumber: 26 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts
-function IdentityVerificationComponent_div_22_Template(rf, ctx) {
+function IdentityVerificationComponent_div_8_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 14);
-    \u0275\u0275text(1, " Please complete the identity verification process in the new window. ");
+    \u0275\u0275elementStart(0, "div", 11);
+    \u0275\u0275element(1, "fdk-alert", 12);
     \u0275\u0275elementEnd();
   }
 }
-function IdentityVerificationComponent_app_dev_tools_23_Template(rf, ctx) {
+function IdentityVerificationComponent_app_dev_tools_17_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "app-dev-tools", 15);
-    \u0275\u0275listener("skip", function IdentityVerificationComponent_app_dev_tools_23_Template_app_dev_tools_skip_0_listener() {
+    \u0275\u0275elementStart(0, "app-dev-tools", 13);
+    \u0275\u0275listener("skip", function IdentityVerificationComponent_app_dev_tools_17_Template_app_dev_tools_skip_0_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.skipIdentityVerification());
-    })("resetConnections", function IdentityVerificationComponent_app_dev_tools_23_Template_app_dev_tools_resetConnections_0_listener() {
+    })("resetConnections", function IdentityVerificationComponent_app_dev_tools_17_Template_app_dev_tools_resetConnections_0_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.onResetConnections());
@@ -79754,52 +83252,46 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationComponent, selectors: [["app-identity-verification"]], decls: 24, vars: 7, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], ["id", "verification-hint", 1, "text-sm", "text-gray-600"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["src", "https://s3.amazonaws.com/idme-design/brand-assets/Primary-IDme-Logo-RGB.svg", 2, "height", "0.8rem", "display", "inline", "vertical-align", "center"], [1, "space-y-4", "flex", "flex-col", "items-center"], ["type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "clear-button", 3, "click", "disabled"], ["src", "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Generator: Adobe Illustrator 26.3.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 353.2 337.6' style='enable-background:new 0 0 353.2 337.6;' xml:space='preserve'%3E%3Cstyle type='text/css'%3E .st0%7Bdisplay:none;%7D .st1%7Bdisplay:inline;fill:%23192958;%7D .st2%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Cg id='BKGD' class='st0'%3E%3Crect class='st1' width='353.2' height='337.6'/%3E%3C/g%3E%3Cg id='Layer_2'%3E%3Cg%3E%3Cg%3E%3Ccircle class='st2' cx='14' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='77.1' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='227.8' r='14'/%3E%3Ccircle class='st2' cx='99.4' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='45.5' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='108.7' r='14'/%3E%3Ccircle class='st2' cx='98.4' cy='61.7' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='61.1' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='109.7' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='227.9' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='45.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='301.5' r='14'/%3E%3Ccircle class='st2' cx='226.7' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='126.6' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='276.5' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='339.2' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='35.5' r='14'/%3E%3Ccircle class='st2' cx='126.2' cy='14' r='14'/%3E%3Ccircle class='st2' cx='226.8' cy='14' r='14'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E", 1, "px-[8px]", 2, "height", "24px", "display", "inline", "vertical-align", "bottom"], ["data-testid", "idme-button", "type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "gap-2", "clear-button", "idme-button", 3, "click", "disabled"], [1, "text-base", "font-semibold"], ["src", "data:image/svg+xml,%3Csvg%20%20%20%20role%3D%22img%22%20%20%20%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%20%20%20viewBox%3D%220%200%2030%2012%22%20%20%20%20fill%3D%22none%22%20%20%20%20aria-labelledby%3D%22idme-title%22%3E%3Ctitle%20id%3D%22idme-title%22%3EID.me%3C%2Ftitle%3E%3Cg%20fillRule%3D%22nonzero%22%20fill%3D%22none%22%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M1.48515.0384H.96978C.32628.0384%200%20.24588%200%20.6551v10.12096c0%20.40922.32627.6167.96978.6167h.51537c.64332%200%20.96977-.20748.96977-.6167V.6551c0-.40922-.32645-.6167-.96977-.6167M7.67332%209.10802H6.14794V2.31206h1.52538c1.90854%200%202.30924%201.84782%202.30924%203.39798s-.4007%203.39798-2.30924%203.39798zm2.901%201.04522c0-1.20723.73212-2.22915%201.74336-2.58106.11573-.56263.17475-1.18411.17475-1.86214%200-3.65857-1.71147-5.67336-4.81911-5.67336h-3.3127c-.4629%200-.67823.23232-.67823.73114v9.88444c0%20.49882.21532.73114.67824.73114h3.31269c1.18475%200%202.16587-.29364%202.92723-.85876-.01542-.1217-.02623-.24512-.02623-.3714z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M14.24058%2010.15324c0%20.68452-.51484%201.23952-1.14984%201.23952-.63518%200-1.14984-.555-1.14984-1.23952%200-.68453.51466-1.23952%201.14984-1.23952.635%200%201.14984.555%201.14984%201.23952%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M27.26344%205.99604c.00248.0298.00478.05941.00514.0896%200%20.04337-.0016.08769-.0062.13488-.01525.15857-.04236.30625-.08047.43922-.2536.88646-.96747%201.0435-1.58492%201.06604.08383-.38496.20718-.76209.35906-1.09489.30057-.66007.67788-1.07006.98466-1.07025.028%200%20.05547.0044.08347.013.01188.00362.02233.00973.04112.01967l.01276.0063c.00514.0023.01028.00459.01506.00803.01312.00898.02464.02082.0374.03343l.01046.0105c.0039.00383.00797.00765.0117.01204.0085.01032.01559.02236.02268.03401l.00921.0151c.00638.00993.01259.02005.01826.03209.00336.00707.0062.0149.01418.03553.00815.0216.01648.04337.02268.06706l.00567.02751c.00656.02847.01223.0575.01577.08789l.0023.03324zm2.17934%202.4177a.2772.2772%200%2000-.10652-.0256c-.15702-.00553-.26406.06095-.3587.22564-.056.09877-.11112.19926-.1657.29975-.2086.38305-.4241.77871-.73726%201.06223-.42534.38496-1.04102.56512-1.56898.46061-.31404-.06209-.53823-.30701-.67115-.5015-.24386-.35726-.36242-.83832-.34328-1.39274.77713-.0705%203.11951-.4438%203.30578-2.35791.03597-.37102-.06203-.70745-.28356-.97263-.2809-.33624-.72928-.52156-1.26238-.52156-1.56224%200-3.1041%201.76147-3.29958%203.76957-.05334.5508.01028%201.05974.18963%201.5129-.13362.13336-.2598.22946-.3851.29327-.1308.06725-.24422.08081-.32734.03973-.10297-.05158-.14462-.1811-.1611-.28045-.0615-.36777.0179-.79037.11183-1.22691.05547-.256.12477-.5229.18591-.75827.18874-.72618.38422-1.47718.319-2.23584-.05936-.69465-.51164-1.12603-1.18031-1.12603-.93753%200-1.5548.7212-1.95462%201.33943-.0085-.4608-.11041-.79533-.30997-1.01885-.1898-.21283-.46876-.32058-.82888-.32058-.91962%200-1.52928.69274-1.92803%201.29912.00531-.05578.01063-.11271.0163-.16946.02517-.26001.03651-.63256-.15578-.86239-.11466-.13717-.28693-.20652-.51218-.20652-.19885%200-.24847.00115-.46203.03917-.00212.00019-.20877.04394-.28728.1217-.1377.13621-.09393.32401-.06876.43138.00319.01356.00602.02598.00762.03649.01506.10374.01967.22142.01435.35917-.0287.72942-.15436%201.45827-.27363%202.07516-.06433.33243-.137.67058-.2086%201.00434-.15914.7405-.3236%201.50603-.40797%202.27595-.00904.08158.01259.15915.06079.21818.04838.05923.11661.0919.19211.09209l.04963.00038c.50526.00726%201.00185-.01529%201.11882-.32574.1292-.34274.20062-.7596.26389-1.12833l.02782-.16334c.14993-.84787.2809-1.4554.5448-2.23641.13592-.40254.3844-.76515.58537-1.03643.24333-.32822.50562-.64957.80176-.6576.12264-.00687.2024.03249.26265.11865.28764.41362-.07054%201.74866-.2233%202.31875-.03314.12322-.06115.22734-.07887.30376l-.10527.44037c-.15507.64211-.31528%201.306-.39752%201.97754a7.70047%207.70047%200%2000-.0225.20747l-.00692.09362.0647.05368c.13043.10909%201.06192-.04356%201.06955-.04604.34346-.12514.41825-.4736.44288-.58805.06398-.29631.12051-.59893.17492-.89123l.0039-.02178c.10261-.5508.2086-1.1207.36739-1.67053.30961-1.06987.72255-1.79986%201.22728-2.16973.21586-.15857.4374-.17614.53806-.04222.17439.23117.0638.85704.01648%201.12432-.06522.37063-.1487.74814-.2295%201.11285l-.00408.01872c-.05175.2325-.10315.46482-.151.6979-.14763.72235-.26885%201.6178.10846%202.13458.19194.26345.48897.3968.88294.3968.41754%200%20.81045-.15016%201.23632-.47265.11733-.0896.23571-.19372.3743-.3179.4794.58747%201.02401.83908%201.80965.83908%201.77721%200%202.61265-1.27295%203.08655-2.23048.05973-.12132.12654-.26136.16642-.38019.0592-.17652-.01134-.3691-.16021-.43845z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E", 1, "px-[8px]", 2, "height", "22px", "display", "inline", "vertical-align", "center"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["skipTooltip", "Continue to the dashboard without repeating identity verification.", "resetConnectionsTooltip", "Remove all test-mode health system connections for this profile.", 3, "showSkip", "showResetConnections", "resetState", "skip", "resetConnections", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], ["skipTooltip", "Continue to the dashboard without repeating identity verification.", "resetConnectionsTooltip", "Remove all test-mode health system connections for this profile.", 3, "skip", "resetConnections", "showSkip", "showResetConnections", "resetState"]], template: function IdentityVerificationComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationComponent, selectors: [["app-identity-verification"]], decls: 18, vars: 9, consts: [[1, "mt-fdk-xl"], [1, "fdk-type-heading-2", "text-fdk-primary"], ["id", "verification-hint", 1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], ["class", "mt-fdk-m", 4, "ngIf"], [1, "space-y-6", "flex", "flex-col", "mt-fdk-l"], ["type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "clear-button", 3, "click", "disabled"], ["src", "data:image/svg+xml,%3C%3Fxml version='1.0' encoding='utf-8'%3F%3E%3C!-- Generator: Adobe Illustrator 26.3.1, SVG Export Plug-In . SVG Version: 6.00 Build 0) --%3E%3Csvg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' x='0px' y='0px' viewBox='0 0 353.2 337.6' style='enable-background:new 0 0 353.2 337.6;' xml:space='preserve'%3E%3Cstyle type='text/css'%3E .st0%7Bdisplay:none;%7D .st1%7Bdisplay:inline;fill:%23192958;%7D .st2%7Bfill:%23FFFFFF;%7D%0A%3C/style%3E%3Cg id='BKGD' class='st0'%3E%3Crect class='st1' width='353.2' height='337.6'/%3E%3C/g%3E%3Cg id='Layer_2'%3E%3Cg%3E%3Cg%3E%3Ccircle class='st2' cx='14' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='77.1' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='227.8' r='14'/%3E%3Ccircle class='st2' cx='99.4' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='51.3' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='45.5' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='96.6' cy='108.7' r='14'/%3E%3Ccircle class='st2' cx='98.4' cy='61.7' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='61.1' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='109.7' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='127.1' r='14'/%3E%3Ccircle class='st2' cx='301.9' cy='209.8' r='14'/%3E%3Ccircle class='st2' cx='256.5' cy='227.9' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='207.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='145.9' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='45.1' cy='264.2' r='14'/%3E%3Ccircle class='st2' cx='253.3' cy='276.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='301.5' r='14'/%3E%3Ccircle class='st2' cx='226.7' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='126.6' cy='323.6' r='14'/%3E%3Ccircle class='st2' cx='276.5' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='339.2' cy='168.5' r='14'/%3E%3Ccircle class='st2' cx='308.1' cy='72.8' r='14'/%3E%3Ccircle class='st2' cx='176.3' cy='35.5' r='14'/%3E%3Ccircle class='st2' cx='126.2' cy='14' r='14'/%3E%3Ccircle class='st2' cx='226.8' cy='14' r='14'/%3E%3C/g%3E%3C/g%3E%3C/g%3E%3C/svg%3E", 1, "px-[8px]", 2, "height", "24px", "display", "inline", "vertical-align", "bottom"], ["data-testid", "idme-button", "type", "button", 1, "text-white", "py-2.5", "px-4", "flex", "justify-center", "items-center", "gap-2", "clear-button", "idme-button", 3, "click", "disabled"], [1, "text-base", "font-semibold"], ["src", "data:image/svg+xml,%3Csvg%20%20%20%20role%3D%22img%22%20%20%20%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20%20%20%20viewBox%3D%220%200%2030%2012%22%20%20%20%20fill%3D%22none%22%20%20%20%20aria-labelledby%3D%22idme-title%22%3E%3Ctitle%20id%3D%22idme-title%22%3EID.me%3C%2Ftitle%3E%3Cg%20fillRule%3D%22nonzero%22%20fill%3D%22none%22%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M1.48515.0384H.96978C.32628.0384%200%20.24588%200%20.6551v10.12096c0%20.40922.32627.6167.96978.6167h.51537c.64332%200%20.96977-.20748.96977-.6167V.6551c0-.40922-.32645-.6167-.96977-.6167M7.67332%209.10802H6.14794V2.31206h1.52538c1.90854%200%202.30924%201.84782%202.30924%203.39798s-.4007%203.39798-2.30924%203.39798zm2.901%201.04522c0-1.20723.73212-2.22915%201.74336-2.58106.11573-.56263.17475-1.18411.17475-1.86214%200-3.65857-1.71147-5.67336-4.81911-5.67336h-3.3127c-.4629%200-.67823.23232-.67823.73114v9.88444c0%20.49882.21532.73114.67824.73114h3.31269c1.18475%200%202.16587-.29364%202.92723-.85876-.01542-.1217-.02623-.24512-.02623-.3714z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M14.24058%2010.15324c0%20.68452-.51484%201.23952-1.14984%201.23952-.63518%200-1.14984-.555-1.14984-1.23952%200-.68453.51466-1.23952%201.14984-1.23952.635%200%201.14984.555%201.14984%201.23952%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3Cpath%20%20%20%20%20%20%20%20%20%20%20%20d%3D%22M27.26344%205.99604c.00248.0298.00478.05941.00514.0896%200%20.04337-.0016.08769-.0062.13488-.01525.15857-.04236.30625-.08047.43922-.2536.88646-.96747%201.0435-1.58492%201.06604.08383-.38496.20718-.76209.35906-1.09489.30057-.66007.67788-1.07006.98466-1.07025.028%200%20.05547.0044.08347.013.01188.00362.02233.00973.04112.01967l.01276.0063c.00514.0023.01028.00459.01506.00803.01312.00898.02464.02082.0374.03343l.01046.0105c.0039.00383.00797.00765.0117.01204.0085.01032.01559.02236.02268.03401l.00921.0151c.00638.00993.01259.02005.01826.03209.00336.00707.0062.0149.01418.03553.00815.0216.01648.04337.02268.06706l.00567.02751c.00656.02847.01223.0575.01577.08789l.0023.03324zm2.17934%202.4177a.2772.2772%200%2000-.10652-.0256c-.15702-.00553-.26406.06095-.3587.22564-.056.09877-.11112.19926-.1657.29975-.2086.38305-.4241.77871-.73726%201.06223-.42534.38496-1.04102.56512-1.56898.46061-.31404-.06209-.53823-.30701-.67115-.5015-.24386-.35726-.36242-.83832-.34328-1.39274.77713-.0705%203.11951-.4438%203.30578-2.35791.03597-.37102-.06203-.70745-.28356-.97263-.2809-.33624-.72928-.52156-1.26238-.52156-1.56224%200-3.1041%201.76147-3.29958%203.76957-.05334.5508.01028%201.05974.18963%201.5129-.13362.13336-.2598.22946-.3851.29327-.1308.06725-.24422.08081-.32734.03973-.10297-.05158-.14462-.1811-.1611-.28045-.0615-.36777.0179-.79037.11183-1.22691.05547-.256.12477-.5229.18591-.75827.18874-.72618.38422-1.47718.319-2.23584-.05936-.69465-.51164-1.12603-1.18031-1.12603-.93753%200-1.5548.7212-1.95462%201.33943-.0085-.4608-.11041-.79533-.30997-1.01885-.1898-.21283-.46876-.32058-.82888-.32058-.91962%200-1.52928.69274-1.92803%201.29912.00531-.05578.01063-.11271.0163-.16946.02517-.26001.03651-.63256-.15578-.86239-.11466-.13717-.28693-.20652-.51218-.20652-.19885%200-.24847.00115-.46203.03917-.00212.00019-.20877.04394-.28728.1217-.1377.13621-.09393.32401-.06876.43138.00319.01356.00602.02598.00762.03649.01506.10374.01967.22142.01435.35917-.0287.72942-.15436%201.45827-.27363%202.07516-.06433.33243-.137.67058-.2086%201.00434-.15914.7405-.3236%201.50603-.40797%202.27595-.00904.08158.01259.15915.06079.21818.04838.05923.11661.0919.19211.09209l.04963.00038c.50526.00726%201.00185-.01529%201.11882-.32574.1292-.34274.20062-.7596.26389-1.12833l.02782-.16334c.14993-.84787.2809-1.4554.5448-2.23641.13592-.40254.3844-.76515.58537-1.03643.24333-.32822.50562-.64957.80176-.6576.12264-.00687.2024.03249.26265.11865.28764.41362-.07054%201.74866-.2233%202.31875-.03314.12322-.06115.22734-.07887.30376l-.10527.44037c-.15507.64211-.31528%201.306-.39752%201.97754a7.70047%207.70047%200%2000-.0225.20747l-.00692.09362.0647.05368c.13043.10909%201.06192-.04356%201.06955-.04604.34346-.12514.41825-.4736.44288-.58805.06398-.29631.12051-.59893.17492-.89123l.0039-.02178c.10261-.5508.2086-1.1207.36739-1.67053.30961-1.06987.72255-1.79986%201.22728-2.16973.21586-.15857.4374-.17614.53806-.04222.17439.23117.0638.85704.01648%201.12432-.06522.37063-.1487.74814-.2295%201.11285l-.00408.01872c-.05175.2325-.10315.46482-.151.6979-.14763.72235-.26885%201.6178.10846%202.13458.19194.26345.48897.3968.88294.3968.41754%200%20.81045-.15016%201.23632-.47265.11733-.0896.23571-.19372.3743-.3179.4794.58747%201.02401.83908%201.80965.83908%201.77721%200%202.61265-1.27295%203.08655-2.23048.05973-.12132.12654-.26136.16642-.38019.0592-.17652-.01134-.3691-.16021-.43845z%22%20%20%20%20%20%20%20%20%20%20%20%20fill%3D%22%23FFF%22%20%20%20%20%20%20%20%20%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E", 1, "px-[8px]", 2, "height", "22px", "display", "inline", "vertical-align", "center"], ["skipTooltip", "Continue to the dashboard without repeating identity verification.", "resetConnectionsTooltip", "Remove all test-mode health system connections for this profile.", 3, "showSkip", "showResetConnections", "resetState", "skip", "resetConnections", 4, "ngIf"], [1, "mt-fdk-m"], ["title", "Verify your identity in the new window", "description", "We've opened a new window so you can verify your identity. Once you're done there, you'll be brought back here automatically.", "variant", "warning"], ["skipTooltip", "Continue to the dashboard without repeating identity verification.", "resetConnectionsTooltip", "Remove all test-mode health system connections for this profile.", 3, "skip", "resetConnections", "showSkip", "showResetConnections", "resetState"]], template: function IdentityVerificationComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275element(1, "app-header");
-        \u0275\u0275elementStart(2, "div", 1)(3, "h2", 2);
-        \u0275\u0275text(4, " Verify your identity");
-        \u0275\u0275element(5, "br");
-        \u0275\u0275text(6, "just once ");
+        \u0275\u0275elementStart(0, "div")(1, "div", 0)(2, "h2", 1);
+        \u0275\u0275text(3, "Verify your identity");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(7, "p", 3);
-        \u0275\u0275text(8);
-        \u0275\u0275pipe(9, "async");
-        \u0275\u0275element(10, "img", 4);
-        \u0275\u0275text(11, " or ");
-        \u0275\u0275element(12, "img", 5);
-        \u0275\u0275text(13, " This one-time step will bring you right back after your ID has been verified. ");
+        \u0275\u0275elementStart(4, "p", 2);
+        \u0275\u0275text(5);
+        \u0275\u0275pipe(6, "async");
+        \u0275\u0275pipe(7, "async");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(14, "div", 6)(15, "button", 7);
-        \u0275\u0275listener("click", function IdentityVerificationComponent_Template_button_click_15_listener() {
+        \u0275\u0275template(8, IdentityVerificationComponent_div_8_Template, 2, 0, "div", 3);
+        \u0275\u0275elementStart(9, "div", 4)(10, "button", 5);
+        \u0275\u0275listener("click", function IdentityVerificationComponent_Template_button_click_10_listener() {
           return ctx.verifyIdentity(ctx.CspType.ClearCsp);
         });
-        \u0275\u0275element(16, "img", 8);
-        \u0275\u0275text(17, " Verify with CLEAR ");
+        \u0275\u0275element(11, "img", 6);
+        \u0275\u0275text(12, " Verify with CLEAR ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(18, "button", 9);
-        \u0275\u0275listener("click", function IdentityVerificationComponent_Template_button_click_18_listener() {
+        \u0275\u0275elementStart(13, "button", 7);
+        \u0275\u0275listener("click", function IdentityVerificationComponent_Template_button_click_13_listener() {
           return ctx.verifyIdentity(ctx.CspType.IdmeCsp);
         });
-        \u0275\u0275elementStart(19, "span", 10);
-        \u0275\u0275text(20, "Verify with ");
-        \u0275\u0275element(21, "img", 11);
+        \u0275\u0275elementStart(14, "span", 8);
+        \u0275\u0275text(15, "Verify with ");
+        \u0275\u0275element(16, "img", 9);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275template(22, IdentityVerificationComponent_div_22_Template, 2, 0, "div", 12)(23, IdentityVerificationComponent_app_dev_tools_23_Template, 1, 3, "app-dev-tools", 13);
+        \u0275\u0275template(17, IdentityVerificationComponent_app_dev_tools_17_Template, 1, 3, "app-dev-tools", 10);
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
         let tmp_0_0;
-        \u0275\u0275advance(8);
-        \u0275\u0275textInterpolate1(" You're leaving ", ((tmp_0_0 = \u0275\u0275pipeBind1(9, 5, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.org == null ? null : tmp_0_0.org.name) || "Unknown", " to verify your identity with our partners, ");
-        \u0275\u0275advance(7);
+        \u0275\u0275advance(5);
+        \u0275\u0275textInterpolate1(" This is a one-time step. You'll briefly leave ", ((tmp_0_0 = \u0275\u0275pipeBind1(6, 5, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.companyName) || ((tmp_0_0 = \u0275\u0275pipeBind1(7, 7, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.org == null ? null : tmp_0_0.org.name) || "Unknown", " to verify your identity with Clear or ID.me, then we'll bring you right back. ");
+        \u0275\u0275advance(3);
+        \u0275\u0275property("ngIf", ctx.loading);
+        \u0275\u0275advance(2);
         \u0275\u0275property("disabled", ctx.loading);
         \u0275\u0275advance(3);
         \u0275\u0275property("disabled", ctx.loading);
         \u0275\u0275advance(4);
-        \u0275\u0275property("ngIf", ctx.loading);
-        \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.configService.systemConfig$.apiMode === ctx.ApiMode.Test);
       }
     }, dependencies: [
@@ -79807,333 +83299,132 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
       NgIf,
       AsyncPipe,
       RouterModule,
-      HeaderComponent,
-      DevToolsComponent
+      DevToolsComponent,
+      FdkAlertComponent
     ], styles: ['\n\n.clear-button[_ngcontent-%COMP%] {\n  border-radius: 32px;\n  background-color: #041A55;\n  font-family: "Inter", serif;\n  font-weight: 600;\n  font-size: 16px;\n  line-height: 26px;\n  height: 56px;\n  width: 328px;\n}\n.idme-button[_ngcontent-%COMP%] {\n  background-color: #08833D;\n  font-family: "Open Sans Light", sans-serif;\n}\n/*# sourceMappingURL=identity-verification.component.css.map */'] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 28 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationComponent, { className: "IdentityVerificationComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification/identity-verification.component.ts", lineNumber: 32 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts
-var _c04 = () => [];
+var _c03 = () => [];
 var _c12 = () => ({});
-var _c2 = (a0) => ({ "rotate-180": a0 });
-function DashboardComponent_div_10_ng_container_4_Template(rf, ctx) {
+function DashboardComponent_div_9_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementContainer(0);
-  }
-}
-function DashboardComponent_div_10_ng_template_6_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275element(0, "img", 40);
-  }
-}
-function DashboardComponent_div_10_ng_template_8_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275element(0, "img", 41);
-  }
-}
-function DashboardComponent_div_10_div_10_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 42);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 43);
-    \u0275\u0275element(2, "circle", 44)(3, "path", 45);
+    \u0275\u0275elementStart(0, "div", 18)(1, "div", 19);
+    \u0275\u0275element(2, "fdk-illustration", 20);
     \u0275\u0275elementEnd();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(4, "span");
-    \u0275\u0275text(5, "Finding institutions you've visited for treatment...");
+    \u0275\u0275elementStart(3, "h3", 21);
+    \u0275\u0275text(4, " No providers found ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "p", 22);
+    \u0275\u0275text(6, " We couldn't automatically find providers linked to your details. You can search for and add them manually. ");
     \u0275\u0275elementEnd()();
   }
 }
-function DashboardComponent_div_10_div_11_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 46);
-    \u0275\u0275text(1, " We couldn't find any institutions you've visited for treatment. You can still connect your health systems manually. ");
-    \u0275\u0275elementEnd();
-  }
-}
-function DashboardComponent_div_10_ng_container_12_div_20_ng_container_21_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275text(1);
-    \u0275\u0275elementContainerEnd();
-  }
-  if (rf & 2) {
-    const patientDemographics_r3 = \u0275\u0275nextContext(2).ngIf;
-    const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate2(" (", ctx_r1.getCurrentPatientAddressNumber(patientDemographics_r3), " of ", ctx_r1.getPatientAddressCount(patientDemographics_r3), ") ");
-  }
-}
-function DashboardComponent_div_10_ng_container_12_div_20_button_22_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 73);
-    \u0275\u0275listener("click", function DashboardComponent_div_10_ng_container_12_div_20_button_22_Template_button_click_0_listener() {
-      \u0275\u0275restoreView(_r4);
-      const patientDemographics_r3 = \u0275\u0275nextContext(2).ngIf;
-      const ctx_r1 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r1.showNextPatientAddress(patientDemographics_r3));
-    });
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 74);
-    \u0275\u0275element(2, "path", 75);
-    \u0275\u0275elementEnd()();
-  }
-}
-function DashboardComponent_div_10_ng_container_12_div_20_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 65)(1, "dl", 66)(2, "div")(3, "dt", 67);
-    \u0275\u0275text(4, "Name");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "dd", 68);
-    \u0275\u0275text(6);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(7, "div")(8, "dt", 67);
-    \u0275\u0275text(9, "Date of Birth");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "dd", 68);
-    \u0275\u0275text(11);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(12, "div")(13, "dt", 67);
-    \u0275\u0275text(14, "Gender");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(15, "dd", 69);
-    \u0275\u0275text(16);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(17, "div")(18, "dt", 70)(19, "span");
-    \u0275\u0275text(20, " Address ");
-    \u0275\u0275template(21, DashboardComponent_div_10_ng_container_12_div_20_ng_container_21_Template, 2, 2, "ng-container", 31);
-    \u0275\u0275elementEnd();
-    \u0275\u0275template(22, DashboardComponent_div_10_ng_container_12_div_20_button_22_Template, 3, 0, "button", 71);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(23, "dd", 72);
-    \u0275\u0275text(24);
-    \u0275\u0275elementEnd()()()();
-  }
-  if (rf & 2) {
-    const patientDemographics_r3 = \u0275\u0275nextContext().ngIf;
-    const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275advance(6);
-    \u0275\u0275textInterpolate(ctx_r1.getVerifiedPatientName(patientDemographics_r3));
-    \u0275\u0275advance(5);
-    \u0275\u0275textInterpolate(ctx_r1.getVerifiedBirthdate(patientDemographics_r3));
-    \u0275\u0275advance(5);
-    \u0275\u0275textInterpolate(patientDemographics_r3.gender || "Not available");
-    \u0275\u0275advance(5);
-    \u0275\u0275property("ngIf", ctx_r1.getPatientAddressCount(patientDemographics_r3) > 1);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.getPatientAddressCount(patientDemographics_r3) > 1);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate(ctx_r1.getVerifiedPatientAddress(patientDemographics_r3 == null ? null : patientDemographics_r3.addressInformation == null ? null : patientDemographics_r3.addressInformation[ctx_r1.patientAddressIndex]));
-  }
-}
-function DashboardComponent_div_10_ng_container_12_Template(rf, ctx) {
+function DashboardComponent_ng_container_11_fdk_checkbox_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 47)(2, "div", 48)(3, "button", 49);
-    \u0275\u0275listener("click", function DashboardComponent_div_10_ng_container_12_Template_button_click_3_listener() {
+    \u0275\u0275elementStart(0, "fdk-checkbox", 24);
+    \u0275\u0275listener("change", function DashboardComponent_ng_container_11_fdk_checkbox_1_Template_fdk_checkbox_change_0_listener($event) {
       \u0275\u0275restoreView(_r1);
-      const ctx_r1 = \u0275\u0275nextContext(2);
-      return \u0275\u0275resetView(ctx_r1.togglePatientDemographicsPopover());
+      const vaultProfile_r2 = \u0275\u0275nextContext().ngIf;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.toggleAllAccounts($event.target.checked, vaultProfile_r2));
     });
-    \u0275\u0275elementStart(4, "span", 50);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(5, "svg", 51);
-    \u0275\u0275element(6, "g", 52)(7, "g", 53);
-    \u0275\u0275elementStart(8, "g", 54)(9, "g");
-    \u0275\u0275element(10, "path", 55)(11, "path", 56)(12, "path", 57)(13, "path", 58)(14, "path", 59)(15, "path", 60)(16, "path", 61);
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275text(17, " Patient Demographics ");
+    \u0275\u0275text(1, " Select all ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(18, "svg", 62);
-    \u0275\u0275element(19, "path", 63);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275template(20, DashboardComponent_div_10_ng_container_12_div_20_Template, 25, 6, "div", 64);
-    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const vaultProfile_r2 = \u0275\u0275nextContext().ngIf;
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("checked", ctx_r2.areAllAccountsSelected(vaultProfile_r2))("indeterminate", ctx_r2.areSomeAccountsSelected(vaultProfile_r2));
+  }
+}
+function DashboardComponent_ng_container_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275template(1, DashboardComponent_ng_container_11_fdk_checkbox_1_Template, 2, 2, "fdk-checkbox", 23);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275advance(3);
-    \u0275\u0275attribute("aria-expanded", ctx_r1.showPatientDemographicsPopover);
-    \u0275\u0275advance(15);
-    \u0275\u0275property("ngClass", \u0275\u0275pureFunction1(3, _c2, ctx_r1.showPatientDemographicsPopover));
-    \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ctx_r1.showPatientDemographicsPopover);
+    const vaultProfile_r2 = ctx.ngIf;
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r2.hasSelectableAccounts(vaultProfile_r2));
   }
 }
-function DashboardComponent_div_10_Template(rf, ctx) {
+function DashboardComponent_fdk_card_13_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 36)(1, "div")(2, "p");
-    \u0275\u0275text(3, "Thank you for verifying with ");
-    \u0275\u0275template(4, DashboardComponent_div_10_ng_container_4_Template, 1, 0, "ng-container", 37);
-    \u0275\u0275pipe(5, "async");
-    \u0275\u0275elementEnd();
-    \u0275\u0275template(6, DashboardComponent_div_10_ng_template_6_Template, 1, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor)(8, DashboardComponent_div_10_ng_template_8_Template, 1, 0, "ng-template", null, 1, \u0275\u0275templateRefExtractor)(10, DashboardComponent_div_10_div_10_Template, 6, 0, "div", 38)(11, DashboardComponent_div_10_div_11_Template, 2, 0, "div", 39);
-    \u0275\u0275elementEnd();
-    \u0275\u0275template(12, DashboardComponent_div_10_ng_container_12_Template, 21, 5, "ng-container", 31);
-    \u0275\u0275pipe(13, "async");
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "fdk-card", 25);
+    \u0275\u0275listener("click", function DashboardComponent_fdk_card_13_Template_fdk_card_click_0_listener() {
+      const connectedAccount_r5 = \u0275\u0275restoreView(_r4).$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.deselectTefcaDirectAccount(connectedAccount_r5.vault_profile_connection_id));
+    });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_3_0;
-    let tmp_8_0;
-    const clearCspLogo_r5 = \u0275\u0275reference(7);
-    const idmeCspLogo_r6 = \u0275\u0275reference(9);
-    const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(4);
-    \u0275\u0275property("ngIf", ((tmp_3_0 = \u0275\u0275pipeBind1(5, 6, ctx_r1.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.verifiedIdentityCspType) == ctx_r1.CspType.IdmeCsp)("ngIfThen", idmeCspLogo_r6)("ngIfElse", clearCspLogo_r5);
-    \u0275\u0275advance(6);
-    \u0275\u0275property("ngIf", ctx_r1.loadingTefcaRLS);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", !ctx_r1.loadingTefcaRLS && ctx_r1.emptyTefcaRLSResult);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", (tmp_8_0 = \u0275\u0275pipeBind1(13, 8, ctx_r1.configService.vaultProfileConfigSubject)) == null ? null : tmp_8_0.verifiedIdentityPatientDemographics);
+    const connectedAccount_r5 = ctx.$implicit;
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("title", (connectedAccount_r5.portal == null ? null : connectedAccount_r5.portal.name) || (connectedAccount_r5.brand == null ? null : connectedAccount_r5.brand.name) || "")("initials", ctx_r2.getAccountInitials((connectedAccount_r5.portal == null ? null : connectedAccount_r5.portal.name) || (connectedAccount_r5.brand == null ? null : connectedAccount_r5.brand.name) || ""))("logo", ctx_r2.getAccountLogo(connectedAccount_r5.brand == null ? null : connectedAccount_r5.brand.id))("selected", true);
   }
 }
-function DashboardComponent_div_12_Template(rf, ctx) {
+function DashboardComponent_fdk_card_15_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 76)(1, "button", 77);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 78);
-    \u0275\u0275element(3, "path", 79);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275element(4, "img", 80);
-    \u0275\u0275elementStart(5, "div", 81)(6, "p", 82);
-    \u0275\u0275text(7);
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "fdk-card", 26);
+    \u0275\u0275listener("click", function DashboardComponent_fdk_card_15_Template_fdk_card_click_0_listener() {
+      const discoveredAccount_r7 = \u0275\u0275restoreView(_r6).$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.connectTefcaDirectAccount(discoveredAccount_r7.key, discoveredAccount_r7.value));
+    });
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "p", 7);
-    \u0275\u0275text(9, "Connected");
-    \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    const connectedAccount_r7 = ctx.$implicit;
-    \u0275\u0275advance(4);
-    \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", connectedAccount_r7.brand == null ? null : connectedAccount_r7.brand.id, ".png", \u0275\u0275sanitizeUrl);
-    \u0275\u0275propertyInterpolate("alt", connectedAccount_r7.brand == null ? null : connectedAccount_r7.brand.name);
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate((connectedAccount_r7.portal == null ? null : connectedAccount_r7.portal.name) || (connectedAccount_r7.brand == null ? null : connectedAccount_r7.brand.name));
+    const discoveredAccount_r7 = ctx.$implicit;
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("title", (discoveredAccount_r7.value.portal == null ? null : discoveredAccount_r7.value.portal.name) || (discoveredAccount_r7.value.brand == null ? null : discoveredAccount_r7.value.brand.name) || "")("initials", ctx_r2.getAccountInitials((discoveredAccount_r7.value.portal == null ? null : discoveredAccount_r7.value.portal.name) || (discoveredAccount_r7.value.brand == null ? null : discoveredAccount_r7.value.brand.name) || ""))("logo", ctx_r2.getAccountLogo(discoveredAccount_r7.value.brand == null ? null : discoveredAccount_r7.value.brand.id));
   }
 }
-function DashboardComponent_div_14_Template(rf, ctx) {
+function DashboardComponent_fdk_card_18_Template(rf, ctx) {
   if (rf & 1) {
     const _r8 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 76)(1, "button", 83);
-    \u0275\u0275listener("click", function DashboardComponent_div_14_Template_button_click_1_listener() {
-      const discoveredAccount_r9 = \u0275\u0275restoreView(_r8).$implicit;
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.connectTefcaDirectAccount(discoveredAccount_r9.key, discoveredAccount_r9.value));
+    \u0275\u0275elementStart(0, "fdk-card", 27);
+    \u0275\u0275listener("click", function DashboardComponent_fdk_card_18_Template_fdk_card_click_0_listener() {
+      const pendingAccount_r9 = \u0275\u0275restoreView(_r8).$implicit;
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.connectAccount(pendingAccount_r9.key, pendingAccount_r9.value));
     });
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 78);
-    \u0275\u0275element(3, "path", 79);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275element(4, "img", 80);
-    \u0275\u0275elementStart(5, "div", 81)(6, "p", 82);
-    \u0275\u0275text(7);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "p", 7);
-    \u0275\u0275text(9, "Ready to connect");
-    \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    const discoveredAccount_r9 = ctx.$implicit;
-    \u0275\u0275advance(4);
-    \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", discoveredAccount_r9.value.brand == null ? null : discoveredAccount_r9.value.brand.id, ".png", \u0275\u0275sanitizeUrl);
-    \u0275\u0275propertyInterpolate("alt", discoveredAccount_r9.value.brand == null ? null : discoveredAccount_r9.value.brand.name);
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate((discoveredAccount_r9.value.portal == null ? null : discoveredAccount_r9.value.portal.name) || (discoveredAccount_r9.value.brand == null ? null : discoveredAccount_r9.value.brand.name));
+    const pendingAccount_r9 = ctx.$implicit;
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275property("title", (pendingAccount_r9.value.portal == null ? null : pendingAccount_r9.value.portal.name) || (pendingAccount_r9.value.brand == null ? null : pendingAccount_r9.value.brand.name) || "")("initials", ctx_r2.getAccountInitials((pendingAccount_r9.value.portal == null ? null : pendingAccount_r9.value.portal.name) || (pendingAccount_r9.value.brand == null ? null : pendingAccount_r9.value.brand.name) || ""))("logo", ctx_r2.getAccountLogo(pendingAccount_r9.value.brand == null ? null : pendingAccount_r9.value.brand.id));
   }
 }
-function DashboardComponent_div_17_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r10 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 76)(1, "div", 84);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 85);
-    \u0275\u0275element(3, "path", 86)(4, "line", 87)(5, "line", 88);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275element(6, "img", 89);
-    \u0275\u0275elementStart(7, "div", 81)(8, "p", 82);
-    \u0275\u0275text(9);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "p", 7);
-    \u0275\u0275text(11, "Sign in required");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(12, "a", 90);
-    \u0275\u0275listener("click", function DashboardComponent_div_17_Template_a_click_12_listener() {
-      const pendingAccount_r11 = \u0275\u0275restoreView(_r10).$implicit;
-      const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.connectAccount(pendingAccount_r11.key, pendingAccount_r11.value));
-    });
-    \u0275\u0275text(13, " Sign in ");
-    \u0275\u0275elementEnd()();
-  }
-  if (rf & 2) {
-    const pendingAccount_r11 = ctx.$implicit;
-    \u0275\u0275advance(6);
-    \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", pendingAccount_r11.value.brand == null ? null : pendingAccount_r11.value.brand.id, ".png", \u0275\u0275sanitizeUrl);
-    \u0275\u0275propertyInterpolate("alt", pendingAccount_r11.value.brand == null ? null : pendingAccount_r11.value.brand.name);
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate((pendingAccount_r11.value.portal == null ? null : pendingAccount_r11.value.portal.name) || (pendingAccount_r11.value.brand == null ? null : pendingAccount_r11.value.brand.name));
-  }
-}
-function DashboardComponent_app_spinner_44_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275element(0, "app-spinner");
-  }
-}
+var DEFAULT_SOURCE_LOGO_BRAND_ID = "ee170dc1-d2ef-4dfa-a2fb-b30335244aa6";
 var DashboardComponent = class _DashboardComponent {
-  constructor(configService, router, fastenService, messageBus, logger, injector) {
+  constructor(configService, router, logger) {
     this.configService = configService;
     this.router = router;
-    this.fastenService = fastenService;
-    this.messageBus = messageBus;
     this.logger = logger;
-    this.injector = injector;
-    this.loadingTefcaRLS = false;
     this.emptyTefcaRLSResult = false;
-    this.isCompleting = false;
-    this.showPatientDemographicsPopover = false;
-    this.patientAddressIndex = 0;
-    this.CspType = CspType;
   }
   ngOnInit() {
     if (this.configService.systemConfig$.tefcaMode && !this.configService.vaultProfileConfig$.rlsQueryComplete) {
-      this.loadingTefcaRLS = true;
-      this.fastenService.recordLocatorRegisterAndPollForStatus().pipe(switchMap((rlsStatusResponse) => {
-        if (rlsStatusResponse.data.status == "success") {
-          console.log("RLS status response", rlsStatusResponse);
-          return this.fastenService.recordLocatorResults(rlsStatusResponse.data.task_id);
-        } else {
-          console.error("RLS status response was not successful", rlsStatusResponse);
-          return of(new RecordLocatorResponse());
-        }
-      })).subscribe((rlsResponse) => {
-        console.log("record locator response", rlsResponse);
-        const { numDiscovered, numPending, numConnected } = StoreRecordLocatorResultsInVaultProfile(this.configService, rlsResponse);
-        this.loadingTefcaRLS = false;
-        this.configService.vaultProfileConfig = {
-          rlsQueryComplete: true
-        };
-        this.emptyTefcaRLSResult = numDiscovered + numPending + numConnected == 0;
-      }, (err) => {
-        this.loadingTefcaRLS = false;
-        console.error("Error fetching RLS data", err);
-        this.configService.vaultProfileConfig = {
-          rlsQueryComplete: true
-        };
-        this.emptyTefcaRLSResult = true;
+      void this.router.navigateByUrl("/dashboard/loading", {
+        state: { skipIdentityVerification: true }
       });
+      return;
     }
+    const vaultProfile = this.configService.vaultProfileConfig$;
+    const resultCount = Object.keys(vaultProfile.discoveredPatientAccounts || {}).length + Object.keys(vaultProfile.pendingPatientAccounts || {}).length + (vaultProfile.connectedPatientAccounts?.length || 0);
+    this.emptyTefcaRLSResult = !!(this.configService.systemConfig$.tefcaMode && vaultProfile.rlsQueryComplete && resultCount === 0);
   }
   connectAccount(externalState, pendingAccount) {
     this.logger.info("connecting account", pendingAccount);
@@ -80162,40 +83453,55 @@ var DashboardComponent = class _DashboardComponent {
       patient_auth_type: pendingAccount.patient_auth_type || SourceCredentialType.SourceCredentialTypeTefcaDirect
     });
   }
-  completeAccounts() {
-    const connectedAccounts = this.configService.vaultProfileConfig$.connectedPatientAccounts || [];
-    const tefcaDirectAccounts = connectedAccounts.filter((acc) => {
-      return acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect || acc.patient_auth_type === SourceCredentialType.SourceCredentialTypeMedicareDirect;
-    });
-    this.logger.debug(`Direct connected accounts to complete:`, tefcaDirectAccounts);
-    const vaultConnectionIds = tefcaDirectAccounts.map((a) => a.vault_profile_connection_id).filter((id) => !!id);
-    const uniqueVaultConnectionIds = Array.from(new Set(vaultConnectionIds));
-    if (uniqueVaultConnectionIds.length === 0) {
-      this.router.navigateByUrl("dashboard/complete");
+  deselectTefcaDirectAccount(vaultProfileConnectionId) {
+    if (!vaultProfileConnectionId) {
       return;
     }
-    this.isCompleting = true;
-    this.fastenService.authorizeTefcaDirect(uniqueVaultConnectionIds, this.configService.systemConfig$.externalId).subscribe((resp) => {
-      this.logger.info("Direct authorization response", resp);
-      this.injector.runInContext(() => {
-        ProcessTefcaDirectAuthorizationResults(uniqueVaultConnectionIds, resp);
+    this.configService.vaultProfileDeselectTefcaDirectConnectedAccount(vaultProfileConnectionId);
+  }
+  toggleAllAccounts(checked, vaultProfile) {
+    if (checked) {
+      Object.entries(vaultProfile.discoveredPatientAccounts || {}).forEach(([externalState, account]) => {
+        this.connectTefcaDirectAccount(externalState, account);
       });
-      this.isCompleting = false;
-      this.router.navigateByUrl("dashboard/complete");
-    }, (err) => {
-      this.logger.error("Failed to authorize Direct accounts", err);
-      this.injector.runInContext(() => {
-        ProcessTefcaDirectAuthorizationResults(uniqueVaultConnectionIds, null);
-      });
-      this.isCompleting = false;
-      this.router.navigateByUrl("dashboard/complete");
+      return;
+    }
+    const connectedAccounts = [...vaultProfile.connectedPatientAccounts || []];
+    connectedAccounts.forEach((account) => {
+      this.deselectTefcaDirectAccount(account.vault_profile_connection_id);
     });
+  }
+  areAllAccountsSelected(vaultProfile) {
+    const discoveredCount = Object.keys(vaultProfile.discoveredPatientAccounts || {}).length;
+    const connectedCount = (vaultProfile.connectedPatientAccounts || []).filter((account) => !!account.vault_profile_connection_id).length;
+    return connectedCount > 0 && discoveredCount === 0;
+  }
+  areSomeAccountsSelected(vaultProfile) {
+    const discoveredCount = Object.keys(vaultProfile.discoveredPatientAccounts || {}).length;
+    const connectedCount = (vaultProfile.connectedPatientAccounts || []).filter((account) => !!account.vault_profile_connection_id).length;
+    return connectedCount > 0 && discoveredCount > 0;
+  }
+  hasSelectableAccounts(vaultProfile) {
+    return Object.keys(vaultProfile.discoveredPatientAccounts || {}).length > 0 || (vaultProfile.connectedPatientAccounts || []).some((account) => !!account.vault_profile_connection_id);
+  }
+  getAccountInitials(name) {
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    if (words.length > 1) {
+      return `${words[0][0]}${words[1][0]}`;
+    }
+    return words[0]?.slice(0, 2) || "";
+  }
+  getAccountLogo(brandId) {
+    if (!brandId || brandId === DEFAULT_SOURCE_LOGO_BRAND_ID) {
+      return "";
+    }
+    return `https://cdn.fastenhealth.com/logos/sources/${brandId}.png`;
+  }
+  confirmAccounts() {
+    return this.router.navigateByUrl("/dashboard/confirm");
   }
   //TODO1: add helper to process individual success, failure and catastrophic failures from aturhoizeTefcaDirect, and send messageBus events
   //TODO2: promote pending connections to connected list, so they will be sent to the customer via the Completed event.
-  closeModal() {
-    this.messageBus.publishRequestClose();
-  }
   shouldShowMultiConnectHint(vaultProfile) {
     if (!vaultProfile) {
       return false;
@@ -80207,147 +83513,68 @@ var DashboardComponent = class _DashboardComponent {
     const onlyOneConnected = connectedCount === 1 && pendingCount === 0 && discoveredCount === 0;
     return firstPendingQueued || onlyOneConnected;
   }
-  togglePatientDemographicsPopover() {
-    this.showPatientDemographicsPopover = !this.showPatientDemographicsPopover;
-  }
-  getVerifiedPatientName(demographics) {
-    return formatPatientDemographicsName(demographics);
-  }
-  getVerifiedPatientAddress(address) {
-    return formatPatientDemographicsAddress(address);
-  }
-  getPatientAddressCount(demographics) {
-    return demographics?.addressInformation?.length || 0;
-  }
-  getCurrentPatientAddressNumber(demographics) {
-    const addressCount = this.getPatientAddressCount(demographics);
-    return addressCount ? this.patientAddressIndex % addressCount + 1 : 0;
-  }
-  showNextPatientAddress(demographics) {
-    const addressCount = this.getPatientAddressCount(demographics);
-    if (addressCount > 1) {
-      this.patientAddressIndex = (this.patientAddressIndex + 1) % addressCount;
-    }
-  }
-  getVerifiedBirthdate(demographics) {
-    return formatPatientDemographicsBirthdate(demographics);
-  }
   static {
     this.\u0275fac = function DashboardComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(EnvironmentInjector));
+      return new (__ngFactoryType__ || _DashboardComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], decls: 62, vars: 35, consts: [["clearCspLogo", ""], ["idmeCspLogo", ""], ["id", "step-connecting-systems", 1, "flex", "flex-1", "min-h-0", "flex-col"], [1, "sticky", "top-0", "z-20", "bg-white", "space-y-4", "flex-shrink-0"], [3, "closeButtonEvent", "showClose"], [1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "flex", "flex-1", "min-h-0", "flex-col", "gap-6", "pt-4", "overflow-hidden"], ["id", "connecting-systems-list", 1, "flex-1", "min-h-0", "space-y-3", "overflow-y-auto", "no-scrollbar"], ["class", "p-4 text-sm text-blue800 rounded-lg bg-blue-50 border border-blue-300 flex-shrink-0 flex flex-col gap-3", "role", "alert", 4, "ngIf"], ["class", "flex items-center p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all", 4, "ngFor", "ngForOf"], [1, "dashboard-footer", "sticky", "bottom-0", "z-20", "bg-white", "space-y-4", "pt-4", "flex-shrink-0"], ["id", "search-button", "type", "button", 1, "w-full", "rounded-lg", "flex", "items-center", "justify-between", "gap-3", "px-4", "py-4", "text-sm", "text-left", "transition-all", 3, "routerLink", "ngClass"], [1, "flex", "items-center", "gap-3", "text-left"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "1.5", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-6", "h-6", "text-[#5B47FB]", "flex-shrink-0"], ["d", "M11 12H3"], ["d", "M16 6H3"], ["d", "M16 18H3"], ["d", "M18 9v6"], ["d", "M21 12h-6"], [1, "space-y-1"], [1, "font-semibold", "text-gray-900"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-chevron-right", "w-5", "h-5", "text-gray-400", "flex-shrink-0"], ["points", "9 6 15 12 9 18"], [1, "flex", "items-center", "justify-between"], [1, "flex", "items-center", "gap-2", "text-sm", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-4", "h-4"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], ["id", "connecting-continue", 1, "w-[120px]", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "disabled:opacity-50", "flex", "justify-center", "items-center", "gap-2", 3, "click", "disabled"], [4, "ngIf"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], ["role", "alert", 1, "p-4", "text-sm", "text-blue800", "rounded-lg", "bg-blue-50", "border", "border-blue-300", "flex-shrink-0", "flex", "flex-col", "gap-3"], [4, "ngIf", "ngIfThen", "ngIfElse"], ["class", "flex items-center gap-2 mt-2", 4, "ngIf"], ["class", "text-sm text-gray-600 mt-2", 4, "ngIf"], ["src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["src", "https://s3.amazonaws.com/idme-design/brand-assets/Primary-IDme-Logo-RGB.svg", 2, "height", "0.8rem", "display", "inline", "vertical-align", "center"], [1, "flex", "items-center", "gap-2", "mt-2"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", 1, "animate-spin", "h-5", "w-5", "text-blue-600"], ["cx", "12", "cy", "12", "r", "10", "stroke", "currentColor", "stroke-width", "4", 1, "opacity-25"], ["fill", "currentColor", "d", "M4 12a8 8 0 018-8v8H4z", 1, "opacity-75"], [1, "text-sm", "text-gray-600", "mt-2"], [1, ""], [1, "bg-white", "border", "border-blue-200", "rounded-lg", "p-3", "text-gray-700"], ["type", "button", "aria-controls", "patient-demographics-details", 1, "w-full", "flex", "items-center", "justify-between", "text-left", "text-blue800", 3, "click"], [1, "flex", "items-center", "gap-2", "text-xs", "font-semibold", "uppercase", "tracking-wide"], ["fill", "#000000", "version", "1.1", "id", "Capa_1", "xmlns", "http://www.w3.org/2000/svg", 0, "xmlns", "xlink", "http://www.w3.org/1999/xlink", "viewBox", "0 0 260.666 260.666", 0, "xml", "space", "preserve", 1, "w-4", "h-4"], ["id", "SVGRepo_bgCarrier", "stroke-width", "0"], ["id", "SVGRepo_tracerCarrier", "stroke-linecap", "round", "stroke-linejoin", "round"], ["id", "SVGRepo_iconCarrier"], ["d", "M236.666,40.882H24c-13.233,0-24,10.767-24,24v130.902c0,13.233,10.767,24,24,24h212.666c13.233,0,24-10.767,24-24V64.882 C260.666,51.648,249.899,40.882,236.666,40.882z M245.666,195.784c0,4.962-4.037,9-9,9H24c-4.963,0-9-4.038-9-9V64.882 c0-4.962,4.037-9,9-9h212.666c4.963,0,9,4.038,9,9V195.784z"], ["d", "M216.04,83.703h-68.933c-3.314,0-6,2.687-6,6s2.686,6,6,6h68.933c3.314,0,6-2.687,6-6S219.354,83.703,216.04,83.703z"], ["d", "M216.04,164.963h-68.933c-3.314,0-6,2.686-6,6c0,3.313,2.686,6,6,6h68.933c3.314,0,6-2.687,6-6 C222.04,167.649,219.354,164.963,216.04,164.963z"], ["d", "M216.04,118.411h-41.718c-3.313,0-6,2.687-6,6s2.687,6,6,6h41.718c3.314,0,6-2.687,6-6S219.354,118.411,216.04,118.411z"], ["d", "M216.04,141.686h-41.718c-3.313,0-6,2.687-6,6c0,3.314,2.687,6,6,6h41.718c3.314,0,6-2.686,6-6 C222.04,144.373,219.354,141.686,216.04,141.686z"], ["d", "M85.163,133.136c17.004,0,30.838-13.839,30.838-30.849c0-17.011-13.834-30.85-30.838-30.85 c-17.009,0-30.847,13.839-30.847,30.85C54.316,119.297,68.154,133.136,85.163,133.136z M85.163,86.438 c8.733,0,15.838,7.11,15.838,15.85c0,8.739-7.104,15.849-15.838,15.849c-8.738,0-15.847-7.11-15.847-15.849 C69.316,93.548,76.425,86.438,85.163,86.438z"], ["d", "M97.097,138.68H73.415c-16.592,0-30.09,13.497-30.09,30.088v12.961c0,4.142,3.357,7.5,7.5,7.5s7.5-3.358,7.5-7.5v-12.961 c0-8.319,6.77-15.088,15.09-15.088h23.682c8.32,0,15.09,6.768,15.09,15.088v12.961c0,4.142,3.357,7.5,7.5,7.5s7.5-3.358,7.5-7.5 v-12.961C127.187,152.177,113.688,138.68,97.097,138.68z"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "2", "stroke", "currentColor", 1, "w-3", "h-3", "transition-transform", 3, "ngClass"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M19 9l-7 7-7-7"], ["id", "patient-demographics-details", "class", "mt-2", 4, "ngIf"], ["id", "patient-demographics-details", 1, "mt-2"], [1, "space-y-2", "text-sm"], [1, "text-xs", "font-semibold", "uppercase", "tracking-wide", "text-gray-500"], [1, "text-gray-900"], [1, "text-gray-900", "capitalize"], [1, "flex", "items-center", "justify-between", "gap-2", "text-xs", "font-semibold", "uppercase", "tracking-wide", "text-gray-500"], ["type", "button", "class", "inline-flex h-5 w-5 items-center justify-center rounded-full border border-gray-300 text-gray-600 transition-colors hover:border-blue-500 hover:bg-blue-50 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1", "aria-label", "Show next address", "title", "Show next address", 3, "click", 4, "ngIf"], [1, "text-gray-900", "whitespace-pre-line"], ["type", "button", "aria-label", "Show next address", "title", "Show next address", 1, "inline-flex", "h-5", "w-5", "items-center", "justify-center", "rounded-full", "border", "border-gray-300", "text-gray-600", "transition-colors", "hover:border-blue-500", "hover:bg-blue-50", "hover:text-blue-700", "focus:outline-none", "focus:ring-2", "focus:ring-blue-500", "focus:ring-offset-1", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "fill", "none", "viewBox", "0 0 24 24", "stroke-width", "2", "stroke", "currentColor", "aria-hidden", "true", 1, "h-3", "w-3"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M9 5l7 7-7 7"], [1, "flex", "items-center", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-[#5B47FB]", "bg-[#5B47FB]", "transition-all", "hover:bg-[#4936E8]", "hover:border-[#4936E8]", "animate-scale"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", 1, "w-4", "h-4", "mx-auto", "text-white", "animate-scale"], ["stroke-linecap", "round", "stroke-linejoin", "round", "stroke-width", "2", "d", "M5 13l4 4L19 7"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-4", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], [1, "connect-btn", "w-8", "h-8", "rounded-full", "border", "border-gray-300", "transition-all", "hover:bg-gray-50", "hover:border-[#5B47FB]/30", 3, "click"], [1, "w-8", "h-8", "flex", "items-center", "justify-center", "animate-bounce"], ["xmlns", "http://www.w3.org/2000/svg", "width", "20", "height", "20", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "1.5", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "text-amber-500"], ["d", "M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"], ["x1", "12", "y1", "9", "x2", "12", "y2", "13"], ["x1", "12", "y1", "17", "x2", "12.01", "y2", "17"], ["imageFallback", "", 1, "w-8", "max-h-8", "mx-3", "rounded", 3, "src", "alt"], [1, "cursor-pointer", "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "px-4", "py-1.5", "rounded-lg", "text-sm", "font-medium", "transition-colors", 3, "click"]], template: function DashboardComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], decls: 29, vars: 25, consts: [["id", "step-connecting-systems", 1, "flex", "h-full", "min-h-0", "flex-col", "overflow-hidden"], [1, "flex-shrink-0"], [1, "space-y-2"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary"], [1, "flex", "flex-1", "min-h-0", "flex-col", "gap-6", "pt-6", "overflow-hidden"], ["id", "connecting-systems-list", 1, "flex", "flex-1", "min-h-0", "flex-col", "overflow-hidden"], ["class", "mt-fdk-xl", "role", "alert", 4, "ngIf"], ["id", "account-cards", 1, "flex", "min-h-0", "flex-col", "gap-fdk-xxs", "overflow-y-auto", "no-scrollbar"], [4, "ngIf"], ["class", "connected-account-card flex-shrink-0", "variant", "select", 3, "title", "initials", "logo", "selected", "click", 4, "ngFor", "ngForOf"], ["class", "discovered-account-card flex-shrink-0", "variant", "select", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], ["class", "pending-account-card flex-shrink-0", "variant", "signIn", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], ["id", "search-button", "type", "button", "variant", "tertiary", 1, "mt-fdk-m", "flex-shrink-0", 3, "routerLink"], [1, "flex", "items-center", "justify-center", "gap-2"], ["name", "plus", "size", "24"], [1, "dashboard-footer", "mt-auto", "pt-6", "space-y-4", "flex-shrink-0"], ["id", "connecting-continue", "type", "button", "variant", "primary", "width", "full", 3, "click", "disabled"], ["role", "alert", 1, "mt-fdk-xl"], [1, "text-center"], ["name", "empty"], [1, "fdk-type-heading-3", "text-fdk-primary", "text-center", "mt-fdk-m"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], ["id", "select-all-accounts", "class", "flex-shrink-0", "value", "select-all", 3, "checked", "indeterminate", "change", 4, "ngIf"], ["id", "select-all-accounts", "value", "select-all", 1, "flex-shrink-0", 3, "change", "checked", "indeterminate"], ["variant", "select", 1, "connected-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo", "selected"], ["variant", "select", 1, "discovered-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo"], ["variant", "signIn", 1, "pending-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo"]], template: function DashboardComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 2)(1, "div", 3)(2, "app-header", 4);
-        \u0275\u0275listener("closeButtonEvent", function DashboardComponent_Template_app_header_closeButtonEvent_2_listener() {
-          return ctx.closeModal();
-        });
+        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "div", 2)(3, "h2", 3);
+        \u0275\u0275text(4, " Choose your health systems ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(3, "div", 5)(4, "h2", 6);
-        \u0275\u0275text(5, "Select Health Systems");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(6, "p", 7);
-        \u0275\u0275text(7, " Choose the health systems you'd like to connect ");
+        \u0275\u0275elementStart(5, "p", 4);
+        \u0275\u0275text(6, " Select the providers you'd like to connect your records from. ");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(8, "div", 8)(9, "div", 9);
-        \u0275\u0275template(10, DashboardComponent_div_10_Template, 14, 10, "div", 10);
-        \u0275\u0275pipe(11, "async");
-        \u0275\u0275template(12, DashboardComponent_div_12_Template, 10, 4, "div", 11);
-        \u0275\u0275pipe(13, "async");
-        \u0275\u0275template(14, DashboardComponent_div_14_Template, 10, 4, "div", 11);
-        \u0275\u0275pipe(15, "async");
-        \u0275\u0275pipe(16, "keyvalue");
-        \u0275\u0275template(17, DashboardComponent_div_17_Template, 14, 4, "div", 11);
-        \u0275\u0275pipe(18, "async");
-        \u0275\u0275pipe(19, "keyvalue");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(20, "div", 12)(21, "button", 13);
-        \u0275\u0275pipe(22, "async");
-        \u0275\u0275elementStart(23, "div", 14);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(24, "svg", 15);
-        \u0275\u0275element(25, "path", 16)(26, "path", 17)(27, "path", 18)(28, "path", 19)(29, "path", 20);
+        \u0275\u0275elementStart(7, "div", 5)(8, "div", 6);
+        \u0275\u0275template(9, DashboardComponent_div_9_Template, 7, 0, "div", 7);
+        \u0275\u0275elementStart(10, "div", 8);
+        \u0275\u0275template(11, DashboardComponent_ng_container_11_Template, 2, 1, "ng-container", 9);
+        \u0275\u0275pipe(12, "async");
+        \u0275\u0275template(13, DashboardComponent_fdk_card_13_Template, 1, 4, "fdk-card", 10);
+        \u0275\u0275pipe(14, "async");
+        \u0275\u0275template(15, DashboardComponent_fdk_card_15_Template, 1, 3, "fdk-card", 11);
+        \u0275\u0275pipe(16, "async");
+        \u0275\u0275pipe(17, "keyvalue");
+        \u0275\u0275template(18, DashboardComponent_fdk_card_18_Template, 1, 3, "fdk-card", 12);
+        \u0275\u0275pipe(19, "async");
+        \u0275\u0275pipe(20, "keyvalue");
         \u0275\u0275elementEnd();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(30, "div", 21)(31, "p", 22);
-        \u0275\u0275text(32, "Add more health systems");
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(33, "svg", 23);
-        \u0275\u0275element(34, "polyline", 24);
-        \u0275\u0275elementEnd()();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(35, "div", 25)(36, "div", 26);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(37, "svg", 27);
-        \u0275\u0275element(38, "rect", 28)(39, "path", 29);
-        \u0275\u0275elementEnd();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(40, "span");
-        \u0275\u0275text(41, "Your medical records are secure");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(42, "button", 30);
-        \u0275\u0275pipe(43, "async");
-        \u0275\u0275listener("click", function DashboardComponent_Template_button_click_42_listener() {
-          return ctx.completeAccounts();
-        });
-        \u0275\u0275template(44, DashboardComponent_app_spinner_44_Template, 1, 0, "app-spinner", 31);
-        \u0275\u0275elementStart(45, "span");
-        \u0275\u0275text(46, "Continue");
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(47, "p", 32);
-        \u0275\u0275text(48, " By clicking continue you agree to: ");
-        \u0275\u0275element(49, "br");
-        \u0275\u0275text(50, "Fasten's ");
-        \u0275\u0275elementStart(51, "a", 33);
-        \u0275\u0275text(52, "Privacy Policy");
-        \u0275\u0275elementEnd();
-        \u0275\u0275text(53, " and ");
-        \u0275\u0275elementStart(54, "a", 34);
-        \u0275\u0275text(55, "Terms & Conditions");
-        \u0275\u0275elementEnd();
-        \u0275\u0275element(56, "br");
-        \u0275\u0275text(57);
-        \u0275\u0275pipe(58, "async");
-        \u0275\u0275elementStart(59, "a", 35);
-        \u0275\u0275pipe(60, "async");
-        \u0275\u0275text(61, "Privacy Policy");
+        \u0275\u0275elementStart(21, "fdk-button", 13)(22, "span", 14);
+        \u0275\u0275element(23, "fdk-icon", 15);
+        \u0275\u0275text(24, " Add another health system ");
         \u0275\u0275elementEnd()()()();
+        \u0275\u0275elementStart(25, "div", 16)(26, "fdk-button", 17);
+        \u0275\u0275pipe(27, "async");
+        \u0275\u0275listener("click", function DashboardComponent_Template_fdk_button_click_26_listener() {
+          return ctx.confirmAccounts();
+        });
+        \u0275\u0275text(28, " Connect selected providers ");
+        \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
-        let tmp_1_0;
         let tmp_2_0;
         let tmp_3_0;
         let tmp_4_0;
-        let tmp_7_0;
-        let tmp_9_0;
-        let tmp_10_0;
+        let tmp_6_0;
+        \u0275\u0275advance(9);
+        \u0275\u0275property("ngIf", ctx.emptyTefcaRLSResult);
         \u0275\u0275advance(2);
-        \u0275\u0275property("showClose", true);
-        \u0275\u0275advance(8);
-        \u0275\u0275property("ngIf", (tmp_1_0 = \u0275\u0275pipeBind1(11, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.tefcaMode);
+        \u0275\u0275property("ngIf", \u0275\u0275pipeBind1(12, 7, ctx.configService.vaultProfileConfigSubject));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(13, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(31, _c04));
+        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(14, 9, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(21, _c03));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(16, 17, ((tmp_3_0 = \u0275\u0275pipeBind1(15, 15, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(32, _c12)));
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(17, 13, ((tmp_3_0 = \u0275\u0275pipeBind1(16, 11, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(22, _c12)));
         \u0275\u0275advance(3);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(19, 21, ((tmp_4_0 = \u0275\u0275pipeBind1(18, 19, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(33, _c12)));
-        \u0275\u0275advance(4);
-        \u0275\u0275property("routerLink", "/search")("ngClass", ctx.shouldShowMultiConnectHint(\u0275\u0275pipeBind1(22, 23, ctx.configService.vaultProfileConfigSubject)) ? "multi-connect-hint border border-[#5B47FB]/40 bg-[#5B47FB]/5 text-gray-700" : "border bg-gray-50 border-gray-200 hover:border-[#5B47FB] hover:bg-[#5B47FB]/5");
-        \u0275\u0275advance(21);
-        \u0275\u0275property("disabled", !(((tmp_7_0 = \u0275\u0275pipeBind1(43, 25, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_7_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(34, _c04)).length || ctx.isCompleting);
-        \u0275\u0275advance(2);
-        \u0275\u0275property("ngIf", ctx.isCompleting);
-        \u0275\u0275advance(13);
-        \u0275\u0275textInterpolate1("", ((tmp_9_0 = \u0275\u0275pipeBind1(58, 27, ctx.configService.systemConfigSubject)) == null ? null : tmp_9_0.org == null ? null : tmp_9_0.org.name) || "Unknown", "'s ");
-        \u0275\u0275advance(2);
-        \u0275\u0275propertyInterpolate("href", (tmp_10_0 = \u0275\u0275pipeBind1(60, 29, ctx.configService.systemConfigSubject)) == null ? null : tmp_10_0.org == null ? null : tmp_10_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(20, 17, ((tmp_4_0 = \u0275\u0275pipeBind1(19, 15, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(23, _c12)));
+        \u0275\u0275advance(3);
+        \u0275\u0275property("routerLink", "/search");
+        \u0275\u0275advance(5);
+        \u0275\u0275property("disabled", !(((tmp_6_0 = \u0275\u0275pipeBind1(27, 19, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_6_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(24, _c03)).length);
       }
     }, dependencies: [
       CommonModule,
-      NgClass,
       NgForOf,
       NgIf,
       AsyncPipe,
@@ -80355,15 +83582,16 @@ var DashboardComponent = class _DashboardComponent {
       // Not needed if you don't use any common directives
       RouterModule,
       RouterLink,
-      ImageFallbackDirective,
-      HeaderComponent,
-      // If you have a header component
-      SpinnerComponent
-    ], styles: ["\n\n.blurred[_ngcontent-%COMP%] {\n  filter: blur(3px);\n  filter: url(/assets/blur.svg#gaussian_blur);\n  -webkit-filter: blur(3px);\n}\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  flex: 1 1 auto;\n  height: 100%;\n  min-height: 0;\n}\n.no-scrollbar[_ngcontent-%COMP%] {\n  scrollbar-width: none;\n  -ms-overflow-style: none;\n}\n.no-scrollbar[_ngcontent-%COMP%]::-webkit-scrollbar {\n  display: none;\n}\n.multi-connect-hint[_ngcontent-%COMP%] {\n  position: relative;\n  opacity: 0.8;\n  transition: opacity 200ms ease-in-out, box-shadow 3.5s ease-in-out;\n  animation: _ngcontent-%COMP%_hintPulse 3.5s ease-in-out infinite;\n}\n.multi-connect-hint[_ngcontent-%COMP%]:hover {\n  opacity: 1;\n}\n.multi-connect-hint[_ngcontent-%COMP%]::after, \n.multi-connect-hint[_ngcontent-%COMP%]::before {\n  pointer-events: none;\n}\n@keyframes _ngcontent-%COMP%_hintPulse {\n  0% {\n    box-shadow: 0 0 0 0 rgba(91, 71, 251, 0.25);\n  }\n  50% {\n    box-shadow: 0 0 0 8px rgba(91, 71, 251, 0.05);\n  }\n  100% {\n    box-shadow: 0 0 0 0 rgba(91, 71, 251, 0);\n  }\n}\n@media (prefers-reduced-motion: reduce) {\n  .multi-connect-hint[_ngcontent-%COMP%] {\n    animation: none;\n  }\n}\n/*# sourceMappingURL=dashboard.component.css.map */"] });
+      FdkIllustrationComponent,
+      FdkButtonComponent,
+      FdkCardComponent,
+      FdkCheckboxComponent,
+      FdkIconComponent
+    ], styles: ["\n\n.blurred[_ngcontent-%COMP%] {\n  filter: blur(3px);\n  filter: url(/assets/blur.svg#gaussian_blur);\n  -webkit-filter: blur(3px);\n}\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  flex: 1 1 auto;\n  height: min(100%, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n.no-scrollbar[_ngcontent-%COMP%] {\n  scrollbar-width: none;\n  -ms-overflow-style: none;\n}\n.no-scrollbar[_ngcontent-%COMP%]::-webkit-scrollbar {\n  display: none;\n}\n.multi-connect-hint[_ngcontent-%COMP%] {\n  position: relative;\n  opacity: 0.8;\n  transition: opacity 200ms ease-in-out, box-shadow 3.5s ease-in-out;\n  animation: _ngcontent-%COMP%_hintPulse 3.5s ease-in-out infinite;\n}\n.multi-connect-hint[_ngcontent-%COMP%]:hover {\n  opacity: 1;\n}\n.multi-connect-hint[_ngcontent-%COMP%]::after, \n.multi-connect-hint[_ngcontent-%COMP%]::before {\n  pointer-events: none;\n}\n@keyframes _ngcontent-%COMP%_hintPulse {\n  0% {\n    box-shadow: 0 0 0 0 rgba(91, 71, 251, 0.25);\n  }\n  50% {\n    box-shadow: 0 0 0 8px rgba(91, 71, 251, 0.05);\n  }\n  100% {\n    box-shadow: 0 0 0 0 rgba(91, 71, 251, 0);\n  }\n}\n@media (prefers-reduced-motion: reduce) {\n  .multi-connect-hint[_ngcontent-%COMP%] {\n    animation: none;\n  }\n}\n/*# sourceMappingURL=dashboard.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 43 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(DashboardComponent, { className: "DashboardComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts", lineNumber: 39 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/state-codes.ts
@@ -80943,14 +84171,13 @@ var InfiniteScrollModule = class _InfiniteScrollModule {
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts
 var import_lodash2 = __toESM(require_lodash());
-var _c05 = () => [];
-function HealthSystemSearchComponent_div_2_Template(rf, ctx) {
+function HealthSystemSearchComponent_div_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 16);
+    \u0275\u0275elementStart(0, "div", 11);
     \u0275\u0275text(1, " We were unable to verify your identity. Please search for your healthcare system below. ");
     \u0275\u0275element(2, "br");
     \u0275\u0275text(3, " You can also ");
-    \u0275\u0275elementStart(4, "a", 17);
+    \u0275\u0275elementStart(4, "a", 12);
     \u0275\u0275text(5, "file a ticket");
     \u0275\u0275elementEnd();
     \u0275\u0275text(6, " if you need help. ");
@@ -80961,50 +84188,36 @@ function HealthSystemSearchComponent_div_2_Template(rf, ctx) {
     \u0275\u0275property("routerLink", "/form/support");
   }
 }
-function HealthSystemSearchComponent_button_8_Template(rf, ctx) {
+function HealthSystemSearchComponent_button_7_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 18);
-    \u0275\u0275listener("click", function HealthSystemSearchComponent_button_8_Template_button_click_0_listener() {
+    \u0275\u0275elementStart(0, "button", 13);
+    \u0275\u0275listener("click", function HealthSystemSearchComponent_button_7_Template_button_click_0_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.requestUserLocation());
     });
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 19);
-    \u0275\u0275element(2, "path", 20)(3, "circle", 21);
-    \u0275\u0275elementEnd()();
+    \u0275\u0275element(1, "fdk-icon", 14);
+    \u0275\u0275text(2, " Use my location ");
+    \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275property("disabled", ctx_r1.requestingLocation);
   }
 }
-function HealthSystemSearchComponent_div_13_option_11_Template(rf, ctx) {
+function HealthSystemSearchComponent_div_9_div_8_button_2_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "option", 40);
-    \u0275\u0275text(1);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const item_r4 = ctx.$implicit;
-    \u0275\u0275property("value", item_r4.value);
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate(item_r4.key);
-  }
-}
-function HealthSystemSearchComponent_div_13_div_59_button_2_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r6 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 43);
-    \u0275\u0275listener("click", function HealthSystemSearchComponent_div_13_div_59_button_2_Template_button_click_0_listener() {
-      \u0275\u0275restoreView(_r6);
+    const _r5 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "button", 24);
+    \u0275\u0275listener("click", function HealthSystemSearchComponent_div_9_div_8_button_2_Template_button_click_0_listener() {
+      \u0275\u0275restoreView(_r5);
       const ctx_r1 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r1.requestUserLocation());
     });
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 19);
-    \u0275\u0275element(2, "path", 20)(3, "circle", 21);
+    \u0275\u0275elementStart(1, "svg", 25);
+    \u0275\u0275element(2, "path", 26)(3, "circle", 27);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -81012,281 +84225,146 @@ function HealthSystemSearchComponent_div_13_div_59_button_2_Template(rf, ctx) {
     \u0275\u0275property("disabled", ctx_r1.requestingLocation);
   }
 }
-function HealthSystemSearchComponent_div_13_div_59_Template(rf, ctx) {
+function HealthSystemSearchComponent_div_9_div_8_Template(rf, ctx) {
   if (rf & 1) {
-    const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 5)(1, "input", 41);
-    \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_13_div_59_Template_input_ngModelChange_1_listener($event) {
-      \u0275\u0275restoreView(_r5);
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "div", 18)(1, "fdk-input", 22);
+    \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_9_div_8_Template_fdk_input_ngModelChange_1_listener($event) {
+      \u0275\u0275restoreView(_r4);
       const ctx_r1 = \u0275\u0275nextContext(2);
       \u0275\u0275twoWayBindingSet(ctx_r1.sortByLocationZipcode, $event) || (ctx_r1.sortByLocationZipcode = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275listener("ngModelChange", function HealthSystemSearchComponent_div_13_div_59_Template_input_ngModelChange_1_listener() {
-      \u0275\u0275restoreView(_r5);
+    \u0275\u0275listener("ngModelChange", function HealthSystemSearchComponent_div_9_div_8_Template_fdk_input_ngModelChange_1_listener() {
+      \u0275\u0275restoreView(_r4);
       const ctx_r1 = \u0275\u0275nextContext(2);
       return \u0275\u0275resetView(ctx_r1.sortByLocationZipcodeChanged());
     });
     \u0275\u0275elementEnd();
-    \u0275\u0275template(2, HealthSystemSearchComponent_div_13_div_59_button_2_Template, 4, 1, "button", 42);
+    \u0275\u0275template(2, HealthSystemSearchComponent_div_9_div_8_button_2_Template, 4, 1, "button", 23);
     \u0275\u0275pipe(3, "async");
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_3_0;
+    let tmp_4_0;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance();
+    \u0275\u0275property("hideLabel", true);
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.sortByLocationZipcode);
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((tmp_3_0 = \u0275\u0275pipeBind1(3, 2, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.showSearchByLocation) && (ctx_r1.navigator == null ? null : ctx_r1.navigator.geolocation));
+    \u0275\u0275property("ngIf", ((tmp_4_0 = \u0275\u0275pipeBind1(3, 3, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_4_0.showSearchByLocation) && (ctx_r1.navigator == null ? null : ctx_r1.navigator.geolocation));
   }
 }
-function HealthSystemSearchComponent_div_13_Template(rf, ctx) {
+function HealthSystemSearchComponent_div_9_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 22)(1, "h3", 23);
-    \u0275\u0275text(2, "Filters");
+    \u0275\u0275elementStart(0, "div", 15);
+    \u0275\u0275listener("click", function HealthSystemSearchComponent_div_9_Template_div_click_0_listener() {
+      \u0275\u0275restoreView(_r3);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.showFilters = false);
+    });
+    \u0275\u0275elementStart(1, "section", 16);
+    \u0275\u0275listener("click", function HealthSystemSearchComponent_div_9_Template_section_click_1_listener($event) {
+      \u0275\u0275restoreView(_r3);
+      return \u0275\u0275resetView($event.stopPropagation());
+    });
+    \u0275\u0275elementStart(2, "h3", 17);
+    \u0275\u0275text(3, " Filter and Sort ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "div", 5)(4, "label", 24);
-    \u0275\u0275text(5, "State");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "select", 25);
-    \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_13_Template_select_ngModelChange_6_listener($event) {
+    \u0275\u0275elementStart(4, "div", 18)(5, "fdk-select", 19);
+    \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_9_Template_fdk_select_ngModelChange_5_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.filter.locations[0], $event) || (ctx_r1.filter.locations[0] = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275listener("ngModelChange", function HealthSystemSearchComponent_div_13_Template_select_ngModelChange_6_listener() {
+    \u0275\u0275listener("ngModelChange", function HealthSystemSearchComponent_div_9_Template_fdk_select_ngModelChange_5_listener() {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.querySources(true));
     });
-    \u0275\u0275elementStart(7, "option", 26);
-    \u0275\u0275text(8, "All States");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "option", 27);
-    \u0275\u0275text(10, "-------");
-    \u0275\u0275elementEnd();
-    \u0275\u0275template(11, HealthSystemSearchComponent_div_13_option_11_Template, 2, 2, "option", 28);
-    \u0275\u0275pipe(12, "keyvalue");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "div", 29)(14, "div", 30)(15, "button", 31)(16, "span");
-    \u0275\u0275text(17, "All States");
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(18, "svg", 32);
-    \u0275\u0275element(19, "polyline", 33);
-    \u0275\u0275elementEnd()()()();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(20, "div", 34)(21, "div", 30)(22, "button", 31)(23, "span");
-    \u0275\u0275text(24, "All States");
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(25, "svg", 35);
-    \u0275\u0275element(26, "polyline", 33);
     \u0275\u0275elementEnd()();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(27, "button", 31)(28, "span");
-    \u0275\u0275text(29, "California");
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(30, "svg", 35);
-    \u0275\u0275element(31, "polyline", 33);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(32, "button", 31)(33, "span");
-    \u0275\u0275text(34, "New Jersey");
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(35, "svg", 35);
-    \u0275\u0275element(36, "polyline", 33);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(37, "button", 36)(38, "span");
-    \u0275\u0275text(39, "New York");
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(40, "svg", 32);
-    \u0275\u0275element(41, "polyline", 33);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(42, "button", 31)(43, "span");
-    \u0275\u0275text(44, "Washington");
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(45, "svg", 35);
-    \u0275\u0275element(46, "polyline", 33);
-    \u0275\u0275elementEnd()()()()();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(47, "h3", 23);
-    \u0275\u0275text(48, "Sort By");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(49, "div", 5)(50, "label", 24);
-    \u0275\u0275text(51, "Sort");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(52, "select", 25);
-    \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_13_Template_select_ngModelChange_52_listener($event) {
+    \u0275\u0275elementStart(6, "div", 18)(7, "fdk-select", 20);
+    \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_9_Template_fdk_select_ngModelChange_7_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.filter.sortBy, $event) || (ctx_r1.filter.sortBy = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275listener("ngModelChange", function HealthSystemSearchComponent_div_13_Template_select_ngModelChange_52_listener() {
+    \u0275\u0275listener("ngModelChange", function HealthSystemSearchComponent_div_9_Template_fdk_select_ngModelChange_7_listener() {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.sortByChanged());
     });
-    \u0275\u0275elementStart(53, "option", 37);
-    \u0275\u0275text(54, "Default");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(55, "option", 27);
-    \u0275\u0275text(56, "-------");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(57, "option", 38);
-    \u0275\u0275text(58, "Current Location");
-    \u0275\u0275elementEnd()()();
-    \u0275\u0275template(59, HealthSystemSearchComponent_div_13_div_59_Template, 4, 4, "div", 39);
-    \u0275\u0275elementEnd();
+    \u0275\u0275elementEnd()();
+    \u0275\u0275template(8, HealthSystemSearchComponent_div_9_div_8_Template, 4, 5, "div", 21);
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(6);
-    \u0275\u0275twoWayProperty("ngModel", ctx_r1.filter.locations[0]);
     \u0275\u0275advance(5);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(12, 4, ctx_r1.stateCodes));
-    \u0275\u0275advance(41);
+    \u0275\u0275property("options", ctx_r1.stateOptions);
+    \u0275\u0275twoWayProperty("ngModel", ctx_r1.filter.locations[0]);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("options", ctx_r1.sortOptions);
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.filter.sortBy);
-    \u0275\u0275advance(7);
+    \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r1.filter.sortBy == "location");
   }
 }
-function HealthSystemSearchComponent_button_15_p_5_span_2_Template(rf, ctx) {
+function HealthSystemSearchComponent_fdk_card_11_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "span", 56);
-    \u0275\u0275pipe(1, "safeHtml");
-  }
-  if (rf & 2) {
-    const highlight_r9 = ctx.$implicit;
-    \u0275\u0275property("innerHTML", \u0275\u0275pipeBind1(1, 1, highlight_r9), \u0275\u0275sanitizeHtml);
-  }
-}
-function HealthSystemSearchComponent_button_15_p_5_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 49);
-    \u0275\u0275text(1, "Found match(es): ");
-    \u0275\u0275template(2, HealthSystemSearchComponent_button_15_p_5_span_2_Template, 2, 3, "span", 55);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const brand_r8 = \u0275\u0275nextContext().$implicit;
-    \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", brand_r8 == null ? null : brand_r8.searchHighlights);
-  }
-}
-function HealthSystemSearchComponent_button_15_span_7_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 57);
-    \u0275\u0275text(1);
-    \u0275\u0275pipe(2, "stateName");
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const stateCode_r10 = ctx.$implicit;
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind1(2, 1, stateCode_r10));
-  }
-}
-function HealthSystemSearchComponent_button_15_span_9_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 57);
-    \u0275\u0275text(1);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const brand_r8 = \u0275\u0275nextContext().$implicit;
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(1, _c05)).length, "");
-  }
-}
-function HealthSystemSearchComponent_button_15_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r7 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 44);
-    \u0275\u0275listener("click", function HealthSystemSearchComponent_button_15_Template_button_click_0_listener() {
-      const brand_r8 = \u0275\u0275restoreView(_r7).$implicit;
+    const _r6 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "fdk-card", 28);
+    \u0275\u0275listener("click", function HealthSystemSearchComponent_fdk_card_11_Template_fdk_card_click_0_listener() {
+      const brand_r7 = \u0275\u0275restoreView(_r6).$implicit;
       const ctx_r1 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r1.selectBrand(brand_r8.brand));
+      return \u0275\u0275resetView(ctx_r1.selectBrand(brand_r7.brand));
     });
-    \u0275\u0275element(1, "img", 45);
-    \u0275\u0275elementStart(2, "div", 46)(3, "p", 47);
-    \u0275\u0275text(4);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(5, HealthSystemSearchComponent_button_15_p_5_Template, 3, 1, "p", 48);
-    \u0275\u0275elementStart(6, "p", 49);
-    \u0275\u0275template(7, HealthSystemSearchComponent_button_15_span_7_Template, 3, 3, "span", 50);
-    \u0275\u0275pipe(8, "slice");
-    \u0275\u0275template(9, HealthSystemSearchComponent_button_15_span_9_Template, 2, 2, "span", 51);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(10, "div", 52);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(11, "svg", 53);
-    \u0275\u0275element(12, "polyline", 54);
-    \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    const brand_r8 = ctx.$implicit;
-    \u0275\u0275advance();
-    \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.id, ".png", \u0275\u0275sanitizeUrl);
-    \u0275\u0275propertyInterpolate("alt", brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.name);
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.name);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.searchHighlights) || \u0275\u0275pureFunction0(11, _c05)).length > 0);
-    \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(8, 7, (brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(12, _c05), 0, 3));
-    \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", ((brand_r8 == null ? null : brand_r8.brand == null ? null : brand_r8.brand.locations) || \u0275\u0275pureFunction0(13, _c05)).length > 4);
+    const brand_r7 = ctx.$implicit;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("title", (brand_r7.brand == null ? null : brand_r7.brand.name) || "")("initials", ctx_r1.getBrandInitials((brand_r7.brand == null ? null : brand_r7.brand.name) || ""))("logo", (brand_r7.brand == null ? null : brand_r7.brand.id) ? "https://cdn.fastenhealth.com/logos/sources/" + (brand_r7.brand == null ? null : brand_r7.brand.id) + ".png" : "");
   }
 }
-function HealthSystemSearchComponent_div_16_Template(rf, ctx) {
+function HealthSystemSearchComponent_div_12_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div")(1, "div", 58)(2, "div", 59);
-    \u0275\u0275element(3, "div", 60);
-    \u0275\u0275elementStart(4, "div", 61);
-    \u0275\u0275element(5, "div", 62)(6, "div", 63);
+    \u0275\u0275elementStart(0, "div")(1, "div", 29)(2, "div", 30);
+    \u0275\u0275element(3, "div", 31);
+    \u0275\u0275elementStart(4, "div", 32);
+    \u0275\u0275element(5, "div", 33);
     \u0275\u0275elementEnd();
-    \u0275\u0275element(7, "div", 64);
+    \u0275\u0275element(6, "div", 34);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "div", 59);
-    \u0275\u0275element(9, "div", 60);
-    \u0275\u0275elementStart(10, "div", 61);
-    \u0275\u0275element(11, "div", 62)(12, "div", 63);
+    \u0275\u0275elementStart(7, "div", 30);
+    \u0275\u0275element(8, "div", 31);
+    \u0275\u0275elementStart(9, "div", 32);
+    \u0275\u0275element(10, "div", 33);
     \u0275\u0275elementEnd();
-    \u0275\u0275element(13, "div", 64);
+    \u0275\u0275element(11, "div", 34);
     \u0275\u0275elementEnd()()();
   }
 }
-function HealthSystemSearchComponent_div_17_Template(rf, ctx) {
+function HealthSystemSearchComponent_div_13_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 65)(1, "div", 66)(2, "div", 67);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(3, "svg", 19);
-    \u0275\u0275element(4, "circle", 68)(5, "path", 69);
+    \u0275\u0275elementStart(0, "div")(1, "div", 35);
+    \u0275\u0275element(2, "fdk-illustration", 36);
     \u0275\u0275elementEnd();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(6, "span", 70);
-    \u0275\u0275text(7, "No results found");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(8, "p", 49);
-    \u0275\u0275text(9, " We couldn't find any health systems matching your search ");
+    \u0275\u0275elementStart(3, "h3", 37);
+    \u0275\u0275text(4, " No results found\xA0 ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "button", 71);
-    \u0275\u0275text(11, " Request this health system ");
+    \u0275\u0275elementStart(5, "p", 38);
+    \u0275\u0275text(6, " We couldn't find a provider matching your search. Try different keywords or filters. ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "div", 39)(8, "fdk-button", 40);
+    \u0275\u0275text(9, " Request a provider ");
     \u0275\u0275elementEnd()()();
   }
   if (rf & 2) {
-    \u0275\u0275advance(10);
+    \u0275\u0275advance(8);
     \u0275\u0275property("routerLink", "/form/healthsystem");
   }
 }
@@ -81299,7 +84377,16 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     this.messageBus = messageBus;
     this.loading = false;
     this.lighthouseBrandList = [];
-    this.stateCodes = StateCodes;
+    this.stateOptions = [
+      { label: "All States", value: "ALL" },
+      { label: "-------", value: "", disabled: true },
+      ...Object.entries(StateCodes).map(([label, value]) => ({ label, value }))
+    ];
+    this.sortOptions = [
+      { label: "Default", value: "" },
+      { label: "-------", value: "separator", disabled: true },
+      { label: "Current Location", value: "location" }
+    ];
     this.showFilters = false;
     this.filter = new SearchFilter();
     this.requestingLocation = false;
@@ -81443,6 +84530,13 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     this.configService.searchConfig$.selectedBrand = brandItem;
     this.router.navigateByUrl("brand/details");
   }
+  getBrandInitials(name) {
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    if (words.length > 1) {
+      return `${words[0][0]}${words[1][0]}`;
+    }
+    return words[0]?.slice(0, 2) || "";
+  }
   sortByChanged() {
     this.sortByLocationZipcode = "";
     this.filter.sortByOpts = new SearchFilterSortByOpts();
@@ -81467,55 +84561,49 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], decls: 18, vars: 15, consts: [["id", "step-search", 1, "space-y-6"], [3, "backButtonLink"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], [1, "flex", "gap-2"], [1, "flex-1"], [1, "relative"], ["id", "search-input", "type", "text", "placeholder", "Search for your health system...", 1, "w-full", "block", "px-3", "pr-12", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "keyup", "ngModel"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", "class", "absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["id", "search-filters", 1, "border", "border-gray-200", "rounded-lg", "w-10", "h-10", "flex", "items-center", "justify-center", "hover:border-[#5B47FB]", "hover:bg-[#5B47FB]/5", "transition-all", 3, "click"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-filter", "w-5", "h-5"], ["points", "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"], ["id", "filters-container", "class", "space-y-4 p-4 border rounded-lg", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "space-y-2", "overflow-scroll", 2, "max-height", "600px", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "scrollWindow"], ["type", "button", "class", "w-full flex items-center gap-3 p-3 border rounded-lg hover:border-[#5B47FB]/30 hover:shadow-sm transition-all text-left focus:outline-none focus:ring-2 focus:ring-[#5B47FB] focus:ring-opacity-20", 3, "click", 4, "ngFor", "ngForOf"], [4, "ngIf"], ["class", "space-y-4", 4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", 1, "absolute", "inset-y-0", "right-0", "flex", "items-center", "px-3", "text-gray-500", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["d", "M12 21c-3.6-4-6-7-6-9a6 6 0 1 1 12 0c0 2-2.4 5-6 9z"], ["cx", "12", "cy", "12", "r", "1"], ["id", "filters-container", 1, "space-y-4", "p-4", "border", "rounded-lg"], [1, "font-semibold", "text-lg"], [1, "block", "text-sm", "font-medium", "mb-1"], [1, "w-full", "flex", "items-center", "justify-between", "px-3", "py-2", "text-sm", "border", "rounded-md", "bg-white", "hover:bg-gray-50", 3, "ngModelChange", "ngModel"], ["value", "ALL", "selected", ""], ["disabled", ""], [3, "value", 4, "ngFor", "ngForOf"], ["id", "state-filter-menu", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], [1, "py-1"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]"], ["points", "20 6 9 17 4 12"], ["id", "state-filter-menu-hidden", 1, "absolute", "z-10", "w-full", "mt-1", "rounded-md", "border", "bg-white", "shadow-lg", "hidden"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-4", "h-4", "text-[#5B47FB]", "hidden"], [1, "w-full", "text-left", "px-3", "py-2", "text-sm", "hover:bg-gray-100", "flex", "items-center", "justify-between", "bg-gray-50"], ["value", "", "selected", ""], ["value", "location"], ["class", "relative", 4, "ngIf"], [3, "value"], ["id", "zipcode-input", "type", "text", "placeholder", "Enter your zipcode", 1, "w-full", "block", "px-3", "pr-12", "py-2", "text-sm", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "ngModelChange", "ngModel"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", "class", "absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", 1, "absolute", "inset-y-0", "right-0", "flex", "items-center", "px-3", "text-gray-500", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["type", "button", 1, "w-full", "flex", "items-center", "gap-3", "p-3", "border", "rounded-lg", "hover:border-[#5B47FB]/30", "hover:shadow-sm", "transition-all", "text-left", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", 3, "click"], ["imageFallback", "", 1, "w-8", "max-h-8", "rounded", 3, "src", "alt"], [1, "flex-1", "min-w-0"], [1, "font-semibold"], ["class", "text-sm text-gray-600", 4, "ngIf"], [1, "text-sm", "text-gray-600"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "flex", "items-center"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5", "text-gray-400"], ["points", "9 6 15 12 9 18"], ["class", "comma", 3, "innerHTML", 4, "ngFor", "ngForOf"], [1, "comma", 3, "innerHTML"], [1, "comma"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "skeleton-text", "w-20"], [1, "skeleton", "w-5", "h-5", "rounded"], [1, "space-y-4"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["cx", "11", "cy", "11", "r", "8"], ["d", "m21 21-4.3-4.3"], [1, "font-medium"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], decls: 14, vars: 15, consts: [["id", "step-search"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["id", "search-controls", 1, "space-y-2"], [1, "flex", "items-end", "gap-2"], ["id", "search-input", "type", "search", "label", "Search for your health system", "placeholder", "Search providers...", 1, "flex-1", 3, "ngModelChange", "keyup", "hideLabel", "ngModel"], ["id", "search-filters", "icon", "filter", "aria-label", "Show filters", "variant", "primary", 3, "click"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", "class", "inline-flex items-center gap-1 fdk-type-paragraph-s text-fdk-accent hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["id", "filters-overlay", "class", "filters-drawer-overlay", 3, "click", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "flex", "flex-col", "gap-fdk-xxs", "overflow-scroll", "mt-fdk-m", 2, "max-height", "600px", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "scrollWindow"], ["variant", "more", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], [4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", 1, "inline-flex", "items-center", "gap-1", "fdk-type-paragraph-s", "text-fdk-accent", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["name", "location-off"], ["id", "filters-overlay", 1, "filters-drawer-overlay", 3, "click"], ["id", "filters-container", "role", "dialog", "aria-modal", "true", "aria-labelledby", "filters-title", 1, "filters-drawer", "space-y-4", 3, "click"], ["id", "filters-title", 1, "fdk-type-heading-3", "text-fdk-primary"], [1, "relative"], ["id", "state-filter", "label", "State", 3, "ngModelChange", "options", "ngModel"], ["id", "sort-filter", "label", "Sort by", 3, "ngModelChange", "options", "ngModel"], ["class", "relative", 4, "ngIf"], ["id", "zipcode-input", "type", "text", "label", "ZIP code", "placeholder", "Enter your zipcode", 3, "ngModelChange", "hideLabel", "ngModel"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", "class", "absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", 1, "absolute", "inset-y-0", "right-0", "flex", "items-center", "px-3", "text-gray-500", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["d", "M12 21c-3.6-4-6-7-6-9a6 6 0 1 1 12 0c0 2-2.4 5-6 9z"], ["cx", "12", "cy", "12", "r", "1"], ["variant", "more", 3, "click", "title", "initials", "logo"], [1, "animate-pulse", "space-y-2", "overflow-scroll", 2, "max-height", "600px"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "w-5", "h-5", "rounded"], [1, "flex", "justify-center", "mt-fdk-xl"], ["name", "empty"], [1, "fdk-type-heading-3", "text-fdk-primary", "mt-fdk-m", "text-center"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], [1, "flex", "justify-center", "mt-fdk-m"], ["type", "button", "variant", "secondary", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275element(1, "app-header", 1);
-        \u0275\u0275template(2, HealthSystemSearchComponent_div_2_Template, 7, 1, "div", 2);
-        \u0275\u0275pipe(3, "async");
-        \u0275\u0275elementStart(4, "div", 3)(5, "div", 4)(6, "div", 5)(7, "input", 6);
-        \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_Template_input_ngModelChange_7_listener($event) {
+        \u0275\u0275template(1, HealthSystemSearchComponent_div_1_Template, 7, 1, "div", 1);
+        \u0275\u0275pipe(2, "async");
+        \u0275\u0275elementStart(3, "div", 2)(4, "div", 3)(5, "fdk-input", 4);
+        \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_Template_fdk_input_ngModelChange_5_listener($event) {
           \u0275\u0275twoWayBindingSet(ctx.filter.query, $event) || (ctx.filter.query = $event);
           return $event;
         });
-        \u0275\u0275listener("keyup", function HealthSystemSearchComponent_Template_input_keyup_7_listener($event) {
+        \u0275\u0275listener("keyup", function HealthSystemSearchComponent_Template_fdk_input_keyup_5_listener($event) {
           return ctx.onKeyup($event);
         });
         \u0275\u0275elementEnd();
-        \u0275\u0275template(8, HealthSystemSearchComponent_button_8_Template, 4, 1, "button", 7);
-        \u0275\u0275pipe(9, "async");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(10, "button", 8);
-        \u0275\u0275listener("click", function HealthSystemSearchComponent_Template_button_click_10_listener() {
+        \u0275\u0275elementStart(6, "fdk-icon-button", 5);
+        \u0275\u0275listener("click", function HealthSystemSearchComponent_Template_fdk_icon_button_click_6_listener() {
           return ctx.showFilters = !ctx.showFilters;
         });
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(11, "svg", 9);
-        \u0275\u0275element(12, "polygon", 10);
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275template(13, HealthSystemSearchComponent_div_13_Template, 60, 6, "div", 11);
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(14, "div", 12);
-        \u0275\u0275listener("scrolled", function HealthSystemSearchComponent_Template_div_scrolled_14_listener() {
+        \u0275\u0275elementEnd()();
+        \u0275\u0275template(7, HealthSystemSearchComponent_button_7_Template, 3, 1, "button", 6);
+        \u0275\u0275pipe(8, "async");
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(9, HealthSystemSearchComponent_div_9_Template, 9, 5, "div", 7);
+        \u0275\u0275elementStart(10, "div", 8);
+        \u0275\u0275listener("scrolled", function HealthSystemSearchComponent_Template_div_scrolled_10_listener() {
           return ctx.onScroll();
         });
-        \u0275\u0275template(15, HealthSystemSearchComponent_button_15_Template, 13, 14, "button", 13);
+        \u0275\u0275template(11, HealthSystemSearchComponent_fdk_card_11_Template, 1, 3, "fdk-card", 9);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(16, HealthSystemSearchComponent_div_16_Template, 14, 0, "div", 14)(17, HealthSystemSearchComponent_div_17_Template, 12, 1, "div", 15);
+        \u0275\u0275template(12, HealthSystemSearchComponent_div_12_Template, 12, 0, "div", 10)(13, HealthSystemSearchComponent_div_13_Template, 10, 1, "div", 10);
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
-        let tmp_1_0;
+        let tmp_0_0;
         let tmp_3_0;
         \u0275\u0275advance();
-        \u0275\u0275property("backButtonLink", "/dashboard");
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", (((tmp_1_0 = \u0275\u0275pipeBind1(3, 11, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_1_0.identityVerificationFailureCount) || 0) >= 2);
-        \u0275\u0275advance(5);
+        \u0275\u0275property("ngIf", (((tmp_0_0 = \u0275\u0275pipeBind1(2, 11, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_0_0.identityVerificationFailureCount) || 0) >= 2);
+        \u0275\u0275advance(4);
+        \u0275\u0275property("hideLabel", true);
         \u0275\u0275twoWayProperty("ngModel", ctx.filter.query);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ((tmp_3_0 = \u0275\u0275pipeBind1(9, 13, ctx.configService.searchConfigSubject)) == null ? null : tmp_3_0.showSearchByLocation) && (ctx.navigator == null ? null : ctx.navigator.geolocation));
-        \u0275\u0275advance(5);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("ngIf", ((tmp_3_0 = \u0275\u0275pipeBind1(8, 13, ctx.configService.searchConfigSubject)) == null ? null : tmp_3_0.showSearchByLocation) && (ctx.navigator == null ? null : ctx.navigator.geolocation));
+        \u0275\u0275advance(2);
         \u0275\u0275property("ngIf", ctx.showFilters);
         \u0275\u0275advance();
         \u0275\u0275property("infiniteScrollDistance", 2)("infiniteScrollThrottle", 50)("scrollWindow", false);
@@ -81531,164 +84619,153 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
       NgForOf,
       NgIf,
       AsyncPipe,
-      SlicePipe,
-      KeyValuePipe,
       RouterModule,
       RouterLink,
       FormsModule,
-      NgSelectOption,
-      \u0275NgSelectMultipleOption,
-      DefaultValueAccessor,
-      SelectControlValueAccessor,
       NgControlStatus,
       NgModel,
       ReactiveFormsModule,
-      HeaderComponent,
+      FdkCardComponent,
+      FdkIconComponent,
+      FdkIconButtonComponent,
+      FdkInputComponent,
+      FdkSelectComponent,
       InfiniteScrollModule,
       InfiniteScrollDirective,
-      ImageFallbackDirective,
-      StateNamePipe,
-      SafeHtmlPipe
-    ], styles: ['\n\n.comma[_ngcontent-%COMP%]:not(:last-child):after {\n  content: ", ";\n}\n/*# sourceMappingURL=health-system-search.component.css.map */'] });
+      FdkIllustrationComponent,
+      FdkButtonComponent
+    ], styles: ['\n\n.comma[_ngcontent-%COMP%]:not(:last-child):after {\n  content: ", ";\n}\n.filters-drawer-overlay[_ngcontent-%COMP%] {\n  position: fixed;\n  z-index: 1000;\n  inset: 0;\n  display: flex;\n  align-items: flex-end;\n  justify-content: center;\n  background-color: var(--fdk-color-neutrals-overlay);\n}\n.filters-drawer[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  width: min(32rem, 100%);\n  max-height: min(80dvh, 40rem);\n  overflow-y: auto;\n  padding: var(--fdk-spacing-l) var(--fdk-spacing-l) var(--fdk-spacing-xxxl) var(--fdk-spacing-l);\n  border: 1px solid var(--fdk-color-neutrals-border);\n  border-bottom: 0;\n  border-radius: 12px 12px 0 0;\n  background-color: var(--fdk-color-neutrals-background);\n  box-shadow: 0 -1rem 2rem rgb(0 0 0 / 0.16);\n}\n/*# sourceMappingURL=health-system-search.component.css.map */'] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemSearchComponent, { className: "HealthSystemSearchComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts", lineNumber: 45 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemSearchComponent, { className: "HealthSystemSearchComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts", lineNumber: 46 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts
-var _c06 = () => [];
-function HealthSystemBrandDetailsComponent_div_14_Template(rf, ctx) {
+var _c04 = () => [];
+function HealthSystemBrandDetailsComponent_img_5_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 15);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 16);
-    \u0275\u0275element(2, "circle", 17)(3, "path", 18)(4, "path", 19);
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "img", 10);
+    \u0275\u0275pipe(1, "async");
+    \u0275\u0275listener("error", function HealthSystemBrandDetailsComponent_img_5_Template_img_error_0_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.handleBrandLogoError());
+    });
     \u0275\u0275elementEnd();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(5, "a", 20);
-    \u0275\u0275pipe(6, "async");
-    \u0275\u0275text(7);
-    \u0275\u0275pipe(8, "async");
-    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    let tmp_1_0;
     let tmp_2_0;
-    const ctx_r0 = \u0275\u0275nextContext();
-    \u0275\u0275advance(5);
-    \u0275\u0275property("href", (tmp_1_0 = \u0275\u0275pipeBind1(6, 2, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.brand_website, \u0275\u0275sanitizeUrl);
-    \u0275\u0275advance(2);
-    \u0275\u0275textInterpolate((tmp_2_0 = \u0275\u0275pipeBind1(8, 4, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.brand_website);
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", (tmp_2_0 = \u0275\u0275pipeBind1(1, 2, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.id, ".png", \u0275\u0275sanitizeUrl);
   }
 }
-function HealthSystemBrandDetailsComponent_div_16_span_5_Template(rf, ctx) {
+function HealthSystemBrandDetailsComponent_ng_template_7_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 28);
+    \u0275\u0275element(0, "fdk-initials", 11);
+    \u0275\u0275pipe(1, "async");
+  }
+  if (rf & 2) {
+    let tmp_2_0;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275property("initials", ctx_r1.getBrandInitials(((tmp_2_0 = \u0275\u0275pipeBind1(1, 1, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.name) || ""));
+  }
+}
+function HealthSystemBrandDetailsComponent_div_12_span_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span", 17);
     \u0275\u0275text(1);
     \u0275\u0275pipe(2, "stateName");
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const stateCode_r2 = ctx.$implicit;
+    const stateCode_r3 = ctx.$implicit;
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(\u0275\u0275pipeBind1(2, 1, stateCode_r2));
+    \u0275\u0275textInterpolate(\u0275\u0275pipeBind1(2, 1, stateCode_r3));
   }
 }
-function HealthSystemBrandDetailsComponent_div_16_span_8_Template(rf, ctx) {
+function HealthSystemBrandDetailsComponent_div_12_span_6_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span", 28);
+    \u0275\u0275elementStart(0, "span", 17);
     \u0275\u0275text(1);
     \u0275\u0275pipe(2, "async");
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    let tmp_2_0;
-    const ctx_r0 = \u0275\u0275nextContext(2);
+    let tmp_3_0;
+    const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", (((tmp_2_0 = \u0275\u0275pipeBind1(2, 1, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c06)).length, "");
+    \u0275\u0275textInterpolate1("+ ", (((tmp_3_0 = \u0275\u0275pipeBind1(2, 1, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c04)).length, "");
   }
 }
-function HealthSystemBrandDetailsComponent_div_16_Template(rf, ctx) {
+function HealthSystemBrandDetailsComponent_div_12_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 21);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 22);
-    \u0275\u0275element(2, "path", 23)(3, "circle", 24);
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(4, "span", 25);
-    \u0275\u0275template(5, HealthSystemBrandDetailsComponent_div_16_span_5_Template, 3, 3, "span", 26);
-    \u0275\u0275pipe(6, "async");
-    \u0275\u0275pipe(7, "slice");
-    \u0275\u0275template(8, HealthSystemBrandDetailsComponent_div_16_span_8_Template, 3, 4, "span", 27);
-    \u0275\u0275pipe(9, "async");
+    \u0275\u0275elementStart(0, "div", 12);
+    \u0275\u0275element(1, "fdk-icon", 13);
+    \u0275\u0275elementStart(2, "span", 14);
+    \u0275\u0275template(3, HealthSystemBrandDetailsComponent_div_12_span_3_Template, 3, 3, "span", 15);
+    \u0275\u0275pipe(4, "async");
+    \u0275\u0275pipe(5, "slice");
+    \u0275\u0275template(6, HealthSystemBrandDetailsComponent_div_12_span_6_Template, 3, 4, "span", 16);
+    \u0275\u0275pipe(7, "async");
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    let tmp_1_0;
     let tmp_2_0;
-    const ctx_r0 = \u0275\u0275nextContext();
-    \u0275\u0275advance(5);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(7, 4, ((tmp_1_0 = \u0275\u0275pipeBind1(6, 2, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c06), 0, 3));
+    let tmp_3_0;
+    const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", (((tmp_2_0 = \u0275\u0275pipeBind1(9, 8, ctx_r0.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c06)).length > 4);
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(5, 4, ((tmp_2_0 = \u0275\u0275pipeBind1(4, 2, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c04), 0, 3));
+    \u0275\u0275advance(3);
+    \u0275\u0275property("ngIf", (((tmp_3_0 = \u0275\u0275pipeBind1(7, 8, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c04)).length > 4);
   }
 }
-function HealthSystemBrandDetailsComponent_ng_container_19_div_1_p_9_Template(rf, ctx) {
+function HealthSystemBrandDetailsComponent_div_14_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 37);
-    \u0275\u0275text(1);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const portal_r5 = \u0275\u0275nextContext(2).$implicit;
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate(portal_r5.description);
-  }
-}
-function HealthSystemBrandDetailsComponent_ng_container_19_div_1_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 30)(1, "div", 31)(2, "span", 32);
+    \u0275\u0275elementStart(0, "div", 18)(1, "fdk-link", 19);
+    \u0275\u0275pipe(2, "async");
     \u0275\u0275text(3);
+    \u0275\u0275pipe(4, "async");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(4, "div", 33)(5, "h4", 34);
-    \u0275\u0275text(6);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "button", 35);
-    \u0275\u0275listener("click", function HealthSystemBrandDetailsComponent_ng_container_19_div_1_Template_button_click_7_listener() {
-      const endpoint_r4 = \u0275\u0275restoreView(_r3).$implicit;
-      const portal_r5 = \u0275\u0275nextContext().$implicit;
-      const ctx_r0 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r0.addPendingAccount(ctx_r0.configService.searchConfig$ == null ? null : ctx_r0.configService.searchConfig$.selectedBrand, portal_r5, endpoint_r4));
+  }
+  if (rf & 2) {
+    let tmp_2_0;
+    let tmp_3_0;
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275property("href", (tmp_2_0 = (tmp_2_0 = \u0275\u0275pipeBind1(2, 2, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.brand_website) !== null && tmp_2_0 !== void 0 ? tmp_2_0 : "");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate((tmp_3_0 = \u0275\u0275pipeBind1(4, 4, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.brand_website);
+  }
+}
+function HealthSystemBrandDetailsComponent_ng_container_19_fdk_card_1_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r4 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementStart(0, "fdk-card", 21);
+    \u0275\u0275listener("click", function HealthSystemBrandDetailsComponent_ng_container_19_fdk_card_1_Template_fdk_card_click_0_listener() {
+      const endpoint_r5 = \u0275\u0275restoreView(_r4).$implicit;
+      const portal_r6 = \u0275\u0275nextContext().$implicit;
+      const ctx_r1 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r1.addPendingAccount(ctx_r1.configService.searchConfig$ == null ? null : ctx_r1.configService.searchConfig$.selectedBrand, portal_r6, endpoint_r5));
     });
-    \u0275\u0275text(8, "+");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275template(9, HealthSystemBrandDetailsComponent_ng_container_19_div_1_p_9_Template, 2, 1, "p", 36);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const endpoint_r4 = ctx.$implicit;
-    const portal_r5 = \u0275\u0275nextContext().$implicit;
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(endpoint_r4.platform_type_override || endpoint_r4.platform_type);
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate(portal_r5.name);
-    \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", portal_r5.description);
+    const portal_r6 = \u0275\u0275nextContext().$implicit;
+    \u0275\u0275property("title", portal_r6.name);
   }
 }
 function HealthSystemBrandDetailsComponent_ng_container_19_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275template(1, HealthSystemBrandDetailsComponent_ng_container_19_div_1_Template, 10, 3, "div", 29);
+    \u0275\u0275template(1, HealthSystemBrandDetailsComponent_ng_container_19_fdk_card_1_Template, 1, 1, "fdk-card", 20);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
-    const portal_r5 = ctx.$implicit;
+    const portal_r6 = ctx.$implicit;
     \u0275\u0275advance();
-    \u0275\u0275property("ngForOf", portal_r5.endpoints);
+    \u0275\u0275property("ngForOf", portal_r6.endpoints);
   }
 }
 var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent {
@@ -81698,6 +84775,19 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
     this.logger = logger;
   }
   ngOnInit() {
+  }
+  shouldShowBrandLogo(brandId) {
+    return !!brandId && brandId !== this.failedLogoBrandId;
+  }
+  handleBrandLogoError() {
+    this.failedLogoBrandId = this.configService.searchConfig$?.selectedBrand?.id;
+  }
+  getBrandInitials(name) {
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    if (words.length > 1) {
+      return `${words[0][0]}${words[1][0]}`;
+    }
+    return words[0]?.slice(0, 2) || "";
   }
   addPendingAccount(brand, portal, endpoint) {
     this.logger.debug("addPendingAccount", brand, portal, endpoint);
@@ -81710,48 +84800,47 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], decls: 21, vars: 18, consts: [["id", "step-health-system-details", 1, "space-y-6"], [3, "backButtonLink", "backButtonReplaceUrl"], [1, "space-y-6"], [1, "border", "rounded-2xl", "p-6"], [1, "flex", "items-start", "space-x-4", "mb-4"], [1, "flex-shrink-0"], ["imageFallback", "", 1, "w-12", "max-h-12", "rounded-lg", "object-contain", 3, "src"], [1, "flex-1", "min-w-0"], ["id", "hsd-name", 1, "text-xl", "font-semibold"], ["id", "hsd-description", 1, "text-gray-600", "text-base", "mb-4"], [1, "space-y-2"], ["class", "flex items-center gap-2 text-gray-600", "id", "hsd-website-container", 4, "ngIf"], ["class", "flex items-center gap-2 text-gray-600", 4, "ngIf"], ["id", "hsd-institutions-list", 1, "space-y-2"], [4, "ngFor", "ngForOf"], ["id", "hsd-website-container", 1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-globe", "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"], ["d", "M2 12h20"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 1, "text-base", "hover:underline", 3, "href"], [1, "flex", "items-center", "gap-2", "text-gray-600"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-map-pin", "w-5", "h-5"], ["d", "M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"], ["cx", "12", "cy", "10", "r", "3"], ["id", "hsd-location", 1, "text-base"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "comma"], ["class", "p-4 pt-6 pb-6 border rounded-lg hover:border-gray-400 transition-colors relative", 4, "ngFor", "ngForOf"], [1, "p-4", "pt-6", "pb-6", "border", "rounded-lg", "hover:border-gray-400", "transition-colors", "relative"], ["id", "platform-tag", 1, "absolute", "top-0", "left-0", "bg-gray-200", "text-gray-600", "text-xs", "font-medium", "px-2", "py-1", "rounded-tl-lg", "rounded-br-lg"], [1, "text-xs", "text-gray-500"], [1, "flex", "items-center", "justify-between"], [1, "font-medium", "text-base", "tracking-tight"], ["type", "button", 1, "border", "border-[#5B47FB]", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "w-8", "h-8", "rounded-lg", "text-lg", "font-medium", "transition-colors", "flex", "items-center", "justify-center", 3, "click"], ["class", "text-xs text-gray-500 mt-2", 4, "ngIf"], [1, "text-xs", "text-gray-500", "mt-2"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], decls: 21, vars: 16, consts: [["brandInitials", ""], ["id", "step-health-system-details"], [1, "mt-fdk-m"], ["class", "w-32 max-h-32 object-contain", "alt", "", 3, "src", "error", 4, "ngIf", "ngIfElse"], ["id", "hsd-name", 1, "fdk-type-heading-2", "text-fdk-primary", "mt-fdk-xs"], ["class", "fdk-type-paragraph text-fdk-secondary mt-fdk-xxs flex items-center gap-fdk-xxxs", 4, "ngIf"], ["class", "fdk-type-paragraph text-fdk-accent mt-fdk-xxxs", "id", "hsd-website-container", 4, "ngIf"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-l"], ["id", "hsd-institutions-list", 1, "flex", "flex-col", "gap-fdk-xxs", "mt-fdk-s"], [4, "ngFor", "ngForOf"], ["alt", "", 1, "w-32", "max-h-32", "object-contain", 3, "error", "src"], ["size", "large", 3, "initials"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs", "flex", "items-center", "gap-fdk-xxxs"], ["name", "location-off", "size", "24"], ["id", "hsd-location", 1, "text-base"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "comma"], ["id", "hsd-website-container", 1, "fdk-type-paragraph", "text-fdk-accent", "mt-fdk-xxxs"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 3, "href"], ["class", "institution-card", "variant", "add", 3, "title", "click", 4, "ngFor", "ngForOf"], ["variant", "add", 1, "institution-card", 3, "click", "title"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275element(1, "app-header", 1);
-        \u0275\u0275elementStart(2, "div", 2)(3, "div", 3)(4, "div", 4)(5, "div", 5);
-        \u0275\u0275element(6, "img", 6);
-        \u0275\u0275pipe(7, "async");
+        \u0275\u0275elementStart(0, "div", 1)(1, "div")(2, "div")(3, "div", 2)(4, "div");
+        \u0275\u0275template(5, HealthSystemBrandDetailsComponent_img_5_Template, 2, 4, "img", 3);
+        \u0275\u0275pipe(6, "async");
+        \u0275\u0275template(7, HealthSystemBrandDetailsComponent_ng_template_7_Template, 2, 3, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(8, "div", 7)(9, "h2", 8);
+        \u0275\u0275elementStart(9, "h2", 4);
         \u0275\u0275text(10);
         \u0275\u0275pipe(11, "async");
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275element(12, "p", 9);
-        \u0275\u0275elementStart(13, "div", 10);
-        \u0275\u0275template(14, HealthSystemBrandDetailsComponent_div_14_Template, 9, 6, "div", 11);
-        \u0275\u0275pipe(15, "async");
-        \u0275\u0275template(16, HealthSystemBrandDetailsComponent_div_16_Template, 10, 12, "div", 12);
-        \u0275\u0275pipe(17, "async");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(18, "div", 13);
-        \u0275\u0275template(19, HealthSystemBrandDetailsComponent_ng_container_19_Template, 2, 1, "ng-container", 14);
+        \u0275\u0275template(12, HealthSystemBrandDetailsComponent_div_12_Template, 8, 12, "div", 5);
+        \u0275\u0275pipe(13, "async");
+        \u0275\u0275template(14, HealthSystemBrandDetailsComponent_div_14_Template, 5, 6, "div", 6);
+        \u0275\u0275pipe(15, "async");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(16, "p", 7);
+        \u0275\u0275text(17, " Choose which branches to connect ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(18, "div", 8);
+        \u0275\u0275template(19, HealthSystemBrandDetailsComponent_ng_container_19_Template, 2, 1, "ng-container", 9);
         \u0275\u0275pipe(20, "async");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
-        let tmp_2_0;
+        let tmp_1_0;
         let tmp_3_0;
         let tmp_4_0;
         let tmp_5_0;
         let tmp_6_0;
-        \u0275\u0275advance();
-        \u0275\u0275property("backButtonLink", "/search")("backButtonReplaceUrl", true);
+        const brandInitials_r7 = \u0275\u0275reference(8);
         \u0275\u0275advance(5);
-        \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", (tmp_2_0 = \u0275\u0275pipeBind1(7, 8, ctx.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.id, ".png", \u0275\u0275sanitizeUrl);
-        \u0275\u0275advance(4);
-        \u0275\u0275textInterpolate((tmp_3_0 = \u0275\u0275pipeBind1(11, 10, ctx.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.name);
-        \u0275\u0275advance(4);
-        \u0275\u0275property("ngIf", (tmp_4_0 = \u0275\u0275pipeBind1(15, 12, ctx.configService.searchConfigSubject)) == null ? null : tmp_4_0.selectedBrand == null ? null : tmp_4_0.selectedBrand.brand_website);
+        \u0275\u0275property("ngIf", ctx.shouldShowBrandLogo((tmp_1_0 = \u0275\u0275pipeBind1(6, 6, ctx.configService.searchConfigSubject)) == null ? null : tmp_1_0.selectedBrand == null ? null : tmp_1_0.selectedBrand.id))("ngIfElse", brandInitials_r7);
+        \u0275\u0275advance(5);
+        \u0275\u0275textInterpolate1(" ", (tmp_3_0 = \u0275\u0275pipeBind1(11, 8, ctx.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.name, " ");
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngIf", (tmp_5_0 = \u0275\u0275pipeBind1(17, 14, ctx.configService.searchConfigSubject)) == null ? null : tmp_5_0.selectedBrand == null ? null : tmp_5_0.selectedBrand.locations);
-        \u0275\u0275advance(3);
-        \u0275\u0275property("ngForOf", (tmp_6_0 = \u0275\u0275pipeBind1(20, 16, ctx.configService.searchConfigSubject)) == null ? null : tmp_6_0.selectedBrand == null ? null : tmp_6_0.selectedBrand.portals);
+        \u0275\u0275property("ngIf", (tmp_4_0 = \u0275\u0275pipeBind1(13, 10, ctx.configService.searchConfigSubject)) == null ? null : tmp_4_0.selectedBrand == null ? null : tmp_4_0.selectedBrand.locations);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("ngIf", (tmp_5_0 = \u0275\u0275pipeBind1(15, 12, ctx.configService.searchConfigSubject)) == null ? null : tmp_5_0.selectedBrand == null ? null : tmp_5_0.selectedBrand.brand_website);
+        \u0275\u0275advance(5);
+        \u0275\u0275property("ngForOf", (tmp_6_0 = \u0275\u0275pipeBind1(20, 14, ctx.configService.searchConfigSubject)) == null ? null : tmp_6_0.selectedBrand == null ? null : tmp_6_0.selectedBrand.portals);
       }
     }, dependencies: [
       CommonModule,
@@ -81759,14 +84848,16 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
       NgIf,
       AsyncPipe,
       SlicePipe,
-      HeaderComponent,
-      ImageFallbackDirective,
-      StateNamePipe
+      StateNamePipe,
+      FdkLinkComponent,
+      FdkCardComponent,
+      FdkInitialsComponent,
+      FdkIconComponent
     ], styles: ['\n\n.comma[_ngcontent-%COMP%]:not(:last-child):after {\n  content: ", ";\n}\n/*# sourceMappingURL=health-system-brand-details.component.css.map */'] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemBrandDetailsComponent, { className: "HealthSystemBrandDetailsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts", lineNumber: 25 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemBrandDetailsComponent, { className: "HealthSystemBrandDetailsComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts", lineNumber: 31 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/connect-helper.ts
@@ -81869,12 +84960,10 @@ function ConnectHelper(connectData) {
 }
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts
-var _c07 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
+var _c05 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
 var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
-  constructor(configService, router, messageBus, injector) {
+  constructor(configService, injector) {
     this.configService = configService;
-    this.router = router;
-    this.messageBus = messageBus;
     this.injector = injector;
     this.brandId = "";
     this.portalId = "";
@@ -81905,84 +84994,45 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
       });
     });
   }
-  cancelAccountConnect() {
-    console.log("cancel account connect");
-  }
-  //close modal will only be visible when reconnecting.
-  closeModal() {
-    this.messageBus.publishRequestClose();
-  }
   static {
     this.\u0275fac = function HealthSystemConnectingComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _HealthSystemConnectingComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(MessageBusService), \u0275\u0275directiveInject(EnvironmentInjector));
+      return new (__ngFactoryType__ || _HealthSystemConnectingComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(EnvironmentInjector));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId", sdkMode: "sdkMode" }, decls: 32, vars: 16, consts: [[1, "space-y-6"], [3, "backButtonEvent", "closeButtonEvent", "backButtonLink", "showClose"], [1, "flex", "items-center", "justify-center", "gap-4"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-100"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], [1, "relative", "w-16", "h-16", "bg-white", "rounded-2xl", "shadow-md", "p-3", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-container", 1, "w-full", "h-full", "flex", "items-center", "justify-center"], ["id", "connecting-system-logo", "imageFallback", "hospital", 1, "w-full", "h-full", "object-contain", 3, "src"], [1, "text-center", "space-y-2"], ["id", "connecting-title", 1, "text-xl", "font-semibold", "text-gray-900"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "mt-8", "p-4", "bg-gray-50", "rounded-lg", "space-y-4"], [1, "flex", "items-center", "gap-2", "text-gray-700"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["cx", "12", "cy", "12", "r", "10"], ["d", "M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"], ["d", "M12 17h.01"], [1, "font-medium"], [1, "text-sm", "text-gray-600"], [1, "w-full", "bg-white", "border", "border-gray-200", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", "hover:border-[#5B47FB]", "font-medium", "py-2", "px-4", "rounded-md", "transition-colors", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemConnectingComponent, selectors: [["app-health-system-connecting"]], inputs: { brandId: "brandId", portalId: "portalId", endpointId: "endpointId", externalId: "externalId", externalState: "externalState", orgConnectionId: "orgConnectionId", vaultProfileConnectionId: "vaultProfileConnectionId", sdkMode: "sdkMode" }, decls: 13, vars: 9, consts: [[1, "flex", "justify-center", "mt-fdk-xxxl"], ["name", "sign-in"], [1, "fdk-type-heading-2", "text-fdk-primary", "text-center", "mt-fdk-m"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xs"], [1, "flex", "justify-center", "mt-fdk-m"], ["id", "contact-support", "variant", "secondary", 3, "routerLink", "queryParams"]], template: function HealthSystemConnectingComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0)(1, "app-header", 1);
-        \u0275\u0275listener("backButtonEvent", function HealthSystemConnectingComponent_Template_app_header_backButtonEvent_1_listener() {
-          return ctx.cancelAccountConnect();
-        })("closeButtonEvent", function HealthSystemConnectingComponent_Template_app_header_closeButtonEvent_1_listener() {
-          return ctx.closeModal();
-        });
+        \u0275\u0275elementStart(0, "div")(1, "div")(2, "div", 0);
+        \u0275\u0275element(3, "fdk-illustration", 1);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(2, "div", 2)(3, "div", 3);
-        \u0275\u0275element(4, "img", 4);
-        \u0275\u0275pipe(5, "async");
+        \u0275\u0275elementStart(4, "h1", 2);
+        \u0275\u0275text(5, " Complete sign-in ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(6, "div", 5);
-        \u0275\u0275element(7, "div", 6)(8, "div", 7)(9, "div", 8);
+        \u0275\u0275elementStart(6, "p", 3);
+        \u0275\u0275text(7, " Please finish signing in using the window that just opened. ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(10, "div", 9)(11, "div", 10);
-        \u0275\u0275element(12, "img", 11);
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(13, "div", 12);
-        \u0275\u0275element(14, "h2", 13);
-        \u0275\u0275elementStart(15, "div", 14)(16, "p");
-        \u0275\u0275text(17, "Please complete the consent process");
-        \u0275\u0275element(18, "br");
-        \u0275\u0275text(19, " in the new window.");
-        \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(20, "div", 15)(21, "div", 16);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(22, "svg", 17);
-        \u0275\u0275element(23, "circle", 18)(24, "path", 19)(25, "path", 20);
-        \u0275\u0275elementEnd();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(26, "span", 21);
-        \u0275\u0275text(27, "Having trouble?");
+        \u0275\u0275elementStart(8, "p", 4);
+        \u0275\u0275text(9, " Having trouble connecting? Our support team can help. ");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(28, "p", 22);
-        \u0275\u0275text(29, " If you're experiencing issues connecting to your health system, our support team is here to help. ");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(30, "button", 23);
-        \u0275\u0275text(31, " Contact Support ");
+        \u0275\u0275elementStart(10, "div", 5)(11, "fdk-button", 6);
+        \u0275\u0275text(12, " Contact Support ");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
-        let tmp_2_0;
-        \u0275\u0275advance();
-        \u0275\u0275property("backButtonLink", ctx.orgConnectionId ? "" : "/dashboard")("showClose", ctx.orgConnectionId ? true : false);
-        \u0275\u0275advance(3);
-        \u0275\u0275property("src", (tmp_2_0 = \u0275\u0275pipeBind1(5, 7, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.logo_uri, \u0275\u0275sanitizeUrl);
-        \u0275\u0275advance(8);
-        \u0275\u0275propertyInterpolate1("src", "https://cdn.fastenhealth.com/logos/sources/", ctx.brandId, ".png", \u0275\u0275sanitizeUrl);
-        \u0275\u0275advance(18);
-        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(9, _c07, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
+        \u0275\u0275advance(11);
+        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(2, _c05, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
       }
     }, dependencies: [
       CommonModule,
-      AsyncPipe,
       RouterModule,
       RouterLink,
-      HeaderComponent,
-      ImageFallbackDirective
+      FdkButtonComponent,
+      FdkIllustrationComponent
     ], encapsulation: 2 });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemConnectingComponent, { className: "HealthSystemConnectingComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts", lineNumber: 21 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemConnectingComponent, { className: "HealthSystemConnectingComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts", lineNumber: 24 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/complete/complete.component.ts
@@ -82003,274 +85053,159 @@ var CompleteComponent = class _CompleteComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _CompleteComponent, selectors: [["app-complete"]], decls: 13, vars: 3, consts: [["id", "step-completion", 1, "text-center", "space-y-6"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "space-y-2"], [1, "text-2xl", "font-bold"], [1, "text-gray-600"], ["id", "completion-close", 1, "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", 3, "click"]], template: function CompleteComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _CompleteComponent, selectors: [["app-complete"]], decls: 15, vars: 10, consts: [["id", "step-completion", 1, "flex", "h-full", "min-h-0", "flex-col", "text-center"], [1, "flex", "justify-center", "mt-fdk-xxxl"], ["name", "success"], [1, "fdk-type-heading-2", "text-fdk-primary", "mt-fdk-l"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], [1, "mt-auto", "pt-6", "flex-shrink-0"], ["id", "completion-close", "type", "button", "variant", "primary", "width", "full", 3, "click"]], template: function CompleteComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275element(1, "app-header");
-        \u0275\u0275elementStart(2, "div", 1);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(3, "svg", 2);
-        \u0275\u0275element(4, "path", 3);
-        \u0275\u0275elementEnd()();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(5, "div", 4)(6, "h2", 5);
-        \u0275\u0275text(7, "Success!");
+        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1);
+        \u0275\u0275element(2, "fdk-illustration", 2);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(8, "p", 6);
-        \u0275\u0275text(9);
+        \u0275\u0275elementStart(3, "div")(4, "h2", 3);
+        \u0275\u0275text(5, "You're all set!");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(6, "p", 4);
+        \u0275\u0275text(7);
+        \u0275\u0275pipe(8, "async");
+        \u0275\u0275pipe(9, "async");
         \u0275\u0275pipe(10, "async");
+        \u0275\u0275pipe(11, "async");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(11, "button", 7);
-        \u0275\u0275listener("click", function CompleteComponent_Template_button_click_11_listener() {
+        \u0275\u0275elementStart(12, "div", 5)(13, "fdk-button", 6);
+        \u0275\u0275listener("click", function CompleteComponent_Template_fdk_button_click_13_listener() {
           return ctx.closeModal();
         });
-        \u0275\u0275text(12, " Close ");
-        \u0275\u0275elementEnd()();
+        \u0275\u0275text(14, " Close ");
+        \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
         let tmp_0_0;
-        \u0275\u0275advance(9);
-        \u0275\u0275textInterpolate1(" Your health records have been successfully linked with ", ((tmp_0_0 = \u0275\u0275pipeBind1(10, 1, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.org == null ? null : tmp_0_0.org.name) || "Unknown", ". You can now close this window. ");
+        \u0275\u0275advance(7);
+        \u0275\u0275textInterpolate2("\nYour health records are now connected with ", ((tmp_0_0 = \u0275\u0275pipeBind1(8, 2, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.companyName) || ((tmp_0_0 = \u0275\u0275pipeBind1(9, 4, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.org == null ? null : tmp_0_0.org.name) || "Unknown", ". You can close this window and return to ", ((tmp_0_0 = \u0275\u0275pipeBind1(10, 6, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.companyName) || ((tmp_0_0 = \u0275\u0275pipeBind1(11, 8, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.org == null ? null : tmp_0_0.org.name) || "Unknown", ". ");
       }
-    }, dependencies: [CommonModule, AsyncPipe, HeaderComponent], encapsulation: 2 });
+    }, dependencies: [
+      CommonModule,
+      AsyncPipe,
+      FdkButtonComponent,
+      FdkIllustrationComponent
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  min-height: 0;\n}\n/*# sourceMappingURL=complete.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(CompleteComponent, { className: "CompleteComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/complete/complete.component.ts", lineNumber: 17 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(CompleteComponent, { className: "CompleteComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/complete/complete.component.ts", lineNumber: 18 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/form-health-system-request/form-health-system-request.component.ts
-function FormHealthSystemRequestComponent_form_2_p_15_span_1_Template(rf, ctx) {
+function FormHealthSystemRequestComponent_form_1_fdk_alert_17_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "span");
-    \u0275\u0275text(1, " Email is required. ");
-    \u0275\u0275elementEnd();
-  }
-}
-function FormHealthSystemRequestComponent_form_2_p_15_span_2_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "span");
-    \u0275\u0275text(1, " Email must be valid. ");
-    \u0275\u0275elementEnd();
-  }
-}
-function FormHealthSystemRequestComponent_form_2_p_15_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 24);
-    \u0275\u0275template(1, FormHealthSystemRequestComponent_form_2_p_15_span_1_Template, 2, 0, "span", 23)(2, FormHealthSystemRequestComponent_form_2_p_15_span_2_Template, 2, 0, "span", 23);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    \u0275\u0275nextContext();
-    const email_r3 = \u0275\u0275reference(14);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", email_r3.errors == null ? null : email_r3.errors["required"]);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", email_r3.errors == null ? null : email_r3.errors["email"]);
-  }
-}
-function FormHealthSystemRequestComponent_form_2_p_23_span_1_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "span");
-    \u0275\u0275text(1, " Health system name is required. ");
-    \u0275\u0275elementEnd();
-  }
-}
-function FormHealthSystemRequestComponent_form_2_p_23_span_2_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "span");
-    \u0275\u0275text(1, " Health system name must be at least 4 characters long. ");
-    \u0275\u0275elementEnd();
-  }
-}
-function FormHealthSystemRequestComponent_form_2_p_23_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 24);
-    \u0275\u0275template(1, FormHealthSystemRequestComponent_form_2_p_23_span_1_Template, 2, 0, "span", 23)(2, FormHealthSystemRequestComponent_form_2_p_23_span_2_Template, 2, 0, "span", 23);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    \u0275\u0275nextContext();
-    const name_r4 = \u0275\u0275reference(22);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", name_r4.errors == null ? null : name_r4.errors["required"]);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", name_r4.errors == null ? null : name_r4.errors["minlength"]);
-  }
-}
-function FormHealthSystemRequestComponent_form_2_p_31_span_1_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "span");
-    \u0275\u0275text(1, " Website is required. ");
-    \u0275\u0275elementEnd();
-  }
-}
-function FormHealthSystemRequestComponent_form_2_p_31_span_2_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "span");
-    \u0275\u0275text(1, " Website must be at least 4 characters long. ");
-    \u0275\u0275elementEnd();
-  }
-}
-function FormHealthSystemRequestComponent_form_2_p_31_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 24);
-    \u0275\u0275template(1, FormHealthSystemRequestComponent_form_2_p_31_span_1_Template, 2, 0, "span", 23)(2, FormHealthSystemRequestComponent_form_2_p_31_span_2_Template, 2, 0, "span", 23);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    \u0275\u0275nextContext();
-    const website_r5 = \u0275\u0275reference(30);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", website_r5.errors == null ? null : website_r5.errors["required"]);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", website_r5.errors == null ? null : website_r5.errors["minlength"]);
-  }
-}
-function FormHealthSystemRequestComponent_form_2_p_37_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 24)(1, "strong");
-    \u0275\u0275text(2, "Error");
-    \u0275\u0275elementEnd();
-    \u0275\u0275text(3);
-    \u0275\u0275elementEnd();
+    \u0275\u0275element(0, "fdk-alert", 23);
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate1(" ", ctx_r1.errorMsg, " ");
+    \u0275\u0275property("description", ctx_r1.errorMsg);
   }
 }
-function FormHealthSystemRequestComponent_form_2_app_spinner_39_Template(rf, ctx) {
+function FormHealthSystemRequestComponent_form_1_fdk_spinner_21_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "app-spinner");
+    \u0275\u0275element(0, "fdk-spinner");
   }
 }
-function FormHealthSystemRequestComponent_form_2_Template(rf, ctx) {
+function FormHealthSystemRequestComponent_form_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "form", 9, 1);
-    \u0275\u0275listener("ngSubmit", function FormHealthSystemRequestComponent_form_2_Template_form_ngSubmit_0_listener() {
+    \u0275\u0275elementStart(0, "form", 7, 1);
+    \u0275\u0275listener("ngSubmit", function FormHealthSystemRequestComponent_form_1_Template_form_ngSubmit_0_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.submitForm());
     });
-    \u0275\u0275elementStart(2, "div", 10)(3, "h2", 11);
-    \u0275\u0275text(4, "Request your Health System");
+    \u0275\u0275elementStart(2, "div", 8)(3, "div", 9)(4, "h2", 10);
+    \u0275\u0275text(5, " Request your Health System ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "p", 12);
-    \u0275\u0275text(6, " Sharing your email address and related information helps us prioritize your Health System. ");
+    \u0275\u0275elementStart(6, "p", 11);
+    \u0275\u0275text(7, " Sharing your email address and related information helps us prioritize your Health System. ");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(7, "div", 13)(8, "div", 14)(9, "label", 15);
-    \u0275\u0275text(10, "Your email address ");
-    \u0275\u0275elementStart(11, "span", 16);
-    \u0275\u0275text(12, "*");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(13, "input", 17, 2);
-    \u0275\u0275twoWayListener("ngModelChange", function FormHealthSystemRequestComponent_form_2_Template_input_ngModelChange_13_listener($event) {
+    \u0275\u0275elementStart(8, "div", 12)(9, "fdk-input", 13, 2);
+    \u0275\u0275twoWayListener("ngModelChange", function FormHealthSystemRequestComponent_form_1_Template_fdk_input_ngModelChange_9_listener($event) {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.formRequestHealthSystem.email, $event) || (ctx_r1.formRequestHealthSystem.email = $event);
       return \u0275\u0275resetView($event);
     });
     \u0275\u0275elementEnd();
-    \u0275\u0275template(15, FormHealthSystemRequestComponent_form_2_p_15_Template, 3, 2, "p", 18);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(16, "div", 14)(17, "label", 15);
-    \u0275\u0275text(18, "Health system name ");
-    \u0275\u0275elementStart(19, "span", 16);
-    \u0275\u0275text(20, "*");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(21, "input", 19, 3);
-    \u0275\u0275twoWayListener("ngModelChange", function FormHealthSystemRequestComponent_form_2_Template_input_ngModelChange_21_listener($event) {
+    \u0275\u0275elementStart(11, "fdk-input", 14, 3);
+    \u0275\u0275twoWayListener("ngModelChange", function FormHealthSystemRequestComponent_form_1_Template_fdk_input_ngModelChange_11_listener($event) {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.formRequestHealthSystem.name, $event) || (ctx_r1.formRequestHealthSystem.name = $event);
       return \u0275\u0275resetView($event);
     });
     \u0275\u0275elementEnd();
-    \u0275\u0275template(23, FormHealthSystemRequestComponent_form_2_p_23_Template, 3, 2, "p", 18);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(24, "div", 14)(25, "label", 15);
-    \u0275\u0275text(26, "Website ");
-    \u0275\u0275elementStart(27, "span", 16);
-    \u0275\u0275text(28, "*");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(29, "input", 20, 4);
-    \u0275\u0275twoWayListener("ngModelChange", function FormHealthSystemRequestComponent_form_2_Template_input_ngModelChange_29_listener($event) {
+    \u0275\u0275elementStart(13, "fdk-input", 15, 4);
+    \u0275\u0275twoWayListener("ngModelChange", function FormHealthSystemRequestComponent_form_1_Template_fdk_input_ngModelChange_13_listener($event) {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.formRequestHealthSystem.website, $event) || (ctx_r1.formRequestHealthSystem.website = $event);
       return \u0275\u0275resetView($event);
     });
     \u0275\u0275elementEnd();
-    \u0275\u0275template(31, FormHealthSystemRequestComponent_form_2_p_31_Template, 3, 2, "p", 18);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(32, "div", 14)(33, "label", 15);
-    \u0275\u0275text(34, "Street Address");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(35, "input", 21, 5);
-    \u0275\u0275twoWayListener("ngModelChange", function FormHealthSystemRequestComponent_form_2_Template_input_ngModelChange_35_listener($event) {
+    \u0275\u0275elementStart(15, "fdk-input", 16);
+    \u0275\u0275twoWayListener("ngModelChange", function FormHealthSystemRequestComponent_form_1_Template_fdk_input_ngModelChange_15_listener($event) {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.formRequestHealthSystem.street_address, $event) || (ctx_r1.formRequestHealthSystem.street_address = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275elementEnd()();
-    \u0275\u0275template(37, FormHealthSystemRequestComponent_form_2_p_37_Template, 4, 1, "p", 18);
-    \u0275\u0275elementStart(38, "button", 22);
-    \u0275\u0275template(39, FormHealthSystemRequestComponent_form_2_app_spinner_39_Template, 1, 0, "app-spinner", 23);
-    \u0275\u0275text(40, " Submit ");
-    \u0275\u0275elementEnd()();
+    \u0275\u0275elementEnd()()();
+    \u0275\u0275elementStart(16, "div", 17);
+    \u0275\u0275template(17, FormHealthSystemRequestComponent_form_1_fdk_alert_17_Template, 1, 1, "fdk-alert", 18);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(18, "div", 19)(19, "fdk-button", 20)(20, "span", 21);
+    \u0275\u0275template(21, FormHealthSystemRequestComponent_form_1_fdk_spinner_21_Template, 1, 0, "fdk-spinner", 22);
+    \u0275\u0275text(22, " Submit");
+    \u0275\u0275elementEnd()()()();
   }
   if (rf & 2) {
-    const healthSystemRequestForm_r6 = \u0275\u0275reference(1);
-    const email_r3 = \u0275\u0275reference(14);
-    const name_r4 = \u0275\u0275reference(22);
-    const website_r5 = \u0275\u0275reference(30);
+    const healthSystemRequestForm_r3 = \u0275\u0275reference(1);
+    const email_r4 = \u0275\u0275reference(10);
+    const name_r5 = \u0275\u0275reference(12);
+    const website_r6 = \u0275\u0275reference(14);
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(13);
+    \u0275\u0275advance(9);
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.formRequestHealthSystem.email);
+    \u0275\u0275property("error", email_r4.invalid && (email_r4.dirty || email_r4.touched))("errorMessage", (email_r4.errors == null ? null : email_r4.errors["required"]) ? "Email is required." : (email_r4.errors == null ? null : email_r4.errors["email"]) ? "Email must be valid." : "");
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", email_r3.invalid && (email_r3.dirty || email_r3.touched));
-    \u0275\u0275advance(6);
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.formRequestHealthSystem.name);
+    \u0275\u0275property("minlength", 4)("error", name_r5.invalid && (name_r5.dirty || name_r5.touched))("errorMessage", (name_r5.errors == null ? null : name_r5.errors["required"]) ? "Health system name is required." : (name_r5.errors == null ? null : name_r5.errors["minlength"]) ? "Health system name must be at least 4 characters long." : "");
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", name_r4.invalid && (name_r4.dirty || name_r4.touched));
-    \u0275\u0275advance(6);
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.formRequestHealthSystem.website);
+    \u0275\u0275property("minlength", 4)("error", website_r6.invalid && (website_r6.dirty || website_r6.touched))("errorMessage", (website_r6.errors == null ? null : website_r6.errors["required"]) ? "Website is required." : (website_r6.errors == null ? null : website_r6.errors["minlength"]) ? "Website must be at least 4 characters long." : "");
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngIf", website_r5.invalid && (website_r5.dirty || website_r5.touched));
-    \u0275\u0275advance(4);
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.formRequestHealthSystem.street_address);
     \u0275\u0275advance(2);
     \u0275\u0275property("ngIf", ctx_r1.errorMsg);
-    \u0275\u0275advance();
-    \u0275\u0275property("disabled", !healthSystemRequestForm_r6.form.valid || ctx_r1.loading);
-    \u0275\u0275advance();
+    \u0275\u0275advance(2);
+    \u0275\u0275property("disabled", !healthSystemRequestForm_r3.form.valid || ctx_r1.loading);
+    \u0275\u0275advance(2);
     \u0275\u0275property("ngIf", ctx_r1.loading);
   }
 }
-function FormHealthSystemRequestComponent_ng_template_3_Template(rf, ctx) {
+function FormHealthSystemRequestComponent_ng_template_2_Template(rf, ctx) {
   if (rf & 1) {
     const _r7 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 25)(1, "div", 26);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 27);
-    \u0275\u0275element(3, "path", 28);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(4, "div", 29)(5, "div")(6, "div", 30);
-    \u0275\u0275text(7, " Thanks for providing information about your Health System. Your request has been recorded and we will notify you once your Health System is supported. ");
+    \u0275\u0275elementStart(0, "div", 24)(1, "div");
+    \u0275\u0275element(2, "fdk-illustration", 25);
+    \u0275\u0275elementStart(3, "h2", 26);
+    \u0275\u0275text(4, " Request received ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "button", 31);
-    \u0275\u0275listener("click", function FormHealthSystemRequestComponent_ng_template_3_Template_button_click_8_listener() {
+    \u0275\u0275elementStart(5, "p", 27);
+    \u0275\u0275text(6, " Thanks for letting us know. We'll notify you when this provider is available. ");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(7, "div", 28)(8, "fdk-button", 29);
+    \u0275\u0275listener("click", function FormHealthSystemRequestComponent_ng_template_2_Template_fdk_button_click_8_listener() {
       \u0275\u0275restoreView(_r7);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.dismiss());
     });
-    \u0275\u0275text(9, " Dismiss ");
-    \u0275\u0275elementEnd()()()();
+    \u0275\u0275text(9, " Done ");
+    \u0275\u0275elementEnd()()();
   }
 }
 var FormHealthSystemRequestComponent = class _FormHealthSystemRequestComponent {
@@ -82315,18 +85250,15 @@ var FormHealthSystemRequestComponent = class _FormHealthSystemRequestComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormHealthSystemRequestComponent, selectors: [["app-form-health-system-request"]], decls: 5, vars: 3, consts: [["requestSuccess", ""], ["healthSystemRequestForm", "ngForm"], ["email", "ngModel"], ["name", "ngModel"], ["website", "ngModel"], ["street_address", "ngModel"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["id", "request-email", "type", "email", "placeholder", "you@example.com", "required", "", "email", "", "name", "email", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["class", "mt-2 text-sm text-red-600 dark:text-red-500", 4, "ngIf"], ["id", "request-healthsystem", "type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "name", "name", "required", "", "minlength", "4", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["id", "request-website", "type", "text", "placeholder", "www.mayoclinic.org", "name", "website", "required", "", "minlength", "4", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["id", "request-address", "type", "text", "placeholder", "123 Broadway, New York, NY", "name", "street_address", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [4, "ngIf"], [1, "mt-2", "text-sm", "text-red-600", "dark:text-red-500"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormHealthSystemRequestComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormHealthSystemRequestComponent, selectors: [["app-form-health-system-request"]], decls: 4, vars: 2, consts: [["requestSuccess", ""], ["healthSystemRequestForm", "ngForm"], ["email", "ngModel"], ["name", "ngModel"], ["website", "ngModel"], ["id", "step-request-form", 1, "flex", "min-h-0", "flex-1", "flex-col"], ["id", "request-form", "class", "flex flex-1 flex-col pt-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "flex", "flex-1", "flex-col", "pt-6", 3, "ngSubmit"], [1, "space-y-6"], ["id", "request-form-header", 1, "space-y-2"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary"], [1, "space-y-4"], ["id", "request-email", "name", "email", "label", "Your email address", "type", "email", "autocomplete", "email", "placeholder", "you@example.com", "required", "", "email", "", 3, "ngModelChange", "ngModel", "error", "errorMessage"], ["id", "request-healthsystem", "name", "name", "label", "Health system name", "type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "required", "", 3, "ngModelChange", "ngModel", "minlength", "error", "errorMessage"], ["id", "request-website", "name", "website", "label", "Website", "type", "text", "placeholder", "www.mayoclinic.org", "required", "", 3, "ngModelChange", "ngModel", "minlength", "error", "errorMessage"], ["id", "request-address", "name", "street_address", "label", "Street Address", "type", "text", "placeholder", "123 Broadway, New York, NY", 3, "ngModelChange", "ngModel"], [1, "mt-fdk-s"], ["title", "We couldn't submit your request.", "variant", "error", 3, "description", 4, "ngIf"], [1, "health-system-request-actions", "mt-auto", "pt-6"], ["id", "health-system-request-submit", "type", "submit", "variant", "primary", "width", "full", 3, "disabled"], [1, "flex", "items-center", "justify-center", "gap-2"], [4, "ngIf"], ["title", "We couldn't submit your request.", "variant", "error", 3, "description"], ["id", "request-success-animation", 1, "flex", "flex-1", "flex-col", "text-center", "mt-fdk-xxxl"], ["name", "success"], [1, "fdk-type-heading-2", "text-fdk-primary", "mt-fdk-l"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], [1, "health-system-request-success-actions", "mt-auto", "pt-6"], ["id", "health-system-request-done", "type", "button", "variant", "secondary", "width", "full", 3, "click"]], template: function FormHealthSystemRequestComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 6);
-        \u0275\u0275element(1, "app-header", 7);
-        \u0275\u0275template(2, FormHealthSystemRequestComponent_form_2_Template, 41, 10, "form", 8);
+        \u0275\u0275elementStart(0, "div", 5);
+        \u0275\u0275template(1, FormHealthSystemRequestComponent_form_1_Template, 23, 15, "form", 6);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(3, FormHealthSystemRequestComponent_ng_template_3_Template, 10, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
+        \u0275\u0275template(2, FormHealthSystemRequestComponent_ng_template_2_Template, 10, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
       }
       if (rf & 2) {
-        const requestSuccess_r8 = \u0275\u0275reference(4);
-        \u0275\u0275advance();
-        \u0275\u0275property("backButtonLink", "/dashboard");
+        const requestSuccess_r8 = \u0275\u0275reference(3);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.submitSuccess)("ngIfElse", requestSuccess_r8);
       }
@@ -82335,7 +85267,6 @@ var FormHealthSystemRequestComponent = class _FormHealthSystemRequestComponent {
       NgIf,
       ReactiveFormsModule,
       \u0275NgNoValidate,
-      DefaultValueAccessor,
       NgControlStatus,
       NgControlStatusGroup,
       RequiredValidator,
@@ -82344,195 +85275,137 @@ var FormHealthSystemRequestComponent = class _FormHealthSystemRequestComponent {
       FormsModule,
       NgModel,
       NgForm,
-      HeaderComponent,
-      SpinnerComponent
-    ], encapsulation: 2 });
+      FdkSpinnerComponent,
+      FdkAlertComponent,
+      FdkInputComponent,
+      FdkButtonComponent,
+      FdkIllustrationComponent
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  min-height: 0;\n}\n/*# sourceMappingURL=form-health-system-request.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormHealthSystemRequestComponent, { className: "FormHealthSystemRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-health-system-request/form-health-system-request.component.ts", lineNumber: 24 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormHealthSystemRequestComponent, { className: "FormHealthSystemRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-health-system-request/form-health-system-request.component.ts", lineNumber: 26 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/form-support-request/form-support-request.component.ts
-function FormSupportRequestComponent_form_2_div_7_Template(rf, ctx) {
+function FormSupportRequestComponent_form_1_fdk_alert_8_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 20)(1, "div", 21);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 22);
-    \u0275\u0275element(3, "path", 23);
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(4, "div", 24)(5, "p", 25);
-    \u0275\u0275text(6, "We couldn't submit your request.");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "p", 26);
-    \u0275\u0275text(8);
-    \u0275\u0275elementEnd()()()();
+    \u0275\u0275element(0, "fdk-alert", 20);
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275advance(8);
-    \u0275\u0275textInterpolate(ctx_r1.errorMsg);
+    \u0275\u0275property("description", ctx_r1.signInWarningDescription);
   }
 }
-function FormSupportRequestComponent_form_2_div_8_p_8_Template(rf, ctx) {
+function FormSupportRequestComponent_form_1_fdk_alert_14_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p")(1, "span", 32);
-    \u0275\u0275text(2, "Type:");
-    \u0275\u0275elementEnd();
-    \u0275\u0275text(3);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext(3);
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate1(" ", ctx_r1.error, "");
-  }
-}
-function FormSupportRequestComponent_form_2_div_8_p_9_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 33)(1, "span", 32);
-    \u0275\u0275text(2, "Description:");
-    \u0275\u0275elementEnd();
-    \u0275\u0275text(3);
-    \u0275\u0275elementEnd();
-  }
-  if (rf & 2) {
-    const ctx_r1 = \u0275\u0275nextContext(3);
-    \u0275\u0275advance(3);
-    \u0275\u0275textInterpolate1(" ", ctx_r1.error_description, "");
-  }
-}
-function FormSupportRequestComponent_form_2_div_8_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 27)(1, "div", 21);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 28);
-    \u0275\u0275element(3, "path", 23);
-    \u0275\u0275elementEnd();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(4, "div", 24)(5, "p", 29);
-    \u0275\u0275text(6, "We detected an issue during sign-in. These details will be included with your support request.");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "div", 30);
-    \u0275\u0275template(8, FormSupportRequestComponent_form_2_div_8_p_8_Template, 4, 1, "p", 19)(9, FormSupportRequestComponent_form_2_div_8_p_9_Template, 4, 1, "p", 31);
-    \u0275\u0275elementEnd()()()();
+    \u0275\u0275element(0, "fdk-alert", 21);
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275advance(8);
-    \u0275\u0275property("ngIf", ctx_r1.error);
-    \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r1.error_description);
+    \u0275\u0275property("description", ctx_r1.errorMsg);
   }
 }
-function FormSupportRequestComponent_form_2_app_spinner_29_Template(rf, ctx) {
+function FormSupportRequestComponent_form_1_fdk_spinner_18_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275element(0, "app-spinner");
+    \u0275\u0275element(0, "fdk-spinner");
   }
 }
-function FormSupportRequestComponent_form_2_Template(rf, ctx) {
+function FormSupportRequestComponent_form_1_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "form", 5, 1);
-    \u0275\u0275listener("ngSubmit", function FormSupportRequestComponent_form_2_Template_form_ngSubmit_0_listener() {
+    \u0275\u0275elementStart(0, "form", 4, 1);
+    \u0275\u0275listener("ngSubmit", function FormSupportRequestComponent_form_1_Template_form_ngSubmit_0_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.submitForm());
     });
-    \u0275\u0275elementStart(2, "div", 6)(3, "h2", 7);
-    \u0275\u0275text(4, "Report an issue");
+    \u0275\u0275elementStart(2, "div", 5)(3, "div", 6)(4, "h2", 7);
+    \u0275\u0275text(5, "Report an issue");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "p", 8);
-    \u0275\u0275text(6, " Sharing your email address and related information helps us prioritize your issue. ");
+    \u0275\u0275elementStart(6, "p", 8);
+    \u0275\u0275text(7, " Sharing your email address helps us follow up with you directly. ");
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(7, FormSupportRequestComponent_form_2_div_7_Template, 9, 1, "div", 9)(8, FormSupportRequestComponent_form_2_div_8_Template, 10, 2, "div", 10);
-    \u0275\u0275elementStart(9, "div", 11)(10, "div", 12)(11, "label", 13);
-    \u0275\u0275text(12, "Your email address ");
-    \u0275\u0275elementStart(13, "span", 14);
-    \u0275\u0275text(14, "*");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(15, "input", 15);
-    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_2_Template_input_ngModelChange_15_listener($event) {
+    \u0275\u0275template(8, FormSupportRequestComponent_form_1_fdk_alert_8_Template, 1, 1, "fdk-alert", 9);
+    \u0275\u0275elementStart(9, "div", 10)(10, "fdk-input", 11);
+    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_1_Template_fdk_input_ngModelChange_10_listener($event) {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.formSupportRequest.email, $event) || (ctx_r1.formSupportRequest.email = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(16, "div", 12)(17, "label", 13);
-    \u0275\u0275text(18, "Health system name ");
-    \u0275\u0275elementStart(19, "span", 14);
-    \u0275\u0275text(20, "*");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(21, "input", 16);
-    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_2_Template_input_ngModelChange_21_listener($event) {
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(11, "fdk-input", 12);
+    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_1_Template_fdk_input_ngModelChange_11_listener($event) {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.formSupportRequest.healthsystem_name, $event) || (ctx_r1.formSupportRequest.healthsystem_name = $event);
       return \u0275\u0275resetView($event);
     });
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(22, "div", 12)(23, "label", 13);
-    \u0275\u0275text(24, "Describe your technical issue");
-    \u0275\u0275elementStart(25, "span", 14);
-    \u0275\u0275text(26, "*");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(27, "textarea", 17);
-    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_2_Template_textarea_ngModelChange_27_listener($event) {
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(12, "fdk-textarea", 13);
+    \u0275\u0275twoWayListener("ngModelChange", function FormSupportRequestComponent_form_1_Template_fdk_textarea_ngModelChange_12_listener($event) {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       \u0275\u0275twoWayBindingSet(ctx_r1.formSupportRequest.request_content, $event) || (ctx_r1.formSupportRequest.request_content = $event);
       return \u0275\u0275resetView($event);
     });
     \u0275\u0275elementEnd()()();
-    \u0275\u0275elementStart(28, "button", 18);
-    \u0275\u0275template(29, FormSupportRequestComponent_form_2_app_spinner_29_Template, 1, 0, "app-spinner", 19);
-    \u0275\u0275text(30, " Submit ");
-    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(13, "div", 14);
+    \u0275\u0275template(14, FormSupportRequestComponent_form_1_fdk_alert_14_Template, 1, 1, "fdk-alert", 15);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(15, "div", 16)(16, "fdk-button", 17)(17, "span", 18);
+    \u0275\u0275template(18, FormSupportRequestComponent_form_1_fdk_spinner_18_Template, 1, 0, "fdk-spinner", 19);
+    \u0275\u0275text(19, " Submit");
+    \u0275\u0275elementEnd()()()();
   }
   if (rf & 2) {
     const supportRequestForm_r3 = \u0275\u0275reference(1);
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(7);
-    \u0275\u0275property("ngIf", ctx_r1.errorMsg);
-    \u0275\u0275advance();
+    \u0275\u0275advance(8);
     \u0275\u0275property("ngIf", ctx_r1.error || ctx_r1.error_description);
-    \u0275\u0275advance(7);
+    \u0275\u0275advance(2);
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.formSupportRequest.email);
-    \u0275\u0275advance(6);
+    \u0275\u0275advance();
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.formSupportRequest.healthsystem_name);
-    \u0275\u0275advance(6);
+    \u0275\u0275advance();
     \u0275\u0275twoWayProperty("ngModel", ctx_r1.formSupportRequest.request_content);
-    \u0275\u0275advance();
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", ctx_r1.errorMsg);
+    \u0275\u0275advance(2);
     \u0275\u0275property("disabled", !supportRequestForm_r3.form.valid || ctx_r1.loading);
-    \u0275\u0275advance();
+    \u0275\u0275advance(2);
     \u0275\u0275property("ngIf", ctx_r1.loading);
   }
 }
-function FormSupportRequestComponent_ng_template_3_Template(rf, ctx) {
+function FormSupportRequestComponent_ng_template_2_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 34)(1, "div", 35);
-    \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(2, "svg", 36);
-    \u0275\u0275element(3, "path", 37);
-    \u0275\u0275elementEnd()();
-    \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(4, "div", 38)(5, "div")(6, "div", 39);
-    \u0275\u0275text(7, " Thanks for providing information about your issue. Your request has been recorded and we will notify you once we have an update. ");
+    \u0275\u0275elementStart(0, "div", 22)(1, "div");
+    \u0275\u0275element(2, "fdk-illustration", 23);
+    \u0275\u0275elementStart(3, "h2", 7);
+    \u0275\u0275text(4, "Issue received");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "button", 40);
-    \u0275\u0275listener("click", function FormSupportRequestComponent_ng_template_3_Template_button_click_8_listener() {
+    \u0275\u0275elementStart(5, "p", 24);
+    \u0275\u0275text(6, " Thanks for letting us know. We'll be in touch once we have an update. ");
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(7, "div", 25)(8, "fdk-button", 26);
+    \u0275\u0275listener("click", function FormSupportRequestComponent_ng_template_2_Template_fdk_button_click_8_listener() {
       \u0275\u0275restoreView(_r4);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.dismiss());
     });
-    \u0275\u0275text(9, " Dismiss ");
-    \u0275\u0275elementEnd()()()();
+    \u0275\u0275text(9, " Done ");
+    \u0275\u0275elementEnd()()();
   }
 }
 var FormSupportRequestComponent = class _FormSupportRequestComponent {
+  get signInWarningDescription() {
+    return [
+      this.error ? `Type: ${this.error}` : "",
+      this.error_description ? `Description: ${this.error_description}` : ""
+    ].filter(Boolean).join(" ");
+  }
   constructor(router, configService, vaultApi) {
     this.router = router;
     this.configService = configService;
@@ -82598,18 +85471,15 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormSupportRequestComponent, selectors: [["app-form-support-request"]], inputs: { error: "error", error_description: "error_description", brand_id: "brand_id", portal_id: "portal_id", endpoint_id: "endpoint_id", org_connection_id: "org_connection_id", vault_profile_connection_id: "vault_profile_connection_id", external_id: "external_id", external_state: "external_state", request_id: "request_id" }, decls: 5, vars: 3, consts: [["requestSuccess", ""], ["supportRequestForm", "ngForm"], ["id", "step-request-form", 1, "space-y-6"], [3, "backButtonLink"], ["id", "request-form", "class", "space-y-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "space-y-6", 3, "ngSubmit"], ["id", "request-form-header", 1, "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-base", "text-gray-600"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], ["class", "rounded-md border border-yellow-200 bg-yellow-50 p-4", 4, "ngIf"], [1, "space-y-4"], [1, "space-y-2"], [1, "block", "text-sm", "font-medium", "text-gray-700", "tracking-tight"], [1, "text-red-500"], ["name", "email", "type", "email", "placeholder", "you@example.com", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["name", "healthsystem_name", "type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["name", "request_content", "placeholder", "please provide as much data as possible about the error, it helps us prioritize your issue", "required", "", 1, "block", "w-full", "mt-1", "px-3", "py-2", "text-base", "rounded-md", "border", "border-gray-300", "focus:outline-none", "focus:ring-2", "focus:ring-[#5B47FB]", "focus:ring-opacity-20", "tracking-tight", 3, "ngModelChange", "ngModel"], ["type", "submit", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "disabled"], [4, "ngIf"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "flex"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-red-400"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v2m0 4h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.73 5c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z"], [1, "ml-3", "text-sm"], [1, "font-medium", "text-red-800"], [1, "mt-1", "text-red-700"], [1, "rounded-md", "border", "border-yellow-200", "bg-yellow-50", "p-4"], ["fill", "none", "viewBox", "0 0 24 24", "stroke", "currentColor", "stroke-width", "2", 1, "h-5", "w-5", "text-yellow-400"], [1, "font-medium", "text-yellow-800"], [1, "mt-1", "text-yellow-700"], ["class", "mt-1", 4, "ngIf"], [1, "font-medium"], [1, "mt-1"], ["id", "request-success-animation", 1, "text-center", "py-16"], [1, "w-16", "h-16", "mx-auto", "bg-[#5B47FB]/10", "rounded-full", "flex", "items-center", "justify-center", "success-circle"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2.5", "viewBox", "0 0 24 24", 1, "w-8", "h-8", "text-[#5B47FB]"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M5 13l4 4L19 7", 1, "success-check"], [1, "flex", "items-center", "justify-center"], [1, "text-base", "text-gray-600", "py-5"], ["type", "button", 1, "py-2", "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "py-2", "px-4", "rounded-md", "tracking-tight", "font-medium", 3, "click"]], template: function FormSupportRequestComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _FormSupportRequestComponent, selectors: [["app-form-support-request"]], inputs: { error: "error", error_description: "error_description", brand_id: "brand_id", portal_id: "portal_id", endpoint_id: "endpoint_id", org_connection_id: "org_connection_id", vault_profile_connection_id: "vault_profile_connection_id", external_id: "external_id", external_state: "external_state", request_id: "request_id" }, decls: 4, vars: 2, consts: [["requestSuccess", ""], ["supportRequestForm", "ngForm"], ["id", "step-request-form", 1, "flex", "min-h-0", "flex-1", "flex-col"], ["id", "request-form", "class", "flex flex-1 flex-col pt-6", 3, "ngSubmit", 4, "ngIf", "ngIfElse"], ["id", "request-form", 1, "flex", "flex-1", "flex-col", "pt-6", 3, "ngSubmit"], [1, "space-y-6"], ["id", "request-form-header", 1, "space-y-2"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary"], ["title", "We detected an issue during sign-in. These details will be included with your support request.", "variant", "warning", 3, "description", 4, "ngIf"], [1, "space-y-4"], ["name", "email", "label", "Your email address", "type", "email", "autocomplete", "email", "placeholder", "you@example.com", "required", "", 3, "ngModelChange", "ngModel"], ["name", "healthsystem_name", "label", "Health system name", "type", "text", "placeholder", "Mayo Clinic, Cleveland Clinic, Kaiser Permanente", "required", "", 3, "ngModelChange", "ngModel"], ["name", "request_content", "label", "Describe your technical issue", "placeholder", "Please provide as much detail as possible about the error. It helps us prioritize your issue.", "required", "", 3, "ngModelChange", "ngModel"], [1, "mt-fdk-s"], ["title", "We couldn't submit your request.", "variant", "error", 3, "description", 4, "ngIf"], [1, "support-request-actions", "mt-auto", "pt-6"], ["id", "support-request-submit", "type", "submit", "variant", "primary", "width", "full", 3, "disabled"], [1, "flex", "items-center", "justify-center", "gap-2"], [4, "ngIf"], ["title", "We detected an issue during sign-in. These details will be included with your support request.", "variant", "warning", 3, "description"], ["title", "We couldn't submit your request.", "variant", "error", 3, "description"], ["id", "request-success-animation", 1, "flex", "flex-1", "flex-col", "pt-16", "text-center"], ["name", "success"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], [1, "support-request-success-actions", "mt-auto", "pt-6"], ["id", "support-request-done", "type", "button", "variant", "secondary", "width", "full", 3, "click"]], template: function FormSupportRequestComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 2);
-        \u0275\u0275element(1, "app-header", 3);
-        \u0275\u0275template(2, FormSupportRequestComponent_form_2_Template, 31, 7, "form", 4);
+        \u0275\u0275template(1, FormSupportRequestComponent_form_1_Template, 20, 7, "form", 3);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(3, FormSupportRequestComponent_ng_template_3_Template, 10, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
+        \u0275\u0275template(2, FormSupportRequestComponent_ng_template_2_Template, 10, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
       }
       if (rf & 2) {
-        const requestSuccess_r5 = \u0275\u0275reference(4);
-        \u0275\u0275advance();
-        \u0275\u0275property("backButtonLink", "/dashboard");
+        const requestSuccess_r5 = \u0275\u0275reference(3);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.submitSuccess)("ngIfElse", requestSuccess_r5);
       }
@@ -82618,20 +85488,23 @@ var FormSupportRequestComponent = class _FormSupportRequestComponent {
       NgIf,
       ReactiveFormsModule,
       \u0275NgNoValidate,
-      DefaultValueAccessor,
       NgControlStatus,
       NgControlStatusGroup,
       RequiredValidator,
       FormsModule,
       NgModel,
       NgForm,
-      HeaderComponent,
-      SpinnerComponent
-    ], encapsulation: 2 });
+      FdkSpinnerComponent,
+      FdkAlertComponent,
+      FdkInputComponent,
+      FdkTextareaComponent,
+      FdkButtonComponent,
+      FdkIllustrationComponent
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  min-height: 0;\n}\n/*# sourceMappingURL=form-support-request.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormSupportRequestComponent, { className: "FormSupportRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-support-request/form-support-request.component.ts", lineNumber: 23 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(FormSupportRequestComponent, { className: "FormSupportRequestComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/form-support-request/form-support-request.component.ts", lineNumber: 26 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/auth-guards/is-authenticated-auth-guard.ts
@@ -82708,35 +85581,36 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationErrorComponent, selectors: [["app-identity-verification-error"]], inputs: { error: "error", error_description: "error_description" }, decls: 21, vars: 3, consts: [[1, "space-y-6", "text-center"], [1, "space-y-2"], [1, "text-xl", "font-semibold", "text-red-600"], ["id", "error-message", 1, "text-sm", "text-gray-600"], ["id", "error-details", 1, "bg-gray-100", "p-4", "rounded-md", "text-left"], [1, "text-md", "font-medium"], [1, "text-sm", "text-gray-800"], [1, "font-semibold"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"]], template: function IdentityVerificationErrorComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _IdentityVerificationErrorComponent, selectors: [["app-identity-verification-error"]], inputs: { error: "error", error_description: "error_description" }, decls: 22, vars: 3, consts: [[1, "mt-fdk-xl"], [1, "flex", "justify-center"], ["name", "warning"], [1, "fdk-type-heading-2", "text-fdk-primary", "text-center", "mt-fdk-l"], ["id", "error-message", 1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs", "text-center"], ["id", "error-details", 1, "bg-gray-100", "p-4", "rounded-md", "text-left", "mt-fdk-m"], [1, "text-md", "font-medium"], [1, "text-sm", "text-gray-800"], [1, "font-semibold"], [1, "mt-fdk-m", "flex", "justify-center"], ["type", "button", 3, "routerLink"]], template: function IdentityVerificationErrorComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275element(1, "app-header");
-        \u0275\u0275elementStart(2, "div", 1)(3, "h2", 2);
-        \u0275\u0275text(4, " Oops! Something went wrong. ");
+        \u0275\u0275elementStart(0, "div")(1, "div", 0)(2, "div", 1);
+        \u0275\u0275element(3, "fdk-illustration", 2);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(5, "p", 3);
-        \u0275\u0275text(6, " We encountered an error while verifying your identity. Please check the details below. ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(7, "div", 4)(8, "h3", 5);
-        \u0275\u0275text(9, "Error Details:");
+        \u0275\u0275elementStart(4, "h2", 3);
+        \u0275\u0275text(5, " We couldn't verify your identity ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(10, "p", 6);
-        \u0275\u0275text(11, "Error Type: ");
-        \u0275\u0275elementStart(12, "span", 7);
-        \u0275\u0275text(13);
+        \u0275\u0275elementStart(6, "p", 4);
+        \u0275\u0275text(7, " Check the details below and try again. ");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(14, "p", 6);
-        \u0275\u0275text(15, "Description: ");
-        \u0275\u0275elementStart(16, "span");
-        \u0275\u0275text(17);
+        \u0275\u0275elementStart(8, "div", 5)(9, "h3", 6);
+        \u0275\u0275text(10, "Error Details:");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(11, "p", 7);
+        \u0275\u0275text(12, " Error Type: ");
+        \u0275\u0275elementStart(13, "span", 8);
+        \u0275\u0275text(14);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(15, "p", 7);
+        \u0275\u0275text(16, " Description: ");
+        \u0275\u0275elementStart(17, "span");
+        \u0275\u0275text(18);
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(18, "div", 1)(19, "button", 8);
-        \u0275\u0275text(20, " Try Again ");
+        \u0275\u0275elementStart(19, "div", 9)(20, "fdk-button", 10);
+        \u0275\u0275text(21, " Try Again ");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
-        \u0275\u0275advance(13);
+        \u0275\u0275advance(14);
         \u0275\u0275textInterpolate(ctx.error);
         \u0275\u0275advance(4);
         \u0275\u0275textInterpolate(ctx.error_description);
@@ -82745,14 +85619,15 @@ var IdentityVerificationErrorComponent = class _IdentityVerificationErrorCompone
       }
     }, dependencies: [
       CommonModule,
-      HeaderComponent,
       RouterModule,
-      RouterLink
+      RouterLink,
+      FdkIllustrationComponent,
+      FdkButtonComponent
     ], encapsulation: 2 });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationErrorComponent, { className: "IdentityVerificationErrorComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification-error/identity-verification-error.component.ts", lineNumber: 19 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(IdentityVerificationErrorComponent, { className: "IdentityVerificationErrorComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/identity-verification-error/identity-verification-error.component.ts", lineNumber: 20 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/auth-guards/is-tefca-mode-auth-guard.ts
@@ -82802,101 +85677,67 @@ var IsTefcaModeAuthGuard = class _IsTefcaModeAuthGuard {
 
 // projects/fasten-connect-stitch-embed/src/app/pages/splash/splash.component.ts
 var SplashComponent = class _SplashComponent {
-  constructor(configService, authService, fastenService, router, logger) {
+  constructor(configService) {
     this.configService = configService;
-    this.authService = authService;
-    this.fastenService = fastenService;
-    this.router = router;
-    this.logger = logger;
   }
   static {
     this.\u0275fac = function SplashComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _SplashComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+      return new (__ngFactoryType__ || _SplashComponent)(\u0275\u0275directiveInject(ConfigService));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SplashComponent, selectors: [["app-splash"]], decls: 61, vars: 13, consts: [["id", "step-initial", 1, "space-y-6"], [1, "flex", "items-center", "justify-center", "space-x-4"], [1, "w-10", "h-10", "text-[#5B47FB]"], ["imageFallback", "unknown-organization", "alt", "Organization Logo", 1, "w-10", "h-10", "rounded-lg", 3, "src"], [1, "flex", "space-x-1"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-100"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-200"], [1, "w-2", "h-2", "bg-[#5B47FB]", "rounded-full", "animate-pulse-flow", "animate-delay-300"], ["id", "connecting-system-logo-placeholder", "xmlns", "http://www.w3.org/2000/svg", "width", "40", "height", "40", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M12 6v4"], ["d", "M14 14h-4"], ["d", "M14 18h-4"], ["d", "M14 8h-4"], ["d", "M18 12h2a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-9a2 2 0 0 1 2-2h2"], ["d", "M18 22V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v18"], [1, "text-center", "space-y-2"], [1, "text-xl", "font-bold"], [1, "text-sm", "text-gray-600"], [1, "space-y-4"], [1, "flex", "items-start", "space-x-4", "p-4", "border", "rounded-lg", "hover:shadow-sm", "transition-shadow", "hover:border-[#5B47FB]/30"], [1, "p-2", "bg-purple-50", "rounded-full"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-shield", "w-5", "h-5", "text-[#5B47FB]"], ["d", "M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01\n                C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1\n                c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0\n                C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"], [1, "font-semibold"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "lucide", "lucide-lock", "w-5", "h-5", "text-[#5B47FB]"], ["width", "18", "height", "11", "x", "3", "y", "11", "rx", "2", "ry", "2"], ["d", "M7 11V7a5 5 0 0 1 10 0v4"], [1, "space-y-6"], [1, "text-xs", "text-gray-400", "text-center"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline"], ["target", "_blank", 1, "text-gray-500", "hover:text-gray-600", "underline", 3, "href"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", "disabled:opacity-50", 3, "routerLink"]], template: function SplashComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _SplashComponent, selectors: [["app-splash"]], decls: 35, vars: 14, consts: [["id", "step-initial", 1, "flex", "min-h-full", "flex-1", "flex-col"], [1, "flex", "justify-center", "mt-fdk-xxl"], ["name", "welcome-animated"], [1, "text-center", "mt-fdk-l"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "mt-fdk-m"], [1, "fdk-type-heading-4", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxxs"], [1, "mt-auto", "pt-6", "space-y-6"], [1, "fdk-type-paragraph-s", "text-fdk-secondary"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", "target", "_blank"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank"], ["target", "_blank", 3, "href"], ["type", "button", "variant", "primary", "width", "full", 3, "routerLink"]], template: function SplashComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275element(1, "app-header");
-        \u0275\u0275elementStart(2, "div", 1)(3, "div", 2);
-        \u0275\u0275element(4, "img", 3);
-        \u0275\u0275pipe(5, "async");
+        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1);
+        \u0275\u0275element(2, "fdk-illustration", 2);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(6, "div", 4);
-        \u0275\u0275element(7, "div", 5)(8, "div", 6)(9, "div", 7);
-        \u0275\u0275elementEnd();
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(10, "svg", 8);
-        \u0275\u0275element(11, "path", 9)(12, "path", 10)(13, "path", 11)(14, "path", 12)(15, "path", 13)(16, "path", 14);
+        \u0275\u0275elementStart(3, "div", 3)(4, "h2", 4);
+        \u0275\u0275text(5);
+        \u0275\u0275pipe(6, "async");
+        \u0275\u0275pipe(7, "async");
         \u0275\u0275elementEnd()();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(17, "div", 15)(18, "h2", 16);
-        \u0275\u0275text(19, "Connect Your Health Records");
+        \u0275\u0275elementStart(8, "div", 5)(9, "div")(10, "h3", 6);
+        \u0275\u0275text(11, "Safe");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(20, "p", 17);
-        \u0275\u0275text(21);
-        \u0275\u0275pipe(22, "async");
+        \u0275\u0275elementStart(12, "p", 7);
+        \u0275\u0275text(13, " Your records are encrypted end-to-end, the same standard used in online banking. ");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(23, "div", 18)(24, "div", 19)(25, "div", 20);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(26, "svg", 21);
-        \u0275\u0275element(27, "path", 22);
-        \u0275\u0275elementEnd()();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(28, "div")(29, "h3", 23);
-        \u0275\u0275text(30, "Safe");
+        \u0275\u0275elementStart(14, "div", 5)(15, "h3", 6);
+        \u0275\u0275text(16, "Private");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(31, "p", 17);
-        \u0275\u0275text(32, " Securely connect your medical records with bank-level encryption ");
+        \u0275\u0275elementStart(17, "p", 7);
+        \u0275\u0275text(18, " We never sell your data. It's only shared with the providers you choose. ");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275elementStart(33, "div", 19)(34, "div", 20);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(35, "svg", 24);
-        \u0275\u0275element(36, "rect", 25)(37, "path", 26);
+        \u0275\u0275elementStart(19, "div", 8)(20, "p", 9);
+        \u0275\u0275text(21, " By clicking continue you agree to: Fasten's ");
+        \u0275\u0275elementStart(22, "fdk-link", 10);
+        \u0275\u0275text(23, "Privacy Policy");
+        \u0275\u0275elementEnd();
+        \u0275\u0275text(24, " and ");
+        \u0275\u0275elementStart(25, "fdk-link", 11);
+        \u0275\u0275text(26, "Terms & Conditions");
+        \u0275\u0275elementEnd();
+        \u0275\u0275text(27);
+        \u0275\u0275pipe(28, "async");
+        \u0275\u0275pipe(29, "async");
+        \u0275\u0275elementStart(30, "fdk-link", 12);
+        \u0275\u0275pipe(31, "async");
+        \u0275\u0275text(32, "Privacy Policy");
         \u0275\u0275elementEnd()();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(38, "div")(39, "h3", 23);
-        \u0275\u0275text(40, "Private");
-        \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(41, "p", 17);
-        \u0275\u0275text(42, " We never sell your personal info and only use it with your permission ");
-        \u0275\u0275elementEnd()()()();
-        \u0275\u0275elementStart(43, "div", 27)(44, "p", 28);
-        \u0275\u0275text(45, " By clicking continue you agree to: ");
-        \u0275\u0275element(46, "br");
-        \u0275\u0275text(47, "Fasten's ");
-        \u0275\u0275elementStart(48, "a", 29);
-        \u0275\u0275text(49, "Privacy Policy");
-        \u0275\u0275elementEnd();
-        \u0275\u0275text(50, " and ");
-        \u0275\u0275elementStart(51, "a", 30);
-        \u0275\u0275text(52, "Terms & Conditions");
-        \u0275\u0275elementEnd();
-        \u0275\u0275element(53, "br");
-        \u0275\u0275text(54);
-        \u0275\u0275pipe(55, "async");
-        \u0275\u0275elementStart(56, "a", 31);
-        \u0275\u0275pipe(57, "async");
-        \u0275\u0275text(58, "Privacy Policy");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(59, "button", 32);
-        \u0275\u0275text(60, " Continue ");
+        \u0275\u0275elementStart(33, "fdk-button", 13);
+        \u0275\u0275text(34, " Connect my health records ");
         \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
         let tmp_0_0;
         let tmp_1_0;
         let tmp_2_0;
-        let tmp_3_0;
-        \u0275\u0275advance(4);
-        \u0275\u0275property("src", (tmp_0_0 = \u0275\u0275pipeBind1(5, 5, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.org == null ? null : tmp_0_0.org.logo_uri, \u0275\u0275sanitizeUrl);
-        \u0275\u0275advance(17);
-        \u0275\u0275textInterpolate1(" ", ((tmp_1_0 = \u0275\u0275pipeBind1(22, 7, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.org == null ? null : tmp_1_0.org.name) || "Unknown", " uses Fasten to securely link your health systems ");
-        \u0275\u0275advance(33);
-        \u0275\u0275textInterpolate1("", ((tmp_2_0 = \u0275\u0275pipeBind1(55, 9, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.name) || "Unknown", "'s ");
-        \u0275\u0275advance(2);
-        \u0275\u0275propertyInterpolate("href", (tmp_3_0 = \u0275\u0275pipeBind1(57, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.privacy_policy_uri, \u0275\u0275sanitizeUrl);
+        \u0275\u0275advance(5);
+        \u0275\u0275textInterpolate1(" ", ((tmp_0_0 = \u0275\u0275pipeBind1(6, 4, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.companyName) || ((tmp_0_0 = \u0275\u0275pipeBind1(7, 6, ctx.configService.systemConfigSubject)) == null ? null : tmp_0_0.org == null ? null : tmp_0_0.org.name) || "Unknown", " uses Fasten to bring your health records together in one place ");
+        \u0275\u0275advance(22);
+        \u0275\u0275textInterpolate1(" ", ((tmp_1_0 = \u0275\u0275pipeBind1(28, 8, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.companyName) || ((tmp_1_0 = \u0275\u0275pipeBind1(29, 10, ctx.configService.systemConfigSubject)) == null ? null : tmp_1_0.org == null ? null : tmp_1_0.org.name) || "Unknown", "'s ");
+        \u0275\u0275advance(3);
+        \u0275\u0275property("href", (tmp_2_0 = (tmp_2_0 = \u0275\u0275pipeBind1(31, 12, ctx.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.privacy_policy_uri) !== null && tmp_2_0 !== void 0 ? tmp_2_0 : "");
         \u0275\u0275advance(3);
         \u0275\u0275property("routerLink", "/search");
       }
@@ -82905,70 +85746,39 @@ var SplashComponent = class _SplashComponent {
       AsyncPipe,
       RouterModule,
       RouterLink,
-      HeaderComponent,
-      ImageFallbackDirective,
-      FormsModule
-    ], styles: [`
-
-.custom-checkbox[_ngcontent-%COMP%] {
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-}
-.custom-checkbox[_ngcontent-%COMP%]::before {
-  content: "";
-  display: inline-block;
-  width: 1em;
-  height: 1em;
-  flex-shrink: 0;
-  flex-grow: 0;
-  border: 1px solid #c3c3c3;
-  border-radius: 0.25em;
-  margin-right: 0.5em;
-  background-repeat: no-repeat;
-  background-position: center center;
-  background-size: 50% 50%;
-}
-.custom-checkbox-checked[_ngcontent-%COMP%]::before {
-  border-color: blue;
-  background-color: blue;
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%23fff' d='M6.564.75l-3.59 3.612-1.538-1.55L0 4.26 2.974 7.25 8 2.193z'/%3e%3c/svg%3e");
-}
-.custom-checkbox[_ngcontent-%COMP%]:hover::before {
-  border-color: rgba(0, 0, 255, 0.33);
-}
-/*# sourceMappingURL=splash.component.css.map */`] });
+      FdkButtonComponent,
+      FdkIllustrationComponent,
+      FdkLinkComponent
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  min-height: 0;\n}\n/*# sourceMappingURL=splash.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SplashComponent, { className: "SplashComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/splash/splash.component.ts", lineNumber: 30 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(SplashComponent, { className: "SplashComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/splash/splash.component.ts", lineNumber: 24 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/auth-callback/auth-callback.component.ts
-function AuthCallbackComponent_ng_container_2_Template(rf, ctx) {
+function AuthCallbackComponent_ng_container_1_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 3)(2, "h2", 4);
-    \u0275\u0275text(3, "Finishing sign-in");
+    \u0275\u0275elementStart(1, "div", 2);
+    \u0275\u0275element(2, "fdk-illustration", 3)(3, "fdk-loading-dots", 4);
+    \u0275\u0275elementStart(4, "h2", 5);
+    \u0275\u0275text(5, " Finishing sign-in ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "p", 5);
-    \u0275\u0275text(5, " Please wait while we securely complete your identity verification. ");
+    \u0275\u0275elementStart(6, "p", 6);
+    \u0275\u0275text(7, " We're confirming your identity. This usually takes just a few seconds. ");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(6, "div", 6);
-    \u0275\u0275element(7, "app-spinner");
+    \u0275\u0275elementStart(8, "div", 7);
+    \u0275\u0275element(9, "fdk-spinner");
     \u0275\u0275elementEnd();
     \u0275\u0275elementContainerEnd();
   }
 }
-function AuthCallbackComponent_ng_template_3_p_16_Template(rf, ctx) {
+function AuthCallbackComponent_ng_template_2_p_17_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "p", 14);
+    \u0275\u0275elementStart(0, "p", 17);
     \u0275\u0275text(1, " More Info: ");
-    \u0275\u0275elementStart(2, "a", 15);
+    \u0275\u0275elementStart(2, "a", 18);
     \u0275\u0275text(3);
     \u0275\u0275elementEnd()();
   }
@@ -82980,42 +85790,44 @@ function AuthCallbackComponent_ng_template_3_p_16_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r0.errorUri);
   }
 }
-function AuthCallbackComponent_ng_template_3_Template(rf, ctx) {
+function AuthCallbackComponent_ng_template_2_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 3)(1, "h2", 7);
-    \u0275\u0275text(2, " We could not complete sign-in ");
+    \u0275\u0275elementStart(0, "div", 8);
+    \u0275\u0275element(1, "fdk-illustration", 9);
+    \u0275\u0275elementStart(2, "h2", 5);
+    \u0275\u0275text(3, " We could not complete sign-in ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "p", 5);
-    \u0275\u0275text(4, " Please check the details below and try again. ");
+    \u0275\u0275elementStart(4, "p", 6);
+    \u0275\u0275text(5, " Please check the details below and try again. ");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(5, "div", 8)(6, "h3", 9);
-    \u0275\u0275text(7, "Error Details:");
+    \u0275\u0275elementStart(6, "div", 10)(7, "h3", 11);
+    \u0275\u0275text(8, "Error Details:");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "p", 10);
-    \u0275\u0275text(9, "Error Type: ");
-    \u0275\u0275elementStart(10, "span", 11);
-    \u0275\u0275text(11);
+    \u0275\u0275elementStart(9, "p", 12);
+    \u0275\u0275text(10, " Error Type: ");
+    \u0275\u0275elementStart(11, "span", 13);
+    \u0275\u0275text(12);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(12, "p", 10);
-    \u0275\u0275text(13, "Description: ");
-    \u0275\u0275elementStart(14, "span");
-    \u0275\u0275text(15);
+    \u0275\u0275elementStart(13, "p", 12);
+    \u0275\u0275text(14, " Description: ");
+    \u0275\u0275elementStart(15, "span");
+    \u0275\u0275text(16);
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(16, AuthCallbackComponent_ng_template_3_p_16_Template, 4, 2, "p", 12);
+    \u0275\u0275template(17, AuthCallbackComponent_ng_template_2_p_17_Template, 4, 2, "p", 14);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(17, "button", 13);
-    \u0275\u0275text(18, " Back to Sign In ");
-    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(18, "div", 15)(19, "fdk-button", 16);
+    \u0275\u0275text(20, " Back to Sign In ");
+    \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const ctx_r0 = \u0275\u0275nextContext();
-    \u0275\u0275advance(11);
+    \u0275\u0275advance(12);
     \u0275\u0275textInterpolate(ctx_r0.error);
     \u0275\u0275advance(4);
     \u0275\u0275textInterpolate(ctx_r0.errorDescription);
     \u0275\u0275advance();
     \u0275\u0275property("ngIf", ctx_r0.errorUri);
-    \u0275\u0275advance();
+    \u0275\u0275advance(2);
     \u0275\u0275property("routerLink", "/auth/signin");
   }
 }
@@ -83108,16 +85920,15 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _AuthCallbackComponent, selectors: [["app-auth-callback"]], decls: 5, vars: 2, consts: [["callbackError", ""], [1, "space-y-6", "text-center"], [4, "ngIf", "ngIfElse"], [1, "space-y-2"], [1, "text-xl", "font-semibold"], [1, "text-sm", "text-gray-600"], [1, "flex", "justify-center", "text-[#5B47FB]"], [1, "text-xl", "font-semibold", "text-red-600"], [1, "bg-gray-100", "p-4", "rounded-md", "text-left"], [1, "text-md", "font-medium"], [1, "text-sm", "text-gray-800"], [1, "font-semibold"], ["class", "text-sm text-gray-800 break-words", 4, "ngIf"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"], [1, "text-sm", "text-gray-800", "break-words"], [1, "font-medium", "text-[#5B47FB]", "hover:text-[#4936E8]", 3, "href"]], template: function AuthCallbackComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _AuthCallbackComponent, selectors: [["app-auth-callback"]], decls: 4, vars: 2, consts: [["callbackError", ""], [4, "ngIf", "ngIfElse"], [1, "mt-fdk-xl", "text-center", "flex", "flex-1", "flex-col", "items-center"], ["name", "sign-in"], [1, "mt-fdk-s"], [1, "fdk-type-heading-2", "text-fdk-primary", "mt-fdk-l"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], [1, "flex", "justify-center", "text-[#5B47FB]"], [1, "mt-fdk-xl", "text-center"], ["name", "warning"], [1, "bg-gray-100", "p-4", "rounded-md", "text-left"], [1, "text-md", "font-medium"], [1, "text-sm", "text-gray-800"], [1, "font-semibold"], ["class", "text-sm text-gray-800 break-words", 4, "ngIf"], [1, "mt-fdk-m", "flex", "justify-center"], ["type", "button", "variant", "secondary", 3, "routerLink"], [1, "text-sm", "text-gray-800", "break-words"], [1, "font-medium", "text-[#5B47FB]", "hover:text-[#4936E8]", 3, "href"]], template: function AuthCallbackComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 1);
-        \u0275\u0275element(1, "app-header");
-        \u0275\u0275template(2, AuthCallbackComponent_ng_container_2_Template, 8, 0, "ng-container", 2)(3, AuthCallbackComponent_ng_template_3_Template, 19, 4, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
+        \u0275\u0275elementStart(0, "div");
+        \u0275\u0275template(1, AuthCallbackComponent_ng_container_1_Template, 10, 0, "ng-container", 1)(2, AuthCallbackComponent_ng_template_2_Template, 21, 4, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
-        const callbackError_r2 = \u0275\u0275reference(4);
-        \u0275\u0275advance(2);
+        const callbackError_r2 = \u0275\u0275reference(3);
+        \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.status === "processing")("ngIfElse", callbackError_r2);
       }
     }, dependencies: [
@@ -83125,94 +85936,90 @@ var AuthCallbackComponent = class _AuthCallbackComponent {
       NgIf,
       RouterModule,
       RouterLink,
-      HeaderComponent,
-      SpinnerComponent
+      FdkSpinnerComponent,
+      FdkIllustrationComponent,
+      FdkLoadingDotsComponent,
+      FdkButtonComponent
     ], styles: ["\n\n[_nghost-%COMP%] {\n  display: block;\n}\n/*# sourceMappingURL=auth-callback.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AuthCallbackComponent, { className: "AuthCallbackComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/auth-callback/auth-callback.component.ts", lineNumber: 30 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AuthCallbackComponent, { className: "AuthCallbackComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/auth-callback/auth-callback.component.ts", lineNumber: 36 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/third-party-cookies-error/third-party-cookies-error.component.ts
-function ThirdPartyCookiesErrorComponent_div_10_a_5_Template(rf, ctx) {
+function ThirdPartyCookiesErrorComponent_div_7_fdk_link_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "a", 16);
+    \u0275\u0275elementStart(0, "fdk-link", 15);
     \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const documentationLink_r1 = ctx.ngIf;
-    \u0275\u0275property("href", documentationLink_r1.url, \u0275\u0275sanitizeUrl);
+    \u0275\u0275property("href", documentationLink_r1.url);
     \u0275\u0275advance();
     \u0275\u0275textInterpolate1(" View ", documentationLink_r1.browserName, " cookie instructions ");
   }
 }
-function ThirdPartyCookiesErrorComponent_div_10_Template(rf, ctx) {
+function ThirdPartyCookiesErrorComponent_div_7_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 12)(1, "h3", 13);
-    \u0275\u0275text(2, "Enable cookies in your browser");
+    \u0275\u0275elementStart(0, "div", 12)(1, "p", 13);
+    \u0275\u0275text(2, " Open your browser's privacy or cookie settings and allow third-party cookies for this application. Then return and try signing in again. ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "p", 14);
-    \u0275\u0275text(4, " Open your browser's privacy or cookie settings and allow third-party cookies for this application. Then return and try signing in again. ");
-    \u0275\u0275elementEnd();
-    \u0275\u0275template(5, ThirdPartyCookiesErrorComponent_div_10_a_5_Template, 2, 2, "a", 15);
+    \u0275\u0275template(3, ThirdPartyCookiesErrorComponent_div_7_fdk_link_3_Template, 2, 2, "fdk-link", 14);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(5);
+    \u0275\u0275advance(3);
     \u0275\u0275property("ngIf", ctx_r1.thirdPartyCookieDocumentationLink);
   }
 }
-function ThirdPartyCookiesErrorComponent_div_11_a_5_Template(rf, ctx) {
+function ThirdPartyCookiesErrorComponent_div_8_fdk_link_3_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "a", 21);
+    \u0275\u0275elementStart(0, "fdk-link", 19);
     \u0275\u0275text(1, " Open in Safari ");
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext(2);
-    \u0275\u0275property("href", ctx_r1.safariDeepLink, \u0275\u0275sanitizeUrl);
+    \u0275\u0275property("href", ctx_r1.safariDeepLink);
   }
 }
-function ThirdPartyCookiesErrorComponent_div_11_Template(rf, ctx) {
+function ThirdPartyCookiesErrorComponent_div_8_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 17)(1, "h3", 13);
-    \u0275\u0275text(2, "Open in Safari");
+    \u0275\u0275elementStart(0, "div", 16)(1, "p", 13);
+    \u0275\u0275text(2, " Safari is currently required on iPhone and iPad. Other browsers on iOS are not currently supported. ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "p", 18);
-    \u0275\u0275text(4, " Safari is currently required on iPhone and iPad. Other browsers on iOS are not currently supported. ");
-    \u0275\u0275elementEnd();
-    \u0275\u0275template(5, ThirdPartyCookiesErrorComponent_div_11_a_5_Template, 2, 1, "a", 19);
-    \u0275\u0275elementStart(6, "p", 20);
-    \u0275\u0275text(7, " If Safari does not open, copy this page's address and paste it into Safari. ");
+    \u0275\u0275template(3, ThirdPartyCookiesErrorComponent_div_8_fdk_link_3_Template, 2, 1, "fdk-link", 17);
+    \u0275\u0275elementStart(4, "p", 18);
+    \u0275\u0275text(5, " If Safari does not open, copy this page's address and paste it into Safari. ");
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(5);
+    \u0275\u0275advance(3);
     \u0275\u0275property("ngIf", ctx_r1.safariDeepLink);
   }
 }
-function ThirdPartyCookiesErrorComponent_div_17_Template(rf, ctx) {
+function ThirdPartyCookiesErrorComponent_div_14_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 22)(1, "h3", 13);
+    \u0275\u0275elementStart(0, "div", 20)(1, "h3", 21);
     \u0275\u0275text(2, "Session debug information (test mode)");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "dl", 23)(4, "dt", 24);
+    \u0275\u0275elementStart(3, "dl", 22)(4, "dt", 23);
     \u0275\u0275text(5, "Cookie name");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "dd", 25);
+    \u0275\u0275elementStart(6, "dd", 24);
     \u0275\u0275text(7);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(8, "dt", 24);
+    \u0275\u0275elementStart(8, "dt", 23);
     \u0275\u0275text(9, "Session active");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(10, "dd", 26);
+    \u0275\u0275elementStart(10, "dd", 24);
     \u0275\u0275text(11);
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(12, "p", 27);
+    \u0275\u0275elementStart(12, "p", 25);
     \u0275\u0275text(13, "The auth cookie is HttpOnly and its value cannot be inspected from the browser; this reflects whether a server-side session check succeeded.");
     \u0275\u0275elementEnd()();
   }
@@ -83272,10 +86079,11 @@ var THIRD_PARTY_COOKIE_DOCUMENTATION_MATRIX = {
   [BROWSERS.MS_EDGE_CHROMIUM]: EDGE_COOKIE_DOCUMENTATION
 };
 var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
-  constructor(authService, configService, deviceDetectorService) {
+  constructor(authService, configService, deviceDetectorService, router) {
     this.authService = authService;
     this.configService = configService;
     this.deviceDetectorService = deviceDetectorService;
+    this.router = router;
     this.showCookieDebugInfo = false;
     this.requiresSafariOnIos = false;
   }
@@ -83311,68 +86119,441 @@ var ThirdPartyCookiesErrorComponent = class _ThirdPartyCookiesErrorComponent {
     const browserDocumentation = THIRD_PARTY_COOKIE_DOCUMENTATION_MATRIX[this.deviceDetectorService.browser];
     return browserDocumentation?.[this.deviceDetectorService.os] ?? browserDocumentation?.[GENERIC_DOCUMENTATION];
   }
+  backToSignIn() {
+    void this.router.navigate(["/auth/signin"]);
+  }
   isCookieDebugEnabled() {
     const systemConfig = this.configService.systemConfig$;
     return systemConfig.apiMode === ApiMode.Test && systemConfig.showCookieDebugInfo === true;
   }
   static {
     this.\u0275fac = function ThirdPartyCookiesErrorComponent_Factory(__ngFactoryType__) {
-      return new (__ngFactoryType__ || _ThirdPartyCookiesErrorComponent)(\u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(DeviceDetectorService));
+      return new (__ngFactoryType__ || _ThirdPartyCookiesErrorComponent)(\u0275\u0275directiveInject(AuthService), \u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(DeviceDetectorService), \u0275\u0275directiveInject(Router));
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ThirdPartyCookiesErrorComponent, selectors: [["app-third-party-cookies-error"]], decls: 20, vars: 5, consts: [["id", "third-party-cookies-error", "aria-labelledby", "cookies-required-title", 1, "space-y-6", "text-center"], [1, "w-16", "h-16", "mx-auto", "bg-red-50", "rounded-full", "flex", "items-center", "justify-center"], ["fill", "none", "stroke", "currentColor", "stroke-width", "2", "viewBox", "0 0 24 24", "aria-hidden", "true", 1, "w-8", "h-8", "text-red-600"], ["stroke-linecap", "round", "stroke-linejoin", "round", "d", "M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 4.5h.008v.008H12V16.5Z"], [1, "space-y-2"], ["id", "cookies-required-title", 1, "text-xl", "font-semibold", "text-red-600"], [1, "text-sm", "text-gray-600"], ["id", "browser-cookie-instructions", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["id", "ios-safari-required", "class", "rounded-md border border-amber-200 bg-amber-50 p-4 text-left", 4, "ngIf"], ["id", "cookie-support-link", 1, "font-medium", "text-[#5B47FB]", "hover:underline", 3, "routerLink"], ["id", "cookie-debug-info", "class", "rounded-md border border-gray-200 bg-gray-50 p-4 text-left", 4, "ngIf"], ["type", "button", 1, "w-full", "bg-[#5B47FB]", "hover:bg-[#4936E8]", "text-white", "font-medium", "py-2.5", "px-4", "rounded-md", "flex", "justify-center", "items-center", 3, "routerLink"], ["id", "browser-cookie-instructions", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "text-base", "font-medium", "text-gray-900"], [1, "mt-1", "text-sm", "text-gray-600"], ["id", "third-party-cookie-documentation-link", "class", "mt-3 inline-block text-sm font-medium text-[#5B47FB] hover:underline", "target", "_blank", "rel", "noopener noreferrer", 3, "href", 4, "ngIf"], ["id", "third-party-cookie-documentation-link", "target", "_blank", "rel", "noopener noreferrer", 1, "mt-3", "inline-block", "text-sm", "font-medium", "text-[#5B47FB]", "hover:underline", 3, "href"], ["id", "ios-safari-required", 1, "rounded-md", "border", "border-amber-200", "bg-amber-50", "p-4", "text-left"], [1, "mt-1", "text-sm", "text-gray-700"], ["id", "open-in-safari-link", "target", "_top", "class", "mt-3 flex w-full items-center justify-center rounded-md border border-[#5B47FB] bg-white px-4 py-2.5 text-sm font-medium text-[#5B47FB] hover:bg-[#5B47FB] hover:text-white", 3, "href", 4, "ngIf"], [1, "mt-2", "text-xs", "text-gray-600"], ["id", "open-in-safari-link", "target", "_top", 1, "mt-3", "flex", "w-full", "items-center", "justify-center", "rounded-md", "border", "border-[#5B47FB]", "bg-white", "px-4", "py-2.5", "text-sm", "font-medium", "text-[#5B47FB]", "hover:bg-[#5B47FB]", "hover:text-white", 3, "href"], ["id", "cookie-debug-info", 1, "rounded-md", "border", "border-gray-200", "bg-gray-50", "p-4", "text-left"], [1, "mt-3", "grid", "grid-cols-[auto,minmax(0,1fr)]", "gap-x-4", "gap-y-2", "text-sm"], [1, "font-medium", "text-gray-600"], [1, "break-all", "font-mono", "text-xs", "text-gray-900"], [1, "font-mono", "text-xs", "text-gray-900"], [1, "mt-2", "text-xs", "text-gray-500"]], template: function ThirdPartyCookiesErrorComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ThirdPartyCookiesErrorComponent, selectors: [["app-third-party-cookies-error"]], decls: 18, vars: 3, consts: [["id", "third-party-cookies-error", "aria-labelledby", "cookies-required-title", 1, "flex", "flex-1", "min-h-full", "flex-col"], [1, "flex", "justify-center", "mt-fdk-xxxl"], ["name", "warning"], ["id", "cookies-required-title", 1, "fdk-type-heading-2", "text-fdk-primary", "text-center", "mt-fdk-m"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], ["id", "browser-cookie-instructions", "class", "mt-fdk-xs fdk-type-paragraph text-fdk-secondary ", 4, "ngIf"], ["id", "ios-safari-required", "class", "mt-fdk-xs fdk-type-paragraph text-fdk-secondary ", 4, "ngIf"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-m"], ["id", "cookie-support-link", "routerLink", "/form/support"], ["id", "cookie-debug-info", "class", "mt-fdk-m mb-fdk-m", 4, "ngIf"], ["id", "back-to-sign-in-action", 1, "mt-auto"], ["id", "back-to-sign-in-button", "type", "button", "variant", "secondary", "width", "full", 3, "click"], ["id", "browser-cookie-instructions", 1, "mt-fdk-xs", "fdk-type-paragraph", "text-fdk-secondary"], [1, "text-fdk-secondary"], ["id", "third-party-cookie-documentation-link", "target", "_blank", "rel", "noopener noreferrer", 3, "href", 4, "ngIf"], ["id", "third-party-cookie-documentation-link", "target", "_blank", "rel", "noopener noreferrer", 3, "href"], ["id", "ios-safari-required", 1, "mt-fdk-xs", "fdk-type-paragraph", "text-fdk-secondary"], ["id", "open-in-safari-link", "target", "_top", 3, "href", 4, "ngIf"], [1, "mt-2"], ["id", "open-in-safari-link", "target", "_top", 3, "href"], ["id", "cookie-debug-info", 1, "mt-fdk-m", "mb-fdk-m"], [1, "fdk-type-heading-4", "text-fdk-secondary"], [1, "mt-3", "grid", "grid-cols-[auto,minmax(0,1fr)]", "gap-x-4", "gap-y-2", "text-sm"], [1, "fdk-type-label-small", "text-fdk-secondary"], [1, "fdk-type-paragraph-s", "text-fdk-secondary"], [1, "mt-2", "text-xs", "text-gray-500"]], template: function ThirdPartyCookiesErrorComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275element(1, "app-header");
-        \u0275\u0275elementStart(2, "div", 1);
-        \u0275\u0275namespaceSVG();
-        \u0275\u0275elementStart(3, "svg", 2);
-        \u0275\u0275element(4, "path", 3);
-        \u0275\u0275elementEnd()();
-        \u0275\u0275namespaceHTML();
-        \u0275\u0275elementStart(5, "div", 4)(6, "h2", 5);
-        \u0275\u0275text(7, " Third-party cookies are required ");
+        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1);
+        \u0275\u0275element(2, "fdk-illustration", 2);
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(8, "p", 6);
-        \u0275\u0275text(9, " Third-party cookies must be enabled to complete the auth flow. ");
-        \u0275\u0275elementEnd()();
-        \u0275\u0275template(10, ThirdPartyCookiesErrorComponent_div_10_Template, 6, 1, "div", 7)(11, ThirdPartyCookiesErrorComponent_div_11_Template, 8, 1, "div", 8);
-        \u0275\u0275elementStart(12, "p", 6);
-        \u0275\u0275text(13, " If this issue continues, please ");
-        \u0275\u0275elementStart(14, "a", 9);
-        \u0275\u0275text(15, "contact support");
+        \u0275\u0275elementStart(3, "h2", 3);
+        \u0275\u0275text(4, " Third-party cookies are required ");
         \u0275\u0275elementEnd();
-        \u0275\u0275text(16, ". ");
+        \u0275\u0275elementStart(5, "p", 4);
+        \u0275\u0275text(6, " Third-party cookies must be enabled to complete the auth flow. ");
         \u0275\u0275elementEnd();
-        \u0275\u0275template(17, ThirdPartyCookiesErrorComponent_div_17_Template, 14, 2, "div", 10);
-        \u0275\u0275elementStart(18, "button", 11);
-        \u0275\u0275text(19, " Back to Sign In ");
-        \u0275\u0275elementEnd()();
+        \u0275\u0275template(7, ThirdPartyCookiesErrorComponent_div_7_Template, 4, 1, "div", 5)(8, ThirdPartyCookiesErrorComponent_div_8_Template, 6, 1, "div", 6);
+        \u0275\u0275elementStart(9, "p", 7);
+        \u0275\u0275text(10, " If this issue continues, please ");
+        \u0275\u0275elementStart(11, "fdk-link", 8);
+        \u0275\u0275text(12, "contact support");
+        \u0275\u0275elementEnd();
+        \u0275\u0275text(13, ". ");
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(14, ThirdPartyCookiesErrorComponent_div_14_Template, 14, 2, "div", 9);
+        \u0275\u0275elementStart(15, "div", 10)(16, "fdk-button", 11);
+        \u0275\u0275listener("click", function ThirdPartyCookiesErrorComponent_Template_fdk_button_click_16_listener() {
+          return ctx.backToSignIn();
+        });
+        \u0275\u0275text(17, " Back to Sign In ");
+        \u0275\u0275elementEnd()()();
       }
       if (rf & 2) {
-        \u0275\u0275advance(10);
+        \u0275\u0275advance(7);
         \u0275\u0275property("ngIf", !ctx.requiresSafariOnIos);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", ctx.requiresSafariOnIos);
-        \u0275\u0275advance(3);
-        \u0275\u0275property("routerLink", "/form/support");
-        \u0275\u0275advance(3);
+        \u0275\u0275advance(6);
         \u0275\u0275property("ngIf", ctx.showCookieDebugInfo && ctx.cookieDebugInfo);
-        \u0275\u0275advance();
-        \u0275\u0275property("routerLink", "/auth/signin");
       }
     }, dependencies: [
       CommonModule,
       NgIf,
-      HeaderComponent,
       RouterModule,
-      RouterLink
-    ], encapsulation: 2 });
+      RouterLink,
+      FdkIllustrationComponent,
+      FdkLinkComponent,
+      FdkButtonComponent
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  min-height: 0;\n}\n/*# sourceMappingURL=third-party-cookies-error.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ThirdPartyCookiesErrorComponent, { className: "ThirdPartyCookiesErrorComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/third-party-cookies-error/third-party-cookies-error.component.ts", lineNumber: 78 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ThirdPartyCookiesErrorComponent, { className: "ThirdPartyCookiesErrorComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/third-party-cookies-error/third-party-cookies-error.component.ts", lineNumber: 81 });
+})();
+
+// projects/fasten-connect-stitch-embed/src/app/auth-guards/has-completed-signin-welcome-guard.ts
+var hasCompletedSigninWelcomeGuard = () => {
+  const signinFlowService = inject(VaultProfileSigninFlowService);
+  const router = inject(Router);
+  return signinFlowService.hasCompletedWelcome() ? true : router.createUrlTree(["/auth/signin"]);
+};
+
+// projects/fasten-connect-stitch-embed/src/app/pages/profile/profile.component.ts
+function ProfileComponent_ng_container_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainer(0);
+  }
+}
+function ProfileComponent_ng_template_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "img", 15);
+  }
+}
+function ProfileComponent_ng_template_12_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "img", 16)(1, "img", 17);
+  }
+}
+function ProfileComponent_ng_container_24_div_1_span_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "span");
+    \u0275\u0275text(1);
+    \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    const addressIndex_r1 = \u0275\u0275nextContext().index;
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate1(" ", addressIndex_r1 + 1, "");
+  }
+}
+function ProfileComponent_ng_container_24_div_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 10)(1, "p", 11);
+    \u0275\u0275text(2, "Address");
+    \u0275\u0275template(3, ProfileComponent_ng_container_24_div_1_span_3_Template, 2, 1, "span", 19);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "p", 20);
+    \u0275\u0275text(5);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const address_r2 = ctx.$implicit;
+    const ctx_r2 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance(3);
+    \u0275\u0275property("ngIf", ctx_r2.patientDemographics.addressInformation.length > 1);
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate(ctx_r2.getVerifiedPatientAddress(address_r2));
+  }
+}
+function ProfileComponent_ng_container_24_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275template(1, ProfileComponent_ng_container_24_div_1_Template, 6, 2, "div", 18);
+    \u0275\u0275elementContainerEnd();
+  }
+  if (rf & 2) {
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275property("ngForOf", ctx_r2.patientDemographics.addressInformation);
+  }
+}
+function ProfileComponent_ng_template_25_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 10)(1, "p", 11);
+    \u0275\u0275text(2, "Address");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(3, "p", 21);
+    \u0275\u0275text(4, "Not available");
+    \u0275\u0275elementEnd()();
+  }
+}
+var ProfileComponent = class _ProfileComponent {
+  get patientDemographics() {
+    return this.configService.vaultProfileConfigSubject.value.verifiedIdentityPatientDemographics;
+  }
+  get identityProviderName() {
+    return this.configService.vaultProfileConfigSubject.value.verifiedIdentityCspType === CspType.IdmeCsp ? "ID.me" : "Clear";
+  }
+  constructor(configService) {
+    this.configService = configService;
+    this.CspType = CspType;
+  }
+  getVerifiedPatientName(demographics) {
+    return formatPatientDemographicsName(demographics);
+  }
+  getVerifiedPatientAddress(address) {
+    return formatPatientDemographicsAddress(address);
+  }
+  getVerifiedBirthdate(demographics) {
+    return formatPatientDemographicsBirthdate(demographics);
+  }
+  static {
+    this.\u0275fac = function ProfileComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _ProfileComponent)(\u0275\u0275directiveInject(ConfigService));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ProfileComponent, selectors: [["app-profile"]], decls: 27, vars: 10, consts: [["clearCspLogo", ""], ["idmeCspLogo", ""], ["noPatientAddress", ""], ["id", "profile-page", 1, "flex", "flex-1", "min-h-0", "flex-col"], [1, "flex-1", "mt-fdk-l"], [1, "fdk-type-heading-4", "text-fdk-secondary"], [1, "fdk-type-heading-1", "text-fdk-primary", "mt-fdk-xxs"], ["id", "profile-information-source", 1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], [1, "block", "mb-fdk-xxs"], [4, "ngIf", "ngIfThen", "ngIfElse"], [1, "mt-fdk-m"], [1, "fdk-type-paragraph-s", "text-fdk-secondary"], [1, "fdk-type-paragraph", "text-fdk-primary", "mt-fdk-xxxs"], [1, "fdk-type-paragraph", "text-fdk-primary", "capitalize", "mt-fdk-xxxs"], [4, "ngIf", "ngIfElse"], ["alt", "CLEAR", "src", "data:image/svg+xml,%3Csvg fill='none' height='129' viewBox='0 0 477 129' width='477' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23041a55'%3E%3Cpath d='m43.6629 11.002c.8485.6349 1.9184.971 2.9513.971.2952 0 .5903-.0373.8485-.0747 2.8038-.4855 4.6483-3.17438 4.2056-5.97532-.2213-1.34445-.9591-2.57686-2.0659-3.36113-2.2503-1.755252-5.4599-1.3071-7.1938.97099-1.7338 2.2781-1.2911 5.52719.9592 7.28246.1107.0747.1845.112.2951.1867z'/%3E%3Cpath d='m81.3643 11.4122c.7009.3735 1.5126.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2987 2.7299-.9337 4.1687-3.92135 3.2464-6.6476-.4427-1.3071-1.365-2.39013-2.5824-2.98766-2.5455-1.307108-5.6812-.22408-6.9355 2.35279-1.2543 2.57686-.1845 5.71387 2.361 7.02097z'/%3E%3Cpath d='m115.228 23.811c-2.73-.859-5.644.6722-6.493 3.4358-.848 2.7636.664 5.7139 3.394 6.5729.517.1494 1.033.2241 1.55.2241.848 0 1.66-.2241 2.398-.5976 2.545-1.3444 3.504-4.4815 2.213-7.0584-.664-1.2324-1.734-2.166-3.062-2.5768z'/%3E%3Cpath d='m129.284 61.271c-1.697-2.3155-4.943-2.801-7.267-1.0457-2.325 1.7552-2.767 5.0043-1.033 7.3571 1.697 2.3155 4.943 2.801 7.267 1.0457 1.107-.8216 1.808-2.054 2.029-3.4358.185-1.3818-.184-2.8009-.996-3.9213z'/%3E%3Cpath d='m113.642 94.7637h-.073c-2.952.1494-5.239 2.6515-5.091 5.6393.11 2.801 2.361 5.079 5.164 5.154h.111c2.951-.15 5.239-2.652 5.091-5.6396-.111-2.8009-2.361-5.079-5.165-5.1537z'/%3E%3Cpath d='m86.6756 117.959c-2.3242-1.681-5.5706-1.121-7.2307 1.232s-1.1067 5.639 1.2174 7.32c2.3242 1.68 5.5706 1.12 7.2307-1.233.8116-1.12 1.1067-2.539.8854-3.921-.2214-1.382-.9961-2.577-2.1028-3.398z'/%3E%3Cpath d='m44.9511 117.36c-2.6562.934-4.095 3.847-3.1727 6.536.7009 2.091 2.6193 3.473 4.7959 3.473.5533 0 1.0698-.112 1.6232-.262 2.693-.784 4.2794-3.622 3.5046-6.348-.7747-2.727-3.5784-4.333-6.2715-3.548-.1475.037-.332.112-.4795.149z'/%3E%3Cpath d='m18.1691 95.1782c-2.73-.859-5.6444.6722-6.4929 3.4358-.8485 2.764.6641 5.714 3.394 6.573.5165.149 1.033.224 1.5495.224 2.8775 0 5.2016-2.39 5.1647-5.266 0-2.2779-1.4756-4.2946-3.6153-4.9668z'/%3E%3Cpath d='m2.08517 60.1841c-2.287253 1.7179-2.766839 5.0043-1.06984 7.3198 1.69699 2.3154 4.94342 2.8009 7.23068 1.083 2.28729-1.7179 2.76679-5.0043 1.06984-7.3198-1.69699-2.3154-4.94342-2.8009-7.23068-1.083z'/%3E%3Cpath d='m16.6203 34.0467h.0738c2.8406-.1121 5.0541-2.5769 4.9434-5.4525-.1106-2.7263-2.2872-4.9297-5.0172-5.0044h-.0369c-2.8775.1121-5.0909 2.5769-4.9434 5.4899.1107 2.6889 2.2873 4.8923 4.9803 4.967z'/%3E%3Cpath d='m33.2966 28.8178c.8854.6349 1.9183.971 2.9882.971.2951 0 .5902-.0373.8854-.0747 2.8037-.4854 4.722-3.2117 4.2425-6.05-.4796-2.8383-3.1727-4.7802-5.9764-4.2947-1.365.224-2.5455 1.0083-3.3571 2.1287-1.6601 2.3528-1.1068 5.6392 1.2174 7.3197z'/%3E%3Cpath d='m62.7334 19.4403c.7009.3735 1.4756.5602 2.2873.5602.5533 0 1.1067-.112 1.6232-.2988 2.7299-.8963 4.1687-3.8839 3.2833-6.6102-.8854-2.7636-3.8367-4.22008-6.5298-3.32378-2.7299.89628-4.1687 3.88398-3.2833 6.61018v.0374c.4427 1.3071 1.4019 2.3901 2.6193 3.025z'/%3E%3Cpath d='m91.9153 29.3014c.5165.1493 1.033.224 1.5495.224 2.8775 0 5.1648-2.3528 5.2017-5.2284 0-2.913-2.3242-5.2284-5.1648-5.2658-2.8776 0-5.1648 2.3528-5.2017 5.2285-.0369 2.3154 1.4388 4.3694 3.6153 5.0417z'/%3E%3Cpath d='m110.584 54.1341c.258.0373.516.0747.775.0747 2.877 0 5.164-2.3528 5.164-5.2284 0-2.913-2.324-5.2284-5.164-5.2284-2.878 0-5.165 2.3527-5.165 5.2284 0 2.5395 1.881 4.7429 4.39 5.1537z'/%3E%3Cpath d='m111.431 85.0958c2.878-.1121 5.091-2.5769 4.943-5.4899-.11-2.7262-2.287-4.9296-5.017-5.0043h-.074c-2.877.112-5.091 2.5768-4.943 5.4898.111 2.7263 2.287 4.9297 5.017 5.0044z'/%3E%3Cpath d='m96.4542 100.41c-2.3242-1.6807-5.5706-1.1205-7.2307 1.232-1.6601 2.353-1.1068 5.639 1.2174 7.32 2.3241 1.681 5.5706 1.12 7.2307-1.232 1.6601-2.39 1.1067-5.677-1.2174-7.32z'/%3E%3Cpath d='m63.5095 109.035c-2.7299.934-4.2056 3.959-3.2464 6.723.7009 2.128 2.6931 3.547 4.9065 3.585.5534 0 1.1068-.112 1.6601-.262 2.6931-1.083 4.0212-4.145 2.9513-6.871-.996-2.54-3.6891-3.884-6.3084-3.137z'/%3E%3Cpath d='m41.3006 102.46c-.6271-1.232-1.7339-2.166-3.0251-2.5768-2.7299-.8589-5.6443.6718-6.4928 3.4358s.664 5.714 3.394 6.573c.4796.149 1.0329.224 1.5494.224 2.2504 0 4.2794-1.494 4.9434-3.697.4058-1.27.2583-2.726-.3689-3.959z'/%3E%3Cpath d='m19.7189 74.7486c-2.7668-.4854-5.423 1.3818-5.9394 4.1828-.4796 2.8009 1.3649 5.4898 4.1318 6.0127.1106 0 .1844.0373.2951.0373.2582.0374.5165.0374.7378.0747 1.1068 0 2.1766-.3735 3.0251-1.0457 2.2504-1.7179 2.7299-4.967 1.033-7.2451-.7379-1.083-1.9553-1.8299-3.2834-2.0167z'/%3E%3Cpath d='m18.9065 43.6758h-.0738c-2.8775.112-5.091 2.5768-4.9434 5.4898.1107 2.7263 2.2872 4.9297 5.0172 5.0044h.0738c2.8775-.1121 5.091-2.5769 4.9434-5.4899-.1476-2.7262-2.3241-4.8923-5.0172-5.0043z'/%3E%3Cpath d='m49.601 25.4901c-1.6601 2.3528-1.0698 5.6392 1.2543 7.3197 2.3241 1.6806 5.5706 1.0831 7.2307-1.2697s1.0698-5.6392-1.2543-7.3198c-1.1068-.7843-2.5086-1.1204-3.8367-.8963-1.4019.2614-2.6193 1.0083-3.394 2.1661z'/%3E%3Cpath d='m71.2566 30.0466c.7379 2.2034 2.7669 3.6972 5.091 3.6972.5903 0 1.1437-.112 1.697-.2988 2.8038-.9336 4.3163-3.996 3.394-6.8343-1.1436-2.7636-4.2794-4.108-7.0093-2.9503-2.5086 1.0457-3.8367 3.772-3.1727 6.3862z'/%3E%3Cpath d='m99.5521 44.0186c.8489-2.7636-.6641-5.7139-3.394-6.5729-2.73-.8589-5.6444.6723-6.4929 3.4359-.8484 2.7635.6641 5.7139 3.394 6.5728.5165.1494 1.033.2614 1.5495.2614 2.2503-.0373 4.2424-1.5311 4.9434-3.6972z'/%3E%3Cpath d='m98.8491 60.2993c-2.2873 1.7179-2.7669 4.967-1.0699 7.2451.8117 1.1204 2.0291 1.83 3.3938 2.0541.258.0373.517.0747.775.0747 1.107 0 2.177-.3735 3.025-1.0084 2.324-1.6432 2.914-4.8549 1.291-7.2077s-4.796-2.9504-7.1198-1.3071c-.1107 0-.1844.0746-.2951.1493z'/%3E%3Cpath d='m90.9561 82.8168c-2.0659 2.1287-2.029 5.5646.0738 7.6559.996 1.0084 2.361 1.5312 3.726 1.5312h.0738c2.9513-.2241 5.1647-2.8009 4.9434-5.7886-.1845-2.6889-2.3242-4.8176-4.9803-5.0044h-.0738c-1.4019 0-2.7668.5976-3.7629 1.6059z'/%3E%3Cpath d='m80.59 103.394c1.6601-2.353 1.1068-5.6395-1.2174-7.3201-2.3241-1.6806-5.5706-1.1204-7.2307 1.2324s-1.1067 5.6397 1.2543 7.3197c.8854.635 1.9184.971 2.9882.971.2952 0 .5903-.037.8854-.075 1.3281-.224 2.5455-.971 3.3202-2.128z'/%3E%3Cpath d='m58.7517 98.5022c-.9223-2.7636-3.8367-4.2201-6.5666-3.2864-2.73.9336-4.1687 3.884-3.2464 6.6472.7009 2.129 2.693 3.586 4.9065 3.586.5534 0 1.1067-.075 1.6232-.262 2.6931-.971 4.1687-3.921 3.2833-6.6848z'/%3E%3Cpath d='m37.1682 81.5446c-1.2912-.4109-2.7299-.2988-3.9473.3734-2.5455 1.3445-3.5047 4.5189-2.1766 7.0957.6271 1.2324 1.7339 2.1287 3.0251 2.5769.5164.1494 1.0329.2241 1.5494.2241 2.8406 0 5.1648-2.3155 5.2017-5.1911 0-2.3528-1.4757-4.3695-3.6523-5.079z'/%3E%3Cpath d='m33.5524 65.154c.4058-2.8756-1.5494-5.5271-4.39-5.9379-2.8406-.4109-5.4599 1.5685-5.8657 4.4441-.1845 1.3818.1476 2.7636.9592 3.884 1.697 2.3154 4.9434 2.8009 7.2306 1.083 1.1437-.8216 1.8815-2.0914 2.0659-3.4732z'/%3E%3Cpath d='m35.7285 36.8438h-.0737c-2.8776 0-5.1648 2.3901-5.1648 5.2657s2.361 5.2284 5.2016 5.2284h.0738c2.8407-.112 5.0541-2.5768 4.9434-5.4525-.0737-2.7636-2.2503-4.9296-4.9803-5.0416z'/%3E%3C/g%3E%3Cpath d='m181.378 64.1812c0-14.9383 11.251-26.3288 25.971-26.3288 9.186-.0747 17.745 4.7429 22.504 12.735l-8.596 5.4898c-2.582-5.3405-7.968-8.6642-13.834-8.5149-9.297 0-16.122 7.3572-16.122 16.6189 0 9.0377 6.752 16.5443 15.974 16.5443 6.235.112 11.953-3.6226 14.388-9.4859l8.964 4.855c-4.353 8.9256-13.391 14.5275-23.241 14.4155-15.31-.0374-26.008-11.8013-26.008-26.3289z' fill='%23000'/%3E%3Cpath d='m248.742 38.5605v51.2012h33.239v-9.5979h-23.389v-41.6033z' fill='%23000'/%3E%3Cpath d='m301.241 38.5605v51.2012h34.087v-9.3738h-24.274v-11.6519h19.773v-9.3365h-19.773v-11.5025h24.274v-9.3365z' fill='%23000'/%3E%3Cpath d='m372.478 38.5605-19.147 51.2386h10.072l3.32-9.3365h21.175l3.321 9.3365h10.071l-19.147-51.2386zm4.87 12.5482 7.304 20.3909h-14.646z' fill='%23000'/%3E%3Cpath d='m429.398 47.6729v16.9177h9.997c6.456 0 9.444-4.0707 9.444-8.6269 0-5.0043-3.209-8.2908-9.444-8.2908zm-9.813-9.1124h20.548c11.658 0 18.593 7.5813 18.593 17.3285.148 6.3488-3.32 12.2121-8.89 15.1624l9.997 18.7477h-10.957l-8.116-16.1335h-11.362v16.1335h-9.776v-51.2386z' fill='%23000'/%3E%3Cpath d='m465.516 43.305c0-2.5769 2.029-4.6683 4.575-4.6683 2.545 0 4.611 2.054 4.611 4.6309s-2.029 4.6682-4.537 4.6682c-2.472.0747-4.538-1.9046-4.649-4.4068 0-.0747 0-.1494 0-.224zm8.264 0c-.074-2.0167-1.734-3.6226-3.726-3.5479s-3.578 1.7552-3.505 3.7719c.074 1.9794 1.66 3.5479 3.616 3.5479 1.992 0 3.578-1.6432 3.578-3.6599 0-.0374 0-.0747 0-.112zm-2.619.4108 1.143 1.9793h-1.07l-1.069-1.8673h-.738v1.8673h-.922v-4.855h1.807c.812 0 1.734.2988 1.734 1.4565.037.6349-.332 1.2324-.922 1.4565zm-.923-2.0541h-.774v1.3818h.811c.591 0 .812-.2987.812-.7095s-.332-.6723-.922-.6723z' fill='%23000'/%3E%3C/svg%3E", 2, "height", "1.25rem", "display", "inline", "vertical-align", "bottom"], ["alt", "ID.me", "src", "assets/logos/idme-light.svg", 1, "idme-csp-logo", "idme-csp-logo--light"], ["alt", "ID.me", "src", "assets/logos/idme-dark.svg", 1, "idme-csp-logo", "idme-csp-logo--dark"], ["class", "mt-fdk-m", 4, "ngFor", "ngForOf"], [4, "ngIf"], [1, "fdk-type-paragraph", "text-fdk-primary", "whitespace-pre-line", "mt-fdk-xxxs"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxxs"]], template: function ProfileComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 3)(1, "section", 4)(2, "h2", 5);
+        \u0275\u0275text(3, "Profile");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(4, "p", 6);
+        \u0275\u0275text(5);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(6, "p", 7)(7, "span", 8);
+        \u0275\u0275template(8, ProfileComponent_ng_container_8_Template, 1, 0, "ng-container", 9);
+        \u0275\u0275elementEnd();
+        \u0275\u0275text(9);
+        \u0275\u0275elementEnd();
+        \u0275\u0275template(10, ProfileComponent_ng_template_10_Template, 1, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor)(12, ProfileComponent_ng_template_12_Template, 2, 0, "ng-template", null, 1, \u0275\u0275templateRefExtractor);
+        \u0275\u0275elementStart(14, "div", 10)(15, "p", 11);
+        \u0275\u0275text(16, "Date of birth");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(17, "p", 12);
+        \u0275\u0275text(18);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(19, "div", 10)(20, "p", 11);
+        \u0275\u0275text(21, "Gender");
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(22, "p", 13);
+        \u0275\u0275text(23);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275template(24, ProfileComponent_ng_container_24_Template, 2, 1, "ng-container", 14)(25, ProfileComponent_ng_template_25_Template, 5, 0, "ng-template", null, 2, \u0275\u0275templateRefExtractor);
+        \u0275\u0275elementEnd()();
+      }
+      if (rf & 2) {
+        const clearCspLogo_r4 = \u0275\u0275reference(11);
+        const idmeCspLogo_r5 = \u0275\u0275reference(13);
+        const noPatientAddress_r6 = \u0275\u0275reference(26);
+        \u0275\u0275advance(5);
+        \u0275\u0275textInterpolate(ctx.getVerifiedPatientName(ctx.patientDemographics));
+        \u0275\u0275advance(3);
+        \u0275\u0275property("ngIf", ctx.configService.vaultProfileConfigSubject.value.verifiedIdentityCspType === ctx.CspType.IdmeCsp)("ngIfThen", idmeCspLogo_r5)("ngIfElse", clearCspLogo_r4);
+        \u0275\u0275advance();
+        \u0275\u0275textInterpolate2(" Your profile information comes directly from ", ctx.identityProviderName, ". If anything looks wrong, contact ", ctx.identityProviderName, " to update it. ");
+        \u0275\u0275advance(9);
+        \u0275\u0275textInterpolate(ctx.getVerifiedBirthdate(ctx.patientDemographics));
+        \u0275\u0275advance(5);
+        \u0275\u0275textInterpolate(ctx.patientDemographics.gender || "Not available");
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.patientDemographics.addressInformation == null ? null : ctx.patientDemographics.addressInformation.length)("ngIfElse", noPatientAddress_r6);
+      }
+    }, dependencies: [CommonModule, NgForOf, NgIf], styles: ['\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  min-height: 0;\n  height: 100%;\n}\n[data-fdk-theme="dark"][_nghost-%COMP%]   #profile-information-source[_ngcontent-%COMP%]   img[alt=CLEAR][_ngcontent-%COMP%], [data-fdk-theme="dark"]   [_nghost-%COMP%]   #profile-information-source[_ngcontent-%COMP%]   img[alt=CLEAR][_ngcontent-%COMP%] {\n  filter: brightness(0) invert(1);\n}\n.idme-csp-logo[_ngcontent-%COMP%] {\n  display: inline;\n  height: 0.8rem;\n  vertical-align: middle;\n}\n.idme-csp-logo--dark[_ngcontent-%COMP%] {\n  display: none;\n}\n[data-fdk-theme="dark"][_nghost-%COMP%]   .idme-csp-logo--light[_ngcontent-%COMP%], [data-fdk-theme="dark"]   [_nghost-%COMP%]   .idme-csp-logo--light[_ngcontent-%COMP%] {\n  display: none;\n}\n[data-fdk-theme="dark"][_nghost-%COMP%]   .idme-csp-logo--dark[_ngcontent-%COMP%], [data-fdk-theme="dark"]   [_nghost-%COMP%]   .idme-csp-logo--dark[_ngcontent-%COMP%] {\n  display: inline;\n}\n/*# sourceMappingURL=profile.component.css.map */'] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ProfileComponent, { className: "ProfileComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/profile/profile.component.ts", lineNumber: 20 });
+})();
+
+// node_modules/@angular/core/fesm2022/rxjs-interop.mjs
+function takeUntilDestroyed(destroyRef) {
+  if (!destroyRef) {
+    assertInInjectionContext(takeUntilDestroyed);
+    destroyRef = inject(DestroyRef);
+  }
+  const destroyed$ = new Observable((observer) => {
+    const unregisterFn = destroyRef.onDestroy(observer.next.bind(observer));
+    return unregisterFn;
+  });
+  return (source) => {
+    return source.pipe(takeUntil(destroyed$));
+  };
+}
+
+// projects/fasten-connect-stitch-embed/src/app/pages/record-locator-loading/record-locator-loading.component.ts
+function RecordLocatorLoadingComponent_div_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 2)(1, "div", 3);
+    \u0275\u0275element(2, "fdk-illustration", 4)(3, "fdk-loading-dots", 5);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(4, "h2", 6);
+    \u0275\u0275text(5, " Finding your health systems ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "p", 7);
+    \u0275\u0275text(7, " We're looking for the providers you've visited. This may take a moment. ");
+    \u0275\u0275elementEnd()();
+  }
+}
+var RecordLocatorLoadingComponent = class _RecordLocatorLoadingComponent {
+  constructor(configService, fastenService, router, logger) {
+    this.configService = configService;
+    this.fastenService = fastenService;
+    this.router = router;
+    this.logger = logger;
+    this.loadingTefcaRLS = true;
+    this.destroyRef = inject(DestroyRef);
+  }
+  ngOnInit() {
+    if (this.configService.vaultProfileConfig$.rlsQueryComplete) {
+      this.finishLoading();
+      return;
+    }
+    FetchAndStoreRecordLocatorResultsInVaultProfile(this.configService, () => this.fastenService.recordLocatorRegisterAndPollForStatus(), (taskId) => this.fastenService.recordLocatorResults(taskId)).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => this.finishLoading(),
+      error: (error2) => {
+        this.logger.error("Error fetching record locator results", error2);
+        this.configService.vaultProfileConfig = {
+          rlsQueryComplete: true
+        };
+        this.finishLoading();
+      }
+    });
+  }
+  finishLoading() {
+    this.loadingTefcaRLS = false;
+    void this.router.navigateByUrl("/dashboard", {
+      replaceUrl: true,
+      state: { skipIdentityVerification: true }
+    });
+  }
+  static {
+    this.\u0275fac = function RecordLocatorLoadingComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _RecordLocatorLoadingComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(NGXLogger));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _RecordLocatorLoadingComponent, selectors: [["app-record-locator-loading"]], decls: 2, vars: 1, consts: [["id", "record-locator-loading-page", 1, "flex", "flex-1", "min-h-0", "flex-col"], ["class", "flex flex-1 flex-col items-center text-center mt-fdk-xxxl", "role", "status", "aria-live", "polite", 4, "ngIf"], ["role", "status", "aria-live", "polite", 1, "flex", "flex-1", "flex-col", "items-center", "text-center", "mt-fdk-xxxl"], [1, "flex", "flex-col", "items-center"], ["name", "connecting"], [1, "mt-fdk-s"], [1, "fdk-type-heading-2", "text-fdk-primary", "mt-fdk-l"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"]], template: function RecordLocatorLoadingComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0);
+        \u0275\u0275template(1, RecordLocatorLoadingComponent_div_1_Template, 8, 0, "div", 1);
+        \u0275\u0275elementEnd();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", ctx.loadingTefcaRLS);
+      }
+    }, dependencies: [
+      CommonModule,
+      NgIf,
+      FdkIllustrationComponent,
+      FdkLoadingDotsComponent
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  min-height: 0;\n  height: 100%;\n}\n/*# sourceMappingURL=record-locator-loading.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(RecordLocatorLoadingComponent, { className: "RecordLocatorLoadingComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/record-locator-loading/record-locator-loading.component.ts", lineNumber: 28 });
+})();
+
+// projects/fasten-connect-stitch-embed/src/app/pages/confirm-health-system-selection/confirm-health-system-selection.component.ts
+var _c06 = () => [];
+function ConfirmHealthSystemSelectionComponent_ng_container_1_fdk_card_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "fdk-card", 12);
+  }
+  if (rf & 2) {
+    const connectedAccount_r2 = ctx.$implicit;
+    \u0275\u0275property("title", (connectedAccount_r2.portal == null ? null : connectedAccount_r2.portal.name) || (connectedAccount_r2.brand == null ? null : connectedAccount_r2.brand.name) || "")("logo", (connectedAccount_r2.brand == null ? null : connectedAccount_r2.brand.id) ? "https://cdn.fastenhealth.com/logos/sources/" + (connectedAccount_r2.brand == null ? null : connectedAccount_r2.brand.id) + ".png" : "");
+  }
+}
+function ConfirmHealthSystemSelectionComponent_ng_container_1_fdk_spinner_16_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "fdk-spinner");
+  }
+}
+function ConfirmHealthSystemSelectionComponent_ng_container_1_Template(rf, ctx) {
+  if (rf & 1) {
+    const _r1 = \u0275\u0275getCurrentView();
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275elementStart(1, "div", 2)(2, "div")(3, "h2", 3);
+    \u0275\u0275text(4, " Review and confirm\xA0 ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(5, "p", 4);
+    \u0275\u0275text(6, " Check the providers you've selected, then confirm to share your records. ");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(7, "p", 5);
+    \u0275\u0275text(8);
+    \u0275\u0275elementEnd()();
+    \u0275\u0275elementStart(9, "div", 6);
+    \u0275\u0275template(10, ConfirmHealthSystemSelectionComponent_ng_container_1_fdk_card_10_Template, 1, 2, "fdk-card", 7);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(11, "div", 8)(12, "p", 9);
+    \u0275\u0275text(13, "Your health records are encrypted and will only be shared with the providers you've selected.");
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(14, "fdk-button", 10);
+    \u0275\u0275listener("click", function ConfirmHealthSystemSelectionComponent_ng_container_1_Template_fdk_button_click_14_listener() {
+      \u0275\u0275restoreView(_r1);
+      const ctx_r2 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r2.completeAccounts());
+    });
+    \u0275\u0275elementStart(15, "span", 11);
+    \u0275\u0275template(16, ConfirmHealthSystemSelectionComponent_ng_container_1_fdk_spinner_16_Template, 1, 0, "fdk-spinner", 1);
+    \u0275\u0275text(17, " Share my records");
+    \u0275\u0275elementEnd()()()();
+    \u0275\u0275elementContainerEnd();
+  }
+  if (rf & 2) {
+    const vaultProfile_r4 = ctx.ngIf;
+    const ctx_r2 = \u0275\u0275nextContext();
+    \u0275\u0275advance(8);
+    \u0275\u0275textInterpolate2(" ", (vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(5, _c06)).length, " provider", (vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(6, _c06)).length === 1 ? "" : "s", " selected ");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngForOf", vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(7, _c06));
+    \u0275\u0275advance(4);
+    \u0275\u0275property("disabled", !(vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(8, _c06)).length || ctx_r2.isCompleting);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngIf", ctx_r2.isCompleting);
+  }
+}
+var ConfirmHealthSystemSelectionComponent = class _ConfirmHealthSystemSelectionComponent {
+  constructor(configService, router, fastenService, logger, injector) {
+    this.configService = configService;
+    this.router = router;
+    this.fastenService = fastenService;
+    this.logger = logger;
+    this.injector = injector;
+    this.isCompleting = false;
+  }
+  completeAccounts() {
+    const connectedAccounts = this.configService.vaultProfileConfig$.connectedPatientAccounts || [];
+    const tefcaDirectAccounts = connectedAccounts.filter((account) => {
+      return account.patient_auth_type === SourceCredentialType.SourceCredentialTypeTefcaDirect || account.patient_auth_type === SourceCredentialType.SourceCredentialTypeMedicareDirect;
+    });
+    this.logger.debug("Direct connected accounts to complete:", tefcaDirectAccounts);
+    const vaultConnectionIds = tefcaDirectAccounts.map((account) => account.vault_profile_connection_id).filter((id) => !!id);
+    const uniqueVaultConnectionIds = Array.from(new Set(vaultConnectionIds));
+    if (uniqueVaultConnectionIds.length === 0) {
+      void this.router.navigateByUrl("dashboard/complete");
+      return;
+    }
+    this.isCompleting = true;
+    this.fastenService.authorizeTefcaDirect(uniqueVaultConnectionIds, this.configService.systemConfig$.externalId).subscribe((response) => {
+      this.logger.info("Direct authorization response", response);
+      this.injector.runInContext(() => {
+        ProcessTefcaDirectAuthorizationResults(uniqueVaultConnectionIds, response);
+      });
+      this.isCompleting = false;
+      void this.router.navigateByUrl("dashboard/complete");
+    }, (error2) => {
+      this.logger.error("Failed to authorize Direct accounts", error2);
+      this.injector.runInContext(() => {
+        ProcessTefcaDirectAuthorizationResults(uniqueVaultConnectionIds, null);
+      });
+      this.isCompleting = false;
+      void this.router.navigateByUrl("dashboard/complete");
+    });
+  }
+  static {
+    this.\u0275fac = function ConfirmHealthSystemSelectionComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _ConfirmHealthSystemSelectionComponent)(\u0275\u0275directiveInject(ConfigService), \u0275\u0275directiveInject(Router), \u0275\u0275directiveInject(FastenService), \u0275\u0275directiveInject(NGXLogger), \u0275\u0275directiveInject(EnvironmentInjector));
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ConfirmHealthSystemSelectionComponent, selectors: [["app-confirm-health-system-selection"]], decls: 3, vars: 3, consts: [["id", "step-confirm-health-system-selection", 1, "flex", "h-full", "min-h-0", "flex-col", "overflow-hidden"], [4, "ngIf"], [1, "flex", "min-h-0", "flex-1", "flex-col", "pt-6"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], ["id", "connected-account-count", 1, "fdk-type-paragraph-s", "text-fdk-accent", "mt-fdk-m"], ["id", "connected-account-cards", 1, "flex", "min-h-0", "flex-1", "flex-col", "gap-fdk-xxs", "overflow-y-auto", "mt-fdk-xs", "no-scrollbar"], ["class", "connected-account-card flex-shrink-0", "variant", "readOnly", 3, "title", "logo", 4, "ngFor", "ngForOf"], [1, "confirm-selection-footer", "mt-auto", "pt-6", "flex-shrink-0"], [1, "fdk-type-paragraph-xs", "text-fdk-secondary", "mb-fdk-xs"], ["id", "share-records", "type", "button", "variant", "primary", "width", "full", 3, "click", "disabled"], [1, "flex", "items-center", "justify-center", "gap-2"], ["variant", "readOnly", 1, "connected-account-card", "flex-shrink-0", 3, "title", "logo"]], template: function ConfirmHealthSystemSelectionComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0);
+        \u0275\u0275template(1, ConfirmHealthSystemSelectionComponent_ng_container_1_Template, 18, 9, "ng-container", 1);
+        \u0275\u0275pipe(2, "async");
+        \u0275\u0275elementEnd();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance();
+        \u0275\u0275property("ngIf", \u0275\u0275pipeBind1(2, 1, ctx.configService.vaultProfileConfigSubject));
+      }
+    }, dependencies: [
+      CommonModule,
+      NgForOf,
+      NgIf,
+      AsyncPipe,
+      FdkButtonComponent,
+      FdkCardComponent,
+      FdkSpinnerComponent
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  flex: 1 1 auto;\n  height: min(100%, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n.no-scrollbar[_ngcontent-%COMP%] {\n  scrollbar-width: none;\n  -ms-overflow-style: none;\n}\n.no-scrollbar[_ngcontent-%COMP%]::-webkit-scrollbar {\n  display: none;\n}\n/*# sourceMappingURL=confirm-health-system-selection.component.css.map */"] });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ConfirmHealthSystemSelectionComponent, { className: "ConfirmHealthSystemSelectionComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/confirm-health-system-selection/confirm-health-system-selection.component.ts", lineNumber: 30 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/auth-guards/prevent-browser-history-navigation-guard.ts
@@ -83423,24 +86604,60 @@ var PreventTefcaPreDashboardHistoryNavigationGuard = class _PreventTefcaPreDashb
 };
 
 // projects/fasten-connect-stitch-embed/src/app/app.routes.ts
+var headerData = (header) => ({ header });
+var plainHeader = headerData({});
+var dashboardHeader = headerData({
+  showReportIssueButton: true,
+  showProfileButton: true,
+  showCloseButton: true
+});
+var dashboardBackHeader = headerData({
+  showBackButton: true,
+  backUrl: "/dashboard",
+  showReportIssueButton: true,
+  showCloseButton: true
+});
 var routes = [
-  { path: "auth/signin", component: VaultProfileSigninComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
-  { path: "auth/signin/code", component: VaultProfileSigninCodeComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
-  { path: "auth/signin/cookies-required", component: ThirdPartyCookiesErrorComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
-  { path: "auth/callback", component: AuthCallbackComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
-  { path: "auth/identity/verification", component: IdentityVerificationComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
+  { path: "auth/signin", component: WelcomeComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard], data: plainHeader },
+  { path: "auth/signin/email", component: VaultProfileSigninComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard, hasCompletedSigninWelcomeGuard], data: plainHeader },
+  { path: "auth/signin/code", component: VaultProfileSigninCodeComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard], data: plainHeader },
+  { path: "auth/signin/cookies-required", component: ThirdPartyCookiesErrorComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard], data: plainHeader },
+  { path: "auth/callback", component: AuthCallbackComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard], data: plainHeader },
+  { path: "auth/identity/verification", component: IdentityVerificationComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard], data: plainHeader },
   //canActivate: [IsAuthenticatedAuthGuard] },
-  { path: "auth/identity/verification/error", component: IdentityVerificationErrorComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard] },
+  { path: "auth/identity/verification/error", component: IdentityVerificationErrorComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard], data: plainHeader },
   //canActivate: [IsAuthenticatedAuthGuard] },
-  { path: "splash", component: SplashComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard, IsAuthenticatedAuthGuard] },
-  { path: "dashboard", component: DashboardComponent, canActivate: [IsAuthenticatedAuthGuard, IsTefcaModeAuthGuard] },
-  { path: "search", component: HealthSystemSearchComponent, canActivate: [IsAuthenticatedAuthGuard] },
-  { path: "brand/details", component: HealthSystemBrandDetailsComponent, canActivate: [PreventBrowserHistoryNavigationGuard, IsAuthenticatedAuthGuard] },
+  { path: "splash", component: SplashComponent, canActivate: [PreventTefcaPreDashboardHistoryNavigationGuard, IsAuthenticatedAuthGuard], data: plainHeader },
+  { path: "dashboard/loading", component: RecordLocatorLoadingComponent, canActivate: [IsAuthenticatedAuthGuard, IsTefcaModeAuthGuard], data: headerData({ showCloseButton: true }) },
+  { path: "dashboard", component: DashboardComponent, canActivate: [IsAuthenticatedAuthGuard, IsTefcaModeAuthGuard], data: dashboardHeader },
+  { path: "dashboard/confirm", component: ConfirmHealthSystemSelectionComponent, canActivate: [IsAuthenticatedAuthGuard, IsTefcaModeAuthGuard], data: dashboardBackHeader },
+  { path: "profile", component: ProfileComponent, canActivate: [IsAuthenticatedAuthGuard, IsTefcaModeAuthGuard], data: headerData({ showBackButton: true, backUrl: "/dashboard", showCloseButton: true }) },
+  { path: "search", component: HealthSystemSearchComponent, canActivate: [IsAuthenticatedAuthGuard], data: dashboardBackHeader },
+  { path: "brand/details", component: HealthSystemBrandDetailsComponent, canActivate: [PreventBrowserHistoryNavigationGuard, IsAuthenticatedAuthGuard], data: headerData({ showBackButton: true, backUrl: "/search", backReplaceUrl: true, showReportIssueButton: true, showCloseButton: true }) },
   //cannot be authenticated, must be publically accessible for reconnecting
-  { path: "dashboard/connecting", component: HealthSystemConnectingComponent, canActivate: [PreventBrowserHistoryNavigationGuard] },
-  { path: "dashboard/complete", component: CompleteComponent, canDeactivate: [PreventBrowserHistoryNavigationGuard] },
-  { path: "form/healthsystem", component: FormHealthSystemRequestComponent },
-  { path: "form/support", component: FormSupportRequestComponent },
+  {
+    path: "dashboard/connecting",
+    component: HealthSystemConnectingComponent,
+    canActivate: [PreventBrowserHistoryNavigationGuard],
+    data: headerData({
+      showBackButton: true,
+      backUrl: "/dashboard",
+      hideBackWhenQueryParam: "orgConnectionId",
+      showReportIssueButton: true,
+      showCloseButton: true,
+      reportIssueQueryParamMap: {
+        brandId: "brand_id",
+        portalId: "portal_id",
+        endpointId: "endpoint_id",
+        orgConnectionId: "org_connection_id",
+        externalId: "external_id",
+        externalState: "external_state"
+      }
+    })
+  },
+  { path: "dashboard/complete", component: CompleteComponent, canDeactivate: [PreventBrowserHistoryNavigationGuard], data: headerData({ showReportIssueButton: true, showCloseButton: true, closeAction: "complete-and-close" }) },
+  { path: "form/healthsystem", component: FormHealthSystemRequestComponent, data: headerData({ showBackButton: true, backUrl: "/dashboard" }) },
+  { path: "form/support", component: FormSupportRequestComponent, data: headerData({ showBackButton: true, backUrl: "/dashboard" }) },
   { path: "", redirectTo: "/auth/signin", pathMatch: "full" },
   //must be at bottom of list
   { path: "**", redirectTo: "auth/signin" }
@@ -88251,6 +91468,13 @@ lodash/lodash.js:
   (*! rollup-include-development-only-end *)
 
 @angular/forms/fesm2022/forms.mjs:
+  (**
+   * @license Angular v19.2.1
+   * (c) 2010-2025 Google LLC. https://angular.io/
+   * License: MIT
+   *)
+
+@angular/core/fesm2022/rxjs-interop.mjs:
   (**
    * @license Angular v19.2.1
    * (c) 2010-2025 Google LLC. https://angular.io/

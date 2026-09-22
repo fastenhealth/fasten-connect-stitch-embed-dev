@@ -1,7 +1,7 @@
 {
   "version": 3,
   "sources": ["projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.css"],
-  "sourcesContent": [".comma:not(:last-child):after {\n  content: \", \";\n}\n"],
-  "mappings": ";AAAA,CAAC,KAAK,KAAK,YAAY;AACrB,WAAS;AACX;",
+  "sourcesContent": [".comma:not(:last-child):after {\n  content: \", \";\n}\n\n.filters-drawer-overlay {\n  position: fixed;\n  z-index: 1000;\n  inset: 0;\n  display: flex;\n  align-items: flex-end;\n  justify-content: center;\n  background-color: var(--fdk-color-neutrals-overlay);\n}\n\n.filters-drawer {\n  box-sizing: border-box;\n  width: min(32rem, 100%);\n  max-height: min(80dvh, 40rem);\n  overflow-y: auto;\n  padding: var(--fdk-spacing-l) var(--fdk-spacing-l) var(--fdk-spacing-xxxl) var(--fdk-spacing-l);\n  border: 1px solid var(--fdk-color-neutrals-border);\n  border-bottom: 0;\n  border-radius: 12px 12px 0 0;\n  background-color: var(--fdk-color-neutrals-background);\n  box-shadow: 0 -1rem 2rem rgb(0 0 0 / 0.16);\n}\n"],
+  "mappings": ";AAAA,CAAC,KAAK,KAAK,YAAY;AACrB,WAAS;AACX;AAEA,CAAC;AACC,YAAU;AACV,WAAS;AACT,SAAO;AACP,WAAS;AACT,eAAa;AACb,mBAAiB;AACjB,oBAAkB,IAAI;AACxB;AAEA,CAAC;AACC,cAAY;AACZ,SAAO,IAAI,KAAK,EAAE;AAClB,cAAY,IAAI,KAAK,EAAE;AACvB,cAAY;AACZ,WAAS,IAAI,iBAAiB,IAAI,iBAAiB,IAAI,oBAAoB,IAAI;AAC/E,UAAQ,IAAI,MAAM,IAAI;AACtB,iBAAe;AACf,iBAAe,KAAK,KAAK,EAAE;AAC3B,oBAAkB,IAAI;AACtB,cAAY,EAAE,MAAM,KAAK,IAAI,EAAE,EAAE,EAAE,EAAE;AACvC;",
   "names": []
 }

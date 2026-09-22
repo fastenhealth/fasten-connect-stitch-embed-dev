@@ -1,7 +1,7 @@
 {
   "version": 3,
   "sources": ["projects/fasten-connect-stitch-embed/src/app/app.component.css"],
-  "sourcesContent": [":host {\n  display: flex;\n  flex-direction: column;\n  height: 100vh;\n  height: 100dvh;\n  min-height: 0;\n}\n\n#widget-container {\n  box-sizing: border-box;\n  flex: 1 1 auto;\n  width: 100%;\n  height: auto;\n  min-height: 0;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  -webkit-overflow-scrolling: touch;\n}\n"],
-  "mappings": ";AAAA;AACE,WAAS;AACT,kBAAgB;AAChB,UAAQ;AACR,UAAQ;AACR,cAAY;AACd;AAEA,CAAC;AACC,cAAY;AACZ,QAAM,EAAE,EAAE;AACV,SAAO;AACP,UAAQ;AACR,cAAY;AACZ,cAAY;AACZ,cAAY;AACZ,yBAAuB;AACvB,8BAA4B;AAC9B;",
+  "sourcesContent": [":host {\n  display: flex;\n  flex-direction: column;\n  height: min(100dvh, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n\n#widget-container {\n  box-sizing: border-box;\n  flex: 1 1 auto;\n  width: 100%;\n  height: auto;\n  max-height: 800px;\n  min-height: 0;\n  overflow-x: hidden;\n  overflow-y: hidden;\n}\n\n#page-scroll-container {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  min-height: 0;\n  padding: 3px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  -webkit-overflow-scrolling: touch;\n}\n\n#widget-container > fdk-footer {\n  flex: 0 0 auto;\n}\n"],
+  "mappings": ";AAAA;AACE,WAAS;AACT,kBAAgB;AAChB,UAAQ,IAAI,MAAM,EAAE;AACpB,cAAY;AACZ,cAAY;AACZ,YAAU;AACZ;AAEA,CAAC;AACC,cAAY;AACZ,QAAM,EAAE,EAAE;AACV,SAAO;AACP,UAAQ;AACR,cAAY;AACZ,cAAY;AACZ,cAAY;AACZ,cAAY;AACd;AAEA,CAAC;AACC,WAAS;AACT,QAAM,EAAE,EAAE;AACV,kBAAgB;AAChB,SAAO;AACP,cAAY;AACZ,WAAS;AACT,cAAY;AACZ,cAAY;AACZ,yBAAuB;AACvB,8BAA4B;AAC9B;AAEA,CAxBC,iBAwBiB,EAAE;AAClB,QAAM,EAAE,EAAE;AACZ;",
   "names": []
 }
