@@ -76619,7 +76619,7 @@ var _c0 = ["*"];
 function FdkCardComponent_Conditional_2_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "img", 7);
+    \u0275\u0275elementStart(0, "img", 9);
     \u0275\u0275listener("error", function FdkCardComponent_Conditional_2_Template_img_error_0_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
@@ -76641,30 +76641,42 @@ function FdkCardComponent_Conditional_3_Template(rf, ctx) {
     \u0275\u0275property("initials", ctx_r1.initials);
   }
 }
-function FdkCardComponent_Conditional_6_Template(rf, ctx) {
+function FdkCardComponent_Conditional_7_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 4);
-    \u0275\u0275element(1, "fdk-icon", 8);
+    \u0275\u0275elementStart(0, "p", 5);
+    \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
-}
-function FdkCardComponent_Case_7_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 5);
-    \u0275\u0275element(1, "fdk-icon", 9);
-    \u0275\u0275elementEnd();
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r1.description);
   }
 }
-function FdkCardComponent_Case_8_Template(rf, ctx) {
+function FdkCardComponent_Conditional_8_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 5);
+    \u0275\u0275elementStart(0, "div", 6);
     \u0275\u0275element(1, "fdk-icon", 10);
     \u0275\u0275elementEnd();
   }
 }
 function FdkCardComponent_Case_9_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 6)(1, "span");
+    \u0275\u0275elementStart(0, "div", 7);
+    \u0275\u0275element(1, "fdk-icon", 11);
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkCardComponent_Case_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 7);
+    \u0275\u0275element(1, "fdk-icon", 12);
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkCardComponent_Case_11_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 8)(1, "span");
     \u0275\u0275text(2, "Sign In");
     \u0275\u0275elementEnd()();
   }
@@ -77659,6 +77671,7 @@ var FdkInitialsComponent = class _FdkInitialsComponent {
 })();
 var FdkCardComponent = class _FdkCardComponent {
   constructor() {
+    this.description = "";
     this.initials = "";
     this.variant = "select";
     this.selected = false;
@@ -77686,40 +77699,45 @@ var FdkCardComponent = class _FdkCardComponent {
       selectors: [["fdk-card"]],
       inputs: {
         title: "title",
+        description: "description",
         initials: "initials",
         variant: "variant",
         selected: [2, "selected", "selected", booleanAttribute],
         logo: "logo"
       },
-      decls: 10,
-      vars: 9,
-      consts: [[1, "fdk-card__header"], ["alt", "", 1, "fdk-card__logo", 3, "src"], ["size", "small", 3, "initials"], [1, "fdk-card__title"], [1, "fdk-card__selected-indicator"], [1, "fdk-card__action"], [1, "fdk-card__sign-in"], ["alt", "", 1, "fdk-card__logo", 3, "error", "src"], ["name", "checkmark", "size", "24"], ["name", "chevron-right", "size", "24"], ["name", "plus", "size", "24"]],
+      decls: 12,
+      vars: 10,
+      consts: [[1, "fdk-card__header"], ["alt", "", 1, "fdk-card__logo", 3, "src"], ["size", "small", 3, "initials"], [1, "fdk-card__text"], [1, "fdk-card__title"], [1, "fdk-card__description"], [1, "fdk-card__selected-indicator"], [1, "fdk-card__action"], [1, "fdk-card__sign-in"], ["alt", "", 1, "fdk-card__logo", 3, "error", "src"], ["name", "checkmark", "size", "24"], ["name", "chevron-right", "size", "24"], ["name", "plus", "size", "24"]],
       template: function FdkCardComponent_Template(rf, ctx) {
         if (rf & 1) {
           \u0275\u0275elementStart(0, "div")(1, "div", 0);
           \u0275\u0275template(2, FdkCardComponent_Conditional_2_Template, 1, 1, "img", 1)(3, FdkCardComponent_Conditional_3_Template, 1, 1, "fdk-initials", 2);
-          \u0275\u0275elementStart(4, "div", 3);
-          \u0275\u0275text(5);
+          \u0275\u0275elementStart(4, "div", 3)(5, "div", 4);
+          \u0275\u0275text(6);
+          \u0275\u0275elementEnd();
+          \u0275\u0275template(7, FdkCardComponent_Conditional_7_Template, 2, 1, "p", 5);
           \u0275\u0275elementEnd()();
-          \u0275\u0275template(6, FdkCardComponent_Conditional_6_Template, 2, 0, "div", 4)(7, FdkCardComponent_Case_7_Template, 2, 0, "div", 5)(8, FdkCardComponent_Case_8_Template, 2, 0, "div", 5)(9, FdkCardComponent_Case_9_Template, 3, 0, "div", 6);
+          \u0275\u0275template(8, FdkCardComponent_Conditional_8_Template, 2, 0, "div", 6)(9, FdkCardComponent_Case_9_Template, 2, 0, "div", 7)(10, FdkCardComponent_Case_10_Template, 2, 0, "div", 7)(11, FdkCardComponent_Case_11_Template, 3, 0, "div", 8);
           \u0275\u0275elementEnd();
         }
         if (rf & 2) {
-          let tmp_5_0;
+          let tmp_6_0;
           \u0275\u0275classMapInterpolate1("fdk-card fdk-card--", ctx.variant, "");
           \u0275\u0275classProp("fdk-card--selected", ctx.selected);
           \u0275\u0275advance(2);
           \u0275\u0275conditional(ctx.logo && !ctx.logoLoadFailed ? 2 : ctx.initials ? 3 : -1);
-          \u0275\u0275advance(3);
+          \u0275\u0275advance(4);
           \u0275\u0275textInterpolate(ctx.title);
           \u0275\u0275advance();
-          \u0275\u0275conditional(ctx.selected ? 6 : -1);
+          \u0275\u0275conditional(ctx.description ? 7 : -1);
           \u0275\u0275advance();
-          \u0275\u0275conditional((tmp_5_0 = ctx.variant) === "more" ? 7 : tmp_5_0 === "add" ? 8 : tmp_5_0 === "signIn" ? 9 : -1);
+          \u0275\u0275conditional(ctx.selected ? 8 : -1);
+          \u0275\u0275advance();
+          \u0275\u0275conditional((tmp_6_0 = ctx.variant) === "more" ? 9 : tmp_6_0 === "add" ? 10 : tmp_6_0 === "signIn" ? 11 : -1);
         }
       },
       dependencies: [FdkIconComponent, FdkInitialsComponent],
-      styles: ["[_nghost-%COMP%]{display:block;width:100%;min-width:0}.fdk-card[_ngcontent-%COMP%]{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);font-family:var(--fdk-font-family-sans);display:flex;justify-content:space-between;cursor:pointer;align-items:center}.fdk-card__header[_ngcontent-%COMP%]{display:flex;align-items:center;gap:var(--fdk-spacing-m);min-width:0}.fdk-card__logo[_ngcontent-%COMP%]{width:2rem;height:2rem;flex:0 0 2rem;object-fit:contain}.fdk-card__title[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary);overflow-wrap:anywhere}.fdk-card--selected[_ngcontent-%COMP%]{border-color:var(--fdk-color-accent);background-color:var(--fdk-color-accent-subtle)}.fdk-card__selected-indicator[_ngcontent-%COMP%]{color:var(--fdk-color-accent)}.fdk-card__sign-in[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-accent);flex:none;white-space:nowrap}.fdk-card--signIn[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--signIn[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--select[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--select[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--add[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--add[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--more[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--more[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--readOnly[_ngcontent-%COMP%]{cursor:default;border:none;background-color:var(--fdk-color-neutrals-hover)}"],
+      styles: ["[_nghost-%COMP%]{display:block;width:100%;min-width:0}.fdk-card[_ngcontent-%COMP%]{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);font-family:var(--fdk-font-family-sans);display:flex;justify-content:space-between;cursor:pointer;align-items:center}.fdk-card__header[_ngcontent-%COMP%]{display:flex;align-items:center;gap:var(--fdk-spacing-m);min-width:0}.fdk-card__logo[_ngcontent-%COMP%]{width:2rem;height:2rem;flex:0 0 2rem;object-fit:contain}.fdk-card__title[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary);overflow-wrap:anywhere}.fdk-card__text[_ngcontent-%COMP%]{min-width:0}.fdk-card__description[_ngcontent-%COMP%]{margin:var(--fdk-spacing-xxxs) 0 0;font-size:var(--fdk-font-size-paragraph-xs);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph-xs);color:var(--fdk-color-text-secondary);overflow-wrap:anywhere}.fdk-card--selected[_ngcontent-%COMP%]{border-color:var(--fdk-color-accent);background-color:var(--fdk-color-accent-subtle)}.fdk-card__selected-indicator[_ngcontent-%COMP%]{color:var(--fdk-color-accent)}.fdk-card__sign-in[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-accent);flex:none;white-space:nowrap}.fdk-card--signIn[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--signIn[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--select[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--select[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--add[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--add[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--more[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--more[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--readOnly[_ngcontent-%COMP%]{cursor:default;border:none;background-color:var(--fdk-color-neutrals-hover)}"],
       changeDetection: 0
     });
   }
@@ -77732,8 +77750,8 @@ var FdkCardComponent = class _FdkCardComponent {
       imports: [FdkIconComponent, FdkInitialsComponent],
       changeDetection: ChangeDetectionStrategy.OnPush,
       standalone: true,
-      template: '<div\n  class="fdk-card fdk-card--{{ variant }}"\n  [class.fdk-card--selected]="selected"\n>\n  <div class="fdk-card__header">\n    @if (logo && !logoLoadFailed) {\n      <img\n        class="fdk-card__logo"\n        [src]="logo"\n        alt=""\n        (error)="handleLogoError()"\n      />\n    } @else if (initials) {\n      <fdk-initials [initials]="initials" size="small" />\n    }\n    <div class="fdk-card__title">{{ title }}</div>\n  </div>\n  @if (selected) {\n    <div class="fdk-card__selected-indicator">\n      <fdk-icon name="checkmark" size="24"></fdk-icon>\n    </div>\n  }\n  @switch (variant) {\n    @case ("more") {\n      <div class="fdk-card__action">\n        <fdk-icon name="chevron-right" size="24" />\n      </div>\n    }\n\n    @case ("add") {\n      <div class="fdk-card__action">\n        <fdk-icon name="plus" size="24" />\n      </div>\n    }\n    @case ("signIn") {\n      <div class="fdk-card__sign-in">\n        <span>Sign In</span>\n      </div>\n    }\n  }\n</div>\n',
-      styles: [":host{display:block;width:100%;min-width:0}.fdk-card{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);font-family:var(--fdk-font-family-sans);display:flex;justify-content:space-between;cursor:pointer;align-items:center}.fdk-card__header{display:flex;align-items:center;gap:var(--fdk-spacing-m);min-width:0}.fdk-card__logo{width:2rem;height:2rem;flex:0 0 2rem;object-fit:contain}.fdk-card__title{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary);overflow-wrap:anywhere}.fdk-card--selected{border-color:var(--fdk-color-accent);background-color:var(--fdk-color-accent-subtle)}.fdk-card__selected-indicator{color:var(--fdk-color-accent)}.fdk-card__sign-in{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-accent);flex:none;white-space:nowrap}.fdk-card--signIn:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--signIn:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--select:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--select:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--add:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--add:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--more:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--more:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--readOnly{cursor:default;border:none;background-color:var(--fdk-color-neutrals-hover)}\n"]
+      template: '<div\n  class="fdk-card fdk-card--{{ variant }}"\n  [class.fdk-card--selected]="selected"\n>\n  <div class="fdk-card__header">\n    @if (logo && !logoLoadFailed) {\n      <img\n        class="fdk-card__logo"\n        [src]="logo"\n        alt=""\n        (error)="handleLogoError()"\n      />\n    } @else if (initials) {\n      <fdk-initials [initials]="initials" size="small" />\n    }\n    <div class="fdk-card__text">\n      <div class="fdk-card__title">{{ title }}</div>\n      @if (description) {\n        <p class="fdk-card__description">{{ description }}</p>\n      }\n    </div>\n  </div>\n  @if (selected) {\n    <div class="fdk-card__selected-indicator">\n      <fdk-icon name="checkmark" size="24"></fdk-icon>\n    </div>\n  }\n  @switch (variant) {\n    @case ("more") {\n      <div class="fdk-card__action">\n        <fdk-icon name="chevron-right" size="24" />\n      </div>\n    }\n\n    @case ("add") {\n      <div class="fdk-card__action">\n        <fdk-icon name="plus" size="24" />\n      </div>\n    }\n    @case ("signIn") {\n      <div class="fdk-card__sign-in">\n        <span>Sign In</span>\n      </div>\n    }\n  }\n</div>\n',
+      styles: [":host{display:block;width:100%;min-width:0}.fdk-card{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);font-family:var(--fdk-font-family-sans);display:flex;justify-content:space-between;cursor:pointer;align-items:center}.fdk-card__header{display:flex;align-items:center;gap:var(--fdk-spacing-m);min-width:0}.fdk-card__logo{width:2rem;height:2rem;flex:0 0 2rem;object-fit:contain}.fdk-card__title{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary);overflow-wrap:anywhere}.fdk-card__text{min-width:0}.fdk-card__description{margin:var(--fdk-spacing-xxxs) 0 0;font-size:var(--fdk-font-size-paragraph-xs);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph-xs);color:var(--fdk-color-text-secondary);overflow-wrap:anywhere}.fdk-card--selected{border-color:var(--fdk-color-accent);background-color:var(--fdk-color-accent-subtle)}.fdk-card__selected-indicator{color:var(--fdk-color-accent)}.fdk-card__sign-in{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-accent);flex:none;white-space:nowrap}.fdk-card--signIn:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--signIn:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--select:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--select:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--add:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--add:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--more:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--more:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--readOnly{cursor:default;border:none;background-color:var(--fdk-color-neutrals-hover)}\n"]
     }]
   }], null, {
     title: [{
@@ -77741,6 +77759,9 @@ var FdkCardComponent = class _FdkCardComponent {
       args: [{
         required: true
       }]
+    }],
+    description: [{
+      type: Input
     }],
     initials: [{
       type: Input
@@ -78168,10 +78189,10 @@ var FdkFooterComponent = class _FdkFooterComponent {
       selectors: [["fdk-footer"]],
       decls: 4,
       vars: 0,
-      consts: [[1, "fdk-footer"]],
+      consts: [["href", "https://www.fastenhealth.com/", "target", "_blank", "rel", "noopener noreferrer", "aria-label", "Powered by Fasten Health (opens in a new tab)", 1, "fdk-footer"]],
       template: function FdkFooterComponent_Template(rf, ctx) {
         if (rf & 1) {
-          \u0275\u0275elementStart(0, "div", 0)(1, "span");
+          \u0275\u0275elementStart(0, "a", 0)(1, "span");
           \u0275\u0275text(2, "powered by");
           \u0275\u0275elementEnd();
           \u0275\u0275element(3, "fdk-logo");
@@ -78179,7 +78200,7 @@ var FdkFooterComponent = class _FdkFooterComponent {
         }
       },
       dependencies: [FdkLogoComponent],
-      styles: [".fdk-footer[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:center;gap:var(--fdk-spacing-xxxs);padding-top:var(--fdk-spacing-m);padding-bottom:1.125rem;color:var(--fdk-color-text-secondary);font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-paragraph-xs);line-height:var(--fdk-line-height-paragraph-xs);font-weight:var(--fdk-font-weight-normal)}"],
+      styles: [".fdk-footer[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:center;gap:var(--fdk-spacing-xxxs);padding-top:var(--fdk-spacing-s);color:var(--fdk-color-text-secondary);font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-paragraph-xs);line-height:var(--fdk-line-height-paragraph-xs);font-weight:var(--fdk-font-weight-normal);text-decoration:none;cursor:pointer}"],
       changeDetection: 0
     });
   }
@@ -78192,8 +78213,8 @@ var FdkFooterComponent = class _FdkFooterComponent {
       imports: [FdkLogoComponent],
       changeDetection: ChangeDetectionStrategy.OnPush,
       standalone: true,
-      template: '<div class="fdk-footer">\n  <span>powered by</span>\n  <fdk-logo />\n</div>\n',
-      styles: [".fdk-footer{display:flex;align-items:center;justify-content:center;gap:var(--fdk-spacing-xxxs);padding-top:var(--fdk-spacing-m);padding-bottom:1.125rem;color:var(--fdk-color-text-secondary);font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-paragraph-xs);line-height:var(--fdk-line-height-paragraph-xs);font-weight:var(--fdk-font-weight-normal)}\n"]
+      template: '<a\n  class="fdk-footer"\n  href="https://www.fastenhealth.com/"\n  target="_blank"\n  rel="noopener noreferrer"\n  aria-label="Powered by Fasten Health (opens in a new tab)"\n>\n  <span>powered by</span>\n  <fdk-logo />\n</a>\n',
+      styles: [".fdk-footer{display:flex;align-items:center;justify-content:center;gap:var(--fdk-spacing-xxxs);padding-top:var(--fdk-spacing-s);color:var(--fdk-color-text-secondary);font-family:var(--fdk-font-family-sans);font-size:var(--fdk-font-size-paragraph-xs);line-height:var(--fdk-line-height-paragraph-xs);font-weight:var(--fdk-font-weight-normal);text-decoration:none;cursor:pointer}\n"]
     }]
   }], null, null);
 })();
@@ -78359,7 +78380,7 @@ var FdkHeaderComponent = class _FdkHeaderComponent {
         }
       },
       dependencies: [FdkIconButtonComponent],
-      styles: ["[_nghost-%COMP%]{display:block;width:100%}.fdk-header[_ngcontent-%COMP%]{width:100%;box-sizing:border-box;color:var(--fdk-color-text-primary);background-color:transparent;font-family:var(--fdk-font-family-sans)}.fdk-header__test-mode[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;padding:var(--fdk-spacing-xxs) var(--fdk-spacing-s);color:var(--fdk-color-text-inverted);background-color:var(--fdk-color-semantic-error);font-size:var(--fdk-font-size-paragraph-small);line-height:var(--fdk-line-height-paragraph-small);text-align:center}.fdk-header__main[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;width:100%;min-height:4.5rem;padding-inline-start:var(--fdk-spacing-m, 1.5rem)}.fdk-header__leading-brand[_ngcontent-%COMP%]{display:flex;align-items:center;gap:var(--fdk-spacing-xxxs, .25rem);justify-self:start}.fdk-header__leading[_ngcontent-%COMP%]{display:flex;justify-self:start}.fdk-header__brand[_ngcontent-%COMP%]{min-width:0;max-width:10rem;max-height:3rem}.fdk-header__logo[_ngcontent-%COMP%]{display:block;width:auto;max-width:100%;height:3rem;object-fit:contain}.fdk-header__brand--wide[_ngcontent-%COMP%], .fdk-header__brand--wide[_ngcontent-%COMP%]   .fdk-header__logo[_ngcontent-%COMP%]{max-height:2rem}.fdk-header__brand--wide[_ngcontent-%COMP%]   .fdk-header__logo[_ngcontent-%COMP%]{height:2rem}.fdk-header__name[_ngcontent-%COMP%]{display:block;overflow:hidden;font-size:var(--fdk-font-size-paragraph);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-paragraph);text-overflow:ellipsis;white-space:nowrap}.fdk-header__actions[_ngcontent-%COMP%]{display:flex;justify-self:end}"],
+      styles: ["[_nghost-%COMP%]{display:block;width:100%}.fdk-header[_ngcontent-%COMP%]{width:100%;box-sizing:border-box;color:var(--fdk-color-text-primary);background-color:transparent;font-family:var(--fdk-font-family-sans)}.fdk-header__test-mode[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;padding:var(--fdk-spacing-xxs) var(--fdk-spacing-s);color:var(--fdk-color-text-inverted);background-color:var(--fdk-color-semantic-error);font-size:var(--fdk-font-size-paragraph-small);line-height:var(--fdk-line-height-paragraph-small);text-align:center}.fdk-header__main[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;width:100%;min-height:4.5rem;padding-inline:1.5rem .75rem}.fdk-header__leading-brand[_ngcontent-%COMP%]{display:flex;align-items:center;gap:var(--fdk-spacing-xxxs, .25rem);justify-self:start}.fdk-header__leading[_ngcontent-%COMP%]{display:flex;justify-self:start}.fdk-header__brand[_ngcontent-%COMP%]{min-width:0;max-width:10rem;max-height:3rem}.fdk-header__logo[_ngcontent-%COMP%]{display:block;width:auto;max-width:100%;height:3rem;object-fit:contain}.fdk-header__brand--wide[_ngcontent-%COMP%], .fdk-header__brand--wide[_ngcontent-%COMP%]   .fdk-header__logo[_ngcontent-%COMP%]{max-height:2rem}.fdk-header__brand--wide[_ngcontent-%COMP%]   .fdk-header__logo[_ngcontent-%COMP%]{height:2rem}.fdk-header__name[_ngcontent-%COMP%]{display:block;overflow:hidden;font-size:var(--fdk-font-size-paragraph);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-paragraph);text-overflow:ellipsis;white-space:nowrap}.fdk-header__actions[_ngcontent-%COMP%]{display:flex;justify-self:end}"],
       changeDetection: 0
     });
   }
@@ -78373,7 +78394,7 @@ var FdkHeaderComponent = class _FdkHeaderComponent {
       changeDetection: ChangeDetectionStrategy.OnPush,
       standalone: true,
       template: '<header class="fdk-header">\n  @if (testMode) {\n    <div\n      class="fdk-header__test-mode"\n      role="status">\n      <span>{{ testModeText }}</span>\n    </div>\n  }\n\n  <div class="fdk-header__main">\n    <div class="fdk-header__leading-brand">\n      @if (showBackButton) {\n        <div class="fdk-header__leading">\n          <fdk-icon-button\n            icon="chevron-left"\n            aria-label="Go back"\n            variant="secondary"\n            (click)="back.emit()" />\n        </div>\n      }\n\n      <div\n        class="fdk-header__brand"\n        [class.fdk-header__brand--wide]="logoIsWide">\n        @if (logoUrl) {\n          <img\n            class="fdk-header__logo"\n            [src]="logoUrl"\n            [alt]="logoAlt || name"\n            (load)="handleLogoLoad($event)"\n            (error)="handleLogoError()" />\n        } @else if (name) {\n          <span class="fdk-header__name">{{ name }}</span>\n        }\n      </div>\n    </div>\n\n    <div class="fdk-header__actions">\n      @if (showReportIssueButton) {\n        <fdk-icon-button\n          icon="support"\n          aria-label="Report an issue"\n          variant="secondary"\n          (click)="reportIssue.emit()" />\n      }\n\n      @if (showProfileButton) {\n        <fdk-icon-button\n          icon="user"\n          aria-label="Open profile"\n          variant="secondary"\n          (click)="profile.emit()" />\n      }\n\n      @if (showCloseButton) {\n        <fdk-icon-button\n          icon="cross"\n          aria-label="Close"\n          variant="secondary"\n          (click)="close.emit()" />\n      }\n    </div>\n  </div>\n</header>\n',
-      styles: [":host{display:block;width:100%}.fdk-header{width:100%;box-sizing:border-box;color:var(--fdk-color-text-primary);background-color:transparent;font-family:var(--fdk-font-family-sans)}.fdk-header__test-mode{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;padding:var(--fdk-spacing-xxs) var(--fdk-spacing-s);color:var(--fdk-color-text-inverted);background-color:var(--fdk-color-semantic-error);font-size:var(--fdk-font-size-paragraph-small);line-height:var(--fdk-line-height-paragraph-small);text-align:center}.fdk-header__main{display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;width:100%;min-height:4.5rem;padding-inline-start:var(--fdk-spacing-m, 1.5rem)}.fdk-header__leading-brand{display:flex;align-items:center;gap:var(--fdk-spacing-xxxs, .25rem);justify-self:start}.fdk-header__leading{display:flex;justify-self:start}.fdk-header__brand{min-width:0;max-width:10rem;max-height:3rem}.fdk-header__logo{display:block;width:auto;max-width:100%;height:3rem;object-fit:contain}.fdk-header__brand--wide,.fdk-header__brand--wide .fdk-header__logo{max-height:2rem}.fdk-header__brand--wide .fdk-header__logo{height:2rem}.fdk-header__name{display:block;overflow:hidden;font-size:var(--fdk-font-size-paragraph);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-paragraph);text-overflow:ellipsis;white-space:nowrap}.fdk-header__actions{display:flex;justify-self:end}\n"]
+      styles: [":host{display:block;width:100%}.fdk-header{width:100%;box-sizing:border-box;color:var(--fdk-color-text-primary);background-color:transparent;font-family:var(--fdk-font-family-sans)}.fdk-header__test-mode{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;padding:var(--fdk-spacing-xxs) var(--fdk-spacing-s);color:var(--fdk-color-text-inverted);background-color:var(--fdk-color-semantic-error);font-size:var(--fdk-font-size-paragraph-small);line-height:var(--fdk-line-height-paragraph-small);text-align:center}.fdk-header__main{display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;width:100%;min-height:4.5rem;padding-inline:1.5rem .75rem}.fdk-header__leading-brand{display:flex;align-items:center;gap:var(--fdk-spacing-xxxs, .25rem);justify-self:start}.fdk-header__leading{display:flex;justify-self:start}.fdk-header__brand{min-width:0;max-width:10rem;max-height:3rem}.fdk-header__logo{display:block;width:auto;max-width:100%;height:3rem;object-fit:contain}.fdk-header__brand--wide,.fdk-header__brand--wide .fdk-header__logo{max-height:2rem}.fdk-header__brand--wide .fdk-header__logo{height:2rem}.fdk-header__name{display:block;overflow:hidden;font-size:var(--fdk-font-size-paragraph);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-paragraph);text-overflow:ellipsis;white-space:nowrap}.fdk-header__actions{display:flex;justify-self:end}\n"]
     }]
   }], null, {
     logoUrl: [{
@@ -78554,7 +78575,7 @@ var FdkInputComponent = class _FdkInputComponent {
           \u0275\u0275conditional(ctx.showErrorMessage ? 5 : -1);
         }
       },
-      styles: ["[_nghost-%COMP%]{display:block}.fdk-input[_ngcontent-%COMP%]{display:grid;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-input__label[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary)}.fdk-input__label--visually-hidden[_ngcontent-%COMP%]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.fdk-input__required[_ngcontent-%COMP%]{margin-inline-start:var(--fdk-spacing-xxxs);color:var(--fdk-color-semantic-error)}.fdk-input__control[_ngcontent-%COMP%]{box-sizing:border-box;width:100%;min-height:3rem;max-height:3rem;height:3rem;padding-left:var(--fdk-spacing-s);padding-right:var(--fdk-spacing-s);font-family:inherit;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary);background-color:var(--fdk-color-neutrals-background);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg)}.fdk-input__control[_ngcontent-%COMP%]::placeholder{color:var(--fdk-color-text-placeholder)}.fdk-input__control[_ngcontent-%COMP%]:focus{border-color:var(--fdk-color-accent);outline:2px solid var(--fdk-color-accent);outline-offset:1px}.fdk-input__control[_ngcontent-%COMP%]:disabled{color:var(--fdk-color-text-placeholder);background-color:var(--fdk-color-neutrals-hover);cursor:not-allowed}.fdk-input__control--error[_ngcontent-%COMP%]{border-color:var(--fdk-color-semantic-error)}.fdk-input__control--error[_ngcontent-%COMP%]:focus{border-color:var(--fdk-color-semantic-error);outline-color:var(--fdk-color-semantic-error)}.fdk-input__error[_ngcontent-%COMP%]{margin:0;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-semantic-error)}"],
+      styles: ["[_nghost-%COMP%]{display:block}.fdk-input[_ngcontent-%COMP%]{display:grid;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-input__label[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary)}.fdk-input__label--visually-hidden[_ngcontent-%COMP%]{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.fdk-input__required[_ngcontent-%COMP%]{margin-inline-start:var(--fdk-spacing-xxxs);color:var(--fdk-color-semantic-error)}.fdk-input__control[_ngcontent-%COMP%]{box-sizing:border-box;width:100%;min-height:3rem;max-height:3rem;height:3rem;padding-left:var(--fdk-spacing-s);padding-right:var(--fdk-spacing-s);font-family:inherit;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary);background-color:var(--fdk-color-neutrals-background);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg)}.fdk-input__control[_ngcontent-%COMP%]::placeholder{color:var(--fdk-color-text-placeholder)}.fdk-input__control[type=search][_ngcontent-%COMP%]::-webkit-search-cancel-button{display:none}.fdk-input__control[_ngcontent-%COMP%]:focus{border-color:var(--fdk-color-accent);outline:2px solid var(--fdk-color-accent);outline-offset:1px}.fdk-input__control[_ngcontent-%COMP%]:disabled{color:var(--fdk-color-text-placeholder);background-color:var(--fdk-color-neutrals-hover);cursor:not-allowed}.fdk-input__control--error[_ngcontent-%COMP%]{border-color:var(--fdk-color-semantic-error)}.fdk-input__control--error[_ngcontent-%COMP%]:focus{border-color:var(--fdk-color-semantic-error);outline-color:var(--fdk-color-semantic-error)}.fdk-input__error[_ngcontent-%COMP%]{margin:0;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-semantic-error)}"],
       changeDetection: 0
     });
   }
@@ -78612,7 +78633,7 @@ var FdkInputComponent = class _FdkInputComponent {
   }
 </div>
 `,
-      styles: [":host{display:block}.fdk-input{display:grid;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-input__label{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary)}.fdk-input__label--visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.fdk-input__required{margin-inline-start:var(--fdk-spacing-xxxs);color:var(--fdk-color-semantic-error)}.fdk-input__control{box-sizing:border-box;width:100%;min-height:3rem;max-height:3rem;height:3rem;padding-left:var(--fdk-spacing-s);padding-right:var(--fdk-spacing-s);font-family:inherit;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary);background-color:var(--fdk-color-neutrals-background);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg)}.fdk-input__control::placeholder{color:var(--fdk-color-text-placeholder)}.fdk-input__control:focus{border-color:var(--fdk-color-accent);outline:2px solid var(--fdk-color-accent);outline-offset:1px}.fdk-input__control:disabled{color:var(--fdk-color-text-placeholder);background-color:var(--fdk-color-neutrals-hover);cursor:not-allowed}.fdk-input__control--error{border-color:var(--fdk-color-semantic-error)}.fdk-input__control--error:focus{border-color:var(--fdk-color-semantic-error);outline-color:var(--fdk-color-semantic-error)}.fdk-input__error{margin:0;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-semantic-error)}\n"]
+      styles: [":host{display:block}.fdk-input{display:grid;gap:var(--fdk-spacing-xxs);font-family:var(--fdk-font-family-sans)}.fdk-input__label{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary)}.fdk-input__label--visually-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}.fdk-input__required{margin-inline-start:var(--fdk-spacing-xxxs);color:var(--fdk-color-semantic-error)}.fdk-input__control{box-sizing:border-box;width:100%;min-height:3rem;max-height:3rem;height:3rem;padding-left:var(--fdk-spacing-s);padding-right:var(--fdk-spacing-s);font-family:inherit;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-text-primary);background-color:var(--fdk-color-neutrals-background);border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg)}.fdk-input__control::placeholder{color:var(--fdk-color-text-placeholder)}.fdk-input__control[type=search]::-webkit-search-cancel-button{display:none}.fdk-input__control:focus{border-color:var(--fdk-color-accent);outline:2px solid var(--fdk-color-accent);outline-offset:1px}.fdk-input__control:disabled{color:var(--fdk-color-text-placeholder);background-color:var(--fdk-color-neutrals-hover);cursor:not-allowed}.fdk-input__control--error{border-color:var(--fdk-color-semantic-error)}.fdk-input__control--error:focus{border-color:var(--fdk-color-semantic-error);outline-color:var(--fdk-color-semantic-error)}.fdk-input__error{margin:0;font-size:var(--fdk-font-size-paragraph-s);line-height:var(--fdk-line-height-paragraph-s);color:var(--fdk-color-semantic-error)}\n"]
     }]
   }], () => [{
     type: ChangeDetectorRef
@@ -79780,6 +79801,100 @@ var DEFAULT_EMBED_HEADER_CONFIG = {
   showCloseButton: true,
   closeAction: "close"
 };
+
+// projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search-skeleton.component.ts
+var _c02 = () => [0, 1];
+function HealthSystemSearchSkeletonComponent_div_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 6);
+    \u0275\u0275element(1, "div", 7)(2, "div", 8);
+    \u0275\u0275elementEnd();
+  }
+}
+function HealthSystemSearchSkeletonComponent_div_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 9);
+    \u0275\u0275element(1, "div", 10);
+    \u0275\u0275elementStart(2, "div", 11);
+    \u0275\u0275element(3, "div", 12);
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(4, "div", 13);
+    \u0275\u0275elementEnd();
+  }
+}
+var HealthSystemSearchSkeletonComponent = class _HealthSystemSearchSkeletonComponent {
+  constructor() {
+    this.showControls = true;
+  }
+  static {
+    this.\u0275fac = function HealthSystemSearchSkeletonComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _HealthSystemSearchSkeletonComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchSkeletonComponent, selectors: [["app-health-system-search-skeleton"]], inputs: { showControls: "showControls" }, decls: 7, vars: 5, consts: [["role", "status", "aria-label", "Loading healthcare providers", "aria-busy", "true"], ["aria-hidden", "true"], ["class", "flex items-end gap-2", 4, "ngIf"], [1, "space-y-2"], ["class", "skeleton-card", 4, "ngFor", "ngForOf"], [1, "sr-only"], [1, "flex", "items-end", "gap-2"], [1, "skeleton", "h-12", "flex-1"], [1, "skeleton", "h-12", "w-12"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "w-5", "h-5", "rounded"]], template: function HealthSystemSearchSkeletonComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1);
+        \u0275\u0275template(2, HealthSystemSearchSkeletonComponent_div_2_Template, 3, 0, "div", 2);
+        \u0275\u0275elementStart(3, "div", 3);
+        \u0275\u0275template(4, HealthSystemSearchSkeletonComponent_div_4_Template, 5, 0, "div", 4);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(5, "span", 5);
+        \u0275\u0275text(6, "Loading healthcare providers");
+        \u0275\u0275elementEnd()();
+      }
+      if (rf & 2) {
+        \u0275\u0275advance(2);
+        \u0275\u0275property("ngIf", ctx.showControls);
+        \u0275\u0275advance();
+        \u0275\u0275classProp("mt-fdk-m", ctx.showControls);
+        \u0275\u0275advance();
+        \u0275\u0275property("ngForOf", \u0275\u0275pureFunction0(4, _c02));
+      }
+    }, dependencies: [CommonModule, NgForOf, NgIf], encapsulation: 2 });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemSearchSkeletonComponent, { className: "HealthSystemSearchSkeletonComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search-skeleton.component.ts", lineNumber: 29 });
+})();
+
+// projects/fasten-connect-stitch-embed/src/app/pages/welcome/welcome-skeleton.component.ts
+var WelcomeSkeletonComponent = class _WelcomeSkeletonComponent {
+  static {
+    this.\u0275fac = function WelcomeSkeletonComponent_Factory(__ngFactoryType__) {
+      return new (__ngFactoryType__ || _WelcomeSkeletonComponent)();
+    };
+  }
+  static {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _WelcomeSkeletonComponent, selectors: [["app-welcome-skeleton"]], hostAttrs: [1, "flex", "flex-1", "min-h-0", "flex-col"], decls: 24, vars: 0, consts: [["role", "status", "aria-label", "Loading welcome page", "aria-busy", "true", 1, "flex", "min-h-full", "flex-1", "flex-col"], ["aria-hidden", "true", 1, "flex", "flex-1", "flex-col"], [1, "flex", "justify-center", "mt-fdk-m"], [1, "skeleton", "w-[232px]", "max-w-full", "h-[72px]"], [1, "mt-fdk-l", "space-y-2"], [1, "skeleton", "h-6", "w-full"], [1, "skeleton", "h-6", "w-2/3", "mx-auto"], [1, "mt-fdk-m", "space-y-2"], [1, "skeleton", "h-5", "w-16"], [1, "skeleton", "h-4", "w-full"], [1, "skeleton", "h-4", "w-5/6"], [1, "skeleton", "h-5", "w-20"], [1, "mt-auto", "pt-6", "space-y-6"], [1, "space-y-2"], [1, "skeleton", "h-3", "w-full"], [1, "skeleton", "h-3", "w-2/3"], [1, "skeleton", "h-12", "w-full"], [1, "sr-only"]], template: function WelcomeSkeletonComponent_Template(rf, ctx) {
+      if (rf & 1) {
+        \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "div", 2);
+        \u0275\u0275element(3, "div", 3);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(4, "div", 4);
+        \u0275\u0275element(5, "div", 5)(6, "div", 5)(7, "div", 6);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(8, "div", 7);
+        \u0275\u0275element(9, "div", 8)(10, "div", 9)(11, "div", 10);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(12, "div", 7);
+        \u0275\u0275element(13, "div", 11)(14, "div", 9)(15, "div", 10);
+        \u0275\u0275elementEnd();
+        \u0275\u0275elementStart(16, "div", 12)(17, "div", 13);
+        \u0275\u0275element(18, "div", 14)(19, "div", 14)(20, "div", 15);
+        \u0275\u0275elementEnd();
+        \u0275\u0275element(21, "div", 16);
+        \u0275\u0275elementEnd()();
+        \u0275\u0275elementStart(22, "span", 17);
+        \u0275\u0275text(23, "Loading welcome page");
+        \u0275\u0275elementEnd()();
+      }
+    }, encapsulation: 2 });
+  }
+};
+(() => {
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(WelcomeSkeletonComponent, { className: "WelcomeSkeletonComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/welcome/welcome-skeleton.component.ts", lineNumber: 41 });
+})();
 
 // node_modules/ngx-device-detector/fesm2022/ngx-device-detector.mjs
 var GENERAL = {
@@ -80950,69 +81065,73 @@ var FastenService = class _FastenService {
 };
 
 // projects/fasten-connect-stitch-embed/src/app/app.component.ts
+function AppComponent_ng_container_15_ng_container_3_app_health_system_search_skeleton_1_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "app-health-system-search-skeleton");
+  }
+}
+function AppComponent_ng_container_15_ng_container_3_ng_template_2_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "app-welcome-skeleton");
+  }
+}
+function AppComponent_ng_container_15_ng_container_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275template(1, AppComponent_ng_container_15_ng_container_3_app_health_system_search_skeleton_1_Template, 1, 0, "app-health-system-search-skeleton", 11)(2, AppComponent_ng_container_15_ng_container_3_ng_template_2_Template, 1, 0, "ng-template", null, 1, \u0275\u0275templateRefExtractor);
+    \u0275\u0275elementContainerEnd();
+  }
+  if (rf & 2) {
+    const welcomeSkeleton_r1 = \u0275\u0275reference(3);
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275advance();
+    \u0275\u0275property("ngIf", ctx_r1.searchOnly)("ngIfElse", welcomeSkeleton_r1);
+  }
+}
+function AppComponent_ng_container_15_ng_template_4_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275element(0, "router-outlet");
+  }
+}
 function AppComponent_ng_container_15_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 7)(2, "div", 8);
-    \u0275\u0275element(3, "fdk-illustration", 9);
+    \u0275\u0275elementStart(1, "div", 9)(2, "main", 10);
+    \u0275\u0275template(3, AppComponent_ng_container_15_ng_container_3_Template, 4, 2, "ng-container", 11)(4, AppComponent_ng_container_15_ng_template_4_Template, 1, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "h2", 10);
-    \u0275\u0275text(5, " Connecting you with Fasten ");
+    \u0275\u0275element(6, "fdk-footer");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "p", 11);
-    \u0275\u0275text(7, " You're about to be taken to Fasten to connect your health records. This usually takes just a few seconds. ");
-    \u0275\u0275elementEnd()();
     \u0275\u0275elementContainerEnd();
+  }
+  if (rf & 2) {
+    const loadedPage_r3 = \u0275\u0275reference(5);
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(3);
+    \u0275\u0275property("ngIf", ctx_r1.loading)("ngIfElse", loadedPage_r3);
   }
 }
 function AppComponent_ng_container_16_Template(rf, ctx) {
   if (rf & 1) {
+    const _r4 = \u0275\u0275getCurrentView();
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 7)(2, "div", 8);
-    \u0275\u0275element(3, "fdk-illustration", 9);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "h2", 10);
-    \u0275\u0275text(5, " Connecting you with Fasten ");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "p", 11);
-    \u0275\u0275text(7, " You're about to be taken to Fasten to connect your health records. This usually takes just a few seconds. ");
-    \u0275\u0275elementEnd()();
-    \u0275\u0275elementContainerEnd();
-  }
-}
-function AppComponent_ng_container_17_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 12)(2, "main", 13);
-    \u0275\u0275element(3, "router-outlet");
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(4, "fdk-footer");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementContainerEnd();
-  }
-}
-function AppComponent_ng_container_18_Template(rf, ctx) {
-  if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementContainerStart(0);
-    \u0275\u0275elementStart(1, "div", 14)(2, "div", 15)(3, "div", 16)(4, "div", 17);
+    \u0275\u0275elementStart(1, "div", 12)(2, "div", 13)(3, "div", 14)(4, "div", 15);
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(5, "svg", 18);
-    \u0275\u0275element(6, "path", 19);
+    \u0275\u0275elementStart(5, "svg", 16);
+    \u0275\u0275element(6, "path", 17);
     \u0275\u0275elementEnd();
     \u0275\u0275namespaceHTML();
-    \u0275\u0275elementStart(7, "span", 20);
+    \u0275\u0275elementStart(7, "span", 18);
     \u0275\u0275text(8, "Error");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(9, "h3", 21);
+    \u0275\u0275elementStart(9, "h3", 19);
     \u0275\u0275text(10, "Configuration Error");
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(11, "div", 22);
+    \u0275\u0275elementStart(11, "div", 20);
     \u0275\u0275text(12);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(13, "div", 23)(14, "button", 24);
-    \u0275\u0275listener("click", function AppComponent_ng_container_18_Template_button_click_14_listener() {
-      \u0275\u0275restoreView(_r1);
+    \u0275\u0275elementStart(13, "div", 21)(14, "button", 22);
+    \u0275\u0275listener("click", function AppComponent_ng_container_16_Template_button_click_14_listener() {
+      \u0275\u0275restoreView(_r4);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.modalClose());
     });
@@ -81483,10 +81602,10 @@ var AppComponent = class _AppComponent {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], email: "email", externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], identityRequestUri: [0, "identity-request-uri", "identityRequestUri"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"], theme: "theme", accentColor: [0, "accent-color", "accentColor"], logoUrl: [0, "logo-url", "logoUrl"], companyName: [0, "company-name", "companyName"], idpCode: [0, "code", "idpCode"], idpState: [0, "state", "idpState"], idpError: [0, "error", "idpError"], idpErrorDescription: [0, "error-description", "idpErrorDescription"], idpErrorUri: [0, "error-uri", "idpErrorUri"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 19, vars: 17, consts: [["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "app-header-container", 1, "flex-shrink-0"], [3, "back", "reportIssue", "profile", "close", "logoUrl", "logoAlt", "name", "testMode", "showBackButton", "showReportIssueButton", "showProfileButton", "showCloseButton"], [3, "openChange", "open"], ["type", "button", "variant", "secondary", 3, "click"], ["type", "button", 3, "click"], [4, "ngIf"], [1, "flex", "flex-1", "flex-col", "items-center", "p-6", "text-center", "mt-fdk-xxxl"], [1, "flex", "justify-center"], ["name", "welcome-animated"], [1, "fdk-type-heading-2", "text-fdk-primary", "text-center", "mt-fdk-l"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs", "text-center"], ["id", "widget-container", 1, "px-6", "pb-6", "fade-in", "flex", "flex-col"], ["id", "page-scroll-container"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], email: "email", externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], identityRequestUri: [0, "identity-request-uri", "identityRequestUri"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"], theme: "theme", accentColor: [0, "accent-color", "accentColor"], logoUrl: [0, "logo-url", "logoUrl"], companyName: [0, "company-name", "companyName"], idpCode: [0, "code", "idpCode"], idpState: [0, "state", "idpState"], idpError: [0, "error", "idpError"], idpErrorDescription: [0, "error-description", "idpErrorDescription"], idpErrorUri: [0, "error-uri", "idpErrorUri"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 17, vars: 15, consts: [["loadedPage", ""], ["welcomeSkeleton", ""], ["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "app-header-container", 1, "flex-shrink-0"], [3, "back", "reportIssue", "profile", "close", "logoUrl", "logoAlt", "name", "testMode", "showBackButton", "showReportIssueButton", "showProfileButton", "showCloseButton"], [3, "openChange", "open"], ["type", "button", "variant", "secondary", 3, "click"], ["type", "button", 3, "click"], [4, "ngIf"], ["id", "widget-container", 1, "px-6", "pb-6", "fade-in", "flex", "flex-col"], ["id", "page-scroll-container"], [4, "ngIf", "ngIfElse"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275element(0, "link", 0);
-        \u0275\u0275elementStart(1, "div", 1)(2, "fdk-header", 2);
+        \u0275\u0275element(0, "link", 2);
+        \u0275\u0275elementStart(1, "div", 3)(2, "fdk-header", 4);
         \u0275\u0275pipe(3, "async");
         \u0275\u0275pipe(4, "async");
         \u0275\u0275listener("back", function AppComponent_Template_fdk_header_back_2_listener() {
@@ -81499,7 +81618,7 @@ var AppComponent = class _AppComponent {
           return ctx.handleHeaderClose();
         });
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(5, "fdk-dialog", 3);
+        \u0275\u0275elementStart(5, "fdk-dialog", 5);
         \u0275\u0275listener("openChange", function AppComponent_Template_fdk_dialog_openChange_5_listener($event) {
           return ctx.closeConfirmationOpen = $event;
         });
@@ -81509,33 +81628,29 @@ var AppComponent = class _AppComponent {
         \u0275\u0275elementStart(8, "fdk-dialog-content");
         \u0275\u0275text(9, " If you close now, your progress won't be saved and you'll need to start again. ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(10, "fdk-dialog-actions")(11, "fdk-button", 4);
+        \u0275\u0275elementStart(10, "fdk-dialog-actions")(11, "fdk-button", 6);
         \u0275\u0275listener("click", function AppComponent_Template_fdk_button_click_11_listener() {
           return ctx.cancelHeaderClose();
         });
         \u0275\u0275text(12, " Cancel ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(13, "fdk-button", 5);
+        \u0275\u0275elementStart(13, "fdk-button", 7);
         \u0275\u0275listener("click", function AppComponent_Template_fdk_button_click_13_listener() {
           return ctx.confirmHeaderClose();
         });
         \u0275\u0275text(14, " Close ");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275template(15, AppComponent_ng_container_15_Template, 8, 0, "ng-container", 6)(16, AppComponent_ng_container_16_Template, 8, 0, "ng-container", 6)(17, AppComponent_ng_container_17_Template, 5, 0, "ng-container", 6)(18, AppComponent_ng_container_18_Template, 16, 1, "ng-container", 6);
+        \u0275\u0275template(15, AppComponent_ng_container_15_Template, 7, 2, "ng-container", 8)(16, AppComponent_ng_container_16_Template, 16, 1, "ng-container", 8);
       }
       if (rf & 2) {
         let tmp_3_0;
         let tmp_6_0;
         \u0275\u0275advance(2);
-        \u0275\u0275property("logoUrl", ctx.logoUrl || null)("logoAlt", ctx.companyName)("name", ctx.companyName || ctx.logoText())("testMode", ((tmp_3_0 = \u0275\u0275pipeBind1(3, 13, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.apiMode) === ctx.testApiMode)("showBackButton", ctx.shouldShowHeaderBackButton())("showReportIssueButton", !!ctx.headerConfig.showReportIssueButton)("showProfileButton", !!ctx.headerConfig.showProfileButton && !!((tmp_6_0 = \u0275\u0275pipeBind1(4, 15, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_6_0.verifiedIdentityPatientDemographics))("showCloseButton", true);
+        \u0275\u0275property("logoUrl", ctx.logoUrl || null)("logoAlt", ctx.companyName)("name", ctx.companyName || ctx.logoText())("testMode", ((tmp_3_0 = \u0275\u0275pipeBind1(3, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.apiMode) === ctx.testApiMode)("showBackButton", ctx.shouldShowHeaderBackButton())("showReportIssueButton", !!ctx.headerConfig.showReportIssueButton)("showProfileButton", !!ctx.headerConfig.showProfileButton && !!((tmp_6_0 = \u0275\u0275pipeBind1(4, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_6_0.verifiedIdentityPatientDemographics))("showCloseButton", true);
         \u0275\u0275advance(3);
         \u0275\u0275property("open", ctx.closeConfirmationOpen);
         \u0275\u0275advance(10);
-        \u0275\u0275property("ngIf", ctx.loading && ctx.searchOnly);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", ctx.loading && !ctx.searchOnly);
-        \u0275\u0275advance();
-        \u0275\u0275property("ngIf", !ctx.loading && !!!ctx.errorMessage);
+        \u0275\u0275property("ngIf", ctx.loading || !ctx.errorMessage);
         \u0275\u0275advance();
         \u0275\u0275property("ngIf", !ctx.loading && ctx.errorMessage);
       }
@@ -81552,12 +81667,13 @@ var AppComponent = class _AppComponent {
       FdkDialogTitleComponent,
       FdkFooterComponent,
       FdkHeaderComponent,
-      FdkIllustrationComponent
-    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  height: min(100dvh, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n#widget-container[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  flex: 1 1 auto;\n  width: 100%;\n  height: auto;\n  max-height: 800px;\n  min-height: 0;\n  overflow-x: hidden;\n  overflow-y: hidden;\n}\n#page-scroll-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  min-height: 0;\n  padding: 3px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  -webkit-overflow-scrolling: touch;\n}\n#widget-container[_ngcontent-%COMP%]    > fdk-footer[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n}\n/*# sourceMappingURL=app.component.css.map */"] });
+      HealthSystemSearchSkeletonComponent,
+      WelcomeSkeletonComponent
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  height: min(100dvh, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n#widget-container[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  flex: 1 1 auto;\n  width: 100%;\n  height: auto;\n  max-height: 800px;\n  min-height: 0;\n  overflow-x: hidden;\n  overflow-y: hidden;\n}\n#page-scroll-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  min-height: 0;\n  padding: 3px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  -webkit-overflow-scrolling: touch;\n}\n#widget-container[_ngcontent-%COMP%]    > fdk-footer[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton) {\n  scrollbar-width: none;\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton)::-webkit-scrollbar {\n  display: none;\n}\n/*# sourceMappingURL=app.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 67 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 69 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/test-identities.ts
@@ -82260,7 +82376,7 @@ var WelcomeComponent = class _WelcomeComponent {
 })();
 
 // node_modules/@fastenhealth/angular-code-input/fesm2022/fastenhealth-angular-code-input.mjs
-var _c02 = ["input"];
+var _c03 = ["input"];
 function CodeInputComponent_span_0_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -82626,7 +82742,7 @@ var CodeInputComponent = class _CodeInputComponent {
       selectors: [["code-input"]],
       viewQuery: function CodeInputComponent_Query(rf, ctx) {
         if (rf & 1) {
-          \u0275\u0275viewQuery(_c02, 5);
+          \u0275\u0275viewQuery(_c03, 5);
         }
         if (rf & 2) {
           let _t;
@@ -83301,7 +83417,7 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
       RouterModule,
       DevToolsComponent,
       FdkAlertComponent
-    ], styles: ['\n\n.clear-button[_ngcontent-%COMP%] {\n  border-radius: 32px;\n  background-color: #041A55;\n  font-family: "Inter", serif;\n  font-weight: 600;\n  font-size: 16px;\n  line-height: 26px;\n  height: 56px;\n  width: 328px;\n}\n.idme-button[_ngcontent-%COMP%] {\n  background-color: #08833D;\n  font-family: "Open Sans Light", sans-serif;\n}\n/*# sourceMappingURL=identity-verification.component.css.map */'] });
+    ], styles: ['\n\n.clear-button[_ngcontent-%COMP%] {\n  border-radius: 32px;\n  background-color: #041A55;\n  font-family: "Inter", serif;\n  font-weight: 600;\n  font-size: 16px;\n  line-height: 26px;\n  height: 56px;\n  width: 100%;\n}\n.idme-button[_ngcontent-%COMP%] {\n  background-color: #08833D;\n  font-family: "Open Sans Light", sans-serif;\n}\n/*# sourceMappingURL=identity-verification.component.css.map */'] });
   }
 };
 (() => {
@@ -83309,8 +83425,15 @@ var IdentityVerificationComponent = class _IdentityVerificationComponent {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/dashboard/dashboard.component.ts
-var _c03 = () => [];
+var _c04 = () => [];
 var _c12 = () => ({});
+function DashboardComponent_div_9_ng_container_6_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementContainerStart(0);
+    \u0275\u0275text(1, " We couldn't automatically find providers linked to your details. ");
+    \u0275\u0275elementContainerEnd();
+  }
+}
 function DashboardComponent_div_9_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 18)(1, "div", 19);
@@ -83320,27 +83443,35 @@ function DashboardComponent_div_9_Template(rf, ctx) {
     \u0275\u0275text(4, " No providers found ");
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(5, "p", 22);
-    \u0275\u0275text(6, " We couldn't automatically find providers linked to your details. You can search for and add them manually. ");
+    \u0275\u0275template(6, DashboardComponent_div_9_ng_container_6_Template, 2, 0, "ng-container", 9);
+    \u0275\u0275pipe(7, "async");
+    \u0275\u0275text(8, " You can search for and add them manually. ");
     \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    let tmp_1_0;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275advance(6);
+    \u0275\u0275property("ngIf", (tmp_1_0 = \u0275\u0275pipeBind1(7, 1, ctx_r0.configService.systemConfigSubject)) == null ? null : tmp_1_0.tefcaMode);
   }
 }
 function DashboardComponent_ng_container_11_fdk_checkbox_1_Template(rf, ctx) {
   if (rf & 1) {
-    const _r1 = \u0275\u0275getCurrentView();
+    const _r2 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "fdk-checkbox", 24);
     \u0275\u0275listener("change", function DashboardComponent_ng_container_11_fdk_checkbox_1_Template_fdk_checkbox_change_0_listener($event) {
-      \u0275\u0275restoreView(_r1);
-      const vaultProfile_r2 = \u0275\u0275nextContext().ngIf;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.toggleAllAccounts($event.target.checked, vaultProfile_r2));
+      \u0275\u0275restoreView(_r2);
+      const vaultProfile_r3 = \u0275\u0275nextContext().ngIf;
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.toggleAllAccounts($event.target.checked, vaultProfile_r3));
     });
     \u0275\u0275text(1, " Select all ");
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
-    const vaultProfile_r2 = \u0275\u0275nextContext().ngIf;
-    const ctx_r2 = \u0275\u0275nextContext();
-    \u0275\u0275property("checked", ctx_r2.areAllAccountsSelected(vaultProfile_r2))("indeterminate", ctx_r2.areSomeAccountsSelected(vaultProfile_r2));
+    const vaultProfile_r3 = \u0275\u0275nextContext().ngIf;
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("checked", ctx_r0.areAllAccountsSelected(vaultProfile_r3))("indeterminate", ctx_r0.areSomeAccountsSelected(vaultProfile_r3));
   }
 }
 function DashboardComponent_ng_container_11_Template(rf, ctx) {
@@ -83350,10 +83481,10 @@ function DashboardComponent_ng_container_11_Template(rf, ctx) {
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
-    const vaultProfile_r2 = ctx.ngIf;
-    const ctx_r2 = \u0275\u0275nextContext();
+    const vaultProfile_r3 = ctx.ngIf;
+    const ctx_r0 = \u0275\u0275nextContext();
     \u0275\u0275advance();
-    \u0275\u0275property("ngIf", ctx_r2.hasSelectableAccounts(vaultProfile_r2));
+    \u0275\u0275property("ngIf", ctx_r0.hasSelectableAccounts(vaultProfile_r3));
   }
 }
 function DashboardComponent_fdk_card_13_Template(rf, ctx) {
@@ -83362,15 +83493,15 @@ function DashboardComponent_fdk_card_13_Template(rf, ctx) {
     \u0275\u0275elementStart(0, "fdk-card", 25);
     \u0275\u0275listener("click", function DashboardComponent_fdk_card_13_Template_fdk_card_click_0_listener() {
       const connectedAccount_r5 = \u0275\u0275restoreView(_r4).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.deselectTefcaDirectAccount(connectedAccount_r5.vault_profile_connection_id));
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.deselectTefcaDirectAccount(connectedAccount_r5.vault_profile_connection_id));
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const connectedAccount_r5 = ctx.$implicit;
-    const ctx_r2 = \u0275\u0275nextContext();
-    \u0275\u0275property("title", (connectedAccount_r5.portal == null ? null : connectedAccount_r5.portal.name) || (connectedAccount_r5.brand == null ? null : connectedAccount_r5.brand.name) || "")("initials", ctx_r2.getAccountInitials((connectedAccount_r5.portal == null ? null : connectedAccount_r5.portal.name) || (connectedAccount_r5.brand == null ? null : connectedAccount_r5.brand.name) || ""))("logo", ctx_r2.getAccountLogo(connectedAccount_r5.brand == null ? null : connectedAccount_r5.brand.id))("selected", true);
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("title", (connectedAccount_r5.portal == null ? null : connectedAccount_r5.portal.name) || (connectedAccount_r5.brand == null ? null : connectedAccount_r5.brand.name) || "")("initials", ctx_r0.getAccountInitials((connectedAccount_r5.portal == null ? null : connectedAccount_r5.portal.name) || (connectedAccount_r5.brand == null ? null : connectedAccount_r5.brand.name) || ""))("logo", ctx_r0.getAccountLogo(connectedAccount_r5.brand == null ? null : connectedAccount_r5.brand.id))("selected", true);
   }
 }
 function DashboardComponent_fdk_card_15_Template(rf, ctx) {
@@ -83379,15 +83510,15 @@ function DashboardComponent_fdk_card_15_Template(rf, ctx) {
     \u0275\u0275elementStart(0, "fdk-card", 26);
     \u0275\u0275listener("click", function DashboardComponent_fdk_card_15_Template_fdk_card_click_0_listener() {
       const discoveredAccount_r7 = \u0275\u0275restoreView(_r6).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.connectTefcaDirectAccount(discoveredAccount_r7.key, discoveredAccount_r7.value));
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.connectTefcaDirectAccount(discoveredAccount_r7.key, discoveredAccount_r7.value));
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const discoveredAccount_r7 = ctx.$implicit;
-    const ctx_r2 = \u0275\u0275nextContext();
-    \u0275\u0275property("title", (discoveredAccount_r7.value.portal == null ? null : discoveredAccount_r7.value.portal.name) || (discoveredAccount_r7.value.brand == null ? null : discoveredAccount_r7.value.brand.name) || "")("initials", ctx_r2.getAccountInitials((discoveredAccount_r7.value.portal == null ? null : discoveredAccount_r7.value.portal.name) || (discoveredAccount_r7.value.brand == null ? null : discoveredAccount_r7.value.brand.name) || ""))("logo", ctx_r2.getAccountLogo(discoveredAccount_r7.value.brand == null ? null : discoveredAccount_r7.value.brand.id));
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("title", (discoveredAccount_r7.value.portal == null ? null : discoveredAccount_r7.value.portal.name) || (discoveredAccount_r7.value.brand == null ? null : discoveredAccount_r7.value.brand.name) || "")("initials", ctx_r0.getAccountInitials((discoveredAccount_r7.value.portal == null ? null : discoveredAccount_r7.value.portal.name) || (discoveredAccount_r7.value.brand == null ? null : discoveredAccount_r7.value.brand.name) || ""))("logo", ctx_r0.getAccountLogo(discoveredAccount_r7.value.brand == null ? null : discoveredAccount_r7.value.brand.id));
   }
 }
 function DashboardComponent_fdk_card_18_Template(rf, ctx) {
@@ -83396,15 +83527,15 @@ function DashboardComponent_fdk_card_18_Template(rf, ctx) {
     \u0275\u0275elementStart(0, "fdk-card", 27);
     \u0275\u0275listener("click", function DashboardComponent_fdk_card_18_Template_fdk_card_click_0_listener() {
       const pendingAccount_r9 = \u0275\u0275restoreView(_r8).$implicit;
-      const ctx_r2 = \u0275\u0275nextContext();
-      return \u0275\u0275resetView(ctx_r2.connectAccount(pendingAccount_r9.key, pendingAccount_r9.value));
+      const ctx_r0 = \u0275\u0275nextContext();
+      return \u0275\u0275resetView(ctx_r0.connectAccount(pendingAccount_r9.key, pendingAccount_r9.value));
     });
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const pendingAccount_r9 = ctx.$implicit;
-    const ctx_r2 = \u0275\u0275nextContext();
-    \u0275\u0275property("title", (pendingAccount_r9.value.portal == null ? null : pendingAccount_r9.value.portal.name) || (pendingAccount_r9.value.brand == null ? null : pendingAccount_r9.value.brand.name) || "")("initials", ctx_r2.getAccountInitials((pendingAccount_r9.value.portal == null ? null : pendingAccount_r9.value.portal.name) || (pendingAccount_r9.value.brand == null ? null : pendingAccount_r9.value.brand.name) || ""))("logo", ctx_r2.getAccountLogo(pendingAccount_r9.value.brand == null ? null : pendingAccount_r9.value.brand.id));
+    const ctx_r0 = \u0275\u0275nextContext();
+    \u0275\u0275property("title", (pendingAccount_r9.value.portal == null ? null : pendingAccount_r9.value.portal.name) || (pendingAccount_r9.value.brand == null ? null : pendingAccount_r9.value.brand.name) || "")("initials", ctx_r0.getAccountInitials((pendingAccount_r9.value.portal == null ? null : pendingAccount_r9.value.portal.name) || (pendingAccount_r9.value.brand == null ? null : pendingAccount_r9.value.brand.name) || ""))("logo", ctx_r0.getAccountLogo(pendingAccount_r9.value.brand == null ? null : pendingAccount_r9.value.brand.id));
   }
 }
 var DEFAULT_SOURCE_LOGO_BRAND_ID = "ee170dc1-d2ef-4dfa-a2fb-b30335244aa6";
@@ -83413,7 +83544,6 @@ var DashboardComponent = class _DashboardComponent {
     this.configService = configService;
     this.router = router;
     this.logger = logger;
-    this.emptyTefcaRLSResult = false;
   }
   ngOnInit() {
     if (this.configService.systemConfig$.tefcaMode && !this.configService.vaultProfileConfig$.rlsQueryComplete) {
@@ -83422,9 +83552,11 @@ var DashboardComponent = class _DashboardComponent {
       });
       return;
     }
+  }
+  get emptyTefcaRLSResult() {
     const vaultProfile = this.configService.vaultProfileConfig$;
     const resultCount = Object.keys(vaultProfile.discoveredPatientAccounts || {}).length + Object.keys(vaultProfile.pendingPatientAccounts || {}).length + (vaultProfile.connectedPatientAccounts?.length || 0);
-    this.emptyTefcaRLSResult = !!(this.configService.systemConfig$.tefcaMode && vaultProfile.rlsQueryComplete && resultCount === 0);
+    return !!((!this.configService.systemConfig$.tefcaMode || vaultProfile.rlsQueryComplete) && resultCount === 0);
   }
   connectAccount(externalState, pendingAccount) {
     this.logger.info("connecting account", pendingAccount);
@@ -83519,7 +83651,7 @@ var DashboardComponent = class _DashboardComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], decls: 29, vars: 25, consts: [["id", "step-connecting-systems", 1, "flex", "h-full", "min-h-0", "flex-col", "overflow-hidden"], [1, "flex-shrink-0"], [1, "space-y-2"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary"], [1, "flex", "flex-1", "min-h-0", "flex-col", "gap-6", "pt-6", "overflow-hidden"], ["id", "connecting-systems-list", 1, "flex", "flex-1", "min-h-0", "flex-col", "overflow-hidden"], ["class", "mt-fdk-xl", "role", "alert", 4, "ngIf"], ["id", "account-cards", 1, "flex", "min-h-0", "flex-col", "gap-fdk-xxs", "overflow-y-auto", "no-scrollbar"], [4, "ngIf"], ["class", "connected-account-card flex-shrink-0", "variant", "select", 3, "title", "initials", "logo", "selected", "click", 4, "ngFor", "ngForOf"], ["class", "discovered-account-card flex-shrink-0", "variant", "select", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], ["class", "pending-account-card flex-shrink-0", "variant", "signIn", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], ["id", "search-button", "type", "button", "variant", "tertiary", 1, "mt-fdk-m", "flex-shrink-0", 3, "routerLink"], [1, "flex", "items-center", "justify-center", "gap-2"], ["name", "plus", "size", "24"], [1, "dashboard-footer", "mt-auto", "pt-6", "space-y-4", "flex-shrink-0"], ["id", "connecting-continue", "type", "button", "variant", "primary", "width", "full", 3, "click", "disabled"], ["role", "alert", 1, "mt-fdk-xl"], [1, "text-center"], ["name", "empty"], [1, "fdk-type-heading-3", "text-fdk-primary", "text-center", "mt-fdk-m"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], ["id", "select-all-accounts", "class", "flex-shrink-0", "value", "select-all", 3, "checked", "indeterminate", "change", 4, "ngIf"], ["id", "select-all-accounts", "value", "select-all", 1, "flex-shrink-0", 3, "change", "checked", "indeterminate"], ["variant", "select", 1, "connected-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo", "selected"], ["variant", "select", 1, "discovered-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo"], ["variant", "signIn", 1, "pending-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo"]], template: function DashboardComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], decls: 29, vars: 25, consts: [["id", "step-connecting-systems", 1, "flex", "h-full", "min-h-0", "flex-col", "overflow-hidden"], [1, "flex-shrink-0"], [1, "space-y-2"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary"], [1, "flex", "flex-1", "min-h-0", "flex-col", "gap-6", "pt-6", "overflow-hidden"], ["id", "connecting-systems-list", 1, "flex", "flex-1", "min-h-0", "flex-col", "overflow-hidden"], ["class", "mt-fdk-xl", "role", "alert", 4, "ngIf"], ["id", "account-cards", 1, "flex", "min-h-0", "flex-col", "gap-fdk-xxs", "overflow-y-auto", "no-scrollbar"], [4, "ngIf"], ["class", "connected-account-card flex-shrink-0", "variant", "select", 3, "title", "initials", "logo", "selected", "click", 4, "ngFor", "ngForOf"], ["class", "discovered-account-card flex-shrink-0", "variant", "select", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], ["class", "pending-account-card flex-shrink-0", "variant", "signIn", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], ["id", "search-button", "width", "full", "type", "button", "variant", "secondary", 1, "mt-fdk-m", "flex-shrink-0", 3, "routerLink"], [1, "flex", "items-center", "justify-center", "gap-2"], ["name", "plus", "size", "24"], [1, "dashboard-footer", "mt-auto", "mt-fdk-xxs", "space-y-4", "flex-shrink-0"], ["id", "connecting-continue", "type", "button", "variant", "primary", "width", "full", 3, "click", "disabled"], ["role", "alert", 1, "mt-fdk-xl"], [1, "text-center"], ["name", "empty"], [1, "fdk-type-heading-3", "text-fdk-primary", "text-center", "mt-fdk-m"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs", "text-center"], ["id", "select-all-accounts", "class", "flex-shrink-0", "value", "select-all", 3, "checked", "indeterminate", "change", 4, "ngIf"], ["id", "select-all-accounts", "value", "select-all", 1, "flex-shrink-0", 3, "change", "checked", "indeterminate"], ["variant", "select", 1, "connected-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo", "selected"], ["variant", "select", 1, "discovered-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo"], ["variant", "signIn", 1, "pending-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo"]], template: function DashboardComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "div", 2)(3, "h2", 3);
         \u0275\u0275text(4, " Choose your health systems ");
@@ -83528,7 +83660,7 @@ var DashboardComponent = class _DashboardComponent {
         \u0275\u0275text(6, " Select the providers you'd like to connect your records from. ");
         \u0275\u0275elementEnd()()();
         \u0275\u0275elementStart(7, "div", 5)(8, "div", 6);
-        \u0275\u0275template(9, DashboardComponent_div_9_Template, 7, 0, "div", 7);
+        \u0275\u0275template(9, DashboardComponent_div_9_Template, 9, 3, "div", 7);
         \u0275\u0275elementStart(10, "div", 8);
         \u0275\u0275template(11, DashboardComponent_ng_container_11_Template, 2, 1, "ng-container", 9);
         \u0275\u0275pipe(12, "async");
@@ -83563,7 +83695,7 @@ var DashboardComponent = class _DashboardComponent {
         \u0275\u0275advance(2);
         \u0275\u0275property("ngIf", \u0275\u0275pipeBind1(12, 7, ctx.configService.vaultProfileConfigSubject));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(14, 9, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(21, _c03));
+        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(14, 9, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(21, _c04));
         \u0275\u0275advance(2);
         \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(17, 13, ((tmp_3_0 = \u0275\u0275pipeBind1(16, 11, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(22, _c12)));
         \u0275\u0275advance(3);
@@ -83571,7 +83703,7 @@ var DashboardComponent = class _DashboardComponent {
         \u0275\u0275advance(3);
         \u0275\u0275property("routerLink", "/search");
         \u0275\u0275advance(5);
-        \u0275\u0275property("disabled", !(((tmp_6_0 = \u0275\u0275pipeBind1(27, 19, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_6_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(24, _c03)).length);
+        \u0275\u0275property("disabled", !(((tmp_6_0 = \u0275\u0275pipeBind1(27, 19, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_6_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(24, _c04)).length);
       }
     }, dependencies: [
       CommonModule,
@@ -84173,11 +84305,11 @@ var InfiniteScrollModule = class _InfiniteScrollModule {
 var import_lodash2 = __toESM(require_lodash());
 function HealthSystemSearchComponent_div_1_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 11);
+    \u0275\u0275elementStart(0, "div", 12);
     \u0275\u0275text(1, " We were unable to verify your identity. Please search for your healthcare system below. ");
     \u0275\u0275element(2, "br");
     \u0275\u0275text(3, " You can also ");
-    \u0275\u0275elementStart(4, "a", 12);
+    \u0275\u0275elementStart(4, "a", 13);
     \u0275\u0275text(5, "file a ticket");
     \u0275\u0275elementEnd();
     \u0275\u0275text(6, " if you need help. ");
@@ -84191,13 +84323,13 @@ function HealthSystemSearchComponent_div_1_Template(rf, ctx) {
 function HealthSystemSearchComponent_button_7_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 13);
+    \u0275\u0275elementStart(0, "button", 14);
     \u0275\u0275listener("click", function HealthSystemSearchComponent_button_7_Template_button_click_0_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.requestUserLocation());
     });
-    \u0275\u0275element(1, "fdk-icon", 14);
+    \u0275\u0275element(1, "fdk-icon", 15);
     \u0275\u0275text(2, " Use my location ");
     \u0275\u0275elementEnd();
   }
@@ -84209,15 +84341,15 @@ function HealthSystemSearchComponent_button_7_Template(rf, ctx) {
 function HealthSystemSearchComponent_div_9_div_8_button_2_Template(rf, ctx) {
   if (rf & 1) {
     const _r5 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "button", 24);
+    \u0275\u0275elementStart(0, "button", 25);
     \u0275\u0275listener("click", function HealthSystemSearchComponent_div_9_div_8_button_2_Template_button_click_0_listener() {
       \u0275\u0275restoreView(_r5);
       const ctx_r1 = \u0275\u0275nextContext(3);
       return \u0275\u0275resetView(ctx_r1.requestUserLocation());
     });
     \u0275\u0275namespaceSVG();
-    \u0275\u0275elementStart(1, "svg", 25);
-    \u0275\u0275element(2, "path", 26)(3, "circle", 27);
+    \u0275\u0275elementStart(1, "svg", 26);
+    \u0275\u0275element(2, "path", 27)(3, "circle", 28);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -84228,7 +84360,7 @@ function HealthSystemSearchComponent_div_9_div_8_button_2_Template(rf, ctx) {
 function HealthSystemSearchComponent_div_9_div_8_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 18)(1, "fdk-input", 22);
+    \u0275\u0275elementStart(0, "div", 19)(1, "fdk-input", 23);
     \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_9_div_8_Template_fdk_input_ngModelChange_1_listener($event) {
       \u0275\u0275restoreView(_r4);
       const ctx_r1 = \u0275\u0275nextContext(2);
@@ -84241,7 +84373,7 @@ function HealthSystemSearchComponent_div_9_div_8_Template(rf, ctx) {
       return \u0275\u0275resetView(ctx_r1.sortByLocationZipcodeChanged());
     });
     \u0275\u0275elementEnd();
-    \u0275\u0275template(2, HealthSystemSearchComponent_div_9_div_8_button_2_Template, 4, 1, "button", 23);
+    \u0275\u0275template(2, HealthSystemSearchComponent_div_9_div_8_button_2_Template, 4, 1, "button", 24);
     \u0275\u0275pipe(3, "async");
     \u0275\u0275elementEnd();
   }
@@ -84258,21 +84390,21 @@ function HealthSystemSearchComponent_div_9_div_8_Template(rf, ctx) {
 function HealthSystemSearchComponent_div_9_Template(rf, ctx) {
   if (rf & 1) {
     const _r3 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "div", 15);
+    \u0275\u0275elementStart(0, "div", 16);
     \u0275\u0275listener("click", function HealthSystemSearchComponent_div_9_Template_div_click_0_listener() {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.showFilters = false);
     });
-    \u0275\u0275elementStart(1, "section", 16);
+    \u0275\u0275elementStart(1, "section", 17);
     \u0275\u0275listener("click", function HealthSystemSearchComponent_div_9_Template_section_click_1_listener($event) {
       \u0275\u0275restoreView(_r3);
       return \u0275\u0275resetView($event.stopPropagation());
     });
-    \u0275\u0275elementStart(2, "h3", 17);
+    \u0275\u0275elementStart(2, "h3", 18);
     \u0275\u0275text(3, " Filter and Sort ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "div", 18)(5, "fdk-select", 19);
+    \u0275\u0275elementStart(4, "div", 19)(5, "fdk-select", 20);
     \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_9_Template_fdk_select_ngModelChange_5_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
@@ -84285,7 +84417,7 @@ function HealthSystemSearchComponent_div_9_Template(rf, ctx) {
       return \u0275\u0275resetView(ctx_r1.querySources(true));
     });
     \u0275\u0275elementEnd()();
-    \u0275\u0275elementStart(6, "div", 18)(7, "fdk-select", 20);
+    \u0275\u0275elementStart(6, "div", 19)(7, "fdk-select", 21);
     \u0275\u0275twoWayListener("ngModelChange", function HealthSystemSearchComponent_div_9_Template_fdk_select_ngModelChange_7_listener($event) {
       \u0275\u0275restoreView(_r3);
       const ctx_r1 = \u0275\u0275nextContext();
@@ -84298,7 +84430,7 @@ function HealthSystemSearchComponent_div_9_Template(rf, ctx) {
       return \u0275\u0275resetView(ctx_r1.sortByChanged());
     });
     \u0275\u0275elementEnd()();
-    \u0275\u0275template(8, HealthSystemSearchComponent_div_9_div_8_Template, 4, 5, "div", 21);
+    \u0275\u0275template(8, HealthSystemSearchComponent_div_9_div_8_Template, 4, 5, "div", 22);
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
@@ -84316,7 +84448,7 @@ function HealthSystemSearchComponent_div_9_Template(rf, ctx) {
 function HealthSystemSearchComponent_fdk_card_11_Template(rf, ctx) {
   if (rf & 1) {
     const _r6 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "fdk-card", 28);
+    \u0275\u0275elementStart(0, "fdk-card", 29);
     \u0275\u0275listener("click", function HealthSystemSearchComponent_fdk_card_11_Template_fdk_card_click_0_listener() {
       const brand_r7 = \u0275\u0275restoreView(_r6).$implicit;
       const ctx_r1 = \u0275\u0275nextContext();
@@ -84330,36 +84462,26 @@ function HealthSystemSearchComponent_fdk_card_11_Template(rf, ctx) {
     \u0275\u0275property("title", (brand_r7.brand == null ? null : brand_r7.brand.name) || "")("initials", ctx_r1.getBrandInitials((brand_r7.brand == null ? null : brand_r7.brand.name) || ""))("logo", (brand_r7.brand == null ? null : brand_r7.brand.id) ? "https://cdn.fastenhealth.com/logos/sources/" + (brand_r7.brand == null ? null : brand_r7.brand.id) + ".png" : "");
   }
 }
-function HealthSystemSearchComponent_div_12_Template(rf, ctx) {
+function HealthSystemSearchComponent_app_health_system_search_skeleton_12_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div")(1, "div", 29)(2, "div", 30);
-    \u0275\u0275element(3, "div", 31);
-    \u0275\u0275elementStart(4, "div", 32);
-    \u0275\u0275element(5, "div", 33);
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(6, "div", 34);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "div", 30);
-    \u0275\u0275element(8, "div", 31);
-    \u0275\u0275elementStart(9, "div", 32);
-    \u0275\u0275element(10, "div", 33);
-    \u0275\u0275elementEnd();
-    \u0275\u0275element(11, "div", 34);
-    \u0275\u0275elementEnd()()();
+    \u0275\u0275element(0, "app-health-system-search-skeleton", 30);
+  }
+  if (rf & 2) {
+    \u0275\u0275property("showControls", false);
   }
 }
 function HealthSystemSearchComponent_div_13_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div")(1, "div", 35);
-    \u0275\u0275element(2, "fdk-illustration", 36);
+    \u0275\u0275elementStart(0, "div")(1, "div", 31);
+    \u0275\u0275element(2, "fdk-illustration", 32);
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(3, "h3", 37);
+    \u0275\u0275elementStart(3, "h3", 33);
     \u0275\u0275text(4, " No results found\xA0 ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(5, "p", 38);
+    \u0275\u0275elementStart(5, "p", 34);
     \u0275\u0275text(6, " We couldn't find a provider matching your search. Try different keywords or filters. ");
     \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(7, "div", 39)(8, "fdk-button", 40);
+    \u0275\u0275elementStart(7, "div", 35)(8, "fdk-button", 36);
     \u0275\u0275text(9, " Request a provider ");
     \u0275\u0275elementEnd()()();
   }
@@ -84561,7 +84683,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], decls: 14, vars: 17, consts: [["id", "step-search"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["id", "search-controls", 1, "space-y-2"], [1, "flex", "items-end", "gap-2"], ["id", "search-input", "type", "search", "label", "Search for your health system", "placeholder", "Search providers...", 1, "flex-1", 3, "ngModelChange", "keyup", "hideLabel", "ngModel"], ["id", "search-filters", "icon", "filter", "aria-label", "Show filters", "variant", "primary", 3, "click"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", "class", "inline-flex items-center gap-1 fdk-type-paragraph-s text-fdk-accent hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["id", "filters-overlay", "class", "filters-drawer-overlay", 3, "click", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "flex", "flex-col", "gap-fdk-xxs", "mt-fdk-m", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "infiniteScrollContainer", "fromRoot", "scrollWindow"], ["variant", "more", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], [4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", 1, "inline-flex", "items-center", "gap-1", "fdk-type-paragraph-s", "text-fdk-accent", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["name", "location-off"], ["id", "filters-overlay", 1, "filters-drawer-overlay", 3, "click"], ["id", "filters-container", "role", "dialog", "aria-modal", "true", "aria-labelledby", "filters-title", 1, "filters-drawer", "space-y-4", 3, "click"], ["id", "filters-title", 1, "fdk-type-heading-3", "text-fdk-primary"], [1, "relative"], ["id", "state-filter", "label", "State", 3, "ngModelChange", "options", "ngModel"], ["id", "sort-filter", "label", "Sort by", 3, "ngModelChange", "options", "ngModel"], ["class", "relative", 4, "ngIf"], ["id", "zipcode-input", "type", "text", "label", "ZIP code", "placeholder", "Enter your zipcode", 3, "ngModelChange", "hideLabel", "ngModel"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", "class", "absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", 1, "absolute", "inset-y-0", "right-0", "flex", "items-center", "px-3", "text-gray-500", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["d", "M12 21c-3.6-4-6-7-6-9a6 6 0 1 1 12 0c0 2-2.4 5-6 9z"], ["cx", "12", "cy", "12", "r", "1"], ["variant", "more", 3, "click", "title", "initials", "logo"], [1, "animate-pulse", "space-y-2"], [1, "skeleton-card"], [1, "skeleton", "skeleton-circle"], [1, "flex-1", "space-y-1"], [1, "skeleton", "skeleton-text", "w-32"], [1, "skeleton", "w-5", "h-5", "rounded"], [1, "flex", "justify-center", "mt-fdk-xl"], ["name", "empty"], [1, "fdk-type-heading-3", "text-fdk-primary", "mt-fdk-m", "text-center"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], [1, "flex", "justify-center", "mt-fdk-m"], ["type", "button", "variant", "secondary", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], decls: 14, vars: 17, consts: [["id", "step-search"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["id", "search-controls", 1, "space-y-2"], [1, "flex", "items-end", "gap-2"], ["id", "search-input", "type", "search", "label", "Search for your health system", "placeholder", "Search providers...", 1, "flex-1", 3, "ngModelChange", "keyup", "hideLabel", "ngModel"], ["id", "search-filters", "icon", "filter", "aria-label", "Show filters", "variant", "primary", 3, "click"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", "class", "inline-flex items-center gap-1 fdk-type-paragraph-s text-fdk-accent hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["id", "filters-overlay", "class", "filters-drawer-overlay", 3, "click", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "flex", "flex-col", "gap-fdk-xxs", "mt-fdk-m", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "infiniteScrollContainer", "fromRoot", "scrollWindow"], ["variant", "more", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], [3, "showControls", 4, "ngIf"], [4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", 1, "inline-flex", "items-center", "gap-1", "fdk-type-paragraph-s", "text-fdk-accent", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["name", "location-off"], ["id", "filters-overlay", 1, "filters-drawer-overlay", 3, "click"], ["id", "filters-container", "role", "dialog", "aria-modal", "true", "aria-labelledby", "filters-title", 1, "filters-drawer", "space-y-4", 3, "click"], ["id", "filters-title", 1, "fdk-type-heading-3", "text-fdk-primary"], [1, "relative"], ["id", "state-filter", "label", "State", 3, "ngModelChange", "options", "ngModel"], ["id", "sort-filter", "label", "Sort by", 3, "ngModelChange", "options", "ngModel"], ["class", "relative", 4, "ngIf"], ["id", "zipcode-input", "type", "text", "label", "ZIP code", "placeholder", "Enter your zipcode", 3, "ngModelChange", "hideLabel", "ngModel"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", "class", "absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", 1, "absolute", "inset-y-0", "right-0", "flex", "items-center", "px-3", "text-gray-500", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["d", "M12 21c-3.6-4-6-7-6-9a6 6 0 1 1 12 0c0 2-2.4 5-6 9z"], ["cx", "12", "cy", "12", "r", "1"], ["variant", "more", 3, "click", "title", "initials", "logo"], [3, "showControls"], [1, "flex", "justify-center", "mt-fdk-xl"], ["name", "empty"], [1, "fdk-type-heading-3", "text-fdk-primary", "mt-fdk-m", "text-center"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], [1, "flex", "justify-center", "mt-fdk-m"], ["type", "button", "variant", "secondary", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275template(1, HealthSystemSearchComponent_div_1_Template, 7, 1, "div", 1);
@@ -84590,7 +84712,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
         });
         \u0275\u0275template(11, HealthSystemSearchComponent_fdk_card_11_Template, 1, 3, "fdk-card", 9);
         \u0275\u0275elementEnd();
-        \u0275\u0275template(12, HealthSystemSearchComponent_div_12_Template, 12, 0, "div", 10)(13, HealthSystemSearchComponent_div_13_Template, 10, 1, "div", 10);
+        \u0275\u0275template(12, HealthSystemSearchComponent_app_health_system_search_skeleton_12_Template, 1, 1, "app-health-system-search-skeleton", 10)(13, HealthSystemSearchComponent_div_13_Template, 10, 1, "div", 11);
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
@@ -84633,16 +84755,17 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
       InfiniteScrollModule,
       InfiniteScrollDirective,
       FdkIllustrationComponent,
-      FdkButtonComponent
-    ], styles: ['\n\n.comma[_ngcontent-%COMP%]:not(:last-child):after {\n  content: ", ";\n}\n.filters-drawer-overlay[_ngcontent-%COMP%] {\n  position: fixed;\n  z-index: 1000;\n  inset: 0;\n  display: flex;\n  align-items: flex-end;\n  justify-content: center;\n  background-color: var(--fdk-color-neutrals-overlay);\n}\n.filters-drawer[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  width: min(32rem, 100%);\n  max-height: min(80dvh, 40rem);\n  overflow-y: auto;\n  padding: var(--fdk-spacing-l) var(--fdk-spacing-l) var(--fdk-spacing-xxxl) var(--fdk-spacing-l);\n  border: 1px solid var(--fdk-color-neutrals-border);\n  border-bottom: 0;\n  border-radius: 12px 12px 0 0;\n  background-color: var(--fdk-color-neutrals-background);\n  box-shadow: 0 -1rem 2rem rgb(0 0 0 / 0.16);\n}\n/*# sourceMappingURL=health-system-search.component.css.map */'] });
+      FdkButtonComponent,
+      HealthSystemSearchSkeletonComponent
+    ], styles: ['\n\n[_nghost-%COMP%] {\n  display: block;\n  box-sizing: border-box;\n}\n.comma[_ngcontent-%COMP%]:not(:last-child):after {\n  content: ", ";\n}\n.filters-drawer-overlay[_ngcontent-%COMP%] {\n  position: fixed;\n  z-index: 1000;\n  inset: 0;\n  display: flex;\n  align-items: flex-end;\n  justify-content: center;\n  background-color: var(--fdk-color-neutrals-overlay);\n}\n.filters-drawer[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  width: min(32rem, 100%);\n  max-height: min(80dvh, 40rem);\n  overflow-y: auto;\n  padding: var(--fdk-spacing-l) var(--fdk-spacing-l) var(--fdk-spacing-xxxl) var(--fdk-spacing-l);\n  border: 1px solid var(--fdk-color-neutrals-border);\n  border-bottom: 0;\n  border-radius: 12px 12px 0 0;\n  background-color: var(--fdk-color-neutrals-background);\n  box-shadow: 0 -1rem 2rem rgb(0 0 0 / 0.16);\n}\n/*# sourceMappingURL=health-system-search.component.css.map */'] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemSearchComponent, { className: "HealthSystemSearchComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts", lineNumber: 46 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(HealthSystemSearchComponent, { className: "HealthSystemSearchComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts", lineNumber: 48 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts
-var _c04 = () => [];
+var _c05 = () => [];
 function HealthSystemBrandDetailsComponent_img_5_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -84696,7 +84819,7 @@ function HealthSystemBrandDetailsComponent_div_12_span_6_Template(rf, ctx) {
     let tmp_3_0;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", (((tmp_3_0 = \u0275\u0275pipeBind1(2, 1, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c04)).length, "");
+    \u0275\u0275textInterpolate1("+ ", (((tmp_3_0 = \u0275\u0275pipeBind1(2, 1, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c05)).length, "");
   }
 }
 function HealthSystemBrandDetailsComponent_div_12_Template(rf, ctx) {
@@ -84716,9 +84839,9 @@ function HealthSystemBrandDetailsComponent_div_12_Template(rf, ctx) {
     let tmp_3_0;
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance(3);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(5, 4, ((tmp_2_0 = \u0275\u0275pipeBind1(4, 2, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c04), 0, 3));
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(5, 4, ((tmp_2_0 = \u0275\u0275pipeBind1(4, 2, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c05), 0, 3));
     \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", (((tmp_3_0 = \u0275\u0275pipeBind1(7, 8, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c04)).length > 4);
+    \u0275\u0275property("ngIf", (((tmp_3_0 = \u0275\u0275pipeBind1(7, 8, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c05)).length > 4);
   }
 }
 function HealthSystemBrandDetailsComponent_div_14_Template(rf, ctx) {
@@ -84752,14 +84875,15 @@ function HealthSystemBrandDetailsComponent_ng_container_19_fdk_card_1_Template(r
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
+    let tmp_6_0;
     const portal_r6 = \u0275\u0275nextContext().$implicit;
-    \u0275\u0275property("title", portal_r6.name);
+    \u0275\u0275property("title", portal_r6.name)("description", (tmp_6_0 = portal_r6.description) !== null && tmp_6_0 !== void 0 ? tmp_6_0 : "");
   }
 }
 function HealthSystemBrandDetailsComponent_ng_container_19_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275template(1, HealthSystemBrandDetailsComponent_ng_container_19_fdk_card_1_Template, 1, 1, "fdk-card", 20);
+    \u0275\u0275template(1, HealthSystemBrandDetailsComponent_ng_container_19_fdk_card_1_Template, 1, 2, "fdk-card", 20);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
@@ -84800,7 +84924,7 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], decls: 21, vars: 16, consts: [["brandInitials", ""], ["id", "step-health-system-details"], [1, "mt-fdk-m"], ["class", "w-32 max-h-32 object-contain", "alt", "", 3, "src", "error", 4, "ngIf", "ngIfElse"], ["id", "hsd-name", 1, "fdk-type-heading-2", "text-fdk-primary", "mt-fdk-xs"], ["class", "fdk-type-paragraph text-fdk-secondary mt-fdk-xxs flex items-center gap-fdk-xxxs", 4, "ngIf"], ["class", "fdk-type-paragraph text-fdk-accent mt-fdk-xxxs", "id", "hsd-website-container", 4, "ngIf"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-l"], ["id", "hsd-institutions-list", 1, "flex", "flex-col", "gap-fdk-xxs", "mt-fdk-s"], [4, "ngFor", "ngForOf"], ["alt", "", 1, "w-32", "max-h-32", "object-contain", 3, "error", "src"], ["size", "large", 3, "initials"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs", "flex", "items-center", "gap-fdk-xxxs"], ["name", "location-off", "size", "24"], ["id", "hsd-location", 1, "text-base"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "comma"], ["id", "hsd-website-container", 1, "fdk-type-paragraph", "text-fdk-accent", "mt-fdk-xxxs"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 3, "href"], ["class", "institution-card", "variant", "add", 3, "title", "click", 4, "ngFor", "ngForOf"], ["variant", "add", 1, "institution-card", 3, "click", "title"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], decls: 21, vars: 16, consts: [["brandInitials", ""], ["id", "step-health-system-details"], [1, "mt-fdk-m"], ["class", "max-w-24 max-h-24 object-contain", "alt", "", 3, "src", "error", 4, "ngIf", "ngIfElse"], ["id", "hsd-name", 1, "fdk-type-heading-2", "text-fdk-primary", "mt-fdk-xs"], ["class", "fdk-type-paragraph text-fdk-secondary mt-fdk-xxs flex items-center gap-fdk-xxxs", 4, "ngIf"], ["class", "fdk-type-paragraph text-fdk-accent mt-fdk-xxxs", "id", "hsd-website-container", 4, "ngIf"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-l"], ["id", "hsd-institutions-list", 1, "flex", "flex-col", "gap-fdk-xxs", "mt-fdk-s"], [4, "ngFor", "ngForOf"], ["alt", "", 1, "max-w-24", "max-h-24", "object-contain", 3, "error", "src"], ["size", "large", 3, "initials"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs", "flex", "items-center", "gap-fdk-xxxs"], ["name", "location-off", "size", "24"], ["id", "hsd-location", 1, "text-base"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "comma"], ["id", "hsd-website-container", 1, "fdk-type-paragraph", "text-fdk-accent", "mt-fdk-xxxs"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 3, "href"], ["class", "institution-card", "variant", "add", 3, "title", "description", "click", 4, "ngFor", "ngForOf"], ["variant", "add", 1, "institution-card", 3, "click", "title", "description"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 1)(1, "div")(2, "div")(3, "div", 2)(4, "div");
         \u0275\u0275template(5, HealthSystemBrandDetailsComponent_img_5_Template, 2, 4, "img", 3);
@@ -84960,7 +85084,7 @@ function ConnectHelper(connectData) {
 }
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts
-var _c05 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
+var _c06 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
 var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
   constructor(configService, injector) {
     this.configService = configService;
@@ -85020,7 +85144,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
       }
       if (rf & 2) {
         \u0275\u0275advance(11);
-        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(2, _c05, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
+        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(2, _c06, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
       }
     }, dependencies: [
       CommonModule,
@@ -86353,33 +86477,101 @@ function takeUntilDestroyed(destroyRef) {
 }
 
 // projects/fasten-connect-stitch-embed/src/app/pages/record-locator-loading/record-locator-loading.component.ts
+function RecordLocatorLoadingComponent_div_1_For_3_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 5)(1, "div", 6);
+    \u0275\u0275element(2, "fdk-illustration", 7);
+    \u0275\u0275elementEnd();
+    \u0275\u0275element(3, "fdk-loading-dots", 8);
+    \u0275\u0275elementStart(4, "h2", 9);
+    \u0275\u0275text(5);
+    \u0275\u0275elementEnd();
+    \u0275\u0275elementStart(6, "p", 10);
+    \u0275\u0275text(7);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const index_r1 = ctx.$implicit;
+    const ctx_r1 = \u0275\u0275nextContext(2);
+    \u0275\u0275classProp("record-locator-message--outgoing", index_r1 === ctx_r1.previousMessageIndex)("record-locator-message--incoming", ctx_r1.previousMessageIndex !== null && index_r1 === ctx_r1.currentMessageIndex);
+    \u0275\u0275attribute("aria-hidden", index_r1 === ctx_r1.previousMessageIndex ? "true" : null);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("name", ctx_r1.loadingMessages[index_r1].illustration);
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate1(" ", ctx_r1.loadingMessages[index_r1].title, " ");
+    \u0275\u0275advance(2);
+    \u0275\u0275textInterpolate1(" ", ctx_r1.loadingMessages[index_r1].description, " ");
+  }
+}
 function RecordLocatorLoadingComponent_div_1_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 2)(1, "div", 3);
-    \u0275\u0275element(2, "fdk-illustration", 4)(3, "fdk-loading-dots", 5);
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(4, "h2", 6);
-    \u0275\u0275text(5, " Finding your health systems ");
-    \u0275\u0275elementEnd();
-    \u0275\u0275elementStart(6, "p", 7);
-    \u0275\u0275text(7, " We're looking for the providers you've visited. This may take a moment. ");
+    \u0275\u0275repeaterCreate(2, RecordLocatorLoadingComponent_div_1_For_3_Template, 8, 8, "div", 4, \u0275\u0275repeaterTrackByIdentity);
     \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(2);
+    \u0275\u0275repeater(ctx_r1.visibleMessageIndices);
   }
 }
 var RecordLocatorLoadingComponent = class _RecordLocatorLoadingComponent {
+  get visibleMessageIndices() {
+    return this.previousMessageIndex === null ? [this.currentMessageIndex] : [this.previousMessageIndex, this.currentMessageIndex];
+  }
   constructor(configService, fastenService, router, logger) {
     this.configService = configService;
     this.fastenService = fastenService;
     this.router = router;
     this.logger = logger;
     this.loadingTefcaRLS = true;
+    this.loadingMessages = [
+      {
+        illustration: "connecting",
+        title: "Finding your health systems",
+        description: "We're looking for the providers you've visited. This can take up to two minutes."
+      },
+      {
+        illustration: "location",
+        title: "Looking across health systems",
+        description: "We're checking for providers linked to your details. You don't need to do anything yet."
+      },
+      {
+        illustration: "identifying",
+        title: "Looking for the right matches",
+        description: "We use your verified details to look for providers you've visited."
+      },
+      {
+        illustration: "empty",
+        title: "Giving health systems time to respond",
+        description: "Some health systems take a little longer to respond. We're still looking."
+      },
+      {
+        illustration: "connecting",
+        title: "Keeping the search going",
+        description: "You can stay on this page while we look for your providers."
+      },
+      {
+        illustration: "sign-in",
+        title: "Your next step is choosing providers",
+        description: "When the search finishes, you can choose which providers to connect."
+      }
+    ];
+    this.currentMessageIndex = 0;
+    this.previousMessageIndex = null;
     this.destroyRef = inject(DestroyRef);
+    this.loadingFinished = new Subject();
   }
   ngOnInit() {
     if (this.configService.vaultProfileConfig$.rlsQueryComplete) {
       this.finishLoading();
       return;
     }
+    concat(timer(4e3, 4e3).pipe(take(7)), timer(1e4, 8e3)).pipe(takeUntil(this.loadingFinished), takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+      this.previousMessageIndex = this.currentMessageIndex;
+      this.currentMessageIndex = (this.currentMessageIndex + 1) % this.loadingMessages.length;
+      timer(250).pipe(takeUntil(this.loadingFinished), takeUntilDestroyed(this.destroyRef)).subscribe(() => this.previousMessageIndex = null);
+    });
     FetchAndStoreRecordLocatorResultsInVaultProfile(this.configService, () => this.fastenService.recordLocatorRegisterAndPollForStatus(), (taskId) => this.fastenService.recordLocatorResults(taskId)).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
       next: () => this.finishLoading(),
       error: (error2) => {
@@ -86392,6 +86584,9 @@ var RecordLocatorLoadingComponent = class _RecordLocatorLoadingComponent {
     });
   }
   finishLoading() {
+    this.loadingFinished.next();
+    this.loadingFinished.complete();
+    this.previousMessageIndex = null;
     this.loadingTefcaRLS = false;
     void this.router.navigateByUrl("/dashboard", {
       replaceUrl: true,
@@ -86404,10 +86599,10 @@ var RecordLocatorLoadingComponent = class _RecordLocatorLoadingComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _RecordLocatorLoadingComponent, selectors: [["app-record-locator-loading"]], decls: 2, vars: 1, consts: [["id", "record-locator-loading-page", 1, "flex", "flex-1", "min-h-0", "flex-col"], ["class", "flex flex-1 flex-col items-center text-center mt-fdk-xxxl", "role", "status", "aria-live", "polite", 4, "ngIf"], ["role", "status", "aria-live", "polite", 1, "flex", "flex-1", "flex-col", "items-center", "text-center", "mt-fdk-xxxl"], [1, "flex", "flex-col", "items-center"], ["name", "connecting"], [1, "mt-fdk-s"], [1, "fdk-type-heading-2", "text-fdk-primary", "mt-fdk-l"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"]], template: function RecordLocatorLoadingComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _RecordLocatorLoadingComponent, selectors: [["app-record-locator-loading"]], decls: 2, vars: 1, consts: [["id", "record-locator-loading-page", 1, "flex", "flex-1", "min-h-0", "flex-col"], ["class", "flex flex-1 flex-col items-center text-center mt-fdk-xxxl", "role", "status", "aria-live", "polite", "aria-atomic", "true", 4, "ngIf"], ["role", "status", "aria-live", "polite", "aria-atomic", "true", 1, "flex", "flex-1", "flex-col", "items-center", "text-center", "mt-fdk-xxxl"], [1, "record-locator-messages"], [1, "record-locator-message", "flex", "flex-col", "items-center", 3, "record-locator-message--outgoing", "record-locator-message--incoming"], [1, "record-locator-message", "flex", "flex-col", "items-center"], [1, "record-locator-illustration"], [3, "name"], [1, "mt-fdk-s"], [1, "fdk-type-heading-2", "text-fdk-primary", "mt-fdk-l"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"]], template: function RecordLocatorLoadingComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
-        \u0275\u0275template(1, RecordLocatorLoadingComponent_div_1_Template, 8, 0, "div", 1);
+        \u0275\u0275template(1, RecordLocatorLoadingComponent_div_1_Template, 4, 0, "div", 1);
         \u0275\u0275elementEnd();
       }
       if (rf & 2) {
@@ -86419,22 +86614,23 @@ var RecordLocatorLoadingComponent = class _RecordLocatorLoadingComponent {
       NgIf,
       FdkIllustrationComponent,
       FdkLoadingDotsComponent
-    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  min-height: 0;\n  height: 100%;\n}\n/*# sourceMappingURL=record-locator-loading.component.css.map */"] });
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  min-height: 0;\n  height: 100%;\n}\n.record-locator-messages[_ngcontent-%COMP%] {\n  display: grid;\n  width: 100%;\n}\n.record-locator-message[_ngcontent-%COMP%] {\n  grid-area: 1 / 1;\n  min-width: 0;\n}\n.record-locator-illustration[_ngcontent-%COMP%] {\n  display: flex;\n  align-items: center;\n  justify-content: center;\n  height: 104px;\n}\n.record-locator-message--incoming[_ngcontent-%COMP%] {\n  animation: _ngcontent-%COMP%_record-locator-fade-in 250ms ease-in-out both;\n}\n.record-locator-message--outgoing[_ngcontent-%COMP%] {\n  animation: _ngcontent-%COMP%_record-locator-fade-out 250ms ease-in-out both;\n  pointer-events: none;\n}\n@keyframes _ngcontent-%COMP%_record-locator-fade-in {\n  from {\n    opacity: 0;\n  }\n  to {\n    opacity: 1;\n  }\n}\n@keyframes _ngcontent-%COMP%_record-locator-fade-out {\n  from {\n    opacity: 1;\n  }\n  to {\n    opacity: 0;\n  }\n}\n@media (prefers-reduced-motion: reduce) {\n  .record-locator-message--incoming[_ngcontent-%COMP%], \n   .record-locator-message--outgoing[_ngcontent-%COMP%] {\n    animation: none;\n  }\n  .record-locator-message--outgoing[_ngcontent-%COMP%] {\n    visibility: hidden;\n  }\n}\n/*# sourceMappingURL=record-locator-loading.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(RecordLocatorLoadingComponent, { className: "RecordLocatorLoadingComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/record-locator-loading/record-locator-loading.component.ts", lineNumber: 28 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(RecordLocatorLoadingComponent, { className: "RecordLocatorLoadingComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/record-locator-loading/record-locator-loading.component.ts", lineNumber: 30 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/confirm-health-system-selection/confirm-health-system-selection.component.ts
-var _c06 = () => [];
+var _c07 = () => [];
 function ConfirmHealthSystemSelectionComponent_ng_container_1_fdk_card_10_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275element(0, "fdk-card", 12);
   }
   if (rf & 2) {
     const connectedAccount_r2 = ctx.$implicit;
-    \u0275\u0275property("title", (connectedAccount_r2.portal == null ? null : connectedAccount_r2.portal.name) || (connectedAccount_r2.brand == null ? null : connectedAccount_r2.brand.name) || "")("logo", (connectedAccount_r2.brand == null ? null : connectedAccount_r2.brand.id) ? "https://cdn.fastenhealth.com/logos/sources/" + (connectedAccount_r2.brand == null ? null : connectedAccount_r2.brand.id) + ".png" : "");
+    const ctx_r2 = \u0275\u0275nextContext(2);
+    \u0275\u0275property("title", (connectedAccount_r2.portal == null ? null : connectedAccount_r2.portal.name) || (connectedAccount_r2.brand == null ? null : connectedAccount_r2.brand.name) || "")("initials", ctx_r2.getAccountInitials((connectedAccount_r2.portal == null ? null : connectedAccount_r2.portal.name) || (connectedAccount_r2.brand == null ? null : connectedAccount_r2.brand.name) || ""))("logo", ctx_r2.getAccountLogo(connectedAccount_r2.brand == null ? null : connectedAccount_r2.brand.id));
   }
 }
 function ConfirmHealthSystemSelectionComponent_ng_container_1_fdk_spinner_16_Template(rf, ctx) {
@@ -86456,7 +86652,7 @@ function ConfirmHealthSystemSelectionComponent_ng_container_1_Template(rf, ctx) 
     \u0275\u0275text(8);
     \u0275\u0275elementEnd()();
     \u0275\u0275elementStart(9, "div", 6);
-    \u0275\u0275template(10, ConfirmHealthSystemSelectionComponent_ng_container_1_fdk_card_10_Template, 1, 2, "fdk-card", 7);
+    \u0275\u0275template(10, ConfirmHealthSystemSelectionComponent_ng_container_1_fdk_card_10_Template, 1, 3, "fdk-card", 7);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(11, "div", 8)(12, "p", 9);
     \u0275\u0275text(13, "Your health records are encrypted and will only be shared with the providers you've selected.");
@@ -86477,15 +86673,16 @@ function ConfirmHealthSystemSelectionComponent_ng_container_1_Template(rf, ctx) 
     const vaultProfile_r4 = ctx.ngIf;
     const ctx_r2 = \u0275\u0275nextContext();
     \u0275\u0275advance(8);
-    \u0275\u0275textInterpolate2(" ", (vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(5, _c06)).length, " provider", (vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(6, _c06)).length === 1 ? "" : "s", " selected ");
+    \u0275\u0275textInterpolate2(" ", (vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(5, _c07)).length, " provider", (vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(6, _c07)).length === 1 ? "" : "s", " selected ");
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(7, _c06));
+    \u0275\u0275property("ngForOf", vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(7, _c07));
     \u0275\u0275advance(4);
-    \u0275\u0275property("disabled", !(vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(8, _c06)).length || ctx_r2.isCompleting);
+    \u0275\u0275property("disabled", !(vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(8, _c07)).length || ctx_r2.isCompleting);
     \u0275\u0275advance(2);
     \u0275\u0275property("ngIf", ctx_r2.isCompleting);
   }
 }
+var DEFAULT_SOURCE_LOGO_BRAND_ID2 = "ee170dc1-d2ef-4dfa-a2fb-b30335244aa6";
 var ConfirmHealthSystemSelectionComponent = class _ConfirmHealthSystemSelectionComponent {
   constructor(configService, router, fastenService, logger, injector) {
     this.configService = configService;
@@ -86494,6 +86691,19 @@ var ConfirmHealthSystemSelectionComponent = class _ConfirmHealthSystemSelectionC
     this.logger = logger;
     this.injector = injector;
     this.isCompleting = false;
+  }
+  getAccountInitials(name) {
+    const words = name.trim().split(/\s+/).filter(Boolean);
+    if (words.length > 1) {
+      return `${words[0][0]}${words[1][0]}`;
+    }
+    return words[0]?.slice(0, 2) || "";
+  }
+  getAccountLogo(brandId) {
+    if (!brandId || brandId === DEFAULT_SOURCE_LOGO_BRAND_ID2) {
+      return "";
+    }
+    return `https://cdn.fastenhealth.com/logos/sources/${brandId}.png`;
   }
   completeAccounts() {
     const connectedAccounts = this.configService.vaultProfileConfig$.connectedPatientAccounts || [];
@@ -86530,7 +86740,7 @@ var ConfirmHealthSystemSelectionComponent = class _ConfirmHealthSystemSelectionC
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ConfirmHealthSystemSelectionComponent, selectors: [["app-confirm-health-system-selection"]], decls: 3, vars: 3, consts: [["id", "step-confirm-health-system-selection", 1, "flex", "h-full", "min-h-0", "flex-col", "overflow-hidden"], [4, "ngIf"], [1, "flex", "min-h-0", "flex-1", "flex-col", "pt-6"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], ["id", "connected-account-count", 1, "fdk-type-paragraph-s", "text-fdk-accent", "mt-fdk-m"], ["id", "connected-account-cards", 1, "flex", "min-h-0", "flex-1", "flex-col", "gap-fdk-xxs", "overflow-y-auto", "mt-fdk-xs", "no-scrollbar"], ["class", "connected-account-card flex-shrink-0", "variant", "readOnly", 3, "title", "logo", 4, "ngFor", "ngForOf"], [1, "confirm-selection-footer", "mt-auto", "pt-6", "flex-shrink-0"], [1, "fdk-type-paragraph-xs", "text-fdk-secondary", "mb-fdk-xs"], ["id", "share-records", "type", "button", "variant", "primary", "width", "full", 3, "click", "disabled"], [1, "flex", "items-center", "justify-center", "gap-2"], ["variant", "readOnly", 1, "connected-account-card", "flex-shrink-0", 3, "title", "logo"]], template: function ConfirmHealthSystemSelectionComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _ConfirmHealthSystemSelectionComponent, selectors: [["app-confirm-health-system-selection"]], decls: 3, vars: 3, consts: [["id", "step-confirm-health-system-selection", 1, "flex", "h-full", "min-h-0", "flex-col", "overflow-hidden"], [4, "ngIf"], [1, "flex", "min-h-0", "flex-1", "flex-col", "pt-6"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], ["id", "connected-account-count", 1, "fdk-type-paragraph-s", "text-fdk-accent", "mt-fdk-m"], ["id", "connected-account-cards", 1, "flex", "min-h-0", "flex-1", "flex-col", "gap-fdk-xxs", "overflow-y-auto", "mt-fdk-xs", "no-scrollbar"], ["class", "connected-account-card flex-shrink-0", "variant", "readOnly", 3, "title", "initials", "logo", 4, "ngFor", "ngForOf"], [1, "confirm-selection-footer", "mt-auto", "pt-6", "flex-shrink-0"], [1, "fdk-type-paragraph-xs", "text-fdk-secondary", "mb-fdk-xs"], ["id", "share-records", "type", "button", "variant", "primary", "width", "full", 3, "click", "disabled"], [1, "flex", "items-center", "justify-center", "gap-2"], ["variant", "readOnly", 1, "connected-account-card", "flex-shrink-0", 3, "title", "initials", "logo"]], template: function ConfirmHealthSystemSelectionComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275template(1, ConfirmHealthSystemSelectionComponent_ng_container_1_Template, 18, 9, "ng-container", 1);
@@ -86553,7 +86763,7 @@ var ConfirmHealthSystemSelectionComponent = class _ConfirmHealthSystemSelectionC
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ConfirmHealthSystemSelectionComponent, { className: "ConfirmHealthSystemSelectionComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/confirm-health-system-selection/confirm-health-system-selection.component.ts", lineNumber: 30 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(ConfirmHealthSystemSelectionComponent, { className: "ConfirmHealthSystemSelectionComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/pages/confirm-health-system-selection/confirm-health-system-selection.component.ts", lineNumber: 32 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/auth-guards/prevent-browser-history-navigation-guard.ts
