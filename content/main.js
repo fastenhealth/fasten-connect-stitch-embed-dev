@@ -47220,11 +47220,6 @@ function getApiModeFromPublicId(publicId) {
   return ApiMode.Test;
 }
 
-// projects/fasten-connect-stitch-embed/src/app/utils/logo-text.ts
-function logoText(environmentName = environment.name) {
-  return environmentName === "production" ? "fasten" : `fasten ${environment.short_name}`;
-}
-
 // node_modules/jose/dist/browser/runtime/webcrypto.js
 var webcrypto_default = crypto;
 var isCryptoKey = (key) => key instanceof CryptoKey;
@@ -76619,7 +76614,7 @@ var _c0 = ["*"];
 function FdkCardComponent_Conditional_2_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
-    \u0275\u0275elementStart(0, "img", 9);
+    \u0275\u0275elementStart(0, "img", 11);
     \u0275\u0275listener("error", function FdkCardComponent_Conditional_2_Template_img_error_0_listener() {
       \u0275\u0275restoreView(_r1);
       const ctx_r1 = \u0275\u0275nextContext();
@@ -76650,33 +76645,59 @@ function FdkCardComponent_Conditional_7_Template(rf, ctx) {
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate(ctx_r1.description);
+    \u0275\u0275textInterpolate1("Matches your search: ", ctx_r1.highlights.join(", "), "");
   }
 }
 function FdkCardComponent_Conditional_8_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 6);
-    \u0275\u0275element(1, "fdk-icon", 10);
+    \u0275\u0275elementStart(0, "p", 6);
+    \u0275\u0275text(1);
     \u0275\u0275elementEnd();
   }
-}
-function FdkCardComponent_Case_9_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 7);
-    \u0275\u0275element(1, "fdk-icon", 11);
-    \u0275\u0275elementEnd();
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275textInterpolate(ctx_r1.description);
   }
 }
-function FdkCardComponent_Case_10_Template(rf, ctx) {
+function FdkCardComponent_Conditional_9_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 7);
+    \u0275\u0275elementStart(0, "p", 7);
     \u0275\u0275element(1, "fdk-icon", 12);
+    \u0275\u0275elementStart(2, "span");
+    \u0275\u0275text(3);
+    \u0275\u0275elementEnd()();
+  }
+  if (rf & 2) {
+    const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance(3);
+    \u0275\u0275textInterpolate(ctx_r1.location.join(", "));
+  }
+}
+function FdkCardComponent_Conditional_10_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 8);
+    \u0275\u0275element(1, "fdk-icon", 13);
     \u0275\u0275elementEnd();
   }
 }
 function FdkCardComponent_Case_11_Template(rf, ctx) {
   if (rf & 1) {
-    \u0275\u0275elementStart(0, "div", 8)(1, "span");
+    \u0275\u0275elementStart(0, "div", 9);
+    \u0275\u0275element(1, "fdk-icon", 14);
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkCardComponent_Case_12_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 9);
+    \u0275\u0275element(1, "fdk-icon", 15);
+    \u0275\u0275elementEnd();
+  }
+}
+function FdkCardComponent_Case_13_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275elementStart(0, "div", 10)(1, "span");
     \u0275\u0275text(2, "Sign In");
     \u0275\u0275elementEnd()();
   }
@@ -76701,6 +76722,8 @@ function FdkDialogComponent_Conditional_0_Template(rf, ctx) {
     \u0275\u0275attribute("aria-label", ctx_r1.ariaLabel || null)("aria-labelledby", ctx_r1.ariaLabel ? null : ctx_r1.dialogTitle == null ? null : ctx_r1.dialogTitle.id);
   }
 }
+var _c2 = [[["fdk-logo"]]];
+var _c3 = ["fdk-logo"];
 function FdkHeaderComponent_Conditional_1_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 1)(1, "span");
@@ -76757,11 +76780,16 @@ function FdkHeaderComponent_Conditional_7_Template(rf, ctx) {
     \u0275\u0275textInterpolate(ctx_r0.name);
   }
 }
-function FdkHeaderComponent_Conditional_9_Template(rf, ctx) {
+function FdkHeaderComponent_Conditional_8_Template(rf, ctx) {
+  if (rf & 1) {
+    \u0275\u0275projection(0);
+  }
+}
+function FdkHeaderComponent_Conditional_10_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "fdk-icon-button", 14);
-    \u0275\u0275listener("click", function FdkHeaderComponent_Conditional_9_Template_fdk_icon_button_click_0_listener() {
+    \u0275\u0275listener("click", function FdkHeaderComponent_Conditional_10_Template_fdk_icon_button_click_0_listener() {
       \u0275\u0275restoreView(_r4);
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.reportIssue.emit());
@@ -76769,11 +76797,11 @@ function FdkHeaderComponent_Conditional_9_Template(rf, ctx) {
     \u0275\u0275elementEnd();
   }
 }
-function FdkHeaderComponent_Conditional_10_Template(rf, ctx) {
+function FdkHeaderComponent_Conditional_11_Template(rf, ctx) {
   if (rf & 1) {
     const _r5 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "fdk-icon-button", 15);
-    \u0275\u0275listener("click", function FdkHeaderComponent_Conditional_10_Template_fdk_icon_button_click_0_listener() {
+    \u0275\u0275listener("click", function FdkHeaderComponent_Conditional_11_Template_fdk_icon_button_click_0_listener() {
       \u0275\u0275restoreView(_r5);
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.profile.emit());
@@ -76781,11 +76809,11 @@ function FdkHeaderComponent_Conditional_10_Template(rf, ctx) {
     \u0275\u0275elementEnd();
   }
 }
-function FdkHeaderComponent_Conditional_11_Template(rf, ctx) {
+function FdkHeaderComponent_Conditional_12_Template(rf, ctx) {
   if (rf & 1) {
     const _r6 = \u0275\u0275getCurrentView();
     \u0275\u0275elementStart(0, "fdk-icon-button", 16);
-    \u0275\u0275listener("click", function FdkHeaderComponent_Conditional_11_Template_fdk_icon_button_click_0_listener() {
+    \u0275\u0275listener("click", function FdkHeaderComponent_Conditional_12_Template_fdk_icon_button_click_0_listener() {
       \u0275\u0275restoreView(_r6);
       const ctx_r0 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r0.close.emit());
@@ -77672,6 +77700,8 @@ var FdkInitialsComponent = class _FdkInitialsComponent {
 var FdkCardComponent = class _FdkCardComponent {
   constructor() {
     this.description = "";
+    this.highlights = [];
+    this.location = [];
     this.initials = "";
     this.variant = "select";
     this.selected = false;
@@ -77700,14 +77730,16 @@ var FdkCardComponent = class _FdkCardComponent {
       inputs: {
         title: "title",
         description: "description",
+        highlights: "highlights",
+        location: "location",
         initials: "initials",
         variant: "variant",
         selected: [2, "selected", "selected", booleanAttribute],
         logo: "logo"
       },
-      decls: 12,
-      vars: 10,
-      consts: [[1, "fdk-card__header"], ["alt", "", 1, "fdk-card__logo", 3, "src"], ["size", "small", 3, "initials"], [1, "fdk-card__text"], [1, "fdk-card__title"], [1, "fdk-card__description"], [1, "fdk-card__selected-indicator"], [1, "fdk-card__action"], [1, "fdk-card__sign-in"], ["alt", "", 1, "fdk-card__logo", 3, "error", "src"], ["name", "checkmark", "size", "24"], ["name", "chevron-right", "size", "24"], ["name", "plus", "size", "24"]],
+      decls: 14,
+      vars: 12,
+      consts: [[1, "fdk-card__header"], ["alt", "", 1, "fdk-card__logo", 3, "src"], ["size", "small", 3, "initials"], [1, "fdk-card__text"], [1, "fdk-card__title"], [1, "fdk-card__highlights"], [1, "fdk-card__description"], [1, "fdk-card__location"], [1, "fdk-card__selected-indicator"], [1, "fdk-card__action"], [1, "fdk-card__sign-in"], ["alt", "", 1, "fdk-card__logo", 3, "error", "src"], ["name", "location-off", "size", "16"], ["name", "checkmark", "size", "24"], ["name", "chevron-right", "size", "24"], ["name", "plus", "size", "24"]],
       template: function FdkCardComponent_Template(rf, ctx) {
         if (rf & 1) {
           \u0275\u0275elementStart(0, "div")(1, "div", 0);
@@ -77715,13 +77747,13 @@ var FdkCardComponent = class _FdkCardComponent {
           \u0275\u0275elementStart(4, "div", 3)(5, "div", 4);
           \u0275\u0275text(6);
           \u0275\u0275elementEnd();
-          \u0275\u0275template(7, FdkCardComponent_Conditional_7_Template, 2, 1, "p", 5);
+          \u0275\u0275template(7, FdkCardComponent_Conditional_7_Template, 2, 1, "p", 5)(8, FdkCardComponent_Conditional_8_Template, 2, 1, "p", 6)(9, FdkCardComponent_Conditional_9_Template, 4, 1, "p", 7);
           \u0275\u0275elementEnd()();
-          \u0275\u0275template(8, FdkCardComponent_Conditional_8_Template, 2, 0, "div", 6)(9, FdkCardComponent_Case_9_Template, 2, 0, "div", 7)(10, FdkCardComponent_Case_10_Template, 2, 0, "div", 7)(11, FdkCardComponent_Case_11_Template, 3, 0, "div", 8);
+          \u0275\u0275template(10, FdkCardComponent_Conditional_10_Template, 2, 0, "div", 8)(11, FdkCardComponent_Case_11_Template, 2, 0, "div", 9)(12, FdkCardComponent_Case_12_Template, 2, 0, "div", 9)(13, FdkCardComponent_Case_13_Template, 3, 0, "div", 10);
           \u0275\u0275elementEnd();
         }
         if (rf & 2) {
-          let tmp_6_0;
+          let tmp_8_0;
           \u0275\u0275classMapInterpolate1("fdk-card fdk-card--", ctx.variant, "");
           \u0275\u0275classProp("fdk-card--selected", ctx.selected);
           \u0275\u0275advance(2);
@@ -77729,15 +77761,19 @@ var FdkCardComponent = class _FdkCardComponent {
           \u0275\u0275advance(4);
           \u0275\u0275textInterpolate(ctx.title);
           \u0275\u0275advance();
-          \u0275\u0275conditional(ctx.description ? 7 : -1);
+          \u0275\u0275conditional(ctx.highlights.length ? 7 : -1);
           \u0275\u0275advance();
-          \u0275\u0275conditional(ctx.selected ? 8 : -1);
+          \u0275\u0275conditional(ctx.description ? 8 : -1);
           \u0275\u0275advance();
-          \u0275\u0275conditional((tmp_6_0 = ctx.variant) === "more" ? 9 : tmp_6_0 === "add" ? 10 : tmp_6_0 === "signIn" ? 11 : -1);
+          \u0275\u0275conditional(ctx.location.length ? 9 : -1);
+          \u0275\u0275advance();
+          \u0275\u0275conditional(ctx.selected ? 10 : -1);
+          \u0275\u0275advance();
+          \u0275\u0275conditional((tmp_8_0 = ctx.variant) === "more" ? 11 : tmp_8_0 === "add" ? 12 : tmp_8_0 === "signIn" ? 13 : -1);
         }
       },
       dependencies: [FdkIconComponent, FdkInitialsComponent],
-      styles: ["[_nghost-%COMP%]{display:block;width:100%;min-width:0}.fdk-card[_ngcontent-%COMP%]{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);font-family:var(--fdk-font-family-sans);display:flex;justify-content:space-between;cursor:pointer;align-items:center}.fdk-card__header[_ngcontent-%COMP%]{display:flex;align-items:center;gap:var(--fdk-spacing-m);min-width:0}.fdk-card__logo[_ngcontent-%COMP%]{width:2rem;height:2rem;flex:0 0 2rem;object-fit:contain}.fdk-card__title[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary);overflow-wrap:anywhere}.fdk-card__text[_ngcontent-%COMP%]{min-width:0}.fdk-card__description[_ngcontent-%COMP%]{margin:var(--fdk-spacing-xxxs) 0 0;font-size:var(--fdk-font-size-paragraph-xs);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph-xs);color:var(--fdk-color-text-secondary);overflow-wrap:anywhere}.fdk-card--selected[_ngcontent-%COMP%]{border-color:var(--fdk-color-accent);background-color:var(--fdk-color-accent-subtle)}.fdk-card__selected-indicator[_ngcontent-%COMP%]{color:var(--fdk-color-accent)}.fdk-card__sign-in[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-accent);flex:none;white-space:nowrap}.fdk-card--signIn[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--signIn[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--select[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--select[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--add[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--add[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--more[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--more[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--readOnly[_ngcontent-%COMP%]{cursor:default;border:none;background-color:var(--fdk-color-neutrals-hover)}"],
+      styles: ["[_nghost-%COMP%]{display:block;width:100%;min-width:0}.fdk-card[_ngcontent-%COMP%]{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);font-family:var(--fdk-font-family-sans);display:flex;justify-content:space-between;cursor:pointer;align-items:center}.fdk-card__header[_ngcontent-%COMP%]{display:flex;align-items:center;gap:var(--fdk-spacing-m);min-width:0}.fdk-card__logo[_ngcontent-%COMP%]{width:2rem;height:2rem;flex:0 0 2rem;object-fit:contain}.fdk-card__title[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary);overflow-wrap:anywhere}.fdk-card__text[_ngcontent-%COMP%]{min-width:0}.fdk-card__description[_ngcontent-%COMP%], .fdk-card__highlights[_ngcontent-%COMP%], .fdk-card__location[_ngcontent-%COMP%]{margin:var(--fdk-spacing-xxxs) 0 0;font-size:var(--fdk-font-size-paragraph-xs);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph-xs);color:var(--fdk-color-text-secondary);overflow-wrap:anywhere}.fdk-card__location[_ngcontent-%COMP%]{display:flex;align-items:center;gap:var(--fdk-spacing-xxxs)}.fdk-card__location[_ngcontent-%COMP%]   fdk-icon[_ngcontent-%COMP%]{flex:none}.fdk-card__location[_ngcontent-%COMP%]   span[_ngcontent-%COMP%]{min-width:0}.fdk-card--selected[_ngcontent-%COMP%]{border-color:var(--fdk-color-accent);background-color:var(--fdk-color-accent-subtle)}.fdk-card__selected-indicator[_ngcontent-%COMP%]{color:var(--fdk-color-accent)}.fdk-card__sign-in[_ngcontent-%COMP%]{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-accent);flex:none;white-space:nowrap}.fdk-card--signIn[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--signIn[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--select[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--select[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--add[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--add[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--more[_ngcontent-%COMP%]:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--more[_ngcontent-%COMP%]:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--readOnly[_ngcontent-%COMP%]{cursor:default;border:none;background-color:var(--fdk-color-neutrals-hover)}"],
       changeDetection: 0
     });
   }
@@ -77750,8 +77786,63 @@ var FdkCardComponent = class _FdkCardComponent {
       imports: [FdkIconComponent, FdkInitialsComponent],
       changeDetection: ChangeDetectionStrategy.OnPush,
       standalone: true,
-      template: '<div\n  class="fdk-card fdk-card--{{ variant }}"\n  [class.fdk-card--selected]="selected"\n>\n  <div class="fdk-card__header">\n    @if (logo && !logoLoadFailed) {\n      <img\n        class="fdk-card__logo"\n        [src]="logo"\n        alt=""\n        (error)="handleLogoError()"\n      />\n    } @else if (initials) {\n      <fdk-initials [initials]="initials" size="small" />\n    }\n    <div class="fdk-card__text">\n      <div class="fdk-card__title">{{ title }}</div>\n      @if (description) {\n        <p class="fdk-card__description">{{ description }}</p>\n      }\n    </div>\n  </div>\n  @if (selected) {\n    <div class="fdk-card__selected-indicator">\n      <fdk-icon name="checkmark" size="24"></fdk-icon>\n    </div>\n  }\n  @switch (variant) {\n    @case ("more") {\n      <div class="fdk-card__action">\n        <fdk-icon name="chevron-right" size="24" />\n      </div>\n    }\n\n    @case ("add") {\n      <div class="fdk-card__action">\n        <fdk-icon name="plus" size="24" />\n      </div>\n    }\n    @case ("signIn") {\n      <div class="fdk-card__sign-in">\n        <span>Sign In</span>\n      </div>\n    }\n  }\n</div>\n',
-      styles: [":host{display:block;width:100%;min-width:0}.fdk-card{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);font-family:var(--fdk-font-family-sans);display:flex;justify-content:space-between;cursor:pointer;align-items:center}.fdk-card__header{display:flex;align-items:center;gap:var(--fdk-spacing-m);min-width:0}.fdk-card__logo{width:2rem;height:2rem;flex:0 0 2rem;object-fit:contain}.fdk-card__title{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary);overflow-wrap:anywhere}.fdk-card__text{min-width:0}.fdk-card__description{margin:var(--fdk-spacing-xxxs) 0 0;font-size:var(--fdk-font-size-paragraph-xs);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph-xs);color:var(--fdk-color-text-secondary);overflow-wrap:anywhere}.fdk-card--selected{border-color:var(--fdk-color-accent);background-color:var(--fdk-color-accent-subtle)}.fdk-card__selected-indicator{color:var(--fdk-color-accent)}.fdk-card__sign-in{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-accent);flex:none;white-space:nowrap}.fdk-card--signIn:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--signIn:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--select:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--select:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--add:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--add:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--more:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--more:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--readOnly{cursor:default;border:none;background-color:var(--fdk-color-neutrals-hover)}\n"]
+      template: `<div
+  class="fdk-card fdk-card--{{ variant }}"
+  [class.fdk-card--selected]="selected"
+>
+  <div class="fdk-card__header">
+    @if (logo && !logoLoadFailed) {
+      <img
+        class="fdk-card__logo"
+        [src]="logo"
+        alt=""
+        (error)="handleLogoError()"
+      />
+    } @else if (initials) {
+      <fdk-initials [initials]="initials" size="small" />
+    }
+    <div class="fdk-card__text">
+      <div class="fdk-card__title">{{ title }}</div>
+      @if (highlights.length) {
+        <p class="fdk-card__highlights">Matches your search: {{ highlights.join(', ') }}</p>
+      }
+      @if (description) {
+        <p class="fdk-card__description">{{ description }}</p>
+      }
+      @if (location.length) {
+        <p class="fdk-card__location">
+          <fdk-icon name="location-off" size="16" />
+          <span>{{ location.join(', ') }}</span>
+        </p>
+      }
+    </div>
+  </div>
+  @if (selected) {
+    <div class="fdk-card__selected-indicator">
+      <fdk-icon name="checkmark" size="24"></fdk-icon>
+    </div>
+  }
+  @switch (variant) {
+    @case ("more") {
+      <div class="fdk-card__action">
+        <fdk-icon name="chevron-right" size="24" />
+      </div>
+    }
+
+    @case ("add") {
+      <div class="fdk-card__action">
+        <fdk-icon name="plus" size="24" />
+      </div>
+    }
+    @case ("signIn") {
+      <div class="fdk-card__sign-in">
+        <span>Sign In</span>
+      </div>
+    }
+  }
+</div>
+`,
+      styles: [":host{display:block;width:100%;min-width:0}.fdk-card{box-sizing:border-box;width:100%;min-width:0;border:1px solid var(--fdk-color-neutrals-border);border-radius:var(--fdk-radius-lg);padding:var(--fdk-spacing-xs) var(--fdk-spacing-s);font-family:var(--fdk-font-family-sans);display:flex;justify-content:space-between;cursor:pointer;align-items:center}.fdk-card__header{display:flex;align-items:center;gap:var(--fdk-spacing-m);min-width:0}.fdk-card__logo{width:2rem;height:2rem;flex:0 0 2rem;object-fit:contain}.fdk-card__title{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-text-primary);overflow-wrap:anywhere}.fdk-card__text{min-width:0}.fdk-card__description,.fdk-card__highlights,.fdk-card__location{margin:var(--fdk-spacing-xxxs) 0 0;font-size:var(--fdk-font-size-paragraph-xs);font-weight:var(--fdk-font-weight-normal);line-height:var(--fdk-line-height-paragraph-xs);color:var(--fdk-color-text-secondary);overflow-wrap:anywhere}.fdk-card__location{display:flex;align-items:center;gap:var(--fdk-spacing-xxxs)}.fdk-card__location fdk-icon{flex:none}.fdk-card__location span{min-width:0}.fdk-card--selected{border-color:var(--fdk-color-accent);background-color:var(--fdk-color-accent-subtle)}.fdk-card__selected-indicator{color:var(--fdk-color-accent)}.fdk-card__sign-in{font-size:var(--fdk-font-size-label-small);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-label-small);color:var(--fdk-color-accent);flex:none;white-space:nowrap}.fdk-card--signIn:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--signIn:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--select:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--select:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--add:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--add:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--more:hover{background-color:var(--fdk-color-accent-subtle)}.fdk-card--more:active{background-color:var(--fdk-color-accent-medium)}.fdk-card--readOnly{cursor:default;border:none;background-color:var(--fdk-color-neutrals-hover)}\n"]
     }]
   }], null, {
     title: [{
@@ -77761,6 +77852,12 @@ var FdkCardComponent = class _FdkCardComponent {
       }]
     }],
     description: [{
+      type: Input
+    }],
+    highlights: [{
+      type: Input
+    }],
+    location: [{
       type: Input
     }],
     initials: [{
@@ -78346,20 +78443,22 @@ var FdkHeaderComponent = class _FdkHeaderComponent {
         profile: "profile",
         close: "close"
       },
-      decls: 12,
+      ngContentSelectors: _c3,
+      decls: 13,
       vars: 8,
       consts: [[1, "fdk-header"], ["role", "status", 1, "fdk-header__test-mode"], [1, "fdk-header__main"], [1, "fdk-header__leading-brand"], [1, "fdk-header__leading"], [1, "fdk-header__brand"], [1, "fdk-header__logo", 3, "src", "alt"], [1, "fdk-header__name"], [1, "fdk-header__actions"], ["icon", "support", "aria-label", "Report an issue", "variant", "secondary"], ["icon", "user", "aria-label", "Open profile", "variant", "secondary"], ["icon", "cross", "aria-label", "Close", "variant", "secondary"], ["icon", "chevron-left", "aria-label", "Go back", "variant", "secondary", 3, "click"], [1, "fdk-header__logo", 3, "load", "error", "src", "alt"], ["icon", "support", "aria-label", "Report an issue", "variant", "secondary", 3, "click"], ["icon", "user", "aria-label", "Open profile", "variant", "secondary", 3, "click"], ["icon", "cross", "aria-label", "Close", "variant", "secondary", 3, "click"]],
       template: function FdkHeaderComponent_Template(rf, ctx) {
         if (rf & 1) {
+          \u0275\u0275projectionDef(_c2);
           \u0275\u0275elementStart(0, "header", 0);
           \u0275\u0275template(1, FdkHeaderComponent_Conditional_1_Template, 3, 1, "div", 1);
           \u0275\u0275elementStart(2, "div", 2)(3, "div", 3);
           \u0275\u0275template(4, FdkHeaderComponent_Conditional_4_Template, 2, 0, "div", 4);
           \u0275\u0275elementStart(5, "div", 5);
-          \u0275\u0275template(6, FdkHeaderComponent_Conditional_6_Template, 1, 2, "img", 6)(7, FdkHeaderComponent_Conditional_7_Template, 2, 1, "span", 7);
+          \u0275\u0275template(6, FdkHeaderComponent_Conditional_6_Template, 1, 2, "img", 6)(7, FdkHeaderComponent_Conditional_7_Template, 2, 1, "span", 7)(8, FdkHeaderComponent_Conditional_8_Template, 1, 0);
           \u0275\u0275elementEnd()();
-          \u0275\u0275elementStart(8, "div", 8);
-          \u0275\u0275template(9, FdkHeaderComponent_Conditional_9_Template, 1, 0, "fdk-icon-button", 9)(10, FdkHeaderComponent_Conditional_10_Template, 1, 0, "fdk-icon-button", 10)(11, FdkHeaderComponent_Conditional_11_Template, 1, 0, "fdk-icon-button", 11);
+          \u0275\u0275elementStart(9, "div", 8);
+          \u0275\u0275template(10, FdkHeaderComponent_Conditional_10_Template, 1, 0, "fdk-icon-button", 9)(11, FdkHeaderComponent_Conditional_11_Template, 1, 0, "fdk-icon-button", 10)(12, FdkHeaderComponent_Conditional_12_Template, 1, 0, "fdk-icon-button", 11);
           \u0275\u0275elementEnd()()();
         }
         if (rf & 2) {
@@ -78370,13 +78469,13 @@ var FdkHeaderComponent = class _FdkHeaderComponent {
           \u0275\u0275advance();
           \u0275\u0275classProp("fdk-header__brand--wide", ctx.logoIsWide);
           \u0275\u0275advance();
-          \u0275\u0275conditional(ctx.logoUrl ? 6 : ctx.name ? 7 : -1);
-          \u0275\u0275advance(3);
-          \u0275\u0275conditional(ctx.showReportIssueButton ? 9 : -1);
+          \u0275\u0275conditional(ctx.logoUrl ? 6 : ctx.name ? 7 : 8);
+          \u0275\u0275advance(4);
+          \u0275\u0275conditional(ctx.showReportIssueButton ? 10 : -1);
           \u0275\u0275advance();
-          \u0275\u0275conditional(ctx.showProfileButton ? 10 : -1);
+          \u0275\u0275conditional(ctx.showProfileButton ? 11 : -1);
           \u0275\u0275advance();
-          \u0275\u0275conditional(ctx.showCloseButton ? 11 : -1);
+          \u0275\u0275conditional(ctx.showCloseButton ? 12 : -1);
         }
       },
       dependencies: [FdkIconButtonComponent],
@@ -78393,7 +78492,7 @@ var FdkHeaderComponent = class _FdkHeaderComponent {
       imports: [FdkIconButtonComponent, FdkIconComponent],
       changeDetection: ChangeDetectionStrategy.OnPush,
       standalone: true,
-      template: '<header class="fdk-header">\n  @if (testMode) {\n    <div\n      class="fdk-header__test-mode"\n      role="status">\n      <span>{{ testModeText }}</span>\n    </div>\n  }\n\n  <div class="fdk-header__main">\n    <div class="fdk-header__leading-brand">\n      @if (showBackButton) {\n        <div class="fdk-header__leading">\n          <fdk-icon-button\n            icon="chevron-left"\n            aria-label="Go back"\n            variant="secondary"\n            (click)="back.emit()" />\n        </div>\n      }\n\n      <div\n        class="fdk-header__brand"\n        [class.fdk-header__brand--wide]="logoIsWide">\n        @if (logoUrl) {\n          <img\n            class="fdk-header__logo"\n            [src]="logoUrl"\n            [alt]="logoAlt || name"\n            (load)="handleLogoLoad($event)"\n            (error)="handleLogoError()" />\n        } @else if (name) {\n          <span class="fdk-header__name">{{ name }}</span>\n        }\n      </div>\n    </div>\n\n    <div class="fdk-header__actions">\n      @if (showReportIssueButton) {\n        <fdk-icon-button\n          icon="support"\n          aria-label="Report an issue"\n          variant="secondary"\n          (click)="reportIssue.emit()" />\n      }\n\n      @if (showProfileButton) {\n        <fdk-icon-button\n          icon="user"\n          aria-label="Open profile"\n          variant="secondary"\n          (click)="profile.emit()" />\n      }\n\n      @if (showCloseButton) {\n        <fdk-icon-button\n          icon="cross"\n          aria-label="Close"\n          variant="secondary"\n          (click)="close.emit()" />\n      }\n    </div>\n  </div>\n</header>\n',
+      template: '<header class="fdk-header">\n  @if (testMode) {\n    <div\n      class="fdk-header__test-mode"\n      role="status">\n      <span>{{ testModeText }}</span>\n    </div>\n  }\n\n  <div class="fdk-header__main">\n    <div class="fdk-header__leading-brand">\n      @if (showBackButton) {\n        <div class="fdk-header__leading">\n          <fdk-icon-button\n            icon="chevron-left"\n            aria-label="Go back"\n            variant="secondary"\n            (click)="back.emit()" />\n        </div>\n      }\n\n      <div\n        class="fdk-header__brand"\n        [class.fdk-header__brand--wide]="logoIsWide">\n        @if (logoUrl) {\n          <img\n            class="fdk-header__logo"\n            [src]="logoUrl"\n            [alt]="logoAlt || name"\n            (load)="handleLogoLoad($event)"\n            (error)="handleLogoError()" />\n        } @else if (name) {\n          <span class="fdk-header__name">{{ name }}</span>\n        } @else {\n          <ng-content select="fdk-logo" />\n        }\n      </div>\n    </div>\n\n    <div class="fdk-header__actions">\n      @if (showReportIssueButton) {\n        <fdk-icon-button\n          icon="support"\n          aria-label="Report an issue"\n          variant="secondary"\n          (click)="reportIssue.emit()" />\n      }\n\n      @if (showProfileButton) {\n        <fdk-icon-button\n          icon="user"\n          aria-label="Open profile"\n          variant="secondary"\n          (click)="profile.emit()" />\n      }\n\n      @if (showCloseButton) {\n        <fdk-icon-button\n          icon="cross"\n          aria-label="Close"\n          variant="secondary"\n          (click)="close.emit()" />\n      }\n    </div>\n  </div>\n</header>\n',
       styles: [":host{display:block;width:100%}.fdk-header{width:100%;box-sizing:border-box;color:var(--fdk-color-text-primary);background-color:transparent;font-family:var(--fdk-font-family-sans)}.fdk-header__test-mode{display:flex;align-items:center;justify-content:center;box-sizing:border-box;width:100%;padding:var(--fdk-spacing-xxs) var(--fdk-spacing-s);color:var(--fdk-color-text-inverted);background-color:var(--fdk-color-semantic-error);font-size:var(--fdk-font-size-paragraph-small);line-height:var(--fdk-line-height-paragraph-small);text-align:center}.fdk-header__main{display:flex;align-items:center;justify-content:space-between;box-sizing:border-box;width:100%;min-height:4.5rem;padding-inline:1.5rem .75rem}.fdk-header__leading-brand{display:flex;align-items:center;gap:var(--fdk-spacing-xxxs, .25rem);justify-self:start}.fdk-header__leading{display:flex;justify-self:start}.fdk-header__brand{min-width:0;max-width:10rem;max-height:3rem}.fdk-header__logo{display:block;width:auto;max-width:100%;height:3rem;object-fit:contain}.fdk-header__brand--wide,.fdk-header__brand--wide .fdk-header__logo{max-height:2rem}.fdk-header__brand--wide .fdk-header__logo{height:2rem}.fdk-header__name{display:block;overflow:hidden;font-size:var(--fdk-font-size-paragraph);font-weight:var(--fdk-font-weight-bold);line-height:var(--fdk-line-height-paragraph);text-overflow:ellipsis;white-space:nowrap}.fdk-header__actions{display:flex;justify-self:end}\n"]
     }]
   }], null, {
@@ -79160,7 +79259,7 @@ var FdkIllustrationComponent = class _FdkIllustrationComponent {
       },
       decls: 14,
       vars: 1,
-      consts: [["focusable", "false", "viewBox", "0 0 118 104", "fill", "none", "xmlns", "http://www.w3.org/2000/svg", 1, "fdk-illustration__svg"], ["focusable", "false", "viewBox", "0 0 66 18", "fill", "none", "xmlns", "http://www.w3.org/2000/svg", 1, "fdk-illustration__svg"], ["focusable", "false", "viewBox", "0 0 232 72", "fill", "none", "xmlns", "http://www.w3.org/2000/svg", 1, "fdk-illustration__svg"], ["d", "M36.7026 39.2923L44.0078 36.0455L49.6928 37.148L54.5598 39.2923L61.865 36.0455L66.6975 36.5812L70.7935 39.2923L74.0403 46.5975L70.7935 56.3377L63.4883 63.6429L54.5598 68.513L39.9494 58.7728L34.2676 48.2208L36.7026 39.2923Z", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M63.4769 35.8051C59.7837 35.5795 56.4282 36.9091 54.1312 39.2451C51.8356 36.9091 48.4801 35.5795 44.787 35.8051C38.9038 36.1656 34.076 40.9269 34.1213 46.8213C34.209 58.1201 50.2708 66.7954 53.5516 68.4497C53.9184 68.6347 54.3454 68.6347 54.7124 68.4497C57.9932 66.7954 74.0548 58.1201 74.1425 46.8213C74.188 40.9269 69.36 36.1656 63.4769 35.8051Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M71.7804 72.8815L82.1261 72.8701L84.4411 66.5876L88.3144 77.4465L92.6699 56.3262L96.9524 86.0179L102.651 63.5844L105.711 72.9335L115.6 72.8815", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M94.0567 47.599C94.2271 42.5634 94.2645 36.8198 94.2645 30.1948C94.2645 25.755 94.0518 21.4075 93.6459 17.1818C68.5015 23.0569 54.1315 4 54.1315 4C54.1315 4 39.7628 23.0569 14.6184 17.1818C14.2126 21.4075 14 25.755 14 30.1948C14 77.0113 15.8198 79.7679 54.1315 100C67.2645 93.065 76.1103 88.1834 82.0632 82.8767", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "57.6707", "y", "57.3563", "width", "4.67129", "height", "19.1996", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["x", "68.7991", "y", "65.4276", "width", "4.67129", "height", "19.1996", "transform", "rotate(90 68.7991 65.4276)", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M71.3546 63.3562H62.9765V54.9782H55.4381V63.3562H47.06V70.9109H55.4381V79.2888H62.9765V70.9109H71.3546V63.3562Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M90.1444 26.8578V20.6429C90.1444 19.5936 89.7569 18.5927 89.0466 17.8179L77.5532 5.33972C76.7621 4.4842 75.6482 3.99992 74.4861 3.99992H31.6114C29.3029 3.99992 27.4465 5.85632 27.4465 8.16467V17.6242", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M98.4901 99.9999H19.9403C16.6635 99.9999 14 97.3364 14 94.0593V30.2477C14 26.9708 16.6635 24.3073 19.9403 24.3073H34.7754C36.9868 24.3073 39.021 25.5503 40.0378 27.5197L41.4585 30.2477C42.4753 32.2172 44.5095 33.4439 46.737 33.4439H98.4901C101.767 33.4439 104.431 36.1075 104.431 39.4006V94.0593C104.431 97.3364 101.767 99.9999 98.4901 99.9999Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M89.8218 19.0123H78.6834C77.3759 19.0123 76.3105 17.9468 76.3105 16.6393V12.9749", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M78.8609 53.3638C81.5083 57.2864 83.058 62.0324 83.058 67.1333C83.058 80.7415 72.0328 91.767 58.4244 91.767C54.3242 91.767 50.466 90.7662 47.06 88.9905", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M38.4076 81.4679C35.502 77.4322 33.807 72.4766 33.807 67.1333C33.807 53.5251 44.8325 42.4998 58.4245 42.4998C62.6215 42.4998 66.5604 43.549 70.015 45.3892", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M78.5126 99.9998H35.2293C30.1323 99.9998 26 95.8724 26 90.7738V15.994C26 11.6561 29.5172 8.12757 33.8583 8.12757H40.3312", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M77.1482 8.12786H83.6162C87.9557 8.12786 91.4745 11.6564 91.4745 15.9943V62.6588", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 46.3107H80.4599", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 29.7357H80.4599", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 62.869H80.4599", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 79.444H69.2737", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M74.67 12.7079H42.8045C41.4368 12.7079 40.3296 11.5911 40.3296 10.2315V6.46012C40.3296 5.10047 41.4368 3.99984 42.8045 3.99984H74.67C76.0361 3.99984 77.1449 5.10047 77.1449 6.46012V10.2315C77.1449 11.5911 76.0361 12.7079 74.67 12.7079Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M105.278 80.35H95.7619V70.8325H87.1865V80.35H77.6707V88.9286H87.1865V98.446H95.7619V88.9286H105.278V80.35Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "88", "y", "71", "width", "7", "height", "28", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "77.5", "y", "88.5", "width", "7", "height", "28", "transform", "rotate(-90 77.5 88.5)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "34", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "58", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "9", "cy", "9", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "8", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "33", "cy", "9", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "32", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "57", "cy", "9", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M92.7051 54.6437H82.6201V44.5569H73.5324V54.6437H63.4474V63.7297H73.5324V73.8163H82.6201V63.7297H92.7051V54.6437Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M11 100V38.3151L33.9862 29.0351", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M87.285 100V83.604", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M33.9861 100V4H87.2849V35.4119", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M87.285 25.363L110.273 38.3151V100", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 58.7793H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 69.2965H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 79.8152H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.8865 79.8152H63.3621", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 90.3324H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.8865 90.3324H63.3621", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M75.4089 90.3324H79.8846", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "75", "y", "45", "width", "8", "height", "29", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "63", "y", "63", "width", "8", "height", "29", "transform", "rotate(-90 63 63)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "43", "y", "52", "width", "28", "height", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "52.5", "y", "70.5", "width", "28", "height", "9", "transform", "rotate(-90 52.5 70.5)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M72.4732 51.5288H62.0118V41.0706H52.6015V51.5288H42.1403V60.9504H52.6015V71.4068H62.0118V60.9504H72.4732V51.5288Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M75.7233 19.1794L80.6872 24.1433L90.3562 14.4726", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M96.8724 18.4387C96.8724 26.4116 90.4048 32.876 82.4333 32.876C74.462 32.876 67.9944 26.4116 67.9944 18.4387C67.9944 10.4641 74.462 3.99984 82.4333 3.99984C90.4048 3.99984 96.8724 10.4641 96.8724 18.4387Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M83.6139 41.0383V91.5164C83.6139 96.2022 79.8142 100 75.1252 100H39.4887C34.7997 100 31 96.2022 31 91.5164V20.9631C31 16.2772 34.7997 12.4791 39.4887 12.4791H61.0743", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M41.6231 89.5369H72.9747", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["cx", "59", "cy", "52", "r", "46.3", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M74.418 35.2304L51.8778 57.7706L44.376 50.2619C42.3662 48.2521 39.1061 48.2521 37.0963 50.2619C35.0865 52.2706 35.0865 55.5295 37.0963 57.5393L48.2437 68.6867C50.2536 70.6966 53.5137 70.6966 55.5234 68.6867L59.1575 65.0481L81.6978 42.5077C83.7076 40.498 83.7076 37.239 81.6978 35.2304C79.688 33.2206 76.4279 33.2206 74.418 35.2304Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M35.4276 55.4028L37.242 50.8666L41.0396 47.5884L56.7813 64.6783L54.933 69.9184L49.036 69.9184L35.4276 55.4028Z", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "76.8206", "y", "31.9999", "width", "10.4125", "height", "40.1362", "transform", "rotate(46.2842 76.8206 31.9999)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M42.4012 13.1131L28.8593 35.1115L6.87241 70.8049C-0.983449 83.5663 8.20143 100 23.19 100H94.2137C109.202 100 118.387 83.5663 110.531 70.8049L75.0193 13.1131C67.5334 0.962303 49.87 0.962303 42.4012 13.1131Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M62.702 28.1079L64.5262 32.0942L63.705 51.811L62.1493 65.814L58.6718 66.9731L55.2509 65.8325L53.1415 31.9292L54.1591 28.146L60.1317 26.8179L62.702 28.1079Z", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M64.1185 60.0167L63.8662 64.2257C63.698 66.9491 61.427 69.0756 58.7016 69.0756C55.9765 69.0756 53.7222 66.9491 53.554 64.2257L51.6027 32.3171C51.3504 28.2243 54.6139 24.7691 58.7016 24.7691C62.8063 24.7691 66.0531 28.2243 65.8007 32.3171L64.1185 59.5", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["cx", "58.2857", "cy", "82.2857", "r", "3.44286", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M64.0344 82.352C64.0344 85.2924 61.6454 87.6761 58.7015 87.6761C55.7576 87.6761 53.3857 85.2924 53.3857 82.352C53.3857 79.4114 55.7576 77.0293 58.7015 77.0293C61.6454 77.0293 64.0344 79.4114 64.0344 82.352Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "197.18", "y", "39.6375", "width", "2.98086", "height", "12.6664", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4"], ["x", "204.466", "y", "45.0184", "width", "2.98086", "height", "12.6664", "transform", "rotate(90 204.466 45.0184)", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4"], ["d", "M206.236 43.5708H200.651V37.9854H195.625V43.5708H190.04V48.6073H195.625V54.1926H200.651V48.6073H206.236V43.5708Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M218.763 19.2385V15.0953C218.763 14.3957 218.505 13.7285 218.031 13.212L210.369 4.89317C209.841 4.32282 209.099 3.99997 208.324 3.99997H179.741C178.202 3.99997 176.964 5.23756 176.964 6.77647V13.0828", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M224.327 67.9999H171.96C169.776 67.9999 168 66.2243 168 64.0395V21.4985C168 19.3139 169.776 17.5382 171.96 17.5382H181.85C183.325 17.5382 184.681 18.3668 185.359 19.6798L186.306 21.4985C186.984 22.8114 188.34 23.6293 189.825 23.6293H224.327C226.511 23.6293 228.287 25.405 228.287 27.6004V64.0395C228.287 66.2243 226.511 67.9999 224.327 67.9999Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M218.548 14.0082H211.122C210.251 14.0082 209.54 13.2978 209.54 12.4262V9.98325", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M211.241 36.9092C213.006 39.5242 214.039 42.6882 214.039 46.0889C214.039 55.161 206.688 62.5114 197.616 62.5114C194.883 62.5114 192.311 61.8441 190.04 60.6603", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M184.272 55.6453C182.335 52.9548 181.205 49.6511 181.205 46.0889C181.205 37.0168 188.555 29.6665 197.616 29.6665C200.414 29.6665 203.04 30.366 205.343 31.5928", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.4701 37.7624H51.7467V31.0379H45.6883V37.7624H38.9649V43.8198H45.6883V50.5442H51.7467V43.8198H58.4701V37.7624Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M4 68V26.8768L19.3242 20.6901", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8567 68V57.0694", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M19.3241 68V4H54.8566V24.9413", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8567 18.242L70.1819 26.8768V68", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 40.5195H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 47.531H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 54.5435H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M35.9243 54.5435H38.9081", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 61.5549H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M35.9243 61.5549H38.9081", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M46.9393 61.5549H49.9231", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "46.6667", "y", "31.3333", "width", "5.33333", "height", "19.3333", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "38.6667", "y", "43.3333", "width", "5.33333", "height", "19.3333", "transform", "rotate(-90 38.6667 43.3333)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "120", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "144", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "95", "cy", "44", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M58.47 37.7624H51.7467V31.0379H45.6883V37.7624H38.9649V43.8198H45.6883V50.5442H51.7467V43.8198H58.47V37.7624Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8566 68V57.0694", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8566 18.242L70.1818 26.8768V68", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M46.9393 61.5549H49.923", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["cx", "94", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "119", "cy", "44", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M211.241 36.9092C213.006 39.5242 214.039 42.6882 214.039 46.0889C214.039 55.161 206.689 62.5114 197.616 62.5114C194.883 62.5114 192.311 61.8441 190.04 60.6603", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.4701 37.7624H51.7468V31.0379H45.6883V37.7624H38.965V43.8198H45.6883V50.5442H51.7468V43.8198H58.4701V37.7624Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "46.6666", "y", "31.3333", "width", "5.33333", "height", "19.3333", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "38.6666", "y", "43.3333", "width", "5.33333", "height", "19.3333", "transform", "rotate(-90 38.6666 43.3333)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "118", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "143", "cy", "44", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "95", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "95", "cy", "44", "r", "7", "fill", "var(--fdk-color-accent, #5B47FB)", 1, "fdk-illustration__welcome-dot", "fdk-illustration__welcome-dot--1"], ["cx", "120", "cy", "44", "r", "7", "fill", "var(--fdk-color-accent, #5B47FB)", 1, "fdk-illustration__welcome-dot", "fdk-illustration__welcome-dot--2"], ["cx", "144", "cy", "44", "r", "7", "fill", "var(--fdk-color-accent, #5B47FB)", 1, "fdk-illustration__welcome-dot", "fdk-illustration__welcome-dot--3"]],
+      consts: [["focusable", "false", "viewBox", "0 0 118 104", "fill", "none", "xmlns", "http://www.w3.org/2000/svg", 1, "fdk-illustration__svg"], ["focusable", "false", "viewBox", "0 0 66 18", "fill", "none", "xmlns", "http://www.w3.org/2000/svg", 1, "fdk-illustration__svg"], ["focusable", "false", "viewBox", "0 0 232 72", "fill", "none", "xmlns", "http://www.w3.org/2000/svg", 1, "fdk-illustration__svg"], ["d", "M36.7026 39.2923L44.0078 36.0455L49.6928 37.148L54.5598 39.2923L61.865 36.0455L66.6975 36.5812L70.7935 39.2923L74.0403 46.5975L70.7935 56.3377L63.4883 63.6429L54.5598 68.513L39.9494 58.7728L34.2676 48.2208L36.7026 39.2923Z", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M63.4769 35.8051C59.7837 35.5795 56.4282 36.9091 54.1312 39.2451C51.8356 36.9091 48.4801 35.5795 44.787 35.8051C38.9038 36.1656 34.076 40.9269 34.1213 46.8213C34.209 58.1201 50.2708 66.7954 53.5516 68.4497C53.9184 68.6347 54.3454 68.6347 54.7124 68.4497C57.9932 66.7954 74.0548 58.1201 74.1425 46.8213C74.188 40.9269 69.36 36.1656 63.4769 35.8051Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M71.7804 72.8815L82.1261 72.8701L84.4411 66.5876L88.3144 77.4465L92.6699 56.3262L96.9524 86.0179L102.651 63.5844L105.711 72.9335L115.6 72.8815", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M99.0541 47.599C99.2266 42.5634 99.2645 36.8198 99.2645 30.1948C99.2645 25.755 99.0491 21.4075 98.6382 17.1818C73.1805 23.0569 58.6315 4 58.6315 4C58.6315 4 44.0838 23.0569 18.6261 17.1818C18.2152 21.4075 18 25.755 18 30.1948C18 77.0113 19.8425 79.7679 58.6315 100C71.9281 93.065 80.8841 88.1834 86.9112 82.8767", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "57.6707", "y", "57.3563", "width", "4.67129", "height", "19.1996", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["x", "68.7991", "y", "65.4276", "width", "4.67129", "height", "19.1996", "transform", "rotate(90 68.7991 65.4276)", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M71.3546 63.3562H62.9765V54.9782H55.4381V63.3562H47.06V70.9109H55.4381V79.2888H62.9765V70.9109H71.3546V63.3562Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M90.1444 26.8578V20.6429C90.1444 19.5936 89.7569 18.5927 89.0466 17.8179L77.5532 5.33972C76.7621 4.4842 75.6482 3.99992 74.4861 3.99992H31.6114C29.3029 3.99992 27.4465 5.85632 27.4465 8.16467V17.6242", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M98.4901 99.9999H19.9403C16.6635 99.9999 14 97.3364 14 94.0593V30.2477C14 26.9708 16.6635 24.3073 19.9403 24.3073H34.7754C36.9868 24.3073 39.021 25.5503 40.0378 27.5197L41.4585 30.2477C42.4753 32.2172 44.5095 33.4439 46.737 33.4439H98.4901C101.767 33.4439 104.431 36.1075 104.431 39.4006V94.0593C104.431 97.3364 101.767 99.9999 98.4901 99.9999Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M89.8218 19.0123H78.6834C77.3759 19.0123 76.3105 17.9468 76.3105 16.6393V12.9749", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M78.8609 53.3638C81.5083 57.2864 83.058 62.0324 83.058 67.1333C83.058 80.7415 72.0328 91.767 58.4244 91.767C54.3242 91.767 50.466 90.7662 47.06 88.9905", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M38.4076 81.4679C35.502 77.4322 33.807 72.4766 33.807 67.1333C33.807 53.5251 44.8325 42.4998 58.4245 42.4998C62.6215 42.4998 66.5604 43.549 70.015 45.3892", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M78.5126 99.9998H35.2293C30.1323 99.9998 26 95.8724 26 90.7738V15.994C26 11.6561 29.5172 8.12757 33.8583 8.12757H40.3312", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M77.1482 8.12786H83.6162C87.9557 8.12786 91.4745 11.6564 91.4745 15.9943V62.6588", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 46.3107H80.4599", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 29.7357H80.4599", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 62.869H80.4599", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M37.12 79.444H69.2737", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M74.67 12.7079H42.8045C41.4368 12.7079 40.3296 11.5911 40.3296 10.2315V6.46012C40.3296 5.10047 41.4368 3.99984 42.8045 3.99984H74.67C76.0361 3.99984 77.1449 5.10047 77.1449 6.46012V10.2315C77.1449 11.5911 76.0361 12.7079 74.67 12.7079Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M105.278 80.35H95.7619V70.8325H87.1865V80.35H77.6707V88.9286H87.1865V98.446H95.7619V88.9286H105.278V80.35Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "88", "y", "71", "width", "7", "height", "28", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "77.5", "y", "88.5", "width", "7", "height", "28", "transform", "rotate(-90 77.5 88.5)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "34", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "58", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "9", "cy", "9", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "8", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "33", "cy", "9", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "32", "cy", "9", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "57", "cy", "9", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M92.7051 54.6437H82.6201V44.5569H73.5324V54.6437H63.4474V63.7297H73.5324V73.8163H82.6201V63.7297H92.7051V54.6437Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M11 100V38.3151L33.9862 29.0351", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M87.285 100V83.604", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M33.9861 100V4H87.2849V35.4119", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M87.285 25.363L110.273 38.3151V100", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 58.7793H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 69.2965H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 79.8152H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.8865 79.8152H63.3621", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M42.3638 90.3324H46.8394", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.8865 90.3324H63.3621", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M75.4089 90.3324H79.8846", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "75", "y", "45", "width", "8", "height", "29", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "63", "y", "63", "width", "8", "height", "29", "transform", "rotate(-90 63 63)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "43", "y", "52", "width", "28", "height", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "52.5", "y", "70.5", "width", "28", "height", "9", "transform", "rotate(-90 52.5 70.5)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M72.4732 51.5288H62.0118V41.0706H52.6015V51.5288H42.1403V60.9504H52.6015V71.4068H62.0118V60.9504H72.4732V51.5288Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M75.7233 19.1794L80.6872 24.1433L90.3562 14.4726", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M96.8724 18.4387C96.8724 26.4116 90.4048 32.876 82.4333 32.876C74.462 32.876 67.9944 26.4116 67.9944 18.4387C67.9944 10.4641 74.462 3.99984 82.4333 3.99984C90.4048 3.99984 96.8724 10.4641 96.8724 18.4387Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M83.6139 41.0383V91.5164C83.6139 96.2022 79.8142 100 75.1252 100H39.4887C34.7997 100 31 96.2022 31 91.5164V20.9631C31 16.2772 34.7997 12.4791 39.4887 12.4791H61.0743", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M41.6231 89.5369H72.9747", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["cx", "59", "cy", "52", "r", "46.3", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M74.418 35.2304L51.8778 57.7706L44.376 50.2619C42.3662 48.2521 39.1061 48.2521 37.0963 50.2619C35.0865 52.2706 35.0865 55.5295 37.0963 57.5393L48.2437 68.6867C50.2536 70.6966 53.5137 70.6966 55.5234 68.6867L59.1575 65.0481L81.6978 42.5077C83.7076 40.498 83.7076 37.239 81.6978 35.2304C79.688 33.2206 76.4279 33.2206 74.418 35.2304Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M35.4276 55.4028L37.242 50.8666L41.0396 47.5884L56.7813 64.6783L54.933 69.9184L49.036 69.9184L35.4276 55.4028Z", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "76.8206", "y", "31.9999", "width", "10.4125", "height", "40.1362", "transform", "rotate(46.2842 76.8206 31.9999)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M42.4012 13.1131L28.8593 35.1115L6.87241 70.8049C-0.983449 83.5663 8.20143 100 23.19 100H94.2137C109.202 100 118.387 83.5663 110.531 70.8049L75.0193 13.1131C67.5334 0.962303 49.87 0.962303 42.4012 13.1131Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M62.702 28.1079L64.5262 32.0942L63.705 51.811L62.1493 65.814L58.6718 66.9731L55.2509 65.8325L53.1415 31.9292L54.1591 28.146L60.1317 26.8179L62.702 28.1079Z", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M64.1185 60.0167L63.8662 64.2257C63.698 66.9491 61.427 69.0756 58.7016 69.0756C55.9765 69.0756 53.7222 66.9491 53.554 64.2257L51.6027 32.3171C51.3504 28.2243 54.6139 24.7691 58.7016 24.7691C62.8063 24.7691 66.0531 28.2243 65.8007 32.3171L64.1185 59.5", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["cx", "58.2857", "cy", "82.2857", "r", "3.44286", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4"], ["d", "M64.0344 82.352C64.0344 85.2924 61.6454 87.6761 58.7015 87.6761C55.7576 87.6761 53.3857 85.2924 53.3857 82.352C53.3857 79.4114 55.7576 77.0293 58.7015 77.0293C61.6454 77.0293 64.0344 79.4114 64.0344 82.352Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "3.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "197.18", "y", "39.6375", "width", "2.98086", "height", "12.6664", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4"], ["x", "204.466", "y", "45.0184", "width", "2.98086", "height", "12.6664", "transform", "rotate(90 204.466 45.0184)", "fill", "var(--fdk-color-accent, #5B47FB)", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4"], ["d", "M206.236 43.5708H200.651V37.9854H195.625V43.5708H190.04V48.6073H195.625V54.1926H200.651V48.6073H206.236V43.5708Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M218.763 19.2385V15.0953C218.763 14.3957 218.505 13.7285 218.031 13.212L210.369 4.89317C209.841 4.32282 209.099 3.99997 208.324 3.99997H179.741C178.202 3.99997 176.964 5.23756 176.964 6.77647V13.0828", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M224.327 67.9999H171.96C169.776 67.9999 168 66.2243 168 64.0395V21.4985C168 19.3139 169.776 17.5382 171.96 17.5382H181.85C183.325 17.5382 184.681 18.3668 185.359 19.6798L186.306 21.4985C186.984 22.8114 188.34 23.6293 189.825 23.6293H224.327C226.511 23.6293 228.287 25.405 228.287 27.6004V64.0395C228.287 66.2243 226.511 67.9999 224.327 67.9999Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M218.548 14.0082H211.122C210.251 14.0082 209.54 13.2978 209.54 12.4262V9.98325", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M211.241 36.9092C213.006 39.5242 214.039 42.6882 214.039 46.0889C214.039 55.161 206.688 62.5114 197.616 62.5114C194.883 62.5114 192.311 61.8441 190.04 60.6603", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M184.272 55.6453C182.335 52.9548 181.205 49.6511 181.205 46.0889C181.205 37.0168 188.555 29.6665 197.616 29.6665C200.414 29.6665 203.04 30.366 205.343 31.5928", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.4701 37.7624H51.7467V31.0379H45.6883V37.7624H38.9649V43.8198H45.6883V50.5442H51.7467V43.8198H58.4701V37.7624Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M4 68V26.8768L19.3242 20.6901", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8567 68V57.0694", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M19.3241 68V4H54.8566V24.9413", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8567 18.242L70.1819 26.8768V68", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 40.5195H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 47.531H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 54.5435H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M35.9243 54.5435H38.9081", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M24.9092 61.5549H27.8929", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M35.9243 61.5549H38.9081", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M46.9393 61.5549H49.9231", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "46.6667", "y", "31.3333", "width", "5.33333", "height", "19.3333", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "38.6667", "y", "43.3333", "width", "5.33333", "height", "19.3333", "transform", "rotate(-90 38.6667 43.3333)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "120", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "144", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "95", "cy", "44", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M58.47 37.7624H51.7467V31.0379H45.6883V37.7624H38.9649V43.8198H45.6883V50.5442H51.7467V43.8198H58.47V37.7624Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8566 68V57.0694", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M54.8566 18.242L70.1818 26.8768V68", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M46.9393 61.5549H49.923", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["cx", "94", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "119", "cy", "44", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["d", "M211.241 36.9092C213.006 39.5242 214.039 42.6882 214.039 46.0889C214.039 55.161 206.689 62.5114 197.616 62.5114C194.883 62.5114 192.311 61.8441 190.04 60.6603", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["d", "M58.4701 37.7624H51.7468V31.0379H45.6883V37.7624H38.965V43.8198H45.6883V50.5442H51.7468V43.8198H58.4701V37.7624Z", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2.4", "stroke-linecap", "round", "stroke-linejoin", "round"], ["x", "46.6666", "y", "31.3333", "width", "5.33333", "height", "19.3333", "fill", "var(--fdk-color-accent, #5B47FB)"], ["x", "38.6666", "y", "43.3333", "width", "5.33333", "height", "19.3333", "transform", "rotate(-90 38.6666 43.3333)", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "118", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "143", "cy", "44", "r", "9", "fill", "var(--fdk-color-accent, #5B47FB)"], ["cx", "95", "cy", "44", "r", "7", "stroke", "var(--fdk-color-accent, #5B47FB)", "stroke-width", "2"], ["cx", "95", "cy", "44", "r", "7", "fill", "var(--fdk-color-accent, #5B47FB)", 1, "fdk-illustration__welcome-dot", "fdk-illustration__welcome-dot--1"], ["cx", "120", "cy", "44", "r", "7", "fill", "var(--fdk-color-accent, #5B47FB)", 1, "fdk-illustration__welcome-dot", "fdk-illustration__welcome-dot--2"], ["cx", "144", "cy", "44", "r", "7", "fill", "var(--fdk-color-accent, #5B47FB)", 1, "fdk-illustration__welcome-dot", "fdk-illustration__welcome-dot--3"]],
       template: function FdkIllustrationComponent_Template(rf, ctx) {
         if (rf & 1) {
           \u0275\u0275template(0, FdkIllustrationComponent_Case_0_Template, 5, 3, ":svg:svg", 0)(1, FdkIllustrationComponent_Case_1_Template, 9, 3, ":svg:svg", 0)(2, FdkIllustrationComponent_Case_2_Template, 11, 3, ":svg:svg", 0)(3, FdkIllustrationComponent_Case_3_Template, 4, 3, ":svg:svg", 1)(4, FdkIllustrationComponent_Case_4_Template, 4, 3, ":svg:svg", 1)(5, FdkIllustrationComponent_Case_5_Template, 4, 3, ":svg:svg", 1)(6, FdkIllustrationComponent_Case_6_Template, 15, 3, ":svg:svg", 0)(7, FdkIllustrationComponent_Case_7_Template, 8, 3, ":svg:svg", 0)(8, FdkIllustrationComponent_Case_8_Template, 5, 3, ":svg:svg", 0)(9, FdkIllustrationComponent_Case_9_Template, 6, 3, ":svg:svg", 0)(10, FdkIllustrationComponent_Case_10_Template, 26, 3, ":svg:svg", 2)(11, FdkIllustrationComponent_Case_11_Template, 26, 3, ":svg:svg", 2)(12, FdkIllustrationComponent_Case_12_Template, 26, 3, ":svg:svg", 2)(13, FdkIllustrationComponent_Case_13_Template, 29, 3, ":svg:svg", 2);
@@ -79198,7 +79297,7 @@ var FdkIllustrationComponent = class _FdkIllustrationComponent {
     <path d="M36.7026 39.2923L44.0078 36.0455L49.6928 37.148L54.5598 39.2923L61.865 36.0455L66.6975 36.5812L70.7935 39.2923L74.0403 46.5975L70.7935 56.3377L63.4883 63.6429L54.5598 68.513L39.9494 58.7728L34.2676 48.2208L36.7026 39.2923Z" fill="var(--fdk-color-accent, #5B47FB)"/>
     <path d="M63.4769 35.8051C59.7837 35.5795 56.4282 36.9091 54.1312 39.2451C51.8356 36.9091 48.4801 35.5795 44.787 35.8051C38.9038 36.1656 34.076 40.9269 34.1213 46.8213C34.209 58.1201 50.2708 66.7954 53.5516 68.4497C53.9184 68.6347 54.3454 68.6347 54.7124 68.4497C57.9932 66.7954 74.0548 58.1201 74.1425 46.8213C74.188 40.9269 69.36 36.1656 63.4769 35.8051Z" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="M71.7804 72.8815L82.1261 72.8701L84.4411 66.5876L88.3144 77.4465L92.6699 56.3262L96.9524 86.0179L102.651 63.5844L105.711 72.9335L115.6 72.8815" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
-    <path d="M94.0567 47.599C94.2271 42.5634 94.2645 36.8198 94.2645 30.1948C94.2645 25.755 94.0518 21.4075 93.6459 17.1818C68.5015 23.0569 54.1315 4 54.1315 4C54.1315 4 39.7628 23.0569 14.6184 17.1818C14.2126 21.4075 14 25.755 14 30.1948C14 77.0113 15.8198 79.7679 54.1315 100C67.2645 93.065 76.1103 88.1834 82.0632 82.8767" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M99.0541 47.599C99.2266 42.5634 99.2645 36.8198 99.2645 30.1948C99.2645 25.755 99.0491 21.4075 98.6382 17.1818C73.1805 23.0569 58.6315 4 58.6315 4C58.6315 4 44.0838 23.0569 18.6261 17.1818C18.2152 21.4075 18 25.755 18 30.1948C18 77.0113 19.8425 79.7679 58.6315 100C71.9281 93.065 80.8841 88.1834 86.9112 82.8767" stroke="var(--fdk-color-accent, #5B47FB)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
   }
   @case ('empty') {
@@ -81065,20 +81164,20 @@ var FastenService = class _FastenService {
 };
 
 // projects/fasten-connect-stitch-embed/src/app/app.component.ts
-function AppComponent_ng_container_15_ng_container_3_app_health_system_search_skeleton_1_Template(rf, ctx) {
+function AppComponent_ng_container_16_ng_container_3_app_health_system_search_skeleton_1_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275element(0, "app-health-system-search-skeleton");
   }
 }
-function AppComponent_ng_container_15_ng_container_3_ng_template_2_Template(rf, ctx) {
+function AppComponent_ng_container_16_ng_container_3_ng_template_2_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275element(0, "app-welcome-skeleton");
   }
 }
-function AppComponent_ng_container_15_ng_container_3_Template(rf, ctx) {
+function AppComponent_ng_container_16_ng_container_3_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementContainerStart(0);
-    \u0275\u0275template(1, AppComponent_ng_container_15_ng_container_3_app_health_system_search_skeleton_1_Template, 1, 0, "app-health-system-search-skeleton", 11)(2, AppComponent_ng_container_15_ng_container_3_ng_template_2_Template, 1, 0, "ng-template", null, 1, \u0275\u0275templateRefExtractor);
+    \u0275\u0275template(1, AppComponent_ng_container_16_ng_container_3_app_health_system_search_skeleton_1_Template, 1, 0, "app-health-system-search-skeleton", 11)(2, AppComponent_ng_container_16_ng_container_3_ng_template_2_Template, 1, 0, "ng-template", null, 1, \u0275\u0275templateRefExtractor);
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
@@ -81088,16 +81187,16 @@ function AppComponent_ng_container_15_ng_container_3_Template(rf, ctx) {
     \u0275\u0275property("ngIf", ctx_r1.searchOnly)("ngIfElse", welcomeSkeleton_r1);
   }
 }
-function AppComponent_ng_container_15_ng_template_4_Template(rf, ctx) {
+function AppComponent_ng_container_16_ng_template_4_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275element(0, "router-outlet");
   }
 }
-function AppComponent_ng_container_15_Template(rf, ctx) {
+function AppComponent_ng_container_16_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementContainerStart(0);
     \u0275\u0275elementStart(1, "div", 9)(2, "main", 10);
-    \u0275\u0275template(3, AppComponent_ng_container_15_ng_container_3_Template, 4, 2, "ng-container", 11)(4, AppComponent_ng_container_15_ng_template_4_Template, 1, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
+    \u0275\u0275template(3, AppComponent_ng_container_16_ng_container_3_Template, 4, 2, "ng-container", 11)(4, AppComponent_ng_container_16_ng_template_4_Template, 1, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
     \u0275\u0275elementEnd();
     \u0275\u0275element(6, "fdk-footer");
     \u0275\u0275elementEnd();
@@ -81110,7 +81209,7 @@ function AppComponent_ng_container_15_Template(rf, ctx) {
     \u0275\u0275property("ngIf", ctx_r1.loading)("ngIfElse", loadedPage_r3);
   }
 }
-function AppComponent_ng_container_16_Template(rf, ctx) {
+function AppComponent_ng_container_17_Template(rf, ctx) {
   if (rf & 1) {
     const _r4 = \u0275\u0275getCurrentView();
     \u0275\u0275elementContainerStart(0);
@@ -81130,7 +81229,7 @@ function AppComponent_ng_container_16_Template(rf, ctx) {
     \u0275\u0275text(12);
     \u0275\u0275elementEnd();
     \u0275\u0275elementStart(13, "div", 21)(14, "button", 22);
-    \u0275\u0275listener("click", function AppComponent_ng_container_16_Template_button_click_14_listener() {
+    \u0275\u0275listener("click", function AppComponent_ng_container_17_Template_button_click_14_listener() {
       \u0275\u0275restoreView(_r4);
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.modalClose());
@@ -81192,7 +81291,6 @@ var AppComponent = class _AppComponent {
     this.router = router;
     this.logger = logger;
     this.sentryContext = sentryContext;
-    this.logoText = logoText;
     this.testApiMode = ApiMode.Test;
     this.headerConfig = __spreadValues({}, DEFAULT_EMBED_HEADER_CONFIG);
     this.closeConfirmationOpen = false;
@@ -81602,7 +81700,7 @@ var AppComponent = class _AppComponent {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
-    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], email: "email", externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], identityRequestUri: [0, "identity-request-uri", "identityRequestUri"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"], theme: "theme", accentColor: [0, "accent-color", "accentColor"], logoUrl: [0, "logo-url", "logoUrl"], companyName: [0, "company-name", "companyName"], idpCode: [0, "code", "idpCode"], idpState: [0, "state", "idpState"], idpError: [0, "error", "idpError"], idpErrorDescription: [0, "error-description", "idpErrorDescription"], idpErrorUri: [0, "error-uri", "idpErrorUri"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 17, vars: 15, consts: [["loadedPage", ""], ["welcomeSkeleton", ""], ["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "app-header-container", 1, "flex-shrink-0"], [3, "back", "reportIssue", "profile", "close", "logoUrl", "logoAlt", "name", "testMode", "showBackButton", "showReportIssueButton", "showProfileButton", "showCloseButton"], [3, "openChange", "open"], ["type", "button", "variant", "secondary", 3, "click"], ["type", "button", 3, "click"], [4, "ngIf"], ["id", "widget-container", 1, "px-6", "pb-6", "fade-in", "flex", "flex-col"], ["id", "page-scroll-container"], [4, "ngIf", "ngIfElse"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
+    }, inputs: { publicId: [0, "public-id", "publicId"], externalId: [0, "external-id", "externalId"], email: "email", externalState: [0, "external-state", "externalState"], reconnectOrgConnectionId: [0, "reconnect-org-connection-id", "reconnectOrgConnectionId"], tefcaMode: [0, "tefca-mode", "tefcaMode"], tefcaCspPromptForce: [0, "tefca-csp-prompt-force", "tefcaCspPromptForce"], identityRequestUri: [0, "identity-request-uri", "identityRequestUri"], staticBackdrop: [0, "static-backdrop", "staticBackdrop"], eventTypes: [0, "event-types", "eventTypes"], showSplash: [0, "show-splash", "showSplash"], searchOnly: [0, "search-only", "searchOnly"], searchQuery: [0, "search-query", "searchQuery"], searchSortBy: [0, "search-sort-by", "searchSortBy"], searchSortByOpts: [0, "search-sort-by-opts", "searchSortByOpts"], brandId: [0, "brand-id", "brandId"], portalId: [0, "portal-id", "portalId"], endpointId: [0, "endpoint-id", "endpointId"], sdkMode: [0, "sdk-mode", "sdkMode"], connectMode: [0, "connect-mode", "connectMode"], theme: "theme", accentColor: [0, "accent-color", "accentColor"], logoUrl: [0, "logo-url", "logoUrl"], companyName: [0, "company-name", "companyName"], idpCode: [0, "code", "idpCode"], idpState: [0, "state", "idpState"], idpError: [0, "error", "idpError"], idpErrorDescription: [0, "error-description", "idpErrorDescription"], idpErrorUri: [0, "error-uri", "idpErrorUri"] }, features: [\u0275\u0275NgOnChangesFeature], decls: 18, vars: 15, consts: [["loadedPage", ""], ["welcomeSkeleton", ""], ["rel", "stylesheet", "href", \u0275\u0275trustConstantResourceUrl`https://fonts.googleapis.com/css?family=Inter`], ["id", "app-header-container", 1, "flex-shrink-0"], [3, "back", "reportIssue", "profile", "close", "logoUrl", "logoAlt", "name", "testMode", "showBackButton", "showReportIssueButton", "showProfileButton", "showCloseButton"], [3, "openChange", "open"], ["type", "button", "variant", "secondary", 3, "click"], ["type", "button", 3, "click"], [4, "ngIf"], ["id", "widget-container", 1, "px-6", "pb-6", "fade-in", "flex", "flex-col"], ["id", "page-scroll-container"], [4, "ngIf", "ngIfElse"], ["id", "error-container", 1, "w-full", "p-6", "min-h-96"], [1, "relative", "p-4", "w-full", "max-w-2xl", "h-full", "md:h-auto"], ["id", "alert-additional-content-2", "role", "alert", 1, "p-4", "border", "border-red-300", "rounded-lg", "bg-[#DC3545]", "text-white"], [1, "flex", "items-center"], ["aria-hidden", "true", "xmlns", "http://www.w3.org/2000/svg", "width", "22", "height", "22", "fill", "currentColor", "viewBox", "0 0 24 24", 1, "flex-shrink-0", "w-4", "h-4", "me-2"], ["fill-rule", "evenodd", "d", "M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm7.707-3.707a1 1 0 0 0-1.414 1.414L10.586 12l-2.293 2.293a1 1 0 1 0 1.414 1.414L12 13.414l2.293 2.293a1 1 0 0 0 1.414-1.414L13.414 12l2.293-2.293a1 1 0 0 0-1.414-1.414L12 10.586 9.707 8.293Z", "clip-rule", "evenodd"], [1, "sr-only"], [1, "text-lg", "font-medium"], [1, "mt-2", "mb-4", "text-sm"], [1, "flex"], ["type", "button", 1, "text-white", "bg-transparent", "border", "border-white", "hover:bg-red-900", "hover:text-white", "focus:ring-4", "focus:outline-none", "focus:ring-grey-300", "font-medium", "rounded-lg", "text-xs", "px-3", "py-1.5", "text-center", 3, "click"]], template: function AppComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275element(0, "link", 2);
         \u0275\u0275elementStart(1, "div", 3)(2, "fdk-header", 4);
@@ -81617,37 +81715,38 @@ var AppComponent = class _AppComponent {
         })("close", function AppComponent_Template_fdk_header_close_2_listener() {
           return ctx.handleHeaderClose();
         });
+        \u0275\u0275element(5, "fdk-logo");
         \u0275\u0275elementEnd()();
-        \u0275\u0275elementStart(5, "fdk-dialog", 5);
-        \u0275\u0275listener("openChange", function AppComponent_Template_fdk_dialog_openChange_5_listener($event) {
+        \u0275\u0275elementStart(6, "fdk-dialog", 5);
+        \u0275\u0275listener("openChange", function AppComponent_Template_fdk_dialog_openChange_6_listener($event) {
           return ctx.closeConfirmationOpen = $event;
         });
-        \u0275\u0275elementStart(6, "fdk-dialog-title");
-        \u0275\u0275text(7, "Stop connecting your records?");
+        \u0275\u0275elementStart(7, "fdk-dialog-title");
+        \u0275\u0275text(8, "Stop connecting your records?");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(8, "fdk-dialog-content");
-        \u0275\u0275text(9, " If you close now, your progress won't be saved and you'll need to start again. ");
+        \u0275\u0275elementStart(9, "fdk-dialog-content");
+        \u0275\u0275text(10, " If you close now, your progress won't be saved and you'll need to start again. ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(10, "fdk-dialog-actions")(11, "fdk-button", 6);
-        \u0275\u0275listener("click", function AppComponent_Template_fdk_button_click_11_listener() {
+        \u0275\u0275elementStart(11, "fdk-dialog-actions")(12, "fdk-button", 6);
+        \u0275\u0275listener("click", function AppComponent_Template_fdk_button_click_12_listener() {
           return ctx.cancelHeaderClose();
         });
-        \u0275\u0275text(12, " Cancel ");
+        \u0275\u0275text(13, " Cancel ");
         \u0275\u0275elementEnd();
-        \u0275\u0275elementStart(13, "fdk-button", 7);
-        \u0275\u0275listener("click", function AppComponent_Template_fdk_button_click_13_listener() {
+        \u0275\u0275elementStart(14, "fdk-button", 7);
+        \u0275\u0275listener("click", function AppComponent_Template_fdk_button_click_14_listener() {
           return ctx.confirmHeaderClose();
         });
-        \u0275\u0275text(14, " Close ");
+        \u0275\u0275text(15, " Close ");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275template(15, AppComponent_ng_container_15_Template, 7, 2, "ng-container", 8)(16, AppComponent_ng_container_16_Template, 16, 1, "ng-container", 8);
+        \u0275\u0275template(16, AppComponent_ng_container_16_Template, 7, 2, "ng-container", 8)(17, AppComponent_ng_container_17_Template, 16, 1, "ng-container", 8);
       }
       if (rf & 2) {
         let tmp_3_0;
         let tmp_6_0;
         \u0275\u0275advance(2);
-        \u0275\u0275property("logoUrl", ctx.logoUrl || null)("logoAlt", ctx.companyName)("name", ctx.companyName || ctx.logoText())("testMode", ((tmp_3_0 = \u0275\u0275pipeBind1(3, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.apiMode) === ctx.testApiMode)("showBackButton", ctx.shouldShowHeaderBackButton())("showReportIssueButton", !!ctx.headerConfig.showReportIssueButton)("showProfileButton", !!ctx.headerConfig.showProfileButton && !!((tmp_6_0 = \u0275\u0275pipeBind1(4, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_6_0.verifiedIdentityPatientDemographics))("showCloseButton", true);
-        \u0275\u0275advance(3);
+        \u0275\u0275property("logoUrl", ctx.logoUrl || null)("logoAlt", ctx.companyName)("name", ctx.companyName)("testMode", ((tmp_3_0 = \u0275\u0275pipeBind1(3, 11, ctx.configService.systemConfigSubject)) == null ? null : tmp_3_0.apiMode) === ctx.testApiMode)("showBackButton", ctx.shouldShowHeaderBackButton())("showReportIssueButton", !!ctx.headerConfig.showReportIssueButton)("showProfileButton", !!ctx.headerConfig.showProfileButton && !!((tmp_6_0 = \u0275\u0275pipeBind1(4, 13, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_6_0.verifiedIdentityPatientDemographics))("showCloseButton", true);
+        \u0275\u0275advance(4);
         \u0275\u0275property("open", ctx.closeConfirmationOpen);
         \u0275\u0275advance(10);
         \u0275\u0275property("ngIf", ctx.loading || !ctx.errorMessage);
@@ -81667,13 +81766,14 @@ var AppComponent = class _AppComponent {
       FdkDialogTitleComponent,
       FdkFooterComponent,
       FdkHeaderComponent,
+      FdkLogoComponent,
       HealthSystemSearchSkeletonComponent,
       WelcomeSkeletonComponent
     ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  height: min(100dvh, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n#widget-container[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  flex: 1 1 auto;\n  width: 100%;\n  height: auto;\n  max-height: 800px;\n  min-height: 0;\n  overflow-x: hidden;\n  overflow-y: hidden;\n}\n#page-scroll-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  min-height: 0;\n  padding: 3px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  -webkit-overflow-scrolling: touch;\n}\n#widget-container[_ngcontent-%COMP%]    > fdk-footer[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton) {\n  scrollbar-width: none;\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton)::-webkit-scrollbar {\n  display: none;\n}\n/*# sourceMappingURL=app.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 69 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 70 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/test-identities.ts
@@ -84303,6 +84403,7 @@ var InfiniteScrollModule = class _InfiniteScrollModule {
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-search/health-system-search.component.ts
 var import_lodash2 = __toESM(require_lodash());
+var _c05 = () => [];
 function HealthSystemSearchComponent_div_1_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 12);
@@ -84459,7 +84560,7 @@ function HealthSystemSearchComponent_fdk_card_11_Template(rf, ctx) {
   if (rf & 2) {
     const brand_r7 = ctx.$implicit;
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275property("title", (brand_r7.brand == null ? null : brand_r7.brand.name) || "")("initials", ctx_r1.getBrandInitials((brand_r7.brand == null ? null : brand_r7.brand.name) || ""))("logo", (brand_r7.brand == null ? null : brand_r7.brand.id) ? "https://cdn.fastenhealth.com/logos/sources/" + (brand_r7.brand == null ? null : brand_r7.brand.id) + ".png" : "");
+    \u0275\u0275property("title", (brand_r7.brand == null ? null : brand_r7.brand.name) || "")("highlights", brand_r7.searchHighlights || \u0275\u0275pureFunction0(5, _c05))("location", (brand_r7.brand == null ? null : brand_r7.brand.locations) || \u0275\u0275pureFunction0(6, _c05))("initials", ctx_r1.getBrandInitials((brand_r7.brand == null ? null : brand_r7.brand.name) || ""))("logo", (brand_r7.brand == null ? null : brand_r7.brand.id) ? "https://cdn.fastenhealth.com/logos/sources/" + (brand_r7.brand == null ? null : brand_r7.brand.id) + ".png" : "");
   }
 }
 function HealthSystemSearchComponent_app_health_system_search_skeleton_12_Template(rf, ctx) {
@@ -84683,7 +84784,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], decls: 14, vars: 17, consts: [["id", "step-search"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["id", "search-controls", 1, "space-y-2"], [1, "flex", "items-end", "gap-2"], ["id", "search-input", "type", "search", "label", "Search for your health system", "placeholder", "Search providers...", 1, "flex-1", 3, "ngModelChange", "keyup", "hideLabel", "ngModel"], ["id", "search-filters", "icon", "filter", "aria-label", "Show filters", "variant", "primary", 3, "click"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", "class", "inline-flex items-center gap-1 fdk-type-paragraph-s text-fdk-accent hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["id", "filters-overlay", "class", "filters-drawer-overlay", 3, "click", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "flex", "flex-col", "gap-fdk-xxs", "mt-fdk-m", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "infiniteScrollContainer", "fromRoot", "scrollWindow"], ["variant", "more", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], [3, "showControls", 4, "ngIf"], [4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", 1, "inline-flex", "items-center", "gap-1", "fdk-type-paragraph-s", "text-fdk-accent", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["name", "location-off"], ["id", "filters-overlay", 1, "filters-drawer-overlay", 3, "click"], ["id", "filters-container", "role", "dialog", "aria-modal", "true", "aria-labelledby", "filters-title", 1, "filters-drawer", "space-y-4", 3, "click"], ["id", "filters-title", 1, "fdk-type-heading-3", "text-fdk-primary"], [1, "relative"], ["id", "state-filter", "label", "State", 3, "ngModelChange", "options", "ngModel"], ["id", "sort-filter", "label", "Sort by", 3, "ngModelChange", "options", "ngModel"], ["class", "relative", 4, "ngIf"], ["id", "zipcode-input", "type", "text", "label", "ZIP code", "placeholder", "Enter your zipcode", 3, "ngModelChange", "hideLabel", "ngModel"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", "class", "absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", 1, "absolute", "inset-y-0", "right-0", "flex", "items-center", "px-3", "text-gray-500", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["d", "M12 21c-3.6-4-6-7-6-9a6 6 0 1 1 12 0c0 2-2.4 5-6 9z"], ["cx", "12", "cy", "12", "r", "1"], ["variant", "more", 3, "click", "title", "initials", "logo"], [3, "showControls"], [1, "flex", "justify-center", "mt-fdk-xl"], ["name", "empty"], [1, "fdk-type-heading-3", "text-fdk-primary", "mt-fdk-m", "text-center"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], [1, "flex", "justify-center", "mt-fdk-m"], ["type", "button", "variant", "secondary", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemSearchComponent, selectors: [["app-health-system-search"]], decls: 14, vars: 17, consts: [["id", "step-search"], ["class", "p-4 mb-4 text-sm text-yellow-800 rounded-lg bg-yellow-50", "role", "alert", 4, "ngIf"], ["id", "search-controls", 1, "space-y-2"], [1, "flex", "items-end", "gap-2"], ["id", "search-input", "type", "search", "label", "Search for your health system", "placeholder", "Search providers...", 1, "flex-1", 3, "ngModelChange", "keyup", "hideLabel", "ngModel"], ["id", "search-filters", "icon", "filter", "aria-label", "Show filters", "variant", "primary", 3, "click"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", "class", "inline-flex items-center gap-1 fdk-type-paragraph-s text-fdk-accent hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["id", "filters-overlay", "class", "filters-drawer-overlay", 3, "click", 4, "ngIf"], ["id", "search-results", "infiniteScroll", "", 1, "flex", "flex-col", "gap-fdk-xxs", "mt-fdk-m", 3, "scrolled", "infiniteScrollDistance", "infiniteScrollThrottle", "infiniteScrollContainer", "fromRoot", "scrollWindow"], ["variant", "more", 3, "title", "highlights", "location", "initials", "logo", "click", 4, "ngFor", "ngForOf"], [3, "showControls", 4, "ngIf"], [4, "ngIf"], ["role", "alert", 1, "p-4", "mb-4", "text-sm", "text-yellow-800", "rounded-lg", "bg-yellow-50"], [1, "underline", 3, "routerLink"], ["type", "button", "id", "search-by-location", "aria-label", "Search using current location", 1, "inline-flex", "items-center", "gap-1", "fdk-type-paragraph-s", "text-fdk-accent", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["name", "location-off"], ["id", "filters-overlay", 1, "filters-drawer-overlay", 3, "click"], ["id", "filters-container", "role", "dialog", "aria-modal", "true", "aria-labelledby", "filters-title", 1, "filters-drawer", "space-y-4", 3, "click"], ["id", "filters-title", 1, "fdk-type-heading-3", "text-fdk-primary"], [1, "relative"], ["id", "state-filter", "label", "State", 3, "ngModelChange", "options", "ngModel"], ["id", "sort-filter", "label", "Sort by", 3, "ngModelChange", "options", "ngModel"], ["class", "relative", 4, "ngIf"], ["id", "zipcode-input", "type", "text", "label", "ZIP code", "placeholder", "Enter your zipcode", 3, "ngModelChange", "hideLabel", "ngModel"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", "class", "absolute inset-y-0 right-0 flex items-center px-3 text-gray-500 hover:text-[#5B47FB] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed", 3, "disabled", "click", 4, "ngIf"], ["type", "button", "id", "sort-by-location", "aria-label", "Sort using current location", 1, "absolute", "inset-y-0", "right-0", "flex", "items-center", "px-3", "text-gray-500", "hover:text-[#5B47FB]", "focus:outline-none", "disabled:opacity-50", "disabled:cursor-not-allowed", 3, "click", "disabled"], ["xmlns", "http://www.w3.org/2000/svg", "width", "24", "height", "24", "viewBox", "0 0 24 24", "fill", "none", "stroke", "currentColor", "stroke-width", "2", "stroke-linecap", "round", "stroke-linejoin", "round", 1, "w-5", "h-5"], ["d", "M12 21c-3.6-4-6-7-6-9a6 6 0 1 1 12 0c0 2-2.4 5-6 9z"], ["cx", "12", "cy", "12", "r", "1"], ["variant", "more", 3, "click", "title", "highlights", "location", "initials", "logo"], [3, "showControls"], [1, "flex", "justify-center", "mt-fdk-xl"], ["name", "empty"], [1, "fdk-type-heading-3", "text-fdk-primary", "mt-fdk-m", "text-center"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs"], [1, "flex", "justify-center", "mt-fdk-m"], ["type", "button", "variant", "secondary", 3, "routerLink"]], template: function HealthSystemSearchComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0);
         \u0275\u0275template(1, HealthSystemSearchComponent_div_1_Template, 7, 1, "div", 1);
@@ -84710,7 +84811,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
         \u0275\u0275listener("scrolled", function HealthSystemSearchComponent_Template_div_scrolled_10_listener() {
           return ctx.onScroll();
         });
-        \u0275\u0275template(11, HealthSystemSearchComponent_fdk_card_11_Template, 1, 3, "fdk-card", 9);
+        \u0275\u0275template(11, HealthSystemSearchComponent_fdk_card_11_Template, 1, 7, "fdk-card", 9);
         \u0275\u0275elementEnd();
         \u0275\u0275template(12, HealthSystemSearchComponent_app_health_system_search_skeleton_12_Template, 1, 1, "app-health-system-search-skeleton", 10)(13, HealthSystemSearchComponent_div_13_Template, 10, 1, "div", 11);
         \u0275\u0275elementEnd();
@@ -84765,7 +84866,7 @@ var HealthSystemSearchComponent = class _HealthSystemSearchComponent {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-brand-details/health-system-brand-details.component.ts
-var _c05 = () => [];
+var _c06 = () => [];
 function HealthSystemBrandDetailsComponent_img_5_Template(rf, ctx) {
   if (rf & 1) {
     const _r1 = \u0275\u0275getCurrentView();
@@ -84819,7 +84920,7 @@ function HealthSystemBrandDetailsComponent_div_12_span_6_Template(rf, ctx) {
     let tmp_3_0;
     const ctx_r1 = \u0275\u0275nextContext(2);
     \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("+ ", (((tmp_3_0 = \u0275\u0275pipeBind1(2, 1, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c05)).length, "");
+    \u0275\u0275textInterpolate1("+ ", (((tmp_3_0 = \u0275\u0275pipeBind1(2, 1, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(3, _c06)).length, "");
   }
 }
 function HealthSystemBrandDetailsComponent_div_12_Template(rf, ctx) {
@@ -84839,9 +84940,9 @@ function HealthSystemBrandDetailsComponent_div_12_Template(rf, ctx) {
     let tmp_3_0;
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance(3);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(5, 4, ((tmp_2_0 = \u0275\u0275pipeBind1(4, 2, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c05), 0, 3));
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(5, 4, ((tmp_2_0 = \u0275\u0275pipeBind1(4, 2, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c06), 0, 3));
     \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", (((tmp_3_0 = \u0275\u0275pipeBind1(7, 8, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c05)).length > 4);
+    \u0275\u0275property("ngIf", (((tmp_3_0 = \u0275\u0275pipeBind1(7, 8, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c06)).length > 4);
   }
 }
 function HealthSystemBrandDetailsComponent_div_14_Template(rf, ctx) {
@@ -84941,7 +85042,7 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
         \u0275\u0275pipe(15, "async");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(16, "p", 7);
-        \u0275\u0275text(17, " Choose which branches to connect ");
+        \u0275\u0275text(17, " Where were you treated? Choose one to connect your health records. ");
         \u0275\u0275elementEnd();
         \u0275\u0275elementStart(18, "div", 8);
         \u0275\u0275template(19, HealthSystemBrandDetailsComponent_ng_container_19_Template, 2, 1, "ng-container", 9);
@@ -85084,7 +85185,7 @@ function ConnectHelper(connectData) {
 }
 
 // projects/fasten-connect-stitch-embed/src/app/pages/health-system-connecting/health-system-connecting.component.ts
-var _c06 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
+var _c07 = (a0, a1, a2, a3, a4, a5) => ({ brand_id: a0, portal_id: a1, endpoint_id: a2, org_connection_id: a3, external_id: a4, external_state: a5 });
 var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
   constructor(configService, injector) {
     this.configService = configService;
@@ -85144,7 +85245,7 @@ var HealthSystemConnectingComponent = class _HealthSystemConnectingComponent {
       }
       if (rf & 2) {
         \u0275\u0275advance(11);
-        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(2, _c06, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
+        \u0275\u0275property("routerLink", "/form/support")("queryParams", \u0275\u0275pureFunction6(2, _c07, ctx.brandId, ctx.portalId, ctx.endpointId, ctx.orgConnectionId, ctx.externalId, ctx.externalState));
       }
     }, dependencies: [
       CommonModule,
@@ -86622,7 +86723,7 @@ var RecordLocatorLoadingComponent = class _RecordLocatorLoadingComponent {
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/pages/confirm-health-system-selection/confirm-health-system-selection.component.ts
-var _c07 = () => [];
+var _c08 = () => [];
 function ConfirmHealthSystemSelectionComponent_ng_container_1_fdk_card_10_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275element(0, "fdk-card", 12);
@@ -86673,11 +86774,11 @@ function ConfirmHealthSystemSelectionComponent_ng_container_1_Template(rf, ctx) 
     const vaultProfile_r4 = ctx.ngIf;
     const ctx_r2 = \u0275\u0275nextContext();
     \u0275\u0275advance(8);
-    \u0275\u0275textInterpolate2(" ", (vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(5, _c07)).length, " provider", (vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(6, _c07)).length === 1 ? "" : "s", " selected ");
+    \u0275\u0275textInterpolate2(" ", (vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(5, _c08)).length, " provider", (vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(6, _c08)).length === 1 ? "" : "s", " selected ");
     \u0275\u0275advance(2);
-    \u0275\u0275property("ngForOf", vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(7, _c07));
+    \u0275\u0275property("ngForOf", vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(7, _c08));
     \u0275\u0275advance(4);
-    \u0275\u0275property("disabled", !(vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(8, _c07)).length || ctx_r2.isCompleting);
+    \u0275\u0275property("disabled", !(vaultProfile_r4.connectedPatientAccounts || \u0275\u0275pureFunction0(8, _c08)).length || ctx_r2.isCompleting);
     \u0275\u0275advance(2);
     \u0275\u0275property("ngIf", ctx_r2.isCompleting);
   }
