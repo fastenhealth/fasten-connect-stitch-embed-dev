@@ -76670,7 +76670,9 @@ function FdkCardComponent_Conditional_9_Template(rf, ctx) {
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(3);
+    \u0275\u0275advance();
+    \u0275\u0275property("size", 16);
+    \u0275\u0275advance(2);
     \u0275\u0275textInterpolate(ctx_r1.location.join(", "));
   }
 }
@@ -76680,6 +76682,10 @@ function FdkCardComponent_Conditional_10_Template(rf, ctx) {
     \u0275\u0275element(1, "fdk-icon", 13);
     \u0275\u0275elementEnd();
   }
+  if (rf & 2) {
+    \u0275\u0275advance();
+    \u0275\u0275property("size", 24);
+  }
 }
 function FdkCardComponent_Case_11_Template(rf, ctx) {
   if (rf & 1) {
@@ -76687,12 +76693,20 @@ function FdkCardComponent_Case_11_Template(rf, ctx) {
     \u0275\u0275element(1, "fdk-icon", 14);
     \u0275\u0275elementEnd();
   }
+  if (rf & 2) {
+    \u0275\u0275advance();
+    \u0275\u0275property("size", 24);
+  }
 }
 function FdkCardComponent_Case_12_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 9);
     \u0275\u0275element(1, "fdk-icon", 15);
     \u0275\u0275elementEnd();
+  }
+  if (rf & 2) {
+    \u0275\u0275advance();
+    \u0275\u0275property("size", 24);
   }
 }
 function FdkCardComponent_Case_13_Template(rf, ctx) {
@@ -77739,7 +77753,7 @@ var FdkCardComponent = class _FdkCardComponent {
       },
       decls: 14,
       vars: 12,
-      consts: [[1, "fdk-card__header"], ["alt", "", 1, "fdk-card__logo", 3, "src"], ["size", "small", 3, "initials"], [1, "fdk-card__text"], [1, "fdk-card__title"], [1, "fdk-card__highlights"], [1, "fdk-card__description"], [1, "fdk-card__location"], [1, "fdk-card__selected-indicator"], [1, "fdk-card__action"], [1, "fdk-card__sign-in"], ["alt", "", 1, "fdk-card__logo", 3, "error", "src"], ["name", "location-off", "size", "16"], ["name", "checkmark", "size", "24"], ["name", "chevron-right", "size", "24"], ["name", "plus", "size", "24"]],
+      consts: [[1, "fdk-card__header"], ["alt", "", 1, "fdk-card__logo", 3, "src"], ["size", "small", 3, "initials"], [1, "fdk-card__text"], [1, "fdk-card__title"], [1, "fdk-card__highlights"], [1, "fdk-card__description"], [1, "fdk-card__location"], [1, "fdk-card__selected-indicator"], [1, "fdk-card__action"], [1, "fdk-card__sign-in"], ["alt", "", 1, "fdk-card__logo", 3, "error", "src"], ["name", "location-off", 3, "size"], ["name", "checkmark", 3, "size"], ["name", "chevron-right", 3, "size"], ["name", "plus", 3, "size"]],
       template: function FdkCardComponent_Template(rf, ctx) {
         if (rf & 1) {
           \u0275\u0275elementStart(0, "div")(1, "div", 0);
@@ -77747,9 +77761,9 @@ var FdkCardComponent = class _FdkCardComponent {
           \u0275\u0275elementStart(4, "div", 3)(5, "div", 4);
           \u0275\u0275text(6);
           \u0275\u0275elementEnd();
-          \u0275\u0275template(7, FdkCardComponent_Conditional_7_Template, 2, 1, "p", 5)(8, FdkCardComponent_Conditional_8_Template, 2, 1, "p", 6)(9, FdkCardComponent_Conditional_9_Template, 4, 1, "p", 7);
+          \u0275\u0275template(7, FdkCardComponent_Conditional_7_Template, 2, 1, "p", 5)(8, FdkCardComponent_Conditional_8_Template, 2, 1, "p", 6)(9, FdkCardComponent_Conditional_9_Template, 4, 2, "p", 7);
           \u0275\u0275elementEnd()();
-          \u0275\u0275template(10, FdkCardComponent_Conditional_10_Template, 2, 0, "div", 8)(11, FdkCardComponent_Case_11_Template, 2, 0, "div", 9)(12, FdkCardComponent_Case_12_Template, 2, 0, "div", 9)(13, FdkCardComponent_Case_13_Template, 3, 0, "div", 10);
+          \u0275\u0275template(10, FdkCardComponent_Conditional_10_Template, 2, 1, "div", 8)(11, FdkCardComponent_Case_11_Template, 2, 1, "div", 9)(12, FdkCardComponent_Case_12_Template, 2, 1, "div", 9)(13, FdkCardComponent_Case_13_Template, 3, 0, "div", 10);
           \u0275\u0275elementEnd();
         }
         if (rf & 2) {
@@ -77811,7 +77825,7 @@ var FdkCardComponent = class _FdkCardComponent {
       }
       @if (location.length) {
         <p class="fdk-card__location">
-          <fdk-icon name="location-off" size="16" />
+          <fdk-icon name="location-off" [size]="16" />
           <span>{{ location.join(', ') }}</span>
         </p>
       }
@@ -77819,19 +77833,19 @@ var FdkCardComponent = class _FdkCardComponent {
   </div>
   @if (selected) {
     <div class="fdk-card__selected-indicator">
-      <fdk-icon name="checkmark" size="24"></fdk-icon>
+      <fdk-icon name="checkmark" [size]="24"></fdk-icon>
     </div>
   }
   @switch (variant) {
     @case ("more") {
       <div class="fdk-card__action">
-        <fdk-icon name="chevron-right" size="24" />
+        <fdk-icon name="chevron-right" [size]="24" />
       </div>
     }
 
     @case ("add") {
       <div class="fdk-card__action">
-        <fdk-icon name="plus" size="24" />
+        <fdk-icon name="plus" [size]="24" />
       </div>
     }
     @case ("signIn") {
@@ -83751,7 +83765,7 @@ var DashboardComponent = class _DashboardComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], decls: 29, vars: 25, consts: [["id", "step-connecting-systems", 1, "flex", "h-full", "min-h-0", "flex-col", "overflow-hidden"], [1, "flex-shrink-0"], [1, "space-y-2"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary"], [1, "flex", "flex-1", "min-h-0", "flex-col", "gap-6", "pt-6", "overflow-hidden"], ["id", "connecting-systems-list", 1, "flex", "flex-1", "min-h-0", "flex-col", "overflow-hidden"], ["class", "mt-fdk-xl", "role", "alert", 4, "ngIf"], ["id", "account-cards", 1, "flex", "min-h-0", "flex-col", "gap-fdk-xxs", "overflow-y-auto", "no-scrollbar"], [4, "ngIf"], ["class", "connected-account-card flex-shrink-0", "variant", "select", 3, "title", "initials", "logo", "selected", "click", 4, "ngFor", "ngForOf"], ["class", "discovered-account-card flex-shrink-0", "variant", "select", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], ["class", "pending-account-card flex-shrink-0", "variant", "signIn", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], ["id", "search-button", "width", "full", "type", "button", "variant", "secondary", 1, "mt-fdk-m", "flex-shrink-0", 3, "routerLink"], [1, "flex", "items-center", "justify-center", "gap-2"], ["name", "plus", "size", "24"], [1, "dashboard-footer", "mt-auto", "mt-fdk-xxs", "space-y-4", "flex-shrink-0"], ["id", "connecting-continue", "type", "button", "variant", "primary", "width", "full", 3, "click", "disabled"], ["role", "alert", 1, "mt-fdk-xl"], [1, "text-center"], ["name", "empty"], [1, "fdk-type-heading-3", "text-fdk-primary", "text-center", "mt-fdk-m"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs", "text-center"], ["id", "select-all-accounts", "class", "flex-shrink-0", "value", "select-all", 3, "checked", "indeterminate", "change", 4, "ngIf"], ["id", "select-all-accounts", "value", "select-all", 1, "flex-shrink-0", 3, "change", "checked", "indeterminate"], ["variant", "select", 1, "connected-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo", "selected"], ["variant", "select", 1, "discovered-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo"], ["variant", "signIn", 1, "pending-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo"]], template: function DashboardComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _DashboardComponent, selectors: [["app-dashboard"]], decls: 29, vars: 26, consts: [["id", "step-connecting-systems", 1, "flex", "h-full", "min-h-0", "flex-col", "overflow-hidden"], [1, "flex-shrink-0"], [1, "space-y-2"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary"], [1, "flex", "flex-1", "min-h-0", "flex-col", "gap-6", "pt-6", "overflow-hidden"], ["id", "connecting-systems-list", 1, "flex", "flex-1", "min-h-0", "flex-col", "overflow-hidden"], ["class", "mt-fdk-xl", "role", "alert", 4, "ngIf"], ["id", "account-cards", 1, "flex", "min-h-0", "flex-col", "gap-fdk-xxs", "overflow-y-auto", "no-scrollbar"], [4, "ngIf"], ["class", "connected-account-card flex-shrink-0", "variant", "select", 3, "title", "initials", "logo", "selected", "click", 4, "ngFor", "ngForOf"], ["class", "discovered-account-card flex-shrink-0", "variant", "select", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], ["class", "pending-account-card flex-shrink-0", "variant", "signIn", 3, "title", "initials", "logo", "click", 4, "ngFor", "ngForOf"], ["id", "search-button", "width", "full", "type", "button", "variant", "secondary", 1, "mt-fdk-m", "flex-shrink-0", 3, "routerLink"], [1, "flex", "items-center", "justify-center", "gap-2"], ["name", "plus", 3, "size"], [1, "dashboard-footer", "mt-auto", "mt-fdk-xxs", "space-y-4", "flex-shrink-0"], ["id", "connecting-continue", "type", "button", "variant", "primary", "width", "full", 3, "click", "disabled"], ["role", "alert", 1, "mt-fdk-xl"], [1, "text-center"], ["name", "empty"], [1, "fdk-type-heading-3", "text-fdk-primary", "text-center", "mt-fdk-m"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs", "text-center"], ["id", "select-all-accounts", "class", "flex-shrink-0", "value", "select-all", 3, "checked", "indeterminate", "change", 4, "ngIf"], ["id", "select-all-accounts", "value", "select-all", 1, "flex-shrink-0", 3, "change", "checked", "indeterminate"], ["variant", "select", 1, "connected-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo", "selected"], ["variant", "select", 1, "discovered-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo"], ["variant", "signIn", 1, "pending-account-card", "flex-shrink-0", 3, "click", "title", "initials", "logo"]], template: function DashboardComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 0)(1, "div", 1)(2, "div", 2)(3, "h2", 3);
         \u0275\u0275text(4, " Choose your health systems ");
@@ -83789,21 +83803,23 @@ var DashboardComponent = class _DashboardComponent {
         let tmp_2_0;
         let tmp_3_0;
         let tmp_4_0;
-        let tmp_6_0;
+        let tmp_7_0;
         \u0275\u0275advance(9);
         \u0275\u0275property("ngIf", ctx.emptyTefcaRLSResult);
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngIf", \u0275\u0275pipeBind1(12, 7, ctx.configService.vaultProfileConfigSubject));
+        \u0275\u0275property("ngIf", \u0275\u0275pipeBind1(12, 8, ctx.configService.vaultProfileConfigSubject));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(14, 9, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(21, _c04));
+        \u0275\u0275property("ngForOf", ((tmp_2_0 = \u0275\u0275pipeBind1(14, 10, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_2_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(22, _c04));
         \u0275\u0275advance(2);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(17, 13, ((tmp_3_0 = \u0275\u0275pipeBind1(16, 11, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(22, _c12)));
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(17, 14, ((tmp_3_0 = \u0275\u0275pipeBind1(16, 12, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_3_0.discoveredPatientAccounts) || \u0275\u0275pureFunction0(23, _c12)));
         \u0275\u0275advance(3);
-        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(20, 17, ((tmp_4_0 = \u0275\u0275pipeBind1(19, 15, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(23, _c12)));
+        \u0275\u0275property("ngForOf", \u0275\u0275pipeBind1(20, 18, ((tmp_4_0 = \u0275\u0275pipeBind1(19, 16, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_4_0.pendingPatientAccounts) || \u0275\u0275pureFunction0(24, _c12)));
         \u0275\u0275advance(3);
         \u0275\u0275property("routerLink", "/search");
-        \u0275\u0275advance(5);
-        \u0275\u0275property("disabled", !(((tmp_6_0 = \u0275\u0275pipeBind1(27, 19, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_6_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(24, _c04)).length);
+        \u0275\u0275advance(2);
+        \u0275\u0275property("size", 24);
+        \u0275\u0275advance(3);
+        \u0275\u0275property("disabled", !(((tmp_7_0 = \u0275\u0275pipeBind1(27, 20, ctx.configService.vaultProfileConfigSubject)) == null ? null : tmp_7_0.connectedPatientAccounts) || \u0275\u0275pureFunction0(25, _c04)).length);
       }
     }, dependencies: [
       CommonModule,
@@ -84936,13 +84952,15 @@ function HealthSystemBrandDetailsComponent_div_12_Template(rf, ctx) {
     \u0275\u0275elementEnd()();
   }
   if (rf & 2) {
-    let tmp_2_0;
     let tmp_3_0;
+    let tmp_4_0;
     const ctx_r1 = \u0275\u0275nextContext();
+    \u0275\u0275advance();
+    \u0275\u0275property("size", 24);
+    \u0275\u0275advance(2);
+    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(5, 5, ((tmp_3_0 = \u0275\u0275pipeBind1(4, 3, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c06), 0, 3));
     \u0275\u0275advance(3);
-    \u0275\u0275property("ngForOf", \u0275\u0275pipeBind3(5, 4, ((tmp_2_0 = \u0275\u0275pipeBind1(4, 2, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_2_0.selectedBrand == null ? null : tmp_2_0.selectedBrand.locations) || \u0275\u0275pureFunction0(10, _c06), 0, 3));
-    \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", (((tmp_3_0 = \u0275\u0275pipeBind1(7, 8, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_3_0.selectedBrand == null ? null : tmp_3_0.selectedBrand.locations) || \u0275\u0275pureFunction0(11, _c06)).length > 4);
+    \u0275\u0275property("ngIf", (((tmp_4_0 = \u0275\u0275pipeBind1(7, 9, ctx_r1.configService.searchConfigSubject)) == null ? null : tmp_4_0.selectedBrand == null ? null : tmp_4_0.selectedBrand.locations) || \u0275\u0275pureFunction0(12, _c06)).length > 4);
   }
 }
 function HealthSystemBrandDetailsComponent_div_14_Template(rf, ctx) {
@@ -85025,7 +85043,7 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], decls: 21, vars: 16, consts: [["brandInitials", ""], ["id", "step-health-system-details"], [1, "mt-fdk-m"], ["class", "max-w-24 max-h-24 object-contain", "alt", "", 3, "src", "error", 4, "ngIf", "ngIfElse"], ["id", "hsd-name", 1, "fdk-type-heading-2", "text-fdk-primary", "mt-fdk-xs"], ["class", "fdk-type-paragraph text-fdk-secondary mt-fdk-xxs flex items-center gap-fdk-xxxs", 4, "ngIf"], ["class", "fdk-type-paragraph text-fdk-accent mt-fdk-xxxs", "id", "hsd-website-container", 4, "ngIf"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-l"], ["id", "hsd-institutions-list", 1, "flex", "flex-col", "gap-fdk-xxs", "mt-fdk-s"], [4, "ngFor", "ngForOf"], ["alt", "", 1, "max-w-24", "max-h-24", "object-contain", 3, "error", "src"], ["size", "large", 3, "initials"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs", "flex", "items-center", "gap-fdk-xxxs"], ["name", "location-off", "size", "24"], ["id", "hsd-location", 1, "text-base"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "comma"], ["id", "hsd-website-container", 1, "fdk-type-paragraph", "text-fdk-accent", "mt-fdk-xxxs"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 3, "href"], ["class", "institution-card", "variant", "add", 3, "title", "description", "click", 4, "ngFor", "ngForOf"], ["variant", "add", 1, "institution-card", 3, "click", "title", "description"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _HealthSystemBrandDetailsComponent, selectors: [["app-health-system-brand-details"]], decls: 21, vars: 16, consts: [["brandInitials", ""], ["id", "step-health-system-details"], [1, "mt-fdk-m"], ["class", "max-w-24 max-h-24 object-contain", "alt", "", 3, "src", "error", 4, "ngIf", "ngIfElse"], ["id", "hsd-name", 1, "fdk-type-heading-2", "text-fdk-primary", "mt-fdk-xs"], ["class", "fdk-type-paragraph text-fdk-secondary mt-fdk-xxs flex items-center gap-fdk-xxxs", 4, "ngIf"], ["class", "fdk-type-paragraph text-fdk-accent mt-fdk-xxxs", "id", "hsd-website-container", 4, "ngIf"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-l"], ["id", "hsd-institutions-list", 1, "flex", "flex-col", "gap-fdk-xxs", "mt-fdk-s"], [4, "ngFor", "ngForOf"], ["alt", "", 1, "max-w-24", "max-h-24", "object-contain", 3, "error", "src"], ["size", "large", 3, "initials"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxs", "flex", "items-center", "gap-fdk-xxxs"], ["name", "location-off", 3, "size"], ["id", "hsd-location", 1, "text-base"], ["class", "comma", 4, "ngFor", "ngForOf"], ["class", "comma", 4, "ngIf"], [1, "comma"], ["id", "hsd-website-container", 1, "fdk-type-paragraph", "text-fdk-accent", "mt-fdk-xxxs"], ["id", "hsd-website", "target", "_blank", "rel", "noopener noreferrer", 3, "href"], ["class", "institution-card", "variant", "add", 3, "title", "description", "click", 4, "ngFor", "ngForOf"], ["variant", "add", 1, "institution-card", 3, "click", "title", "description"]], template: function HealthSystemBrandDetailsComponent_Template(rf, ctx) {
       if (rf & 1) {
         \u0275\u0275elementStart(0, "div", 1)(1, "div")(2, "div")(3, "div", 2)(4, "div");
         \u0275\u0275template(5, HealthSystemBrandDetailsComponent_img_5_Template, 2, 4, "img", 3);
@@ -85036,7 +85054,7 @@ var HealthSystemBrandDetailsComponent = class _HealthSystemBrandDetailsComponent
         \u0275\u0275text(10);
         \u0275\u0275pipe(11, "async");
         \u0275\u0275elementEnd()();
-        \u0275\u0275template(12, HealthSystemBrandDetailsComponent_div_12_Template, 8, 12, "div", 5);
+        \u0275\u0275template(12, HealthSystemBrandDetailsComponent_div_12_Template, 8, 13, "div", 5);
         \u0275\u0275pipe(13, "async");
         \u0275\u0275template(14, HealthSystemBrandDetailsComponent_div_14_Template, 5, 6, "div", 6);
         \u0275\u0275pipe(15, "async");
