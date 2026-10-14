@@ -76639,13 +76639,14 @@ function FdkCardComponent_Conditional_3_Template(rf, ctx) {
 function FdkCardComponent_Conditional_7_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "p", 5);
-    \u0275\u0275text(1);
+    \u0275\u0275text(1, "Matches your search: ");
+    \u0275\u0275element(2, "span", 12);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance();
-    \u0275\u0275textInterpolate1("Matches your search: ", ctx_r1.highlights.join(", "), "");
+    \u0275\u0275advance(2);
+    \u0275\u0275property("innerHTML", ctx_r1.highlights.join(", "), \u0275\u0275sanitizeHtml);
   }
 }
 function FdkCardComponent_Conditional_8_Template(rf, ctx) {
@@ -76663,7 +76664,7 @@ function FdkCardComponent_Conditional_8_Template(rf, ctx) {
 function FdkCardComponent_Conditional_9_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "p", 7);
-    \u0275\u0275element(1, "fdk-icon", 12);
+    \u0275\u0275element(1, "fdk-icon", 13);
     \u0275\u0275elementStart(2, "span");
     \u0275\u0275text(3);
     \u0275\u0275elementEnd()();
@@ -76679,7 +76680,7 @@ function FdkCardComponent_Conditional_9_Template(rf, ctx) {
 function FdkCardComponent_Conditional_10_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 8);
-    \u0275\u0275element(1, "fdk-icon", 13);
+    \u0275\u0275element(1, "fdk-icon", 14);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -76690,7 +76691,7 @@ function FdkCardComponent_Conditional_10_Template(rf, ctx) {
 function FdkCardComponent_Case_11_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 9);
-    \u0275\u0275element(1, "fdk-icon", 14);
+    \u0275\u0275element(1, "fdk-icon", 15);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -76701,7 +76702,7 @@ function FdkCardComponent_Case_11_Template(rf, ctx) {
 function FdkCardComponent_Case_12_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementStart(0, "div", 9);
-    \u0275\u0275element(1, "fdk-icon", 15);
+    \u0275\u0275element(1, "fdk-icon", 16);
     \u0275\u0275elementEnd();
   }
   if (rf & 2) {
@@ -77753,7 +77754,7 @@ var FdkCardComponent = class _FdkCardComponent {
       },
       decls: 14,
       vars: 12,
-      consts: [[1, "fdk-card__header"], ["alt", "", 1, "fdk-card__logo", 3, "src"], ["size", "small", 3, "initials"], [1, "fdk-card__text"], [1, "fdk-card__title"], [1, "fdk-card__highlights"], [1, "fdk-card__description"], [1, "fdk-card__location"], [1, "fdk-card__selected-indicator"], [1, "fdk-card__action"], [1, "fdk-card__sign-in"], ["alt", "", 1, "fdk-card__logo", 3, "error", "src"], ["name", "location-off", 3, "size"], ["name", "checkmark", 3, "size"], ["name", "chevron-right", 3, "size"], ["name", "plus", 3, "size"]],
+      consts: [[1, "fdk-card__header"], ["alt", "", 1, "fdk-card__logo", 3, "src"], ["size", "small", 3, "initials"], [1, "fdk-card__text"], [1, "fdk-card__title"], [1, "fdk-card__highlights"], [1, "fdk-card__description"], [1, "fdk-card__location"], [1, "fdk-card__selected-indicator"], [1, "fdk-card__action"], [1, "fdk-card__sign-in"], ["alt", "", 1, "fdk-card__logo", 3, "error", "src"], [3, "innerHTML"], ["name", "location-off", 3, "size"], ["name", "checkmark", 3, "size"], ["name", "chevron-right", 3, "size"], ["name", "plus", 3, "size"]],
       template: function FdkCardComponent_Template(rf, ctx) {
         if (rf & 1) {
           \u0275\u0275elementStart(0, "div")(1, "div", 0);
@@ -77761,7 +77762,7 @@ var FdkCardComponent = class _FdkCardComponent {
           \u0275\u0275elementStart(4, "div", 3)(5, "div", 4);
           \u0275\u0275text(6);
           \u0275\u0275elementEnd();
-          \u0275\u0275template(7, FdkCardComponent_Conditional_7_Template, 2, 1, "p", 5)(8, FdkCardComponent_Conditional_8_Template, 2, 1, "p", 6)(9, FdkCardComponent_Conditional_9_Template, 4, 2, "p", 7);
+          \u0275\u0275template(7, FdkCardComponent_Conditional_7_Template, 3, 1, "p", 5)(8, FdkCardComponent_Conditional_8_Template, 2, 1, "p", 6)(9, FdkCardComponent_Conditional_9_Template, 4, 2, "p", 7);
           \u0275\u0275elementEnd()();
           \u0275\u0275template(10, FdkCardComponent_Conditional_10_Template, 2, 1, "div", 8)(11, FdkCardComponent_Case_11_Template, 2, 1, "div", 9)(12, FdkCardComponent_Case_12_Template, 2, 1, "div", 9)(13, FdkCardComponent_Case_13_Template, 3, 0, "div", 10);
           \u0275\u0275elementEnd();
@@ -77818,7 +77819,7 @@ var FdkCardComponent = class _FdkCardComponent {
     <div class="fdk-card__text">
       <div class="fdk-card__title">{{ title }}</div>
       @if (highlights.length) {
-        <p class="fdk-card__highlights">Matches your search: {{ highlights.join(', ') }}</p>
+        <p class="fdk-card__highlights">Matches your search: <span [innerHTML]="highlights.join(', ')"></span></p>
       }
       @if (description) {
         <p class="fdk-card__description">{{ description }}</p>
