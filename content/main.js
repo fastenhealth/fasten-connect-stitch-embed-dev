@@ -82344,7 +82344,7 @@ function WelcomeComponent_p_21_Template(rf, ctx) {
     let tmp_3_0;
     const ctx_r1 = \u0275\u0275nextContext();
     \u0275\u0275advance(7);
-    \u0275\u0275textInterpolate1(" ", ((tmp_2_0 = \u0275\u0275pipeBind1(8, 2, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_2_0.companyName) || ((tmp_2_0 = \u0275\u0275pipeBind1(9, 4, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.name) || "Unknown", "'s ");
+    \u0275\u0275textInterpolate1(" and ", ((tmp_2_0 = \u0275\u0275pipeBind1(8, 2, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_2_0.companyName) || ((tmp_2_0 = \u0275\u0275pipeBind1(9, 4, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_2_0.org == null ? null : tmp_2_0.org.name) || "Unknown", "'s ");
     \u0275\u0275advance(3);
     \u0275\u0275property("href", (tmp_3_0 = (tmp_3_0 = \u0275\u0275pipeBind1(11, 6, ctx_r1.configService.systemConfigSubject)) == null ? null : tmp_3_0.org == null ? null : tmp_3_0.org.privacy_policy_uri) !== null && tmp_3_0 !== void 0 ? tmp_3_0 : "");
   }
@@ -82358,7 +82358,7 @@ function WelcomeComponent_ng_template_23_Template(rf, ctx) {
       const ctx_r1 = \u0275\u0275nextContext();
       return \u0275\u0275resetView(ctx_r1.onStorageAccessConsentChange($event));
     });
-    \u0275\u0275elementStart(1, "span", 18);
+    \u0275\u0275elementStart(1, "span", 23);
     \u0275\u0275text(2, "I've read and agree to Fasten's ");
     \u0275\u0275elementStart(3, "fdk-link", 19);
     \u0275\u0275text(4, "Privacy Policy");
@@ -82431,7 +82431,7 @@ var WelcomeComponent = class _WelcomeComponent {
     };
   }
   static {
-    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _WelcomeComponent, selectors: [["app-welcome"]], decls: 30, vars: 14, consts: [["storagePermissionRequired", ""], ["id", "step-welcome", 1, "flex", "min-h-full", "flex-1", "flex-col"], [1, "flex", "justify-center", "mt-fdk-m"], ["name", "welcome-animated"], [1, "text-center", "mt-fdk-l"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "mt-fdk-m"], [1, "fdk-type-heading-4", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxxs"], [1, "mt-auto", "pt-6", "space-y-6"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], ["class", "fdk-type-paragraph-s text-fdk-secondary", 4, "ngIf", "ngIfElse"], ["type", "button", "variant", "primary", "width", "full", 3, "click", "disabled"], [1, "flex", "items-center", "justify-center", "gap-2"], [4, "ngIf"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "text-sm", "font-medium", "text-red-800"], [1, "mt-1", "text-sm", "text-red-700"], [1, "fdk-type-paragraph-s", "text-fdk-secondary"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", "target", "_blank"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank"], ["target", "_blank", 3, "href"], ["value", "privacy-consent", 3, "change", "checked"]], template: function WelcomeComponent_Template(rf, ctx) {
+    this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _WelcomeComponent, selectors: [["app-welcome"]], decls: 30, vars: 14, consts: [["storagePermissionRequired", ""], ["id", "step-welcome", 1, "flex", "min-h-full", "flex-1", "flex-col"], [1, "flex", "justify-center", "mt-fdk-m"], ["name", "welcome-animated"], [1, "text-center", "mt-fdk-l"], [1, "fdk-type-heading-2", "text-fdk-primary"], [1, "mt-fdk-m"], [1, "fdk-type-heading-4", "text-fdk-primary"], [1, "fdk-type-paragraph", "text-fdk-secondary", "mt-fdk-xxxs"], [1, "mt-auto", "pt-6"], ["class", "rounded-md border border-red-200 bg-red-50 p-4", 4, "ngIf"], ["class", "fdk-type-paragraph-s text-fdk-secondary mb-fdk-xs", 4, "ngIf", "ngIfElse"], ["type", "button", "variant", "primary", "width", "full", 3, "click", "disabled"], [1, "flex", "items-center", "justify-center", "gap-2"], [4, "ngIf"], [1, "rounded-md", "border", "border-red-200", "bg-red-50", "p-4"], [1, "text-sm", "font-medium", "text-red-800"], [1, "mt-1", "text-sm", "text-red-700"], [1, "fdk-type-paragraph-s", "text-fdk-secondary", "mb-fdk-xs"], ["href", "https://policy.fastenhealth.com/connect/privacy_policy.html", "target", "_blank"], ["href", "https://policy.fastenhealth.com/terms.html", "target", "_blank"], ["target", "_blank", 3, "href"], ["value", "privacy-consent", 3, "change", "checked"], [1, "fdk-type-paragraph-s", "text-fdk-secondary"]], template: function WelcomeComponent_Template(rf, ctx) {
       if (rf & 1) {
         const _r1 = \u0275\u0275getCurrentView();
         \u0275\u0275elementStart(0, "div", 1)(1, "div", 2);
