@@ -40593,7 +40593,15 @@ var MessageBusService = class _MessageBusService {
   }
   //this event is published when the popup window is closed, and the connection is successful or failed.
   publishOrgConnectionComplete(orgConnectionCallbackData) {
-    let eventPayload = new MessageBusEventPayload();
+    const _a = orgConnectionCallbackData, { linked_connections: linkedConnections = [] } = _a, primaryConnection = __objRest(_a, ["linked_connections"]);
+    this.publishSingleOrgConnectionComplete(primaryConnection);
+    linkedConnections.forEach((linkedConnection) => {
+      const _a2 = linkedConnection, { linked_connections: _nestedLinkedConnections } = _a2, linkedConnectionData = __objRest(_a2, ["linked_connections"]);
+      this.publishSingleOrgConnectionComplete(linkedConnectionData);
+    });
+  }
+  publishSingleOrgConnectionComplete(orgConnectionCallbackData) {
+    const eventPayload = new MessageBusEventPayload();
     eventPayload.api_mode = this.configService.systemConfig$.apiMode;
     eventPayload.data = orgConnectionCallbackData;
     if (orgConnectionCallbackData.error) {
