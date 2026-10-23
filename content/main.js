@@ -78097,9 +78097,11 @@ var TEST_IDENTITY_PHONE_NUMBERS = Object.freeze({
   "dogbeaker@aol.com": "410-707-2690",
   "btesta@hotmail.com": "831-600-3769",
   "tcranetest@gmail.com": "222-360-1564",
-  "knixontestemail@epic.com": "469-469-4321",
-  "knixontestemail2@epic.com": "785-785-4321",
-  "hsimpson@gmail.com": "217-123-3608"
+  "hsimpson@gmail.com": "217-123-3608",
+  "camilalopez@epic.com": "469-555-5555",
+  "derricklin@epic.com": "785-555-5555",
+  "msmith60@gmail.com": "706-123-4567",
+  "ellen.doe4321@gmail.com": "401-555-1940"
 });
 var TEST_IDENTITY_EMAILS = Object.freeze(Object.keys(TEST_IDENTITY_PHONE_NUMBERS));
 
