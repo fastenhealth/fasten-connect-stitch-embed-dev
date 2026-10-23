@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["projects/fasten-connect-stitch-embed/src/app/pages/profile/profile.component.css"],
+  "sourcesContent": [":host {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  min-height: 0;\n  height: 100%;\n}\n\n:host-context([data-fdk-theme='dark']) #profile-information-source img[alt='CLEAR'] {\n  filter: brightness(0) invert(1);\n}\n\n.idme-csp-logo {\n  display: inline;\n  height: 0.8rem;\n  vertical-align: middle;\n}\n\n.idme-csp-logo--dark {\n  display: none;\n}\n\n:host-context([data-fdk-theme='dark']) .idme-csp-logo--light {\n  display: none;\n}\n\n:host-context([data-fdk-theme='dark']) .idme-csp-logo--dark {\n  display: inline;\n}\n"],
+  "mappings": ";AAAA;AACE,WAAS;AACT,QAAM,EAAE,EAAE;AACV,kBAAgB;AAChB,cAAY;AACZ,UAAQ;AACV;AAEA,cAAc,CAAC,cAAc,CAAC,SAAS,CAAC,2BAA2B,GAAG,CAAC;AACrE,UAAQ,WAAW,GAAG,OAAO;AAC/B;AAEA,CAAC;AACC,WAAS;AACT,UAAQ;AACR,kBAAgB;AAClB;AAEA,CAAC;AACC,WAAS;AACX;AAEA,cAAc,CAAC,cAAc,CAAC,SAAS,CAAC;AACtC,WAAS;AACX;AAEA,cAAc,CAAC,cAAc,CAAC,SAAS,CARtC;AASC,WAAS;AACX;",
+  "names": []
+}
