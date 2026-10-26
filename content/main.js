@@ -77696,7 +77696,7 @@ var FdkInitialsComponent = class _FdkInitialsComponent {
           \u0275\u0275textInterpolate1(" ", ctx.displayedInitials, "\n");
         }
       },
-      styles: ["[_nghost-%COMP%]{display:inline-flex;flex:none}.fdk-initials[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:center;box-sizing:border-box;border-radius:var(--fdk-radius-full);background-color:var(--fdk-color-accent);color:var(--fdk-color-text-inverted);font-family:var(--fdk-font-family-sans);font-weight:var(--fdk-font-weight-bold)}.fdk-initials--small[_ngcontent-%COMP%]{width:2rem;height:2rem;font-size:var(--fdk-font-size-label-small);line-height:var(--fdk-line-height-label-small)}.fdk-initials--large[_ngcontent-%COMP%]{width:3.5rem;height:3.5rem;font-size:var(--fdk-font-size-heading-1);line-height:var(--fdk-line-height-heading-1)}"],
+      styles: ["[_nghost-%COMP%]{display:inline-flex;flex:none}.fdk-initials[_ngcontent-%COMP%]{display:flex;align-items:center;justify-content:center;box-sizing:border-box;border-radius:var(--fdk-radius-lg);background-color:var(--fdk-color-accent);color:var(--fdk-color-text-inverted);font-family:var(--fdk-font-family-sans);font-weight:var(--fdk-font-weight-bold)}.fdk-initials--small[_ngcontent-%COMP%]{width:2rem;height:2rem;font-size:var(--fdk-font-size-label-small);line-height:var(--fdk-line-height-label-small)}.fdk-initials--large[_ngcontent-%COMP%]{width:3.5rem;height:3.5rem;font-size:var(--fdk-font-size-heading-1);line-height:var(--fdk-line-height-heading-1)}"],
       changeDetection: 0
     });
   }
@@ -77709,7 +77709,7 @@ var FdkInitialsComponent = class _FdkInitialsComponent {
       changeDetection: ChangeDetectionStrategy.OnPush,
       standalone: true,
       template: '<div class="fdk-initials fdk-initials--{{ size }}">\n  {{ displayedInitials }}\n</div>\n',
-      styles: [":host{display:inline-flex;flex:none}.fdk-initials{display:flex;align-items:center;justify-content:center;box-sizing:border-box;border-radius:var(--fdk-radius-full);background-color:var(--fdk-color-accent);color:var(--fdk-color-text-inverted);font-family:var(--fdk-font-family-sans);font-weight:var(--fdk-font-weight-bold)}.fdk-initials--small{width:2rem;height:2rem;font-size:var(--fdk-font-size-label-small);line-height:var(--fdk-line-height-label-small)}.fdk-initials--large{width:3.5rem;height:3.5rem;font-size:var(--fdk-font-size-heading-1);line-height:var(--fdk-line-height-heading-1)}\n"]
+      styles: [":host{display:inline-flex;flex:none}.fdk-initials{display:flex;align-items:center;justify-content:center;box-sizing:border-box;border-radius:var(--fdk-radius-lg);background-color:var(--fdk-color-accent);color:var(--fdk-color-text-inverted);font-family:var(--fdk-font-family-sans);font-weight:var(--fdk-font-weight-bold)}.fdk-initials--small{width:2rem;height:2rem;font-size:var(--fdk-font-size-label-small);line-height:var(--fdk-line-height-label-small)}.fdk-initials--large{width:3.5rem;height:3.5rem;font-size:var(--fdk-font-size-heading-1);line-height:var(--fdk-line-height-heading-1)}\n"]
     }]
   }], null, {
     initials: [{
