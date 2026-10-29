@@ -83350,7 +83350,7 @@ var VaultProfileSigninCodeComponent = class _VaultProfileSigninCodeComponent {
       DevToolsComponent,
       FdkButtonComponent,
       FdkAlertComponent
-    ], styles: ["\n\ncode-input[_ngcontent-%COMP%] {\n  --item-width: 2.5rem;\n  --item-height: 2.5rem;\n  --item-border: 1px solid #d1d5db;\n  --item-border-radius: 0.5rem;\n  --item-font-size: 1.25rem;\n  --item-font-weight: 600;\n  --item-color: #111827;\n  //--item-border-bottom: none;\n  //--item-border-has-value: none;\n  //--item-border-bottom-has-value: 2px solid #888888;\n  //--item-border-focused: none;\n  //--item-border-bottom-focused: 2px solid #809070;\n  //--item-shadow-focused: none;\n}\n/*# sourceMappingURL=vault-profile-signin-code.component.css.map */"] });
+    ], styles: ["\n\ncode-input[_ngcontent-%COMP%] {\n  --item-width: 2.5rem;\n  --item-height: 2.5rem;\n  --item-border: 1px solid #d1d5db;\n  --item-border-radius: 0.5rem;\n  --item-font-size: 1.25rem;\n  --item-font-weight: 600;\n  --color: var(--fdk-color-text-primary);\n}\n/*# sourceMappingURL=vault-profile-signin-code.component.css.map */"] });
   }
 };
 (() => {
