@@ -81228,7 +81228,9 @@ function AppComponent_ng_container_16_Template(rf, ctx) {
   if (rf & 2) {
     const loadedPage_r3 = \u0275\u0275reference(5);
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(3);
+    \u0275\u0275advance();
+    \u0275\u0275classProp("text-entry-active", ctx_r1.isTextEntryFocused);
+    \u0275\u0275advance(2);
     \u0275\u0275property("ngIf", ctx_r1.loading)("ngIfElse", loadedPage_r3);
   }
 }
@@ -81317,6 +81319,7 @@ var AppComponent = class _AppComponent {
     this.testApiMode = ApiMode.Test;
     this.headerConfig = __spreadValues({}, DEFAULT_EMBED_HEADER_CONFIG);
     this.closeConfirmationOpen = false;
+    this.isTextEntryFocused = false;
     this.publicId = "";
     this.externalId = "";
     this.email = "";
@@ -81348,7 +81351,10 @@ var AppComponent = class _AppComponent {
     this.loading = true;
   }
   ngOnInit() {
-    this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => this.updateHeaderConfig());
+    this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
+      this.isTextEntryFocused = false;
+      this.updateHeaderConfig();
+    });
     this.updateHeaderConfig();
     this.logger.info("QUERY STRING MAP", new URLSearchParams(window.location.search));
     this.populateInputsFromWindowLocation();
@@ -81682,6 +81688,16 @@ var AppComponent = class _AppComponent {
     this.activeHeaderRoute = route;
     this.headerConfig = __spreadValues(__spreadValues({}, DEFAULT_EMBED_HEADER_CONFIG), route.snapshot.data["header"]);
   }
+  handleTextEntryFocus(event) {
+    const target = event.type === "focusout" ? event.relatedTarget : event.target;
+    if (target instanceof HTMLInputElement) {
+      this.isTextEntryFocused = !target.readOnly && !target.disabled && target.inputMode !== "none" && ["text", "email", "password", "number", "tel", "search", "url"].includes(target.type);
+    } else if (target instanceof HTMLTextAreaElement) {
+      this.isTextEntryFocused = !target.readOnly && !target.disabled && target.inputMode !== "none";
+    } else {
+      this.isTextEntryFocused = target instanceof HTMLElement && target.isContentEditable;
+    }
+  }
   // postMessage registration, listen to events from the parent window
   receivePostMessage(event) {
     this.logger.debug("received client-event from parent window", event);
@@ -81719,7 +81735,11 @@ var AppComponent = class _AppComponent {
   static {
     this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _AppComponent, selectors: [["app-root"]], hostBindings: function AppComponent_HostBindings(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275listener("message", function AppComponent_message_HostBindingHandler($event) {
+        \u0275\u0275listener("focusin", function AppComponent_focusin_HostBindingHandler($event) {
+          return ctx.handleTextEntryFocus($event);
+        })("focusout", function AppComponent_focusout_HostBindingHandler($event) {
+          return ctx.handleTextEntryFocus($event);
+        })("message", function AppComponent_message_HostBindingHandler($event) {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
@@ -81762,7 +81782,7 @@ var AppComponent = class _AppComponent {
         });
         \u0275\u0275text(15, " Close ");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275template(16, AppComponent_ng_container_16_Template, 7, 2, "ng-container", 8)(17, AppComponent_ng_container_17_Template, 16, 1, "ng-container", 8);
+        \u0275\u0275template(16, AppComponent_ng_container_16_Template, 7, 4, "ng-container", 8)(17, AppComponent_ng_container_17_Template, 16, 1, "ng-container", 8);
       }
       if (rf & 2) {
         let tmp_3_0;
@@ -81792,7 +81812,7 @@ var AppComponent = class _AppComponent {
       FdkLogoComponent,
       HealthSystemSearchSkeletonComponent,
       WelcomeSkeletonComponent
-    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  height: min(100dvh, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n#widget-container[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  flex: 1 1 auto;\n  width: 100%;\n  height: auto;\n  max-height: 800px;\n  min-height: 0;\n  overflow-x: hidden;\n  overflow-y: hidden;\n}\n#page-scroll-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  min-height: 0;\n  padding: 3px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  -webkit-overflow-scrolling: touch;\n}\n#widget-container[_ngcontent-%COMP%]    > fdk-footer[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton) {\n  scrollbar-width: none;\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton)::-webkit-scrollbar {\n  display: none;\n}\n/*# sourceMappingURL=app.component.css.map */"] });
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  height: min(100dvh, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n#widget-container[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  flex: 1 1 auto;\n  width: 100%;\n  height: auto;\n  max-height: 800px;\n  min-height: 0;\n  overflow-x: hidden;\n  overflow-y: hidden;\n}\n#page-scroll-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  min-height: 0;\n  padding: 3px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  -webkit-overflow-scrolling: touch;\n}\n#widget-container[_ngcontent-%COMP%]    > fdk-footer[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n}\n@media (max-width: 640px) and (pointer: coarse) {\n  #widget-container.text-entry-active[_ngcontent-%COMP%]    > fdk-footer[_ngcontent-%COMP%] {\n    display: none;\n  }\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton) {\n  scrollbar-width: none;\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton)::-webkit-scrollbar {\n  display: none;\n}\n/*# sourceMappingURL=app.component.css.map */"] });
   }
 };
 (() => {
