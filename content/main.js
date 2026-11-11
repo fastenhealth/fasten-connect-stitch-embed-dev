@@ -81323,17 +81323,7 @@ var AppComponent = class _AppComponent {
     this.logger = logger;
     this.sentryContext = sentryContext;
     this.testApiMode = ApiMode.Test;
-    this.showFastenFooter$ = this.configService.systemConfigSubject.pipe(map(({ apiMode, org }) => {
-      const featureFlag = `${apiMode}.white_label.enable`;
-      const showFooter = !org?.feature_flags?.includes(featureFlag);
-      this.logger.debug("[AppComponent] Fasten footer visibility", {
-        apiMode,
-        featureFlag,
-        featureFlags: org?.feature_flags,
-        showFooter
-      });
-      return showFooter;
-    }), distinctUntilChanged());
+    this.showFastenFooter$ = this.configService.systemConfigSubject.pipe(map(({ apiMode, org }) => !org?.feature_flags?.includes(`${apiMode}.white_label.enable`)), distinctUntilChanged());
     this.headerConfig = __spreadValues({}, DEFAULT_EMBED_HEADER_CONFIG);
     this.closeConfirmationOpen = false;
     this.publicId = "";
