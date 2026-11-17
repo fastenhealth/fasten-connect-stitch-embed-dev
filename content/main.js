@@ -81359,6 +81359,8 @@ var AppComponent = class _AppComponent {
     this.viewportKeyboardVisible = null;
     this.parentKeyboardVisible = null;
     this.destroyRef = inject(DestroyRef);
+    this.hostElement = inject(ElementRef);
+    this.inputVisibilityFrame = null;
     this.publicId = "";
     this.externalId = "";
     this.email = "";
@@ -81390,6 +81392,16 @@ var AppComponent = class _AppComponent {
     this.loading = true;
   }
   ngOnInit() {
+    const viewport = window.visualViewport;
+    const revealInput = () => this.scheduleFocusedInputVisibility();
+    viewport?.addEventListener("resize", revealInput);
+    viewport?.addEventListener("scroll", revealInput);
+    this.destroyRef.onDestroy(() => {
+      viewport?.removeEventListener("resize", revealInput);
+      viewport?.removeEventListener("scroll", revealInput);
+      if (this.inputVisibilityFrame !== null)
+        cancelAnimationFrame(this.inputVisibilityFrame);
+    });
     this.destroyRef.onDestroy(observeKeyboardVisibility(window, (visible) => {
       if (window.parent === window || visible || this.viewportKeyboardVisible !== null) {
         this.viewportKeyboardVisible = visible;
@@ -81741,6 +81753,30 @@ var AppComponent = class _AppComponent {
     } else {
       this.isTextEntryFocused = target instanceof HTMLElement && target.isContentEditable;
     }
+    this.scheduleFocusedInputVisibility();
+  }
+  scheduleFocusedInputVisibility() {
+    if (!this.isTextEntryFocused || !window.matchMedia("(max-width: 640px) and (pointer: coarse)").matches)
+      return;
+    if (this.inputVisibilityFrame !== null)
+      cancelAnimationFrame(this.inputVisibilityFrame);
+    this.inputVisibilityFrame = requestAnimationFrame(() => {
+      this.inputVisibilityFrame = null;
+      if (!this.isTextEntryFocused)
+        return;
+      const input2 = document.activeElement;
+      const scroller = this.hostElement.nativeElement.querySelector("#page-scroll-container");
+      if (!(input2 instanceof HTMLElement) || !scroller?.contains(input2))
+        return;
+      const bounds = scroller.getBoundingClientRect();
+      const field = input2.getBoundingClientRect();
+      const viewport = window.parent === window ? window.visualViewport : null;
+      const top = Math.max(bounds.top, viewport?.offsetTop || 0);
+      const bottom = Math.min(bounds.bottom, viewport ? viewport.offsetTop + viewport.height : window.innerHeight);
+      if (field.top < top || field.bottom > bottom) {
+        input2.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "auto" });
+      }
+    });
   }
   // postMessage registration, listen to events from the parent window
   receivePostMessage(event) {
@@ -81787,7 +81823,9 @@ var AppComponent = class _AppComponent {
           return ctx.handleTextEntryFocus($event);
         })("focusout", function AppComponent_focusout_HostBindingHandler($event) {
           return ctx.handleTextEntryFocus($event);
-        })("message", function AppComponent_message_HostBindingHandler($event) {
+        })("resize", function AppComponent_resize_HostBindingHandler() {
+          return ctx.scheduleFocusedInputVisibility();
+        }, false, \u0275\u0275resolveWindow)("message", function AppComponent_message_HostBindingHandler($event) {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
