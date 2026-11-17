@@ -41434,6 +41434,39 @@ function isNativeSdkMode(sdkMode) {
   return sdkMode === SDKMode.ReactNative || sdkMode === SDKMode.Flutter;
 }
 
+// projects/shared-library/src/lib/utils/keyboard-visibility.ts
+var KEYBOARD_VISIBILITY_MESSAGE = "fasten:keyboard-visibility";
+function observeKeyboardVisibility(host, changed) {
+  const viewport = host.visualViewport;
+  if (!viewport)
+    return () => {
+    };
+  let width = host.innerWidth;
+  let fullHeight = Math.max(host.innerHeight, viewport.height * viewport.scale);
+  let previous;
+  const update = () => {
+    const visibleHeight = viewport.height * viewport.scale;
+    if (width !== host.innerWidth) {
+      width = host.innerWidth;
+      fullHeight = Math.max(host.innerHeight, visibleHeight);
+    } else {
+      fullHeight = Math.max(fullHeight, host.innerHeight, visibleHeight);
+    }
+    const visible = fullHeight - visibleHeight > Math.max(120, fullHeight * 0.15);
+    if (visible !== previous) {
+      previous = visible;
+      changed(visible);
+    }
+  };
+  viewport.addEventListener("resize", update);
+  host.addEventListener("resize", update);
+  update();
+  return () => {
+    viewport.removeEventListener("resize", update);
+    host.removeEventListener("resize", update);
+  };
+}
+
 // projects/shared-library/src/lib/shared-library.service.ts
 var SharedLibraryService = class _SharedLibraryService {
   constructor() {
@@ -81215,29 +81248,23 @@ function AppComponent_ng_container_16_ng_template_4_Template(rf, ctx) {
     \u0275\u0275element(0, "router-outlet");
   }
 }
-function AppComponent_ng_container_16_fdk_footer_6_Template(rf, ctx) {
-  if (rf & 1) {
-    \u0275\u0275element(0, "fdk-footer");
-  }
-}
 function AppComponent_ng_container_16_Template(rf, ctx) {
   if (rf & 1) {
     \u0275\u0275elementContainerStart(0);
     \u0275\u0275elementStart(1, "div", 9)(2, "main", 10);
     \u0275\u0275template(3, AppComponent_ng_container_16_ng_container_3_Template, 4, 2, "ng-container", 11)(4, AppComponent_ng_container_16_ng_template_4_Template, 1, 0, "ng-template", null, 0, \u0275\u0275templateRefExtractor);
     \u0275\u0275elementEnd();
-    \u0275\u0275template(6, AppComponent_ng_container_16_fdk_footer_6_Template, 1, 0, "fdk-footer", 8);
-    \u0275\u0275pipe(7, "async");
+    \u0275\u0275element(6, "fdk-footer");
     \u0275\u0275elementEnd();
     \u0275\u0275elementContainerEnd();
   }
   if (rf & 2) {
     const loadedPage_r3 = \u0275\u0275reference(5);
     const ctx_r1 = \u0275\u0275nextContext();
-    \u0275\u0275advance(3);
+    \u0275\u0275advance();
+    \u0275\u0275classProp("text-entry-active", ctx_r1.isKeyboardInputActive);
+    \u0275\u0275advance(2);
     \u0275\u0275property("ngIf", ctx_r1.loading)("ngIfElse", loadedPage_r3);
-    \u0275\u0275advance(3);
-    \u0275\u0275property("ngIf", \u0275\u0275pipeBind1(7, 3, ctx_r1.showFastenFooter$));
   }
 }
 function AppComponent_ng_container_17_Template(rf, ctx) {
@@ -81276,6 +81303,9 @@ function AppComponent_ng_container_17_Template(rf, ctx) {
   }
 }
 var AppComponent = class _AppComponent {
+  get isKeyboardInputActive() {
+    return this.isTextEntryFocused && (this.parentKeyboardVisible ?? this.viewportKeyboardVisible ?? true);
+  }
   populateInputsFromWindowLocation() {
     let urlParams = new URLSearchParams(window.location.search);
     this.publicId = urlParams.get("public-id") || "";
@@ -81323,9 +81353,12 @@ var AppComponent = class _AppComponent {
     this.logger = logger;
     this.sentryContext = sentryContext;
     this.testApiMode = ApiMode.Test;
-    this.showFastenFooter$ = this.configService.systemConfigSubject.pipe(map(({ apiMode, org }) => !org?.feature_flags?.includes(`${apiMode}.white_label.enable`)), distinctUntilChanged());
     this.headerConfig = __spreadValues({}, DEFAULT_EMBED_HEADER_CONFIG);
     this.closeConfirmationOpen = false;
+    this.isTextEntryFocused = false;
+    this.viewportKeyboardVisible = null;
+    this.parentKeyboardVisible = null;
+    this.destroyRef = inject(DestroyRef);
     this.publicId = "";
     this.externalId = "";
     this.email = "";
@@ -81357,7 +81390,15 @@ var AppComponent = class _AppComponent {
     this.loading = true;
   }
   ngOnInit() {
-    this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => this.updateHeaderConfig());
+    this.destroyRef.onDestroy(observeKeyboardVisibility(window, (visible) => {
+      if (window.parent === window || visible || this.viewportKeyboardVisible !== null) {
+        this.viewportKeyboardVisible = visible;
+      }
+    }));
+    this.router.events.pipe(filter((event) => event instanceof NavigationEnd)).subscribe(() => {
+      this.isTextEntryFocused = false;
+      this.updateHeaderConfig();
+    });
     this.updateHeaderConfig();
     this.logger.info("QUERY STRING MAP", new URLSearchParams(window.location.search));
     this.populateInputsFromWindowLocation();
@@ -81691,8 +81732,22 @@ var AppComponent = class _AppComponent {
     this.activeHeaderRoute = route;
     this.headerConfig = __spreadValues(__spreadValues({}, DEFAULT_EMBED_HEADER_CONFIG), route.snapshot.data["header"]);
   }
+  handleTextEntryFocus(event) {
+    const target = event.type === "focusout" ? event.relatedTarget : event.target;
+    if (target instanceof HTMLInputElement) {
+      this.isTextEntryFocused = !target.readOnly && !target.disabled && target.inputMode !== "none" && ["text", "email", "password", "number", "tel", "search", "url"].includes(target.type);
+    } else if (target instanceof HTMLTextAreaElement) {
+      this.isTextEntryFocused = !target.readOnly && !target.disabled && target.inputMode !== "none";
+    } else {
+      this.isTextEntryFocused = target instanceof HTMLElement && target.isContentEditable;
+    }
+  }
   // postMessage registration, listen to events from the parent window
   receivePostMessage(event) {
+    if (event.source === window.parent && event.data?.type === KEYBOARD_VISIBILITY_MESSAGE && typeof event.data.visible === "boolean") {
+      this.parentKeyboardVisible = event.data.visible;
+      return;
+    }
     this.logger.debug("received client-event from parent window", event);
   }
   sendPostMessage(eventPayload) {
@@ -81728,7 +81783,11 @@ var AppComponent = class _AppComponent {
   static {
     this.\u0275cmp = /* @__PURE__ */ \u0275\u0275defineComponent({ type: _AppComponent, selectors: [["app-root"]], hostBindings: function AppComponent_HostBindings(rf, ctx) {
       if (rf & 1) {
-        \u0275\u0275listener("message", function AppComponent_message_HostBindingHandler($event) {
+        \u0275\u0275listener("focusin", function AppComponent_focusin_HostBindingHandler($event) {
+          return ctx.handleTextEntryFocus($event);
+        })("focusout", function AppComponent_focusout_HostBindingHandler($event) {
+          return ctx.handleTextEntryFocus($event);
+        })("message", function AppComponent_message_HostBindingHandler($event) {
           return ctx.receivePostMessage($event);
         }, false, \u0275\u0275resolveWindow);
       }
@@ -81771,7 +81830,7 @@ var AppComponent = class _AppComponent {
         });
         \u0275\u0275text(15, " Close ");
         \u0275\u0275elementEnd()()();
-        \u0275\u0275template(16, AppComponent_ng_container_16_Template, 8, 5, "ng-container", 8)(17, AppComponent_ng_container_17_Template, 16, 1, "ng-container", 8);
+        \u0275\u0275template(16, AppComponent_ng_container_16_Template, 7, 4, "ng-container", 8)(17, AppComponent_ng_container_17_Template, 16, 1, "ng-container", 8);
       }
       if (rf & 2) {
         let tmp_3_0;
@@ -81801,11 +81860,11 @@ var AppComponent = class _AppComponent {
       FdkLogoComponent,
       HealthSystemSearchSkeletonComponent,
       WelcomeSkeletonComponent
-    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  height: min(100dvh, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n#widget-container[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  flex: 1 1 auto;\n  width: 100%;\n  height: auto;\n  max-height: 800px;\n  min-height: 0;\n  overflow-x: hidden;\n  overflow-y: hidden;\n}\n#page-scroll-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  min-height: 0;\n  padding: 3px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  -webkit-overflow-scrolling: touch;\n}\n#widget-container[_ngcontent-%COMP%]    > fdk-footer[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton) {\n  scrollbar-width: none;\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton)::-webkit-scrollbar {\n  display: none;\n}\n/*# sourceMappingURL=app.component.css.map */"] });
+    ], styles: ["\n\n[_nghost-%COMP%] {\n  display: flex;\n  flex-direction: column;\n  height: min(100dvh, 800px);\n  max-height: 800px;\n  min-height: 0;\n  overflow: hidden;\n}\n#widget-container[_ngcontent-%COMP%] {\n  box-sizing: border-box;\n  flex: 1 1 auto;\n  width: 100%;\n  height: auto;\n  max-height: 800px;\n  min-height: 0;\n  overflow-x: hidden;\n  overflow-y: hidden;\n}\n#page-scroll-container[_ngcontent-%COMP%] {\n  display: flex;\n  flex: 1 1 auto;\n  flex-direction: column;\n  width: 100%;\n  min-height: 0;\n  padding: 3px;\n  overflow-x: hidden;\n  overflow-y: auto;\n  overscroll-behavior-y: contain;\n  -webkit-overflow-scrolling: touch;\n}\n#widget-container[_ngcontent-%COMP%]    > fdk-footer[_ngcontent-%COMP%] {\n  flex: 0 0 auto;\n}\n@media (max-width: 640px) and (pointer: coarse) {\n  #widget-container.text-entry-active[_ngcontent-%COMP%]    > fdk-footer[_ngcontent-%COMP%] {\n    display: none;\n  }\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton) {\n  scrollbar-width: none;\n}\n#page-scroll-container[_ngcontent-%COMP%]:has(app-health-system-search, app-health-system-search-skeleton)::-webkit-scrollbar {\n  display: none;\n}\n/*# sourceMappingURL=app.component.css.map */"] });
   }
 };
 (() => {
-  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 70 });
+  (typeof ngDevMode === "undefined" || ngDevMode) && \u0275setClassDebugInfo(AppComponent, { className: "AppComponent", filePath: "projects/fasten-connect-stitch-embed/src/app/app.component.ts", lineNumber: 72 });
 })();
 
 // projects/fasten-connect-stitch-embed/src/app/utils/test-identities.ts
